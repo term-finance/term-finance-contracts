@@ -1,0 +1,121 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ITermRepoRolloverManagerErrors",
+  "sourceName": "contracts/interfaces/ITermRepoRolloverManagerErrors.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "AlreadyTermContractPaired",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AuctionEndsAfterRepayment",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AuctionEndsBeforeMaturity",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BorrowerRepurchaseObligationInsufficient",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "invalidCollateralToken",
+          "type": "address"
+        }
+      ],
+      "name": "CollateralTokenNotSupported",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "currentPurchaseToken",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "rolloverPurchaseToken",
+          "type": "address"
+        }
+      ],
+      "name": "DifferentPurchaseToken",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "InvalidParameters",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "MaturityReached",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NoRolloverToCancel",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "invalidAddress",
+          "type": "address"
+        }
+      ],
+      "name": "NotTermContract",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RepurchaseWindowOver",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "invalidAddress",
+          "type": "address"
+        }
+      ],
+      "name": "RolloverAddressNotApproved",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RolloverLockedToAuction",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RolloverProcessedToTerm",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroBorrowerRepurchaseObligation",
+      "type": "error"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

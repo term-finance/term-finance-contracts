@@ -1,0 +1,107 @@
+[
+  {
+    "inputs": [],
+    "name": "AlreadyTermContractPaired",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AuctionNotClosed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AuctionNotOpen",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AuctionNotRevealing",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "reveal",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "end",
+        "type": "uint256"
+      }
+    ],
+    "name": "AuctionRevealsAfterEnd",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "start",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "reveal",
+        "type": "uint256"
+      }
+    ],
+    "name": "AuctionStartsAfterReveal",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "CollateralTokenNotApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSelfReferral",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LockingPaused",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "PurchaseTokenNotApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxPrice",
+        "type": "uint256"
+      }
+    ],
+    "name": "TenderPriceTooHigh",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnlockingPaused",
+    "type": "error"
+  }
+]

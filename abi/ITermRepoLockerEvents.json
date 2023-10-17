@@ -1,0 +1,47 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "termRepoId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termRepoLocker",
+        "type": "address"
+      }
+    ],
+    "name": "TermRepoLockerInitialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "termRepoId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "TermRepoLockerTransfersPaused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "termRepoId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "TermRepoLockerTransfersUnpaused",
+    "type": "event"
+  }
+]

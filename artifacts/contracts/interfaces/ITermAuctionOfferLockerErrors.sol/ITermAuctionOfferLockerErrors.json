@@ -1,0 +1,212 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ITermAuctionOfferLockerErrors",
+  "sourceName": "contracts/interfaces/ITermAuctionOfferLockerErrors.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "AlreadyTermContractPaired",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AuctionNotClosed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AuctionNotOpen",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "AuctionNotRevealing",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "reveal",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "end",
+          "type": "uint256"
+        }
+      ],
+      "name": "AuctionRevealsAfterEnd",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "start",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "reveal",
+          "type": "uint256"
+        }
+      ],
+      "name": "AuctionStartsAfterReveal",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "name": "CollateralTokenNotApproved",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "offerId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "GeneratingExistingOffer",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidSelfReferral",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "LockingPaused",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "MaxOfferCountReached",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "NoOfferToUnlock",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "NonExistentOffer",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OfferAlreadyRevealed",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "OfferAmountTooLow",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "offerCount",
+          "type": "uint256"
+        }
+      ],
+      "name": "OfferCountIncorrect",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OfferNotOwned",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "OfferNotRevealed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OfferPriceModified",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "id",
+          "type": "bytes32"
+        }
+      ],
+      "name": "OfferRevealed",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "name": "PurchaseTokenNotApproved",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RevealedOffersNotSorted",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "id",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "maxPrice",
+          "type": "uint256"
+        }
+      ],
+      "name": "TenderPriceTooHigh",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "UnlockingPaused",
+      "type": "error"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

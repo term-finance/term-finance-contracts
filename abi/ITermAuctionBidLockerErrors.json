@@ -1,0 +1,267 @@
+[
+  {
+    "inputs": [],
+    "name": "AlreadyTermContractPaired",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AuctionNotClosed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AuctionNotOpen",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AuctionNotRevealing",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "reveal",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "end",
+        "type": "uint256"
+      }
+    ],
+    "name": "AuctionRevealsAfterEnd",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "start",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "reveal",
+        "type": "uint256"
+      }
+    ],
+    "name": "AuctionStartsAfterReveal",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "BidAlreadyRevealed",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "BidAmountTooLow",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "bidCount",
+        "type": "uint256"
+      }
+    ],
+    "name": "BidCountIncorrect",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "BidNotOwned",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "bidId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "BidNotRevealed",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "BidPriceModified",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "bidId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "BidRevealed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CollateralAmountTooLow",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "CollateralTokenNotApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "bidId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "GeneratingExistingBid",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidPurchaseToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSelfReferral",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidTermRepoServicer",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LockingPaused",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MaxBidCountReached",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoCollateralToUnlock",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "bidId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "NonExistentBid",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "bidId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "NonExpiredRolloverBid",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      }
+    ],
+    "name": "NonRolloverBid",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "PurchaseTokenNotApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RevealedBidsNotSorted",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RolloverBid",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "bidId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "RolloverBidExpired",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RolloverBidInShortfall",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "id",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxPrice",
+        "type": "uint256"
+      }
+    ],
+    "name": "TenderPriceTooHigh",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnlockingPaused",
+    "type": "error"
+  }
+]

@@ -1,0 +1,102 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ITermRepoRolloverManager",
+  "sourceName": "contracts/interfaces/ITermRepoRolloverManager.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "cancelRollover",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "rolloverAuction",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "rolloverAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "rolloverBidPriceHash",
+              "type": "bytes32"
+            }
+          ],
+          "internalType": "struct TermRepoRolloverElectionSubmission",
+          "name": "termRepoRolloverElectionSubmission",
+          "type": "tuple"
+        }
+      ],
+      "name": "electRollover",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "borrower",
+          "type": "address"
+        }
+      ],
+      "name": "fulfillRollover",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "borrower",
+          "type": "address"
+        }
+      ],
+      "name": "getRolloverInstructions",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "rolloverAuction",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "rolloverAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "rolloverBidPriceHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bool",
+              "name": "processed",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct TermRepoRolloverElection",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

@@ -1,0 +1,88 @@
+[
+  {
+    "inputs": [],
+    "name": "AfterMaturity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AfterRepurchaseWindow",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AlreadyTermContractPaired",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "CallerNotBorrower",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EncumberedCollateralRemaining",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientCollateral",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientTermRepoTokenBalance",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientgetBorrowerRepurchaseObligation",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "message",
+        "type": "string"
+      }
+    ],
+    "name": "InvalidParameters",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "LockedBalanceInsufficient",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoMintOpenExposureAccess",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotMaturedYet",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RedemptionPeriodNotOpen",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RepurchaseAmountTooHigh",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroBorrowerRepurchaseObligation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroTermRepoTokenBalance",
+    "type": "error"
+  }
+]

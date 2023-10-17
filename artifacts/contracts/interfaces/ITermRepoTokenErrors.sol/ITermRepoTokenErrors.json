@@ -1,0 +1,31 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ITermRepoTokenErrors",
+  "sourceName": "contracts/interfaces/ITermRepoTokenErrors.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "AlreadyTermContractPaired",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "MintExposureCapExceeded",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TermRepoTokenBurningPaused",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TermRepoTokenMintingPaused",
+      "type": "error"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

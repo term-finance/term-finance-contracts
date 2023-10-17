@@ -1,0 +1,23 @@
+node_modules
+.env
+*.env
+coverage
+coverage.json
+typechain
+typechain-types
+.graphclient
+
+fork-id.txt
+
+#Hardhat files
+cache
+
+.openzeppelin/unknown-*.json
+
+.yarn/install-state.gz
+
+classDiagram.svg
+
+.DS_Store
+
+.deployed-contracts.json

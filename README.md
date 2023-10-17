@@ -1,5 +1,7 @@
 # TermFinance Smart Contracts
 
+[![codecov](https://codecov.io/gh/term-finance/term-finance-contracts/graph/badge.svg?token=rSmJK0e9nG)](https://codecov.io/gh/term-finance/term-finance-contracts) [![CI](https://github.com/term-finance/term-finance-contracts/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/term-finance/term-finance-contracts/blob/main/.github/workflows/ci.yml)
+
 Term Finance is a noncustodial fixed-rate liquidity protocol modeled on tri-party repo arrangements common in traditional finance (TradFi). Liquidity suppliers and takers are matched through a unique weekly auction process where liquidity takers submit bids and suppliers submit offers to the protocol, which then determines an interest rate that clears the market. Bidders who bid more than the clearing rate receive liquidity and lenders asking less than the clearing rate, supply. All other participants’ bids and offers are said to be “left on the table.”
 
 ### What is Tri-Party Repo?
@@ -20,7 +22,6 @@ Protocol contracts are evergreen contracts at the protocol level that govern and
 
 * `TermEventEmitter.sol`
 * `TermController.sol`
-* `Authenticator.sol`
 * `TermPriceConsumerV3.sol`
 
 ### Term Repo Class

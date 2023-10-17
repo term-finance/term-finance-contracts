@@ -1,0 +1,155 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ITermRepoCollateralManagerErrors",
+  "sourceName": "contracts/interfaces/ITermRepoCollateralManagerErrors.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "AlreadyTermContractPaired",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "BorrowerNotInShortfall",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CallerNotBorrower",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "borrower",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "name": "CollateralBelowMaintenanceRatios",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CollateralDepositClosed",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "name": "CollateralTokenNotAllowed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CollateralWithdrawalClosed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "DefaultsClosed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ExceedsNetExposureCapOnLiquidation",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "collateralToken",
+          "type": "address"
+        }
+      ],
+      "name": "InsufficientCollateralForLiquidationRepayment",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InsufficientCollateralForRedemption",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "message",
+          "type": "string"
+        }
+      ],
+      "name": "InvalidParameters",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "LiquidationsPaused",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "RepaymentAmountLargerThanAllowed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "SelfLiquidationNotPermitted",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ShortfallLiquidationsClosed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TermRepurchaseWindowOpen",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TotalRepaymentGreaterThangetBorrowerRepurchaseObligation",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "UnlockAmountGreaterThanCollateralBalance",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroAddressContractPaired",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroBorrowerRepurchaseObligation",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroCollateralBalance",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroLiquidationNotPermitted",
+      "type": "error"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
