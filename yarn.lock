@@ -4492,6 +4492,73 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@term-finance/term-finance-contracts@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@term-finance/term-finance-contracts@workspace:."
+  dependencies:
+    "@chainlink/contracts": ^0.8.0
+    "@defi-wonderland/smock": ^2.3.5
+    "@ethersproject/abstract-provider": ^5.7.0
+    "@ethersproject/experimental": ^5.7.0
+    "@gelatonetwork/ops-sdk": ^2.2.0-alpha
+    "@graphprotocol/client-cli": ^3.0.0
+    "@nomicfoundation/hardhat-chai-matchers": ^1.0.6
+    "@nomicfoundation/hardhat-network-helpers": ^1.0.9
+    "@nomiclabs/hardhat-ethers": ^2.2.3
+    "@nomiclabs/hardhat-etherscan": ^3.1.7
+    "@openzeppelin/contracts-upgradeable": ^4.9.3
+    "@openzeppelin/hardhat-upgrades": ^1.28.0
+    "@safe-global/api-kit": ^1.3.1
+    "@safe-global/protocol-kit": ^1.3.0
+    "@safe-global/safe-core-sdk-types": ^2.3.0
+    "@tenderly/hardhat-tenderly": ^1.7.7
+    "@typechain/ethers-v5": ^11.1.1
+    "@typechain/hardhat": ^7.0.0
+    "@types/chai": ^4.3.9
+    "@types/csv-parse": ^1.2.2
+    "@types/mocha": ^10.0.1
+    "@types/node": ^20.8.6
+    "@types/uuid": ^9.0.5
+    "@typescript-eslint/eslint-plugin": ^6.7.5
+    "@typescript-eslint/parser": ^6.7.0
+    chai: ^4.3.10
+    crypto-js: ^4.1.1
+    csv-parse: ^5.5.0
+    dayjs: ^1.11.10
+    dotenv: ^16.3.1
+    env-cmd: ^10.1.0
+    eslint: ^8.51.0
+    eslint-config-prettier: ^9.0.0
+    eslint-config-standard: ^17.1.0
+    eslint-plugin-import: ^2.28.1
+    eslint-plugin-n: ^16.2.0
+    eslint-plugin-node: ^11.1.0
+    eslint-plugin-prettier: ^4.2.1
+    eslint-plugin-promise: ^6.1.1
+    ethereum-waffle: ^4.0.10
+    ethereumjs-abi: ^0.6.8
+    ethers: ^5.7.2
+    graphql: ^16.8.1
+    hardhat: ^2.18.0
+    hardhat-abi-exporter: ^2.10.1
+    hardhat-contract-sizer: ^2.10.0
+    hardhat-gas-reporter: ^1.0.9
+    lodash: ^4.17.21
+    node-fetch: 3.3.2
+    prettier: ^2.8.8
+    prettier-plugin-solidity: ^1.1.3
+    shx: ^0.3.4
+    sol2uml: ^2.5.16
+    solhint: ^3.6.2
+    solidity-coverage: ^0.8.5
+    solidity-docgen: ^0.6.0-beta.36
+    ts-node: ^10.9.1
+    typechain: ^8.3.1
+    typescript: ^5.2.2
+    uuid: ^9.0.1
+  languageName: unknown
+  linkType: soft
+
 "@tootallnate/once@npm:2":
   version: 2.0.0
   resolution: "@tootallnate/once@npm:2.0.0"
@@ -7361,10 +7428,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dayjs@npm:^1.11.9":
-  version: 1.11.9
-  resolution: "dayjs@npm:1.11.9"
-  checksum: a4844d83dc87f921348bb9b1b93af851c51e6f71fa259604809cfe1b49d1230e6b0212dab44d1cb01994c096ad3a77ea1cf18fa55154da6efcc9d3610526ac38
+"dayjs@npm:^1.11.10":
+  version: 1.11.10
+  resolution: "dayjs@npm:1.11.10"
+  checksum: a6b5a3813b8884f5cd557e2e6b7fa569f4c5d0c97aca9558e38534af4f2d60daafd3ff8c2000fed3435cfcec9e805bcebd99f90130c6d1c5ef524084ced588c4
   languageName: node
   linkType: hard
 
@@ -8327,9 +8394,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-n@npm:^16.1.0":
-  version: 16.1.0
-  resolution: "eslint-plugin-n@npm:16.1.0"
+"eslint-plugin-n@npm:^16.2.0":
+  version: 16.2.0
+  resolution: "eslint-plugin-n@npm:16.2.0"
   dependencies:
     "@eslint-community/eslint-utils": ^4.4.0
     builtins: ^5.0.1
@@ -8342,7 +8409,7 @@ __metadata:
     semver: ^7.5.3
   peerDependencies:
     eslint: ">=7.0.0"
-  checksum: 6b70bf8eec74395a440ca585745eb19aba143ee00513f76893c44944675630bd898227d1b4e0ebef66fd0c84cdcf223d6613b2beee0727b5c572cd705fb50d3a
+  checksum: 124ba4f418c895d81201ddc0c61cdca246c8aaa652e572653fad0dd66701aaef30598956fbe676726ab1037e600eddeaba52cd1a71b86f41e50a97f6e725055e
   languageName: node
   linkType: hard
 
@@ -12850,14 +12917,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-fetch@npm:3.3.1":
-  version: 3.3.1
-  resolution: "node-fetch@npm:3.3.1"
+"node-fetch@npm:3.3.2":
+  version: 3.3.2
+  resolution: "node-fetch@npm:3.3.2"
   dependencies:
     data-uri-to-buffer: ^4.0.0
     fetch-blob: ^3.1.4
     formdata-polyfill: ^4.0.10
-  checksum: 62145fd3ba4770a76110bc31fdc0054ab2f5442b5ce96e9c4b39fc9e94a3d305560eec76e1165d9259eab866e02a8eecf9301062bb5dfc9f08a4d08b69d223dd
+  checksum: 06a04095a2ddf05b0830a0d5302699704d59bda3102894ea64c7b9d4c865ecdff2d90fd042df7f5bc40337266961cb6183dcc808ea4f3000d024f422b462da92
   languageName: node
   linkType: hard
 
@@ -15660,73 +15727,6 @@ __metadata:
   checksum: 167f132d20acb12b841ac29f0e0cdd428e1329fed6c37beaf1e2d05a0ff48ab860b40a734d581d595b053c5bdb80622f3c37409fccba6148af63092a1eb67359
   languageName: node
   linkType: hard
-
-"term-finance@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "term-finance@workspace:."
-  dependencies:
-    "@chainlink/contracts": ^0.8.0
-    "@defi-wonderland/smock": ^2.3.5
-    "@ethersproject/abstract-provider": ^5.7.0
-    "@ethersproject/experimental": ^5.7.0
-    "@gelatonetwork/ops-sdk": ^2.2.0-alpha
-    "@graphprotocol/client-cli": ^3.0.0
-    "@nomicfoundation/hardhat-chai-matchers": ^1.0.6
-    "@nomicfoundation/hardhat-network-helpers": ^1.0.9
-    "@nomiclabs/hardhat-ethers": ^2.2.3
-    "@nomiclabs/hardhat-etherscan": ^3.1.7
-    "@openzeppelin/contracts-upgradeable": ^4.9.3
-    "@openzeppelin/hardhat-upgrades": ^1.28.0
-    "@safe-global/api-kit": ^1.3.1
-    "@safe-global/protocol-kit": ^1.3.0
-    "@safe-global/safe-core-sdk-types": ^2.3.0
-    "@tenderly/hardhat-tenderly": ^1.7.7
-    "@typechain/ethers-v5": ^11.1.1
-    "@typechain/hardhat": ^7.0.0
-    "@types/chai": ^4.3.9
-    "@types/csv-parse": ^1.2.2
-    "@types/mocha": ^10.0.1
-    "@types/node": ^20.8.6
-    "@types/uuid": ^9.0.5
-    "@typescript-eslint/eslint-plugin": ^6.7.5
-    "@typescript-eslint/parser": ^6.7.0
-    chai: ^4.3.10
-    crypto-js: ^4.1.1
-    csv-parse: ^5.5.0
-    dayjs: ^1.11.9
-    dotenv: ^16.3.1
-    env-cmd: ^10.1.0
-    eslint: ^8.51.0
-    eslint-config-prettier: ^9.0.0
-    eslint-config-standard: ^17.1.0
-    eslint-plugin-import: ^2.28.1
-    eslint-plugin-n: ^16.1.0
-    eslint-plugin-node: ^11.1.0
-    eslint-plugin-prettier: ^4.2.1
-    eslint-plugin-promise: ^6.1.1
-    ethereum-waffle: ^4.0.10
-    ethereumjs-abi: ^0.6.8
-    ethers: ^5.7.2
-    graphql: ^16.8.1
-    hardhat: ^2.18.0
-    hardhat-abi-exporter: ^2.10.1
-    hardhat-contract-sizer: ^2.10.0
-    hardhat-gas-reporter: ^1.0.9
-    lodash: ^4.17.21
-    node-fetch: 3.3.1
-    prettier: ^2.8.8
-    prettier-plugin-solidity: ^1.1.3
-    shx: ^0.3.4
-    sol2uml: ^2.5.16
-    solhint: ^3.6.2
-    solidity-coverage: ^0.8.5
-    solidity-docgen: ^0.6.0-beta.36
-    ts-node: ^10.9.1
-    typechain: ^8.3.1
-    typescript: ^5.2.2
-    uuid: ^9.0.1
-  languageName: unknown
-  linkType: soft
 
 "text-table@npm:^0.2.0":
   version: 0.2.0
