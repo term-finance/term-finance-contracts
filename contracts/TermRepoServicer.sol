@@ -46,7 +46,7 @@ contract TermRepoServicer is
     bytes32 public constant COLLATERAL_MANAGER =
         keccak256("COLLATERAL_MANAGER");
     bytes32 public constant DEVOPS_ROLE = keccak256("DEVOPS_ROLE");
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant SPECIALIST_ROLE = keccak256("SPECIALIST_ROLE");
     bytes32 public constant ROLLOVER_MANAGER = keccak256("ROLLOVER_MANAGER");
     bytes32 public constant ROLLOVER_TARGET_AUCTIONEER_ROLE =
         keccak256("ROLLOVER_TARGET_AUCTIONEER_ROLE");
@@ -308,7 +308,7 @@ contract TermRepoServicer is
         return repurchaseExposureLedger[borrower];
     }
 
-    /// @dev This method allows MINTER_ROLE to open repurchase price exposure against a TermRepoToken mint of corresponding value outside of a Term Auction to create new supply
+    /// @dev This method allows SPECIALIST_ROLE to open repurchase price exposure against a TermRepoToken mint of corresponding value outside of a Term Auction to create new supply
     /// @param amount The amount of Term Repo Tokens to mint
     /// @param collateralAmounts An array containing an amount of collateral token for each token in collateral basket
     function mintOpenExposure(
@@ -317,7 +317,7 @@ contract TermRepoServicer is
     ) external {
         address borrower = msg.sender;
 
-        if (!hasRole(MINTER_ROLE, borrower)) {
+        if (!hasRole(SPECIALIST_ROLE, borrower)) {
             revert NoMintOpenExposureAccess();
         }
 
@@ -721,7 +721,7 @@ contract TermRepoServicer is
     function grantMintExposureAccess(
         address authedUser
     ) external onlyRole(ADMIN_ROLE) {
-        _grantRole(MINTER_ROLE, authedUser);
+        _grantRole(SPECIALIST_ROLE, authedUser);
         emitter.emitMintExposureAccessGranted(termRepoId, authedUser);
     }
 

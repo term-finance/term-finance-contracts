@@ -316,19 +316,6 @@
   },
   {
     "inputs": [],
-    "name": "MINTER_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "ROLLOVER_MANAGER",
     "outputs": [
       {
@@ -343,6 +330,19 @@
   {
     "inputs": [],
     "name": "ROLLOVER_TARGET_AUCTIONEER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "SPECIALIST_ROLE",
     "outputs": [
       {
         "internalType": "bytes32",
