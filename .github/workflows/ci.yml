@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: "18.15"
           cache: yarn
-      - run: yarn install  --frozen-lockfile
+      - run: yarn install  --immutable
       - run: yarn build
       - run: yarn check:coverage
         env:

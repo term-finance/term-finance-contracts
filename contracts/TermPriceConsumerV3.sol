@@ -61,7 +61,7 @@ contract TermPriceConsumerV3 is
     function addNewTokenPriceFeed(
         address token,
         address tokenPriceAggregator
-    ) external onlyRole(EVERGREEN_MANAGEMENT_ROLE) {
+    ) external onlyRole(DEVOPS_ROLE) {
         priceFeeds[token] = AggregatorV3Interface(tokenPriceAggregator);
         emit SubscribePriceFeed(token, tokenPriceAggregator);
     }
@@ -69,7 +69,7 @@ contract TermPriceConsumerV3 is
     /// @param token The address of the token whose price feed needs to be removed
     function removeTokenPriceFeed(
         address token
-    ) external onlyRole(EVERGREEN_MANAGEMENT_ROLE) {
+    ) external onlyRole(DEVOPS_ROLE) {
         delete priceFeeds[token];
         emit UnsubscribePriceFeed(token);
     }

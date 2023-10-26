@@ -181,10 +181,10 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(contractAddress).pauseMinting()
       ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
       );
 
-      await expect(termRepoToken.connect(devopsMultisig).pauseMinting())
+      await expect(termRepoToken.connect(adminWallet).pauseMinting())
         .to.emit(termEventEmitter, "TermRepoTokenMintingPaused")
         .withArgs(termIdHashed);
 
@@ -210,10 +210,10 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(contractAddress).unpauseMinting()
       ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
       );
 
-      await expect(termRepoToken.connect(devopsMultisig).unpauseMinting())
+      await expect(termRepoToken.connect(adminWallet).unpauseMinting())
         .to.emit(termEventEmitter, "TermRepoTokenMintingUnpaused")
         .withArgs(termIdHashed);
 
@@ -299,10 +299,10 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(contractAddress).pauseMinting()
       ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
       );
 
-      await expect(termRepoToken.connect(devopsMultisig).pauseMinting())
+      await expect(termRepoToken.connect(adminWallet).pauseMinting())
         .to.emit(termEventEmitter, "TermRepoTokenMintingPaused")
         .withArgs(termIdHashed);
 
@@ -328,10 +328,10 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(contractAddress).unpauseMinting()
       ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
       );
 
-      await expect(termRepoToken.connect(devopsMultisig).unpauseMinting())
+      await expect(termRepoToken.connect(adminWallet).unpauseMinting())
         .to.emit(termEventEmitter, "TermRepoTokenMintingUnpaused")
         .withArgs(termIdHashed);
 
@@ -380,10 +380,10 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(contractAddress).pauseBurning()
       ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
       );
 
-      await expect(termRepoToken.connect(devopsMultisig).pauseBurning())
+      await expect(termRepoToken.connect(adminWallet).pauseBurning())
         .to.emit(termEventEmitter, "TermRepoTokenBurningPaused")
         .withArgs(termIdHashed);
 
@@ -407,10 +407,10 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(contractAddress).unpauseBurning()
       ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
       );
 
-      await expect(termRepoToken.connect(devopsMultisig).unpauseBurning())
+      await expect(termRepoToken.connect(adminWallet).unpauseBurning())
         .to.emit(termEventEmitter, "TermRepoTokenBurningUnpaused")
         .withArgs(termIdHashed);
 

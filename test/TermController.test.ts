@@ -132,7 +132,7 @@ describe("TermController Tests", () => {
           .connect(externalAddress)
           .updateTreasuryAddress(externalAddress.address)
       ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x0bb5a33d705086fce426ce4e2dd59328fcdddf3164b908c4c00fd1a185a702de`
+        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
       );
 
       await expect(
@@ -140,7 +140,7 @@ describe("TermController Tests", () => {
           .connect(externalAddress)
           .updateProtocolReserveAddress(externalAddress.address)
       ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x0bb5a33d705086fce426ce4e2dd59328fcdddf3164b908c4c00fd1a185a702de`
+        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
       );
     });
     it("External Addresses cannot add or remove a Term Finance Address", async () => {
@@ -182,7 +182,7 @@ describe("TermController Tests", () => {
       ).to.equal(originalTreasuryAddress.address);
       await expect(
         termController
-          .connect(evergreenManagementWallet)
+          .connect(devopsWallet)
           .updateTreasuryAddress(newTreasuryAddress.address)
       )
         .to.emit(termController, "TreasuryAddressUpdated")
@@ -198,7 +198,7 @@ describe("TermController Tests", () => {
 
       await expect(
         termController
-          .connect(evergreenManagementWallet)
+          .connect(devopsWallet)
           .updateTreasuryAddress(originalTreasuryAddress.address)
       ).to.be.revertedWith("No change in treasury address");
     });
@@ -211,7 +211,7 @@ describe("TermController Tests", () => {
       ).to.equal(originalProtocolReservesAddress.address);
       await expect(
         termController
-          .connect(evergreenManagementWallet)
+          .connect(devopsWallet)
           .updateProtocolReserveAddress(newProtocolResrvesAddress.address)
       )
         .to.emit(termController, "ProtocolReserveAddressUpdated")
@@ -270,7 +270,7 @@ describe("TermController Tests", () => {
 
       await expect(
         termController
-          .connect(evergreenManagementWallet)
+          .connect(devopsWallet)
           .updateProtocolReserveAddress(originalProtocolReservesAddress.address)
       ).to.be.revertedWith("No change in protocol reserve address");
     });

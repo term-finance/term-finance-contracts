@@ -99,7 +99,7 @@ describe("TermPriceConsumerV3", () => {
           mockCollateralFeed.address
         )
     ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x0bb5a33d705086fce426ce4e2dd59328fcdddf3164b908c4c00fd1a185a702de`
+      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
     );
 
     await expect(
@@ -107,12 +107,12 @@ describe("TermPriceConsumerV3", () => {
         .connect(wallet2)
         .removeTokenPriceFeed(testCollateralToken.address)
     ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x0bb5a33d705086fce426ce4e2dd59328fcdddf3164b908c4c00fd1a185a702de`
+      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
     );
 
     await expect(
       termOracle
-        .connect(evergreenManagementWallet)
+        .connect(devopsWallet)
         .addNewTokenPriceFeed(
           testCollateralToken.address,
           mockCollateralFeed.address
@@ -122,7 +122,7 @@ describe("TermPriceConsumerV3", () => {
       .withArgs(testCollateralToken.address, mockCollateralFeed.address);
 
     await termOracle
-      .connect(evergreenManagementWallet)
+      .connect(devopsWallet)
       .addNewTokenPriceFeed(
         testCollateralToken2.address,
         mockCollateralFeed2.address
@@ -130,7 +130,7 @@ describe("TermPriceConsumerV3", () => {
 
     await expect(
       termOracle
-        .connect(evergreenManagementWallet)
+        .connect(devopsWallet)
         .removeTokenPriceFeed(testCollateralToken2.address)
     )
       .to.emit(termOracle, "UnsubscribePriceFeed")

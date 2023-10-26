@@ -1,6 +1,6 @@
 {
   "name": "@term-finance/term-finance-contracts",
-  "version": "0.5.29",
+  "version": "0.5.31",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/term-finance/term-finance-contracts.git"

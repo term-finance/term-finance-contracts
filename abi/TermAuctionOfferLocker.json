@@ -340,6 +340,19 @@
   },
   {
     "inputs": [],
+    "name": "ADMIN_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "AUCTIONEER_ROLE",
     "outputs": [
       {
@@ -880,6 +893,11 @@
       {
         "internalType": "address",
         "name": "devopsMultisig_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "adminWallet_",
         "type": "address"
       }
     ],

@@ -28,6 +28,7 @@ contract TermRepoLocker is
     // ========================================================================
     // = Access Roles =========================================================
     // ========================================================================
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant DEVOPS_ROLE = keccak256("DEVOPS_ROLE");
     bytes32 public constant INITIALIZER_ROLE = keccak256("INITIALIZER_ROLE");
     bytes32 public constant SERVICER_ROLE = keccak256("SERVICER_ROLE");
@@ -73,13 +74,15 @@ contract TermRepoLocker is
         address termRepoCollateralManager_,
         address termRepoServicer_,
         ITermEventEmitter emitter_,
-        address devopsMultisig_
+        address devopsMultisig_,
+        address adminWallet_
     ) external onlyRole(INITIALIZER_ROLE) {
         emitter = emitter_;
 
         _grantRole(SERVICER_ROLE, termRepoCollateralManager_);
         _grantRole(SERVICER_ROLE, termRepoServicer_);
         _grantRole(DEVOPS_ROLE, devopsMultisig_);
+        _grantRole(ADMIN_ROLE, adminWallet_);
 
         emitter.emitTermRepoLockerInitialized(termRepoId, address(this));
     }
@@ -123,12 +126,12 @@ contract TermRepoLocker is
     // = Pause Functions ======================================================
     // ========================================================================
 
-    function pauseTransfers() external onlyRole(DEVOPS_ROLE) {
+    function pauseTransfers() external onlyRole(ADMIN_ROLE) {
         transfersPaused = true;
         emitter.emitTermRepoLockerTransfersPaused(termRepoId);
     }
 
-    function unpauseTransfers() external onlyRole(DEVOPS_ROLE) {
+    function unpauseTransfers() external onlyRole(ADMIN_ROLE) {
         transfersPaused = false;
         emitter.emitTermRepoLockerTransfersUnpaused(termRepoId);
     }

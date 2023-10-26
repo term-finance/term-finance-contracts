@@ -266,22 +266,22 @@ contract TermRepoToken is
     // = Pause Functions ======================================================
     // ========================================================================
 
-    function pauseMinting() external onlyRole(DEVOPS_ROLE) {
+    function pauseMinting() external onlyRole(ADMIN_ROLE) {
         mintingPaused = true;
         emitter.emitTermRepoTokenMintingPaused(termRepoId);
     }
 
-    function unpauseMinting() external onlyRole(DEVOPS_ROLE) {
+    function unpauseMinting() external onlyRole(ADMIN_ROLE) {
         mintingPaused = false;
         emitter.emitTermRepoTokenMintingUnpaused(termRepoId);
     }
 
-    function pauseBurning() external onlyRole(DEVOPS_ROLE) {
+    function pauseBurning() external onlyRole(ADMIN_ROLE) {
         burningPaused = true;
         emitter.emitTermRepoTokenBurningPaused(termRepoId);
     }
 
-    function unpauseBurning() external onlyRole(DEVOPS_ROLE) {
+    function unpauseBurning() external onlyRole(ADMIN_ROLE) {
         burningPaused = false;
         emitter.emitTermRepoTokenBurningUnpaused(termRepoId);
     }
