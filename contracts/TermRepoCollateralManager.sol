@@ -41,6 +41,7 @@ contract TermRepoCollateralManager is
     // = Access Role  =========================================================
     // ========================================================================
 
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant AUCTION_LOCKER = keccak256("AUCTION_LOCKER");
     bytes32 public constant DEVOPS_ROLE = keccak256("DEVOPS_ROLE");
     bytes32 public constant INITIALIZER_ROLE = keccak256("INITIALIZER_ROLE");
@@ -210,7 +211,8 @@ contract TermRepoCollateralManager is
         address termController_,
         address termPriceOracle_,
         address termRepoRolloverManager_,
-        address devopsMultisig_
+        address devopsMultisig_,
+        address adminWallet_
     ) external onlyRole(INITIALIZER_ROLE) notTermContractPaired {
         termRepoLocker = TermRepoLocker(termRepoLocker_);
         termRepoServicer = TermRepoServicer(termRepoServicer_);
@@ -223,6 +225,8 @@ contract TermRepoCollateralManager is
         _grantRole(SERVICER_ROLE, termRepoServicer_);
         _grantRole(ROLLOVER_MANAGER, termRepoRolloverManager_);
         _grantRole(DEVOPS_ROLE, devopsMultisig_);
+        _grantRole(ADMIN_ROLE, adminWallet_);
+
 
         uint256[] memory maintenanceRatioList = new uint256[](
             collateralTokens.length
@@ -762,12 +766,12 @@ contract TermRepoCollateralManager is
         );
     }
 
-    function pauseLiquidations() external onlyRole(DEVOPS_ROLE) {
+    function pauseLiquidations() external onlyRole(ADMIN_ROLE) {
         liquidationsPaused = true;
         emitter.emitLiquidationPaused(termRepoId);
     }
 
-    function unpauseLiquidations() external onlyRole(DEVOPS_ROLE) {
+    function unpauseLiquidations() external onlyRole(ADMIN_ROLE) {
         liquidationsPaused = false;
         emitter.emitLiquidationUnpaused(termRepoId);
     }

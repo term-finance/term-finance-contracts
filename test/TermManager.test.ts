@@ -179,15 +179,15 @@ describe("TermManager Tests", () => {
     ])) as TermPriceConsumerV3;
 
     await testOracleConsumer
-      .connect(wallet2)
+      .connect(devopsMultisig)
       .addNewTokenPriceFeed(fungibleToken1.address, fungibleToken1Feed.address);
 
     await testOracleConsumer
-      .connect(wallet2)
+      .connect(devopsMultisig)
       .addNewTokenPriceFeed(fungibleToken2.address, fungibleToken2Feed.address);
 
     await testOracleConsumer
-      .connect(wallet2)
+      .connect(devopsMultisig)
       .addNewTokenPriceFeed(fungibleToken3.address, fungibleToken3Feed.address);
 
     const mockTermControllerFactory = await smock.mock<TermController__factory>(
@@ -300,7 +300,8 @@ describe("TermManager Tests", () => {
           termRepoCollateralManager.address,
           termRepoServicer.address,
           termEventEmitter.address,
-          devopsMultisig.address
+          devopsMultisig.address,
+          adminWallet.address
         )
     ).to.be.revertedWith(
       `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`
@@ -311,7 +312,8 @@ describe("TermManager Tests", () => {
         termRepoCollateralManager.address,
         termRepoServicer.address,
         termEventEmitter.address,
-        devopsMultisig.address
+        devopsMultisig.address,
+        adminWallet.address
       );
     await termEventEmitter
       .connect(termInitializer)
@@ -327,7 +329,8 @@ describe("TermManager Tests", () => {
           termController.address,
           testOracleConsumer.address,
           termRepoRolloverManager.address,
-          devopsMultisig.address
+          devopsMultisig.address,
+          adminWallet.address
         )
     ).to.be.revertedWith(
       `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`
@@ -342,7 +345,8 @@ describe("TermManager Tests", () => {
         termController.address,
         testOracleConsumer.address,
         termRepoRolloverManager.address,
-        devopsMultisig.address
+        devopsMultisig.address,
+        adminWallet.address
       );
 
     await expect(
@@ -356,7 +360,8 @@ describe("TermManager Tests", () => {
           termController.address,
           testOracleConsumer.address,
           termRepoRolloverManager.address,
-          devopsMultisig.address
+          devopsMultisig.address,
+          adminWallet.address
         )
     ).to.be.revertedWithCustomError(
       termRepoCollateralManager,
@@ -652,10 +657,10 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoLocker.connect(wallet2).pauseTransfers()
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
       );
 
-      await expect(termRepoLocker.connect(devopsMultisig).pauseTransfers())
+      await expect(termRepoLocker.connect(adminWallet).pauseTransfers())
         .to.emit(termEventEmitter, "TermRepoLockerTransfersPaused")
         .withArgs(termIdHashed);
 
@@ -676,10 +681,10 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoLocker.connect(wallet2).unpauseTransfers()
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
       );
 
-      await expect(termRepoLocker.connect(devopsMultisig).unpauseTransfers())
+      await expect(termRepoLocker.connect(adminWallet).unpauseTransfers())
         .to.emit(termEventEmitter, "TermRepoLockerTransfersUnpaused")
         .withArgs(termIdHashed);
 
@@ -2728,11 +2733,11 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager.connect(wallet2).pauseLiquidations()
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
       );
 
       await expect(
-        termRepoCollateralManager.connect(devopsMultisig).pauseLiquidations()
+        termRepoCollateralManager.connect(adminWallet).pauseLiquidations()
       )
         .to.emit(termEventEmitter, "LiquidationsPaused")
         .withArgs(termIdHashed);
@@ -2750,11 +2755,11 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager.connect(wallet2).unpauseLiquidations()
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
       );
 
       await expect(
-        termRepoCollateralManager.connect(devopsMultisig).unpauseLiquidations()
+        termRepoCollateralManager.connect(adminWallet).unpauseLiquidations()
       )
         .to.emit(termEventEmitter, "LiquidationsUnpaused")
         .withArgs(termIdHashed);
@@ -3269,11 +3274,11 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager.connect(wallet2).pauseLiquidations()
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
       );
 
       await expect(
-        termRepoCollateralManager.connect(devopsMultisig).pauseLiquidations()
+        termRepoCollateralManager.connect(adminWallet).pauseLiquidations()
       )
         .to.emit(termEventEmitter, "LiquidationsPaused")
         .withArgs(termIdHashed);
@@ -3294,11 +3299,11 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager.connect(wallet2).unpauseLiquidations()
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
       );
 
       await expect(
-        termRepoCollateralManager.connect(devopsMultisig).unpauseLiquidations()
+        termRepoCollateralManager.connect(adminWallet).unpauseLiquidations()
       )
         .to.emit(termEventEmitter, "LiquidationsUnpaused")
         .withArgs(termIdHashed);
@@ -3962,7 +3967,7 @@ describe("TermManager Tests", () => {
       ]);
 
       await expect(
-        termRepoCollateralManager.connect(devopsMultisig).pauseLiquidations()
+        termRepoCollateralManager.connect(adminWallet).pauseLiquidations()
       )
         .to.emit(termEventEmitter, "LiquidationsPaused")
         .withArgs(termIdHashed);
@@ -3977,7 +3982,7 @@ describe("TermManager Tests", () => {
       );
 
       await expect(
-        termRepoCollateralManager.connect(devopsMultisig).unpauseLiquidations()
+        termRepoCollateralManager.connect(adminWallet).unpauseLiquidations()
       )
         .to.emit(termEventEmitter, "LiquidationsUnpaused")
         .withArgs(termIdHashed);

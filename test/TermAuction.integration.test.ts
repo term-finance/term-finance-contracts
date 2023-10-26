@@ -154,13 +154,13 @@ describe("TermAuctionIntegration", () => {
     );
 
     await termOracle
-      .connect(wallets[5])
+      .connect(wallets[4])
       .addNewTokenPriceFeed(
         testCollateralToken.address,
         mockCollateralFeed.address
       );
     await termOracle
-      .connect(wallets[5])
+      .connect(wallets[4])
       .addNewTokenPriceFeed(
         testPurchaseToken.address,
         mockPurchaseFeed.address

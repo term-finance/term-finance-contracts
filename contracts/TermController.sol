@@ -108,7 +108,7 @@ contract TermController is
     /// @param newTreasuryWallet The new treasury address
     function updateTreasuryAddress(
         address newTreasuryWallet
-    ) external onlyRole(EVERGREEN_MANAGEMENT_ROLE) {
+    ) external onlyRole(DEVOPS_ROLE) {
         require(
             newTreasuryWallet != treasuryWallet,
             "No change in treasury address"
@@ -125,7 +125,7 @@ contract TermController is
     /// @param newProtocolReserveWallet The new protocol reserve wallet address
     function updateProtocolReserveAddress(
         address newProtocolReserveWallet
-    ) external onlyRole(EVERGREEN_MANAGEMENT_ROLE) {
+    ) external onlyRole(DEVOPS_ROLE) {
         require(
             newProtocolReserveWallet != protocolReserveWallet,
             "No change in protocol reserve address"

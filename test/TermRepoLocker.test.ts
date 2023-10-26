@@ -16,6 +16,7 @@ describe("TermRepoLocker Tests", () => {
   let termInitializer: SignerWithAddress;
   let eventEmitter: TermEventEmitter;
   let devopsMultisig: SignerWithAddress;
+  let adminWallet: SignerWithAddress;
   let collateralToken: FakeContract<TestToken>;
 
   let wallet1: SignerWithAddress;
@@ -38,6 +39,7 @@ describe("TermRepoLocker Tests", () => {
       termRepoServicer,
       termInitializer,
       devopsMultisig,
+      adminWallet,
       wallet1,
     ] = await ethers.getSigners();
 
@@ -71,7 +73,8 @@ describe("TermRepoLocker Tests", () => {
         termRepoCollateralManager.address,
         termRepoServicer.address,
         eventEmitter.address,
-        devopsMultisig.address
+        devopsMultisig.address,
+        adminWallet.address
       );
 
     collateralToken = await smock.fake<TestToken>("TestToken");

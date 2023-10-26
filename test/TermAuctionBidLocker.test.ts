@@ -1841,7 +1841,7 @@ describe("TermAuctionBidLocker", () => {
     await termAuctionBidLocker.setRevealTime(dayjs().add(10, "minute").unix());
 
     await expect(
-      termAuctionBidLocker.connect(devopsMultisig).pauseLocking()
+      termAuctionBidLocker.connect(adminWallet).pauseLocking()
     ).to.emit(termEventEmitter, "BidLockingPaused");
     await expect(
       termAuctionBidLocker.connect(wallet1).lockBids([
@@ -1860,7 +1860,7 @@ describe("TermAuctionBidLocker", () => {
       ])
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "LockingPaused");
     await expect(
-      termAuctionBidLocker.connect(devopsMultisig).unpauseLocking()
+      termAuctionBidLocker.connect(adminWallet).unpauseLocking()
     ).to.emit(termEventEmitter, "BidLockingUnpaused");
     const testId1Id = await getGeneratedTenderId(
       getBytesHash("test-id-1"),
@@ -1923,7 +1923,7 @@ describe("TermAuctionBidLocker", () => {
     await termAuctionBidLocker.setRevealTime(dayjs().add(10, "minute").unix());
 
     await expect(
-      termAuctionBidLocker.connect(devopsMultisig).pauseUnlocking()
+      termAuctionBidLocker.connect(adminWallet).pauseUnlocking()
     ).to.emit(termEventEmitter, "BidUnlockingPaused");
     await expect(
       termAuctionBidLocker
@@ -1931,7 +1931,7 @@ describe("TermAuctionBidLocker", () => {
         .unlockBids([getBytesHash("test-id-1")])
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "UnlockingPaused");
     await expect(
-      termAuctionBidLocker.connect(devopsMultisig).unpauseUnlocking()
+      termAuctionBidLocker.connect(adminWallet).unpauseUnlocking()
     ).to.emit(termEventEmitter, "BidUnlockingUnpaused");
     await expect(
       termAuctionBidLocker

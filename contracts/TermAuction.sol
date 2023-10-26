@@ -1216,14 +1216,14 @@ contract TermAuction is
 
     /// @dev This function pauses the TermAuction contract preventing public state changes
     /// @dev See {Pausable-_pause}.
-    function pauseCompleteAuction() external onlyRole(DEVOPS_ROLE) {
+    function pauseCompleteAuction() external onlyRole(ADMIN_ROLE) {
         completeAuctionPaused = true;
         emitter.emitCompleteAuctionPaused(termAuctionId, termRepoId);
     }
 
     /// Unpuses the TermAuction contract allowing public state changes
     /// @dev See {Pausable-_unpause}.
-    function unpauseCompleteAuction() external onlyRole(DEVOPS_ROLE) {
+    function unpauseCompleteAuction() external onlyRole(ADMIN_ROLE) {
         completeAuctionPaused = false;
         emitter.emitCompleteAuctionUnpaused(termAuctionId, termRepoId);
     }

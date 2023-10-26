@@ -965,22 +965,22 @@ contract TermAuctionBidLocker is
     // = Pausable =============================================================
     // ========================================================================
 
-    function pauseLocking() external onlyRole(DEVOPS_ROLE) {
+    function pauseLocking() external onlyRole(ADMIN_ROLE) {
         lockingPaused = true;
         emitter.emitBidLockingPaused(termAuctionId, termRepoId);
     }
 
-    function unpauseLocking() external onlyRole(DEVOPS_ROLE) {
+    function unpauseLocking() external onlyRole(ADMIN_ROLE) {
         lockingPaused = false;
         emitter.emitBidLockingUnpaused(termAuctionId, termRepoId);
     }
 
-    function pauseUnlocking() external onlyRole(DEVOPS_ROLE) {
+    function pauseUnlocking() external onlyRole(ADMIN_ROLE) {
         unlockingPaused = true;
         emitter.emitBidUnlockingPaused(termAuctionId, termRepoId);
     }
 
-    function unpauseUnlocking() external onlyRole(DEVOPS_ROLE) {
+    function unpauseUnlocking() external onlyRole(ADMIN_ROLE) {
         unlockingPaused = false;
         emitter.emitBidUnlockingUnpaused(termAuctionId, termRepoId);
     }

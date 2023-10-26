@@ -1369,7 +1369,7 @@ describe("TermAuction", () => {
     testBorrowedToken.decimals.returns(8);
 
     await expect(
-      termAuction.connect(wallets[4]).pauseCompleteAuction()
+      termAuction.connect(wallets[6]).pauseCompleteAuction()
     ).to.emit(termEventEmitter, "CompleteAuctionPaused");
 
     await expect(
@@ -1383,7 +1383,7 @@ describe("TermAuction", () => {
     ).to.be.revertedWithCustomError(termAuction, "CompleteAuctionPaused");
 
     await expect(
-      termAuction.connect(wallets[4]).unpauseCompleteAuction()
+      termAuction.connect(wallets[6]).unpauseCompleteAuction()
     ).to.emit(termEventEmitter, "CompleteAuctionUnpaused");
 
     await termAuction.completeAuction({

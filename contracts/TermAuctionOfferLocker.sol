@@ -38,6 +38,7 @@ contract TermAuctionOfferLocker is
     // ========================================================================
     // = Access Roles  ========================================================
     // ========================================================================
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant AUCTIONEER_ROLE = keccak256("AUCTIONEER_ROLE");
     bytes32 public constant DEVOPS_ROLE = keccak256("DEVOPS_ROLE");
     bytes32 public constant INITIALIZER_ROLE = keccak256("INITIALIZER_ROLE");
@@ -176,11 +177,14 @@ contract TermAuctionOfferLocker is
         address termAuction_,
         ITermEventEmitter emitter_,
         ITermRepoServicer termRepoServicer_,
-        address devopsMultisig_
+        address devopsMultisig_,
+        address adminWallet_
     ) external onlyRole(INITIALIZER_ROLE) notTermContractPaired {
         termAuction = ITermAuction(termAuction_);
         _setupRole(AUCTIONEER_ROLE, termAuction_);
         _grantRole(DEVOPS_ROLE, devopsMultisig_);
+        _grantRole(ADMIN_ROLE, adminWallet_);
+
         emitter = emitter_;
 
         termRepoServicer = termRepoServicer_;
@@ -535,22 +539,22 @@ contract TermAuctionOfferLocker is
     // = Pausable =============================================================
     // ========================================================================
 
-    function pauseLocking() external onlyRole(DEVOPS_ROLE) {
+    function pauseLocking() external onlyRole(ADMIN_ROLE) {
         lockingPaused = true;
         emitter.emitOfferLockingPaused(termAuctionId, termRepoId);
     }
 
-    function unpauseLocking() external onlyRole(DEVOPS_ROLE) {
+    function unpauseLocking() external onlyRole(ADMIN_ROLE) {
         lockingPaused = false;
         emitter.emitOfferLockingUnpaused(termAuctionId, termRepoId);
     }
 
-    function pauseUnlocking() external onlyRole(DEVOPS_ROLE) {
+    function pauseUnlocking() external onlyRole(ADMIN_ROLE) {
         unlockingPaused = true;
         emitter.emitOfferUnlockingPaused(termAuctionId, termRepoId);
     }
 
-    function unpauseUnlocking() external onlyRole(DEVOPS_ROLE) {
+    function unpauseUnlocking() external onlyRole(ADMIN_ROLE) {
         unlockingPaused = false;
         emitter.emitOfferUnlockingUnpaused(termAuctionId, termRepoId);
     }

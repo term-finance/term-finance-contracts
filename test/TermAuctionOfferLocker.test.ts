@@ -19,6 +19,7 @@ describe("TermAuctionOfferLocker", () => {
   let wallet3: SignerWithAddress;
   let termInitializer: SignerWithAddress;
   let devopsMultisig: SignerWithAddress;
+  let adminWallet: SignerWithAddress;
   let auctionAddress: SignerWithAddress;
   let testCollateralToken: FakeContract<ERC20Upgradeable>;
   let testBorrowedToken: FakeContract<ERC20Upgradeable>;
@@ -42,6 +43,7 @@ describe("TermAuctionOfferLocker", () => {
       wallet3,
       termInitializer,
       devopsMultisig,
+      adminWallet,
       auctionAddress,
     ] = await ethers.getSigners();
 
@@ -117,7 +119,8 @@ describe("TermAuctionOfferLocker", () => {
           auctionAddress.address,
           termEventEmitter.address,
           termRepoServicer.address,
-          devopsMultisig.address
+          devopsMultisig.address,
+          adminWallet.address
         )
     ).to.be.revertedWith(
       `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`
@@ -129,7 +132,8 @@ describe("TermAuctionOfferLocker", () => {
         auctionAddress.address,
         termEventEmitter.address,
         termRepoServicer.address,
-        devopsMultisig.address
+        devopsMultisig.address,
+        adminWallet.address
       );
 
     await expect(
@@ -139,7 +143,8 @@ describe("TermAuctionOfferLocker", () => {
           auctionAddress.address,
           termEventEmitter.address,
           termRepoServicer.address,
-          devopsMultisig.address
+          devopsMultisig.address,
+          adminWallet.address
         )
     ).to.be.revertedWithCustomError(
       termAuctionOfferLocker,
@@ -1051,7 +1056,7 @@ describe("TermAuctionOfferLocker", () => {
     await termAuctionOfferLocker.setRevealTime(dayjs().add(1, "hour").unix());
 
     await expect(
-      termAuctionOfferLocker.connect(devopsMultisig).pauseLocking()
+      termAuctionOfferLocker.connect(adminWallet).pauseLocking()
     ).to.emit(termEventEmitter, "OfferLockingPaused");
     await expect(
       termAuctionOfferLocker.connect(wallet1).lockOffers([
@@ -1068,7 +1073,7 @@ describe("TermAuctionOfferLocker", () => {
       ])
     ).to.be.revertedWithCustomError(termAuctionOfferLocker, "LockingPaused");
     await expect(
-      termAuctionOfferLocker.connect(devopsMultisig).unpauseLocking()
+      termAuctionOfferLocker.connect(adminWallet).unpauseLocking()
     ).to.emit(termEventEmitter, "OfferLockingUnpaused");
     const testId7Id = await getGeneratedTenderId(
       getBytesHash("test-id-7"),
@@ -1122,7 +1127,7 @@ describe("TermAuctionOfferLocker", () => {
     await termAuctionOfferLocker.setRevealTime(dayjs().add(1, "hour").unix());
 
     await expect(
-      termAuctionOfferLocker.connect(devopsMultisig).pauseUnlocking()
+      termAuctionOfferLocker.connect(adminWallet).pauseUnlocking()
     ).to.emit(termEventEmitter, "OfferUnlockingPaused");
     await expect(
       termAuctionOfferLocker
@@ -1130,7 +1135,7 @@ describe("TermAuctionOfferLocker", () => {
         .unlockOffers([getBytesHash("test-id-7")])
     ).to.be.revertedWithCustomError(termAuctionOfferLocker, "UnlockingPaused");
     await expect(
-      termAuctionOfferLocker.connect(devopsMultisig).unpauseUnlocking()
+      termAuctionOfferLocker.connect(adminWallet).unpauseUnlocking()
     ).to.emit(termEventEmitter, "OfferUnlockingUnpaused");
     await expect(
       termAuctionOfferLocker

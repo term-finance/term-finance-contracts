@@ -144,7 +144,8 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             address(termContractGroup.termRepoCollateralManager),
             address(termContractGroup.termRepoServicer),
             emitter,
-            devOpsMultiSig
+            devOpsMultiSig,
+            adminWallet
         );
 
         emitter.pairTermContract(address(termContractGroup.termRepoToken));
@@ -175,7 +176,8 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             address(termContractGroup.auction),
             emitter,
             termContractGroup.termRepoServicer,
-            devOpsMultiSig
+            devOpsMultiSig,
+            adminWallet
         );
 
         emitter.pairTermContract(address(termContractGroup.auction));
@@ -213,7 +215,8 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             address(controller),
             address(priceOracle),
             address(termContractGroup.rolloverManager),
-            devOpsMultiSig
+            devOpsMultiSig,
+            adminWallet
         );
 
         emitter.pairTermContract(address(termContractGroup.rolloverManager));
@@ -271,7 +274,8 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             address(auction),
             emitter,
             termRepoServicer,
-            devOpsMultiSig
+            devOpsMultiSig,
+            adminWallet
         );
 
         emitter.pairTermContract(address(auction));

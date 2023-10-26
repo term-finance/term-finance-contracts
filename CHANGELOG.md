@@ -22,3 +22,14 @@
 
 
 **Full Changelog**: https://github.com/term-finance/term-finance/compare/0.5.25...0.5.29
+
+## 0.5.31
+
+### What's Changed
+* Bump version to 0.5.30 by @github-actions in https://github.com/term-finance/term-finance/pull/1117
+* Updates flags used by yarn install. by @robotoer in https://github.com/term-finance/term-finance/pull/1119
+* shift pausing to admin role, devops role for controller reserve treas… by @aazhou1 in https://github.com/term-finance/term-finance/pull/1121
+* Bump version to 0.5.31 by @github-actions in https://github.com/term-finance/term-finance/pull/1123
+
+
+**Full Changelog**: https://github.com/term-finance/term-finance/compare/0.5.29...0.5.31
