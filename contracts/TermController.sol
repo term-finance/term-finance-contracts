@@ -27,8 +27,6 @@ contract TermController is
     bytes32 public constant CONTROLLER_ADMIN_ROLE =
         keccak256("CONTROLLER_ADMIN_ROLE");
     bytes32 public constant DEVOPS_ROLE = keccak256("DEVOPS_ROLE");
-    bytes32 public constant EVERGREEN_MANAGEMENT_ROLE =
-        keccak256("EVERGREEN_MANAGEMENT_ROLE");
 
     // ========================================================================
     // = State Variables ======================================================
@@ -56,15 +54,13 @@ contract TermController is
         address treasuryWallet_,
         address protocolReserveWallet_,
         address controllerAdminWallet_,
-        address devopsWallet_,
-        address evergreenManagementWallet_
+        address devopsWallet_
     ) external initializer {
         UUPSUpgradeable.__UUPSUpgradeable_init();
         AccessControlUpgradeable.__AccessControl_init();
 
         _grantRole(CONTROLLER_ADMIN_ROLE, controllerAdminWallet_);
         _grantRole(DEVOPS_ROLE, devopsWallet_);
-        _grantRole(EVERGREEN_MANAGEMENT_ROLE, evergreenManagementWallet_);
 
         require(treasuryWallet_ != address(0), "treasury is zero address");
         treasuryWallet = treasuryWallet_;
@@ -147,7 +143,7 @@ contract TermController is
     function updateControllerAdminWallet(
         address oldControllerAdminWallet,
         address newControllerAdminWallet
-    ) external onlyRole(EVERGREEN_MANAGEMENT_ROLE) {
+    ) external onlyRole(DEVOPS_ROLE) {
         require(
             oldControllerAdminWallet != address(0),
             "Old Controller Admin Wallet cannot be zero address"

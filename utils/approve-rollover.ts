@@ -23,7 +23,7 @@ export interface NextTerm {
 export async function approveRollover(
   previousTerm: PreviousTerm,
   nextTerm: NextTerm,
-  signer?: Signer
+  signer?: Signer,
 ) {
   const [defaultSigner] = await ethers.getSigners();
 
@@ -32,45 +32,45 @@ export async function approveRollover(
   const rolloverManager = (await ethers.getContractAt(
     TermRepoRolloverManagerABI,
     previousTerm.rolloverManagerAddress,
-    managedSigner
+    managedSigner,
   )) as TermRepoRolloverManager;
 
   const auctionBidLocker = (await ethers.getContractAt(
     TermAuctionBidLockerABI,
     nextTerm.termAuctionBidLockerAddress,
-    managedSigner
+    managedSigner,
   )) as TermAuctionBidLocker;
 
   console.log(
     `Pairing term rollover manager %s and associated manager contracts to term auction address %s and term bid locker %s`,
     previousTerm.rolloverManagerAddress,
     nextTerm.auctionAddress,
-    nextTerm.termAuctionBidLockerAddress
+    nextTerm.termAuctionBidLockerAddress,
   );
 
   await rolloverManager.approveRolloverAuction(
     nextTerm.termAuctionBidLockerAddress,
-    nextTerm.auctionAddress
+    nextTerm.auctionAddress,
   );
 
   console.log(
     `Pairing term bid locker %s to past rollover manager %s`,
     nextTerm.termAuctionBidLockerAddress,
-    previousTerm.rolloverManagerAddress
+    previousTerm.rolloverManagerAddress,
   );
 
   await auctionBidLocker.pairRolloverManager(
-    previousTerm.rolloverManagerAddress
+    previousTerm.rolloverManagerAddress,
   );
 }
 
 const previousTermRepoRolloverManager = getEnv(
   "PREVIOUS_TERM_ROLLOVER_MANAGER",
-  ""
+  "",
 );
 const nextTermAuction = getEnv(
   "NEXT_TERM_AUCTION",
-  "defaultGnosisSafeProtocolReservesWalletAddress"
+  "defaultGnosisSafeProtocolReservesWalletAddress",
 );
 const nextTermAuctionBidLocker = getEnv("NEXT_TERM_AUCTION_BID_LOCKER", "");
 
@@ -85,7 +85,7 @@ async function main() {
     {
       auctionAddress: nextTermAuction,
       termAuctionBidLockerAddress: nextTermAuctionBidLocker,
-    }
+    },
   );
 }
 

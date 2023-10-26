@@ -30,9 +30,8 @@ describe("TermRepoLocker Tests", () => {
     await versionable.deployed();
     expectedVersion = await versionable.version();
 
-    const termEventEmitterFactory = await ethers.getContractFactory(
-      "TermEventEmitter"
-    );
+    const termEventEmitterFactory =
+      await ethers.getContractFactory("TermEventEmitter");
 
     [
       termRepoCollateralManager,
@@ -48,7 +47,7 @@ describe("TermRepoLocker Tests", () => {
       [devopsMultisig.address, wallet1.address, termInitializer.address],
       {
         kind: "uups",
-      }
+      },
     )) as TermEventEmitter;
 
     const TermRepoLocker = await ethers.getContractFactory("TermRepoLocker");
@@ -60,7 +59,7 @@ describe("TermRepoLocker Tests", () => {
       [termIdString, termInitializer.address],
       {
         kind: "uups",
-      }
+      },
     )) as TermRepoLocker;
 
     await eventEmitter
@@ -74,7 +73,7 @@ describe("TermRepoLocker Tests", () => {
         termRepoServicer.address,
         eventEmitter.address,
         devopsMultisig.address,
-        adminWallet.address
+        adminWallet.address,
       );
 
     collateralToken = await smock.fake<TestToken>("TestToken");
@@ -85,13 +84,13 @@ describe("TermRepoLocker Tests", () => {
     await expect(
       termRepoLocker
         .connect(termRepoCollateralManager)
-        .transferTokenFromWallet(wallet1.address, collateralToken.address, 20)
+        .transferTokenFromWallet(wallet1.address, collateralToken.address, 20),
     ).to.be.reverted;
 
     await expect(
       termRepoLocker
         .connect(termRepoCollateralManager)
-        .transferTokenToWallet(wallet1.address, collateralToken.address, 20)
+        .transferTokenToWallet(wallet1.address, collateralToken.address, 20),
     ).to.be.reverted;
   });
   it("version returns the current contract version", async () => {

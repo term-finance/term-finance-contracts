@@ -19,7 +19,6 @@ describe("TermPriceConsumerV3", () => {
   let wallet1: SignerWithAddress;
   let wallet2: SignerWithAddress;
   let devopsWallet: SignerWithAddress;
-  let evergreenManagementWallet: SignerWithAddress;
 
   let testCollateralToken: MockContract<ERC20Upgradeable>;
   let testCollateralToken2: MockContract<ERC20Upgradeable>;
@@ -32,23 +31,16 @@ describe("TermPriceConsumerV3", () => {
   let expectedVersion: string;
 
   before(async () => {
-    [
-      termRepoCollateralManager,
-      newBidLocker,
-      wallet1,
-      wallet2,
-      devopsWallet,
-      evergreenManagementWallet,
-    ] = await ethers.getSigners();
+    [termRepoCollateralManager, newBidLocker, wallet1, wallet2, devopsWallet] =
+      await ethers.getSigners();
 
     const versionableFactory = await ethers.getContractFactory("Versionable");
     const versionable = await versionableFactory.deploy();
     await versionable.deployed();
     expectedVersion = await versionable.version();
 
-    const testTokenFactory = await smock.mock<ERC20Upgradeable__factory>(
-      "ERC20Upgradeable"
-    );
+    const testTokenFactory =
+      await smock.mock<ERC20Upgradeable__factory>("ERC20Upgradeable");
     testCollateralToken = await testTokenFactory.deploy();
     await testCollateralToken.deployed();
     testCollateralToken2 = await testTokenFactory.deploy();
@@ -57,19 +49,18 @@ describe("TermPriceConsumerV3", () => {
     await testBorrowedToken.deployed();
 
     const termOracleFactory = await ethers.getContractFactory(
-      "TestTermPriceConsumerV3"
+      "TestTermPriceConsumerV3",
     );
     termOracle = (await upgrades.deployProxy(
       termOracleFactory,
-      [devopsWallet.address, evergreenManagementWallet.address],
+      [devopsWallet.address],
       {
         kind: "uups",
-      }
+      },
     )) as TestTermPriceConsumerV3;
 
-    const mockCollateralFeedFactory = await smock.mock<TestPriceFeed__factory>(
-      "TestPriceFeed"
-    );
+    const mockCollateralFeedFactory =
+      await smock.mock<TestPriceFeed__factory>("TestPriceFeed");
     mockCollateralFeed = await mockCollateralFeedFactory.deploy(
       9,
       "",
@@ -78,7 +69,7 @@ describe("TermPriceConsumerV3", () => {
       1e9,
       1,
       1,
-      1
+      1,
     );
     mockCollateralFeed2 = await mockCollateralFeedFactory.deploy(
       9,
@@ -88,7 +79,7 @@ describe("TermPriceConsumerV3", () => {
       2 * 1e9,
       1,
       1,
-      1
+      1,
     );
 
     await expect(
@@ -96,18 +87,18 @@ describe("TermPriceConsumerV3", () => {
         .connect(wallet2)
         .addNewTokenPriceFeed(
           testCollateralToken.address,
-          mockCollateralFeed.address
-        )
+          mockCollateralFeed.address,
+        ),
     ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
     );
 
     await expect(
       termOracle
         .connect(wallet2)
-        .removeTokenPriceFeed(testCollateralToken.address)
+        .removeTokenPriceFeed(testCollateralToken.address),
     ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
     );
 
     await expect(
@@ -115,8 +106,8 @@ describe("TermPriceConsumerV3", () => {
         .connect(devopsWallet)
         .addNewTokenPriceFeed(
           testCollateralToken.address,
-          mockCollateralFeed.address
-        )
+          mockCollateralFeed.address,
+        ),
     )
       .to.emit(termOracle, "SubscribePriceFeed")
       .withArgs(testCollateralToken.address, mockCollateralFeed.address);
@@ -125,13 +116,13 @@ describe("TermPriceConsumerV3", () => {
       .connect(devopsWallet)
       .addNewTokenPriceFeed(
         testCollateralToken2.address,
-        mockCollateralFeed2.address
+        mockCollateralFeed2.address,
       );
 
     await expect(
       termOracle
         .connect(devopsWallet)
-        .removeTokenPriceFeed(testCollateralToken2.address)
+        .removeTokenPriceFeed(testCollateralToken2.address),
     )
       .to.emit(termOracle, "UnsubscribePriceFeed")
       .withArgs(testCollateralToken2.address);
@@ -150,9 +141,9 @@ describe("TermPriceConsumerV3", () => {
       await termOracle.connect(devopsWallet).upgrade(wallet1.address);
 
       await expect(
-        termOracle.connect(wallet2).upgrade(wallet1.address)
+        termOracle.connect(wallet2).upgrade(wallet1.address),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
       );
     });
   });
@@ -165,10 +156,10 @@ describe("TermPriceConsumerV3", () => {
             .connect(newBidLocker)
             .usdValueOfTokens(
               testCollateralToken.address,
-              "1000000000000000000"
-            )
-        )
-      )
+              "1000000000000000000",
+            ),
+        ),
+      ),
     ).to.deep.equal([BigNumber.from("1000000000000000000").toJSON()]);
   });
 
@@ -176,7 +167,7 @@ describe("TermPriceConsumerV3", () => {
     await expect(
       termOracle
         .connect(termRepoCollateralManager)
-        .usdValueOfTokens(testCollateralToken2.address, "1000000000000000000")
+        .usdValueOfTokens(testCollateralToken2.address, "1000000000000000000"),
     ).to.be.reverted;
   });
   it("version returns the current contract version", async () => {

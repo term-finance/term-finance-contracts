@@ -1,4 +1,4 @@
 {
   "filter_paths": "(test|openzeppelin|node_modules|MultiSend.sol|ExponentialNoError.sol|ERC1967Proxy.sol)",
-  "detectors_to_exclude": "calls-loop,timestamp,assembly,similar-names,cyclomatic-complexity,costly-loop"
+  "detectors_to_exclude": "calls-loop,timestamp,assembly,similar-names,cyclomatic-complexity,costly-loop,reentrancy-benign"
 }

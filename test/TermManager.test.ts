@@ -85,35 +85,33 @@ describe("TermManager Tests", () => {
     await versionable.deployed();
     expectedVersion = await versionable.version();
 
-    const termEventEmitterFactory = await ethers.getContractFactory(
-      "TermEventEmitter"
-    );
+    const termEventEmitterFactory =
+      await ethers.getContractFactory("TermEventEmitter");
 
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
       [devopsMultisig.address, wallet3.address, termInitializer.address],
       {
         kind: "uups",
-      }
+      },
     )) as TermEventEmitter;
 
     const TermRepoCollateralManager = await ethers.getContractFactory(
-      "TestTermRepoCollateralManager"
+      "TestTermRepoCollateralManager",
     );
 
     const TermRepoServicer = await ethers.getContractFactory(
-      "TestTermRepoServicer"
+      "TestTermRepoServicer",
     );
 
-    const TermRepoLocker = await ethers.getContractFactory(
-      "TestTermRepoLocker"
-    );
+    const TermRepoLocker =
+      await ethers.getContractFactory("TestTermRepoLocker");
     const TermRepoToken = await ethers.getContractFactory("TermRepoToken");
 
     const TestToken = await ethers.getContractFactory("TestToken");
 
     const TermPriceConsumerV3 = await ethers.getContractFactory(
-      "TermPriceConsumerV3"
+      "TermPriceConsumerV3",
     );
 
     // Test ERC20Upgradable Tokens
@@ -139,9 +137,8 @@ describe("TermManager Tests", () => {
       ["300000000", "50000000", "350000000"],
     ])) as TestToken;
 
-    const mockPriceFeedFactory = await ethers.getContractFactory(
-      "TestPriceFeed"
-    );
+    const mockPriceFeedFactory =
+      await ethers.getContractFactory("TestPriceFeed");
     const fungibleToken1Feed = await mockPriceFeedFactory.deploy(
       3,
       "",
@@ -150,7 +147,7 @@ describe("TermManager Tests", () => {
       2 * 1e3,
       1,
       1,
-      1
+      1,
     );
     const fungibleToken2Feed = await mockPriceFeedFactory.deploy(
       3,
@@ -160,7 +157,7 @@ describe("TermManager Tests", () => {
       1e3,
       1,
       1,
-      1
+      1,
     );
     const fungibleToken3Feed = await mockPriceFeedFactory.deploy(
       3,
@@ -170,12 +167,11 @@ describe("TermManager Tests", () => {
       1e3,
       1,
       1,
-      1
+      1,
     );
 
     testOracleConsumer = (await upgrades.deployProxy(TermPriceConsumerV3, [
       devopsMultisig.address,
-      wallet2.address,
     ])) as TermPriceConsumerV3;
 
     await testOracleConsumer
@@ -190,9 +186,8 @@ describe("TermManager Tests", () => {
       .connect(devopsMultisig)
       .addNewTokenPriceFeed(fungibleToken3.address, fungibleToken3Feed.address);
 
-    const mockTermControllerFactory = await smock.mock<TermController__factory>(
-      "TermController"
-    );
+    const mockTermControllerFactory =
+      await smock.mock<TermController__factory>("TermController");
     termController = await mockTermControllerFactory.deploy();
     await termController.deployed();
     termController.getTreasuryAddress
@@ -203,7 +198,7 @@ describe("TermManager Tests", () => {
       .returns(reserveAddress.address);
 
     termRepoRolloverManager = await smock.fake<TermRepoRolloverManager>(
-      "TermRepoRolloverManager"
+      "TermRepoRolloverManager",
     );
     termRepoRolloverManager.fulfillRollover.returns();
 
@@ -243,7 +238,7 @@ describe("TermManager Tests", () => {
       ],
       {
         kind: "uups",
-      }
+      },
     )) as TestTermRepoCollateralManager;
     termRepoServicer = (await upgrades.deployProxy(
       TermRepoServicer,
@@ -260,14 +255,14 @@ describe("TermManager Tests", () => {
       ],
       {
         kind: "uups",
-      }
+      },
     )) as TestTermRepoServicer;
     termRepoLocker = (await upgrades.deployProxy(
       TermRepoLocker,
       [termIdString, termInitializer.address],
       {
         kind: "uups",
-      }
+      },
     )) as TestTermRepoLocker;
     testTermRepoToken = await upgrades.deployProxy(
       TermRepoToken,
@@ -288,7 +283,7 @@ describe("TermManager Tests", () => {
       ],
       {
         kind: "uups",
-      }
+      },
     );
     await termEventEmitter
       .connect(termInitializer)
@@ -301,10 +296,10 @@ describe("TermManager Tests", () => {
           termRepoServicer.address,
           termEventEmitter.address,
           devopsMultisig.address,
-          adminWallet.address
-        )
+          adminWallet.address,
+        ),
     ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`
+      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`,
     );
     await termRepoLocker
       .connect(termInitializer)
@@ -313,7 +308,7 @@ describe("TermManager Tests", () => {
         termRepoServicer.address,
         termEventEmitter.address,
         devopsMultisig.address,
-        adminWallet.address
+        adminWallet.address,
       );
     await termEventEmitter
       .connect(termInitializer)
@@ -330,10 +325,10 @@ describe("TermManager Tests", () => {
           testOracleConsumer.address,
           termRepoRolloverManager.address,
           devopsMultisig.address,
-          adminWallet.address
-        )
+          adminWallet.address,
+        ),
     ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`
+      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`,
     );
     await termRepoCollateralManager
       .connect(termInitializer)
@@ -346,7 +341,7 @@ describe("TermManager Tests", () => {
         testOracleConsumer.address,
         termRepoRolloverManager.address,
         devopsMultisig.address,
-        adminWallet.address
+        adminWallet.address,
       );
 
     await expect(
@@ -361,11 +356,11 @@ describe("TermManager Tests", () => {
           testOracleConsumer.address,
           termRepoRolloverManager.address,
           devopsMultisig.address,
-          adminWallet.address
-        )
+          adminWallet.address,
+        ),
     ).to.be.revertedWithCustomError(
       termRepoCollateralManager,
-      "AlreadyTermContractPaired"
+      "AlreadyTermContractPaired",
     );
 
     const collateralManagerInitializedFilter =
@@ -373,7 +368,7 @@ describe("TermManager Tests", () => {
         null,
         null,
         null,
-        null
+        null,
       );
 
     const termRepoCollateralManagerIntializedEvents =
@@ -397,10 +392,10 @@ describe("TermManager Tests", () => {
           termRepoRolloverManager.address,
           devopsMultisig.address,
           adminWallet.address,
-          "0.1.0"
-        )
+          "0.1.0",
+        ),
     ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`
+      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`,
     );
     await termRepoServicer
       .connect(termInitializer)
@@ -413,7 +408,7 @@ describe("TermManager Tests", () => {
         termRepoRolloverManager.address,
         devopsMultisig.address,
         adminWallet.address,
-        "0.1.0"
+        "0.1.0",
       );
 
     await expect(
@@ -428,11 +423,11 @@ describe("TermManager Tests", () => {
           termRepoRolloverManager.address,
           devopsMultisig.address,
           adminWallet.address,
-          "0.1.0"
-        )
+          "0.1.0",
+        ),
     ).to.be.revertedWithCustomError(
       termRepoServicer,
-      "AlreadyTermContractPaired"
+      "AlreadyTermContractPaired",
     );
 
     await termEventEmitter
@@ -445,7 +440,7 @@ describe("TermManager Tests", () => {
         termRepoServicer.address,
         termEventEmitter.address,
         devopsMultisig.address,
-        adminWallet.address
+        adminWallet.address,
       );
     const servicerInitializedFilter =
       termEventEmitter.filters.TermRepoServicerInitialized(
@@ -454,11 +449,11 @@ describe("TermManager Tests", () => {
         null,
         null,
         null,
-        null
+        null,
       );
 
     const termRepoServicerIntializedEvents = await termEventEmitter.queryFilter(
-      servicerInitializedFilter
+      servicerInitializedFilter,
     );
 
     expect(termRepoServicerIntializedEvents.length).to.equal(1);
@@ -500,7 +495,7 @@ describe("TermManager Tests", () => {
   describe("invalid initialization reverts", () => {
     it("collateral manager initialization reverts if purchase token is address zero", async () => {
       const TermRepoCollateralManager = await ethers.getContractFactory(
-        "TestTermRepoCollateralManager"
+        "TestTermRepoCollateralManager",
       );
 
       await expect(
@@ -525,13 +520,13 @@ describe("TermManager Tests", () => {
           ],
           {
             kind: "uups",
-          }
-        )
+          },
+        ),
       ).to.be.revertedWith("Zero address purchase token");
     });
     it("servicer initialization reverts if purchase token is address zero", async () => {
       const TermRepoServicer = await ethers.getContractFactory(
-        "TestTermRepoServicer"
+        "TestTermRepoServicer",
       );
 
       await expect(
@@ -550,13 +545,13 @@ describe("TermManager Tests", () => {
           ],
           {
             kind: "uups",
-          }
-        )
+          },
+        ),
       ).to.be.revertedWith("Zero address purchase token");
     });
     it("collateral manager initialization reverts if liquidated damage is zero", async () => {
       const TermRepoCollateralManager = await ethers.getContractFactory(
-        "TestTermRepoCollateralManager"
+        "TestTermRepoCollateralManager",
       );
 
       await expect(
@@ -581,51 +576,51 @@ describe("TermManager Tests", () => {
           ],
           {
             kind: "uups",
-          }
-        )
+          },
+        ),
       ).to.be.revertedWith("Liquidated damage is zero");
     });
   });
   describe("upgrade tests", () => {
     it("term repo locker upgrade succeeds with admin and reverted if called by somebody else", async () => {
       await expect(
-        termRepoLocker.connect(devopsMultisig).upgrade(wallet1.address)
+        termRepoLocker.connect(devopsMultisig).upgrade(wallet1.address),
       )
         .to.emit(termEventEmitter, "TermContractUpgraded")
         .withArgs(termRepoLocker.address, wallet1.address);
 
       await expect(
-        termRepoLocker.connect(wallet2).upgrade(wallet1.address)
+        termRepoLocker.connect(wallet2).upgrade(wallet1.address),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
       );
     });
     it("servicer upgrade succeeds with admin and reverted if called by somebody else", async () => {
       await expect(
-        termRepoServicer.connect(devopsMultisig).upgrade(wallet1.address)
+        termRepoServicer.connect(devopsMultisig).upgrade(wallet1.address),
       )
         .to.emit(termEventEmitter, "TermContractUpgraded")
         .withArgs(termRepoServicer.address, wallet1.address);
 
       await expect(
-        termRepoServicer.connect(wallet2).upgrade(wallet1.address)
+        termRepoServicer.connect(wallet2).upgrade(wallet1.address),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
       );
     });
     it("collateral manager upgrade succeeds with admin and reverted if called by somebody else", async () => {
       await expect(
         termRepoCollateralManager
           .connect(devopsMultisig)
-          .upgrade(wallet1.address)
+          .upgrade(wallet1.address),
       )
         .to.emit(termEventEmitter, "TermContractUpgraded")
         .withArgs(termRepoCollateralManager.address, wallet1.address);
 
       await expect(
-        termRepoCollateralManager.connect(wallet2).upgrade(wallet1.address)
+        termRepoCollateralManager.connect(wallet2).upgrade(wallet1.address),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
       );
     });
   });
@@ -636,28 +631,28 @@ describe("TermManager Tests", () => {
         termRepoLocker.transferTokenFromWallet(
           wallet1.address,
           fungibleToken1.address,
-          15
-        )
+          15,
+        ),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x250b76734a070a69c7b3930477dd35007ad9c9d0952e97903fdafb2db6980537`
+        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x250b76734a070a69c7b3930477dd35007ad9c9d0952e97903fdafb2db6980537`,
       );
 
       await expect(
         termRepoLocker.transferTokenToWallet(
           wallet1.address,
           fungibleToken1.address,
-          15
-        )
+          15,
+        ),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x250b76734a070a69c7b3930477dd35007ad9c9d0952e97903fdafb2db6980537`
+        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x250b76734a070a69c7b3930477dd35007ad9c9d0952e97903fdafb2db6980537`,
       );
     });
     it("all termRepoLocker transfers revert if transfers paused, and resume when unpaused", async () => {
       // pausing reverts when not called by the admin
       await expect(
-        termRepoLocker.connect(wallet2).pauseTransfers()
+        termRepoLocker.connect(wallet2).pauseTransfers(),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await expect(termRepoLocker.connect(adminWallet).pauseTransfers())
@@ -670,18 +665,18 @@ describe("TermManager Tests", () => {
           .auctionLockCollateral(
             wallet1.address,
             fungibleToken1.address,
-            "15000000"
-          )
+            "15000000",
+          ),
       ).to.be.revertedWithCustomError(
         termRepoLocker,
-        "TermRepoLockerTransfersPaused"
+        "TermRepoLockerTransfersPaused",
       );
 
       // unpausing reverts when not called by the admin
       await expect(
-        termRepoLocker.connect(wallet2).unpauseTransfers()
+        termRepoLocker.connect(wallet2).unpauseTransfers(),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await expect(termRepoLocker.connect(adminWallet).unpauseTransfers())
@@ -694,8 +689,8 @@ describe("TermManager Tests", () => {
           .auctionLockCollateral(
             wallet1.address,
             fungibleToken1.address,
-            "15000000"
-          )
+            "15000000",
+          ),
       ).to.not.be.reverted;
     });
   });
@@ -705,31 +700,31 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager
           .connect(wallet2)
-          .auctionLockCollateral(wallet2.address, fungibleToken2.address, 50)
+          .auctionLockCollateral(wallet2.address, fungibleToken2.address, 50),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x6e14a979b95b01beecd617807f3738f4e067938da99755b16afdcf7148d313b7`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x6e14a979b95b01beecd617807f3738f4e067938da99755b16afdcf7148d313b7`,
       );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet2)
-          .auctionUnlockCollateral(wallet2.address, fungibleToken2.address, 50)
+          .auctionUnlockCollateral(wallet2.address, fungibleToken2.address, 50),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x6e14a979b95b01beecd617807f3738f4e067938da99755b16afdcf7148d313b7`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x6e14a979b95b01beecd617807f3738f4e067938da99755b16afdcf7148d313b7`,
       );
 
       await expect(
-        termRepoServicer.connect(wallet1).lockOfferAmount(wallet1.address, 15)
+        termRepoServicer.connect(wallet1).lockOfferAmount(wallet1.address, 15),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x6e14a979b95b01beecd617807f3738f4e067938da99755b16afdcf7148d313b7`
+        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x6e14a979b95b01beecd617807f3738f4e067938da99755b16afdcf7148d313b7`,
       );
 
       await expect(
         termRepoServicer
           .connect(wallet1)
-          .fulfillOffer(wallet1.address, 15, 20, getBytesHash("offer-1"))
+          .fulfillOffer(wallet1.address, 15, 20, getBytesHash("offer-1")),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x1d693f62a755e2b3c6494da41af454605b9006057cb3c79b6adda1378f2a50a7`
+        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x1d693f62a755e2b3c6494da41af454605b9006057cb3c79b6adda1378f2a50a7`,
       );
 
       await expect(
@@ -741,10 +736,10 @@ describe("TermManager Tests", () => {
             20,
             [fungibleToken2.address],
             ["15000000"],
-            "1000000000000000000"
-          )
+            "1000000000000000000",
+          ),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x1d693f62a755e2b3c6494da41af454605b9006057cb3c79b6adda1378f2a50a7`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x1d693f62a755e2b3c6494da41af454605b9006057cb3c79b6adda1378f2a50a7`,
       );
     });
   });
@@ -754,14 +749,14 @@ describe("TermManager Tests", () => {
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet1.address,
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal(0);
 
       expect(
         await termRepoCollateralManager.getCollateralMarketValue(
-          wallet1.address
-        )
+          wallet1.address,
+        ),
       ).to.equal(0);
     });
 
@@ -772,27 +767,27 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet1.address,
           fungibleToken1.address,
-          "15000000"
+          "15000000",
         );
 
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet1.address,
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("0");
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("0");
 
       expect(await fungibleToken1.balanceOf(wallet1.address)).to.equal(
-        "235000000"
+        "235000000",
       );
       expect(await fungibleToken1.balanceOf(termRepoLocker.address)).to.equal(
-        "15000000"
+        "15000000",
       );
 
       await network.provider.send("evm_increaseTime", [
@@ -805,27 +800,27 @@ describe("TermManager Tests", () => {
         .auctionUnlockCollateral(
           wallet1.address,
           fungibleToken1.address,
-          "14000000"
+          "14000000",
         );
 
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet1.address,
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("0");
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("0");
 
       expect(await fungibleToken1.balanceOf(wallet1.address)).to.equal(
-        "249000000"
+        "249000000",
       );
       expect(await fungibleToken1.balanceOf(termRepoLocker.address)).to.equal(
-        "1000000"
+        "1000000",
       );
     });
     it("revert external unlocking if borrow balance is 0", async function () {
@@ -836,23 +831,23 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet1.address,
           fungibleToken1.address,
-          "15000000"
+          "15000000",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet1)
-          .externalUnlockCollateral(fungibleToken1.address, "15000000")
+          .externalUnlockCollateral(fungibleToken1.address, "15000000"),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        `ZeroCollateralBalance`
+        `ZeroCollateralBalance`,
       );
 
       expect(await fungibleToken1.balanceOf(wallet1.address)).to.equal(
-        "235000000"
+        "235000000",
       );
       expect(await fungibleToken1.balanceOf(termRepoLocker.address)).to.equal(
-        "15000000"
+        "15000000",
       );
 
       await network.provider.send("evm_increaseTime", [
@@ -865,14 +860,14 @@ describe("TermManager Tests", () => {
         .auctionUnlockCollateral(
           wallet1.address,
           fungibleToken1.address,
-          "14000000"
+          "14000000",
         );
 
       expect(await fungibleToken1.balanceOf(wallet1.address)).to.equal(
-        "249000000"
+        "249000000",
       );
       expect(await fungibleToken1.balanceOf(termRepoLocker.address)).to.equal(
-        "1000000"
+        "1000000",
       );
     });
 
@@ -883,9 +878,9 @@ describe("TermManager Tests", () => {
           auction: anotherAuction.address,
           termAuctionBidLocker: anotherAuctionBidLocker.address,
           termAuctionOfferLocker: anotherAuctionOfferLocker.address,
-        })
+        }),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`,
       );
       // locking collateral
       await expect(
@@ -893,13 +888,13 @@ describe("TermManager Tests", () => {
           auction: anotherAuction.address,
           termAuctionBidLocker: anotherAuctionBidLocker.address,
           termAuctionOfferLocker: anotherAuctionOfferLocker.address,
-        })
+        }),
       )
         .to.emit(termEventEmitter, "PairReopeningBidLocker")
         .withArgs(
           termIdHashed,
           termRepoCollateralManager.address,
-          anotherAuctionBidLocker.address
+          anotherAuctionBidLocker.address,
         );
 
       await termRepoCollateralManager
@@ -907,27 +902,27 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet1.address,
           fungibleToken1.address,
-          "15000000"
+          "15000000",
         );
 
       expect(
         await termRepoCollateralManager.getCollateralMarketValue(
-          wallet1.address
-        )
+          wallet1.address,
+        ),
       ).to.equal("0");
 
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet1.address,
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("0");
 
       expect(await fungibleToken1.balanceOf(wallet1.address)).to.equal(
-        "235000000"
+        "235000000",
       );
       expect(await fungibleToken1.balanceOf(termRepoLocker.address)).to.equal(
-        "15000000"
+        "15000000",
       );
 
       await termRepoCollateralManager
@@ -935,26 +930,26 @@ describe("TermManager Tests", () => {
         .auctionUnlockCollateral(
           wallet1.address,
           fungibleToken1.address,
-          "14000000"
+          "14000000",
         );
       expect(
         await termRepoCollateralManager.getCollateralMarketValue(
-          wallet1.address
-        )
+          wallet1.address,
+        ),
       ).to.equal("0");
 
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet1.address,
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("0");
 
       expect(await fungibleToken1.balanceOf(wallet1.address)).to.equal(
-        "249000000"
+        "249000000",
       );
       expect(await fungibleToken1.balanceOf(termRepoLocker.address)).to.equal(
-        "1000000"
+        "1000000",
       );
     });
   });
@@ -964,16 +959,16 @@ describe("TermManager Tests", () => {
       expect(
         await termRepoServicer
           .connect(termAuctionOfferLockerAddress)
-          .lockOfferAmount(wallet1.address, "15000000")
+          .lockOfferAmount(wallet1.address, "15000000"),
       )
         .to.emit(termRepoServicer, "OfferLockedByServicer")
         .withArgs(termIdHashed, wallet1.address, "15000000");
 
       expect(await fungibleToken3.balanceOf(wallet1.address)).to.equal(
-        "285000000"
+        "285000000",
       );
       expect(await fungibleToken3.balanceOf(termRepoLocker.address)).to.equal(
-        "15000000"
+        "15000000",
       );
 
       // fulfilling loan offer when matched
@@ -984,8 +979,8 @@ describe("TermManager Tests", () => {
             wallet1.address,
             "15000000",
             "20000000",
-            getBytesHash("offer-1")
-          )
+            getBytesHash("offer-1"),
+          ),
       )
         .to.emit(termEventEmitter, "OfferFulfilled")
         .withArgs(
@@ -993,14 +988,14 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          "20000000"
+          "20000000",
         );
 
       expect(await fungibleToken3.balanceOf(wallet1.address)).to.equal(
-        "285000000"
+        "285000000",
       );
       expect(await fungibleToken3.balanceOf(termRepoLocker.address)).to.equal(
-        "15000000"
+        "15000000",
       );
     });
   });
@@ -1012,7 +1007,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "15000000"
+          "15000000",
         );
 
       await termRepoServicer
@@ -1025,7 +1020,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-id-1")
+          getBytesHash("offer-id-1"),
         );
 
       await expect(
@@ -1037,8 +1032,8 @@ describe("TermManager Tests", () => {
             "20000000",
             [fungibleToken2.address],
             ["15000000"],
-            "1000000000000000000"
-          )
+            "1000000000000000000",
+          ),
       )
         .to.emit(termEventEmitter, "BidFulfilled")
         .withArgs(
@@ -1046,43 +1041,43 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "15000000",
           "20000000",
-          "3000000"
+          "3000000",
         )
         .to.emit(termEventEmitter, "CollateralLocked")
         .withArgs(
           termIdHashed,
           wallet2.address,
           fungibleToken2.address,
-          "15000000"
+          "15000000",
         );
 
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal("15000000");
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal("15000000");
 
       expect(
         await termRepoCollateralManager.getCollateralMarketValue(
-          wallet2.address
-        )
+          wallet2.address,
+        ),
       ).to.equal("15000000000000000000");
 
       expect(await fungibleToken3.balanceOf(treasuryWallet.address)).to.equal(
-        "3000000"
+        "3000000",
       );
       expect(await fungibleToken3.balanceOf(wallet2.address)).to.equal(
-        "62000000"
+        "62000000",
       );
       expect(await fungibleToken3.balanceOf(termRepoLocker.address)).to.equal(
-        0
+        0,
       );
 
       await fungibleToken1
@@ -1106,15 +1101,15 @@ describe("TermManager Tests", () => {
             "20000000",
             [fungibleToken2.address],
             ["15000000"],
-            "1000000000000000000"
-          )
+            "1000000000000000000",
+          ),
       ).to.be.revertedWithCustomError(termRepoServicer, "AfterMaturity");
 
       await expect(
-        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000")
+        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000"),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "RedemptionPeriodNotOpen"
+        "RedemptionPeriodNotOpen",
       );
 
       termRepoRolloverManager.getRolloverInstructions
@@ -1128,31 +1123,31 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoServicer
           .connect(wallet2)
-          .submitRepurchasePayment(ethers.constants.MaxUint256)
+          .submitRepurchasePayment(ethers.constants.MaxUint256),
       )
         .to.be.revertedWithCustomError(termRepoServicer, "InvalidParameters")
         .withArgs("repurchase amount cannot be uint max");
 
       // Non borrowers reverted when trying to repay
       await expect(
-        termRepoServicer.connect(wallet3).submitRepurchasePayment("1200")
+        termRepoServicer.connect(wallet3).submitRepurchasePayment("1200"),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "ZeroBorrowerRepurchaseObligation"
+        "ZeroBorrowerRepurchaseObligation",
       );
       await expect(
-        termRepoServicer.connect(wallet2).submitRepurchasePayment("20000000")
+        termRepoServicer.connect(wallet2).submitRepurchasePayment("20000000"),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "RepurchaseAmountTooHigh"
+        "RepurchaseAmountTooHigh",
       );
       await expect(
-        termRepoServicer.connect(wallet2).submitRepurchasePayment("10000000")
+        termRepoServicer.connect(wallet2).submitRepurchasePayment("10000000"),
       )
         .to.emit(termEventEmitter, "RepurchasePaymentSubmitted")
         .withArgs(termIdHashed, wallet2.address, "10000000");
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.eq("10000000");
 
       termRepoRolloverManager.getRolloverInstructions
@@ -1165,54 +1160,54 @@ describe("TermManager Tests", () => {
         });
 
       await expect(
-        termRepoServicer.connect(wallet2).submitRepurchasePayment("10000000")
+        termRepoServicer.connect(wallet2).submitRepurchasePayment("10000000"),
       )
         .to.emit(termEventEmitter, "RepurchasePaymentSubmitted")
         .withArgs(termIdHashed, wallet2.address, "10000000");
 
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.eq("0");
 
       expect(await fungibleToken3.balanceOf(wallet2.address)).to.equal(
-        "42000000"
+        "42000000",
       );
       expect(await fungibleToken3.balanceOf(termRepoLocker.address)).to.equal(
-        "20000000"
+        "20000000",
       );
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal(0);
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal(0);
       expect(await fungibleToken2.balanceOf(wallet2.address)).to.equal(
-        "300000000"
+        "300000000",
       );
 
       await network.provider.send("evm_increaseTime", [60 * 60 * 10]);
 
       await expect(
-        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000")
+        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000"),
       )
         .to.emit(termEventEmitter, "TermRepoTokensRedeemed")
         .withArgs(termIdHashed, wallet1.address, "20000000", 0);
 
       // revert if redeemer has no term repo tokens
       await expect(
-        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000")
+        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000"),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "ZeroTermRepoTokenBalance"
+        "ZeroTermRepoTokenBalance",
       );
 
       expect(await fungibleToken3.balanceOf(wallet1.address)).to.equal(
-        "305000000"
+        "305000000",
       );
     });
 
@@ -1223,7 +1218,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "15000000"
+          "15000000",
         );
 
       await termRepoServicer
@@ -1236,7 +1231,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-id-1")
+          getBytesHash("offer-id-1"),
         );
 
       await expect(
@@ -1248,8 +1243,8 @@ describe("TermManager Tests", () => {
             "20000000",
             [fungibleToken2.address],
             ["15000000"],
-            "1000000000000000000"
-          )
+            "1000000000000000000",
+          ),
       )
         .to.emit(termEventEmitter, "BidFulfilled")
         .withArgs(
@@ -1257,17 +1252,17 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "15000000",
           "20000000",
-          "3000000"
+          "3000000",
         );
 
       expect(await fungibleToken3.balanceOf(treasuryWallet.address)).to.equal(
-        "3000000"
+        "3000000",
       );
       expect(await fungibleToken3.balanceOf(wallet2.address)).to.equal(
-        "62000000"
+        "62000000",
       );
       expect(await fungibleToken3.balanceOf(termRepoLocker.address)).to.equal(
-        0
+        0,
       );
 
       await fungibleToken1
@@ -1279,7 +1274,7 @@ describe("TermManager Tests", () => {
         .approve(termRepoLocker.address, "10000000");
 
       await expect(
-        termRepoServicer.connect(wallet2).submitRepurchasePayment("10000000")
+        termRepoServicer.connect(wallet2).submitRepurchasePayment("10000000"),
       )
         .to.emit(termEventEmitter, "RepurchasePaymentSubmitted")
         .withArgs(termIdHashed, wallet2.address, "10000000");
@@ -1289,10 +1284,10 @@ describe("TermManager Tests", () => {
       ]);
 
       await expect(
-        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000")
+        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000"),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "RedemptionPeriodNotOpen"
+        "RedemptionPeriodNotOpen",
       );
 
       termRepoRolloverManager.getRolloverInstructions
@@ -1305,14 +1300,14 @@ describe("TermManager Tests", () => {
           processed: false,
         });
       await expect(
-        termRepoServicer.connect(wallet2).submitRepurchasePayment("20000000")
+        termRepoServicer.connect(wallet2).submitRepurchasePayment("20000000"),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "RepurchaseAmountTooHigh"
+        "RepurchaseAmountTooHigh",
       );
 
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.eq("10000000");
 
       termRepoRolloverManager.getRolloverInstructions
@@ -1326,29 +1321,29 @@ describe("TermManager Tests", () => {
         });
 
       await expect(
-        termRepoServicer.connect(wallet2).submitRepurchasePayment("10000000")
+        termRepoServicer.connect(wallet2).submitRepurchasePayment("10000000"),
       )
         .to.emit(termEventEmitter, "RepurchasePaymentSubmitted")
         .withArgs(termIdHashed, wallet2.address, "10000000");
 
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.eq("0");
 
       expect(await fungibleToken3.balanceOf(wallet2.address)).to.equal(
-        "42000000"
+        "42000000",
       );
       expect(await fungibleToken3.balanceOf(termRepoLocker.address)).to.equal(
-        "20000000"
+        "20000000",
       );
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal(0);
       expect(await fungibleToken2.balanceOf(wallet2.address)).to.equal(
-        "300000000"
+        "300000000",
       );
 
       await network.provider.send("evm_increaseTime", [60 * 60 * 10]);
@@ -1356,13 +1351,13 @@ describe("TermManager Tests", () => {
       termRepoServicer.setPurchaseCurrencyHeld("19999999");
 
       await expect(
-        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000")
+        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000"),
       )
         .to.emit(termEventEmitter, "TermRepoTokensRedeemed")
         .withArgs(termIdHashed, wallet1.address, "19999999", 0);
 
       expect(await fungibleToken3.balanceOf(wallet1.address)).to.equal(
-        "304999999"
+        "304999999",
       );
     });
     it("valid loan (with protocol loan share), half repay and redeem with half redemption", async function () {
@@ -1372,7 +1367,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "10500000"
+          "10500000",
         );
 
       await termRepoServicer
@@ -1385,7 +1380,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-id-1")
+          getBytesHash("offer-id-1"),
         );
 
       await expect(
@@ -1397,8 +1392,8 @@ describe("TermManager Tests", () => {
             "20000000",
             [fungibleToken2.address],
             ["10500000"],
-            "1000000000000000000"
-          )
+            "1000000000000000000",
+          ),
       )
         .to.emit(termEventEmitter, "BidFulfilled")
         .withArgs(
@@ -1406,17 +1401,17 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "15000000",
           "20000000",
-          "3000000"
+          "3000000",
         );
 
       expect(await fungibleToken3.balanceOf(treasuryWallet.address)).to.equal(
-        "3000000"
+        "3000000",
       );
       expect(await fungibleToken3.balanceOf(wallet2.address)).to.equal(
-        "62000000"
+        "62000000",
       );
       expect(await fungibleToken3.balanceOf(termRepoLocker.address)).to.equal(
-        0
+        0,
       );
 
       await fungibleToken1
@@ -1434,10 +1429,10 @@ describe("TermManager Tests", () => {
       await network.provider.send("evm_increaseTime", [60 * 60 * 10]);
 
       await expect(
-        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000")
+        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000"),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "EncumberedCollateralRemaining"
+        "EncumberedCollateralRemaining",
       );
 
       await termRepoCollateralManager
@@ -1446,13 +1441,13 @@ describe("TermManager Tests", () => {
 
       console.log(await fungibleToken3.balanceOf(wallet1.address));
       await expect(
-        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000")
+        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000"),
       )
         .to.emit(termEventEmitter, "TermRepoTokensRedeemed")
         .withArgs(termIdHashed, wallet1.address, "10000000", (5e17).toString());
 
       expect(await fungibleToken3.balanceOf(wallet1.address)).to.equal(
-        "295000000"
+        "295000000",
       );
     });
     it("valid loan (with protocol loan share), half repay and redeem with half redemptions where final redeemer cannot redeem full", async function () {
@@ -1462,7 +1457,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "10500000"
+          "10500000",
         );
 
       await termRepoServicer
@@ -1479,7 +1474,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "7500000",
           "10000000",
-          getBytesHash("offer-id-1")
+          getBytesHash("offer-id-1"),
         );
 
       await termRepoServicer
@@ -1488,11 +1483,11 @@ describe("TermManager Tests", () => {
           wallet3.address,
           "7500000",
           "10000000",
-          getBytesHash("offer-id-2")
+          getBytesHash("offer-id-2"),
         );
 
       const wallet3fun3Balance = await fungibleToken3.balanceOf(
-        wallet3.address
+        wallet3.address,
       );
 
       await expect(
@@ -1504,8 +1499,8 @@ describe("TermManager Tests", () => {
             "20000000",
             [fungibleToken2.address],
             ["10500000"],
-            "1000000000000000000"
-          )
+            "1000000000000000000",
+          ),
       )
         .to.emit(termEventEmitter, "BidFulfilled")
         .withArgs(
@@ -1513,17 +1508,17 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "15000000",
           "20000000",
-          "3000000"
+          "3000000",
         );
 
       expect(await fungibleToken3.balanceOf(treasuryWallet.address)).to.equal(
-        "3000000"
+        "3000000",
       );
       expect(await fungibleToken3.balanceOf(wallet2.address)).to.equal(
-        "62000000"
+        "62000000",
       );
       expect(await fungibleToken3.balanceOf(termRepoLocker.address)).to.equal(
-        0
+        0,
       );
 
       await fungibleToken1
@@ -1541,10 +1536,10 @@ describe("TermManager Tests", () => {
       await network.provider.send("evm_increaseTime", [60 * 60 * 10]);
 
       await expect(
-        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000")
+        termRepoServicer.redeemTermRepoTokens(wallet1.address, "20000000"),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "EncumberedCollateralRemaining"
+        "EncumberedCollateralRemaining",
       );
 
       await termRepoCollateralManager
@@ -1553,29 +1548,29 @@ describe("TermManager Tests", () => {
 
       console.log(await fungibleToken3.balanceOf(wallet1.address));
       await expect(
-        termRepoServicer.redeemTermRepoTokens(wallet1.address, "10000000")
+        termRepoServicer.redeemTermRepoTokens(wallet1.address, "10000000"),
       )
         .to.emit(termEventEmitter, "TermRepoTokensRedeemed")
         .withArgs(termIdHashed, wallet1.address, "5000000", (5e17).toString());
 
       expect(await fungibleToken3.balanceOf(wallet1.address)).to.equal(
-        "297500000"
+        "297500000",
       );
       await termRepoServicer.setPurchaseCurrencyHeld(5000000 - 1);
 
       await expect(
-        termRepoServicer.redeemTermRepoTokens(wallet3.address, "10000000")
+        termRepoServicer.redeemTermRepoTokens(wallet3.address, "10000000"),
       )
         .to.emit(termEventEmitter, "TermRepoTokensRedeemed")
         .withArgs(
           termIdHashed,
           wallet3.address,
           5000000 - 1,
-          (5e17).toString()
+          (5e17).toString(),
         );
 
       expect(await fungibleToken3.balanceOf(wallet3.address)).to.equal(
-        wallet3fun3Balance.add(5000000 - 1 - 10000000) // includes liq repayment
+        wallet3fun3Balance.add(5000000 - 1 - 10000000), // includes liq repayment
       );
     });
     it("valid loan from reopening auction", async function () {
@@ -1584,27 +1579,27 @@ describe("TermManager Tests", () => {
           auction: anotherAuction.address,
           termAuctionBidLocker: anotherAuctionBidLocker.address,
           termAuctionOfferLocker: anotherAuctionOfferLocker.address,
-        })
+        }),
       )
         .to.emit(termEventEmitter, "ReopeningOfferLockerPaired")
         .withArgs(
           termIdHashed,
           termRepoServicer.address,
           anotherAuctionOfferLocker.address,
-          anotherAuction.address
+          anotherAuction.address,
         );
       await expect(
         termRepoCollateralManager.connect(termInitializer).reopenToNewAuction({
           auction: anotherAuction.address,
           termAuctionBidLocker: anotherAuctionBidLocker.address,
           termAuctionOfferLocker: anotherAuctionOfferLocker.address,
-        })
+        }),
       )
         .to.emit(termEventEmitter, "PairReopeningBidLocker")
         .withArgs(
           termIdHashed,
           termRepoCollateralManager.address,
-          anotherAuctionBidLocker.address
+          anotherAuctionBidLocker.address,
         );
 
       await termRepoCollateralManager
@@ -1612,7 +1607,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "15000000"
+          "15000000",
         );
 
       await termRepoServicer
@@ -1625,7 +1620,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await expect(
@@ -1637,8 +1632,8 @@ describe("TermManager Tests", () => {
             "20000000",
             [fungibleToken2.address],
             ["15000000"],
-            "1000000000000000000"
-          )
+            "1000000000000000000",
+          ),
       )
         .to.emit(termEventEmitter, "BidFulfilled")
         .withArgs(
@@ -1646,17 +1641,17 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "15000000",
           "20000000",
-          "3000000"
+          "3000000",
         );
 
       expect(await fungibleToken3.balanceOf(treasuryWallet.address)).to.equal(
-        "3000000"
+        "3000000",
       );
       expect(await fungibleToken3.balanceOf(wallet2.address)).to.equal(
-        "62000000"
+        "62000000",
       );
       expect(await fungibleToken3.balanceOf(termRepoLocker.address)).to.equal(
-        0
+        0,
       );
 
       await fungibleToken1
@@ -1674,7 +1669,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet1.address,
           fungibleToken1.address,
-          "15000000"
+          "15000000",
         );
 
       await termRepoServicer
@@ -1687,7 +1682,7 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -1698,30 +1693,30 @@ describe("TermManager Tests", () => {
           "20000000",
           [fungibleToken1.address],
           ["15000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await expect(
         termRepoServicer
           .connect(wallet2)
-          .mintOpenExposure("20000000", ["0", "50000000"])
+          .mintOpenExposure("20000000", ["0", "50000000"]),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "NoMintOpenExposureAccess"
+        "NoMintOpenExposureAccess",
       );
 
       await expect(
         termRepoServicer
           .connect(wallet2)
-          .grantMintExposureAccess(wallet2.address)
+          .grantMintExposureAccess(wallet2.address),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await expect(
         termRepoServicer
           .connect(adminWallet)
-          .grantMintExposureAccess(wallet2.address)
+          .grantMintExposureAccess(wallet2.address),
       )
         .to.emit(termEventEmitter, "MintExposureAccessGranted")
         .withArgs(termIdHashed, wallet2.address);
@@ -1730,21 +1725,21 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoServicer
           .connect(wallet2)
-          .mintOpenExposure("20000000", ["15000000"])
+          .mintOpenExposure("20000000", ["15000000"]),
       )
         .to.be.revertedWithCustomError(termRepoServicer, `InvalidParameters`)
         .withArgs(
-          "Collateral Amounts array not same length as collateral tokens list"
+          "Collateral Amounts array not same length as collateral tokens list",
         );
 
       // primary dealer mint reverts due to insufficient collateral
       await expect(
         termRepoServicer
           .connect(wallet2)
-          .mintOpenExposure("20000000", ["0", "15000000"])
+          .mintOpenExposure("20000000", ["0", "15000000"]),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "InsufficientCollateral"
+        "InsufficientCollateral",
       );
 
       await network.provider.send("evm_setNextBlockTimestamp", [
@@ -1756,7 +1751,7 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoServicer
           .connect(wallet2)
-          .mintOpenExposure("20000000", ["0", "50000000"])
+          .mintOpenExposure("20000000", ["0", "50000000"]),
       )
         .to.emit(termEventEmitter, "BidFulfilled")
         .withArgs(
@@ -1764,7 +1759,7 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "17944445",
           "20000000",
-          "2055555"
+          "2055555",
         )
         .to.emit(termEventEmitter, "TermRepoTokenMint")
         .withArgs(
@@ -1772,26 +1767,26 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "17944445",
           "2055555",
-          "20000000"
+          "20000000",
         );
 
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.eq("20000000");
 
       expect(await testTermRepoToken.balanceOf(wallet2.address)).to.eq(
-        "37944445"
+        "37944445",
       );
       expect(await testTermRepoToken.balanceOf(treasuryWallet.address)).to.eq(
-        "2055555"
+        "2055555",
       );
 
       // revert if attempt to collapse with no borrow balance
       await expect(
-        termRepoServicer.connect(wallet3).burnCollapseExposure("37944445")
+        termRepoServicer.connect(wallet3).burnCollapseExposure("37944445"),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "ZeroBorrowerRepurchaseObligation"
+        "ZeroBorrowerRepurchaseObligation",
       );
 
       const user: SignerWithAddress = wallet2;
@@ -1807,16 +1802,16 @@ describe("TermManager Tests", () => {
         });
 
       await expect(
-        termRepoServicer.connect(user).burnCollapseExposure("37944445")
+        termRepoServicer.connect(user).burnCollapseExposure("37944445"),
       )
         .to.emit(termEventEmitter, "BurnCollapseExposure")
         .withArgs(termIdHashed, wallet2.address, "15000000");
 
       expect(await testTermRepoToken.balanceOf(wallet2.address)).to.equal(
-        "22944445"
+        "22944445",
       );
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.equal(5000000);
 
       await network.provider.send("evm_increaseTime", [
@@ -1826,16 +1821,16 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoServicer
           .connect(user)
-          .mintOpenExposure("20000000", ["0", "50000000"])
+          .mintOpenExposure("20000000", ["0", "50000000"]),
       ).to.be.revertedWithCustomError(termRepoServicer, "AfterMaturity");
 
       await network.provider.send("evm_increaseTime", [60 * 60 * 9]);
 
       await expect(
-        termRepoServicer.connect(user).burnCollapseExposure("40000000")
+        termRepoServicer.connect(user).burnCollapseExposure("40000000"),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "AfterRepurchaseWindow"
+        "AfterRepurchaseWindow",
       );
     });
     it("valid create position loan and full collapse around a fulfilled rollover", async function () {
@@ -1844,7 +1839,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet1.address,
           fungibleToken1.address,
-          "15000000"
+          "15000000",
         );
 
       await termRepoServicer
@@ -1857,7 +1852,7 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -1868,7 +1863,7 @@ describe("TermManager Tests", () => {
           "20000000",
           [fungibleToken1.address],
           ["15000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       let user: SignerWithAddress = wallet2;
@@ -1876,18 +1871,18 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoServicer
           .connect(user)
-          .mintOpenExposure("20000000", ["0", "50000000"])
+          .mintOpenExposure("20000000", ["0", "50000000"]),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "NoMintOpenExposureAccess"
+        "NoMintOpenExposureAccess",
       );
 
       await expect(
         termRepoServicer
           .connect(wallet2)
-          .grantMintExposureAccess(wallet2.address)
+          .grantMintExposureAccess(wallet2.address),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await termRepoServicer
@@ -1898,21 +1893,21 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoServicer
           .connect(user)
-          .mintOpenExposure("20000000", ["15000000"])
+          .mintOpenExposure("20000000", ["15000000"]),
       )
         .to.be.revertedWithCustomError(termRepoServicer, `InvalidParameters`)
         .withArgs(
-          "Collateral Amounts array not same length as collateral tokens list"
+          "Collateral Amounts array not same length as collateral tokens list",
         );
 
       // primary dealer mint reverts due to insufficient collateral
       await expect(
         termRepoServicer
           .connect(user)
-          .mintOpenExposure("20000000", ["0", "15000000"])
+          .mintOpenExposure("20000000", ["0", "15000000"]),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "InsufficientCollateral"
+        "InsufficientCollateral",
       );
 
       await network.provider.send("evm_setNextBlockTimestamp", [
@@ -1924,7 +1919,7 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoServicer
           .connect(user)
-          .mintOpenExposure("20000000", ["0", "50000000"])
+          .mintOpenExposure("20000000", ["0", "50000000"]),
       )
         .to.emit(termEventEmitter, "BidFulfilled")
         .withArgs(
@@ -1932,7 +1927,7 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "17944445",
           "20000000",
-          "2055555"
+          "2055555",
         )
         .to.emit(termEventEmitter, "TermRepoTokenMint")
         .withArgs(
@@ -1940,26 +1935,26 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "17944445",
           "2055555",
-          "20000000"
+          "20000000",
         );
 
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.eq("20000000");
 
       expect(await testTermRepoToken.balanceOf(wallet2.address)).to.eq(
-        "37944445"
+        "37944445",
       );
       expect(await testTermRepoToken.balanceOf(treasuryWallet.address)).to.eq(
-        "2055555"
+        "2055555",
       );
 
       // revert if attempt to collapse with no borrow balance
       await expect(
-        termRepoServicer.connect(wallet3).burnCollapseExposure("37944445")
+        termRepoServicer.connect(wallet3).burnCollapseExposure("37944445"),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "ZeroBorrowerRepurchaseObligation"
+        "ZeroBorrowerRepurchaseObligation",
       );
 
       user = wallet2;
@@ -1975,16 +1970,16 @@ describe("TermManager Tests", () => {
         });
 
       await expect(
-        termRepoServicer.connect(user).burnCollapseExposure("37944445")
+        termRepoServicer.connect(user).burnCollapseExposure("37944445"),
       )
         .to.emit(termEventEmitter, "BurnCollapseExposure")
         .withArgs(termIdHashed, wallet2.address, "20000000");
 
       expect(await testTermRepoToken.balanceOf(wallet2.address)).to.equal(
-        "17944445"
+        "17944445",
       );
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.equal(0);
     });
 
@@ -1995,14 +1990,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "15000000"
+          "15000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet1.address,
           fungibleToken1.address,
-          "15000000"
+          "15000000",
         );
 
       await termRepoServicer
@@ -2018,7 +2013,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
       await termRepoServicer
         .connect(termAuctionAddress)
@@ -2026,7 +2021,7 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await expect(
@@ -2038,8 +2033,8 @@ describe("TermManager Tests", () => {
             "20000000",
             [fungibleToken2.address],
             ["15000000"],
-            "1000000000000000000"
-          )
+            "1000000000000000000",
+          ),
       )
         .to.emit(termEventEmitter, "BidFulfilled")
         .withArgs(
@@ -2047,7 +2042,7 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "15000000",
           "20000000",
-          "3000000"
+          "3000000",
         );
       await expect(
         termRepoServicer
@@ -2058,8 +2053,8 @@ describe("TermManager Tests", () => {
             "20000000",
             [fungibleToken1.address],
             ["15000000"],
-            "1000000000000000000"
-          )
+            "1000000000000000000",
+          ),
       )
         .to.emit(termEventEmitter, "BidFulfilled")
         .withArgs(
@@ -2067,7 +2062,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          "3000000"
+          "3000000",
         );
 
       await network.provider.send("evm_increaseTime", [
@@ -2076,16 +2071,16 @@ describe("TermManager Tests", () => {
 
       const user = wallet2;
       await expect(
-        termRepoServicer.connect(user).burnCollapseExposure("10000000")
+        termRepoServicer.connect(user).burnCollapseExposure("10000000"),
       )
         .to.emit(termEventEmitter, "BurnCollapseExposure")
         .withArgs(termIdHashed, wallet2.address, "10000000");
 
       expect(await testTermRepoToken.balanceOf(wallet2.address)).to.equal(
-        "10000000"
+        "10000000",
       );
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.equal("10000000");
     });
     it("invalid collapse attempt after repurchase window", async function () {
@@ -2095,14 +2090,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "15000000"
+          "15000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet1.address,
           fungibleToken1.address,
-          "15000000"
+          "15000000",
         );
 
       await termRepoServicer
@@ -2118,7 +2113,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
       await termRepoServicer
         .connect(termAuctionAddress)
@@ -2126,7 +2121,7 @@ describe("TermManager Tests", () => {
           wallet2.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -2137,7 +2132,7 @@ describe("TermManager Tests", () => {
           "20000000",
           [fungibleToken2.address],
           ["15000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await termRepoServicer
@@ -2148,7 +2143,7 @@ describe("TermManager Tests", () => {
           "20000000",
           [fungibleToken1.address],
           ["15000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await network.provider.send("evm_increaseTime", [
@@ -2156,17 +2151,17 @@ describe("TermManager Tests", () => {
       ]);
 
       await expect(
-        termRepoServicer.connect(wallet2).burnCollapseExposure("10000000")
+        termRepoServicer.connect(wallet2).burnCollapseExposure("10000000"),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "AfterRepurchaseWindow"
+        "AfterRepurchaseWindow",
       );
 
       expect(await testTermRepoToken.balanceOf(wallet2.address)).to.equal(
-        "20000000"
+        "20000000",
       );
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.equal("20000000");
     });
 
@@ -2177,7 +2172,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "10000000"
+          "10000000",
         );
 
       await termRepoServicer
@@ -2190,7 +2185,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -2201,7 +2196,7 @@ describe("TermManager Tests", () => {
           "20000000",
           [fungibleToken2.address],
           ["10000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       const user = wallet2;
@@ -2211,10 +2206,10 @@ describe("TermManager Tests", () => {
       ]);
 
       await expect(
-        termRepoServicer.connect(user).submitRepurchasePayment(wallet2.address)
+        termRepoServicer.connect(user).submitRepurchasePayment(wallet2.address),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "AfterRepurchaseWindow"
+        "AfterRepurchaseWindow",
       );
     });
   });
@@ -2226,7 +2221,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "150000000"
+          "150000000",
         );
 
       await termRepoServicer
@@ -2239,7 +2234,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -2250,38 +2245,38 @@ describe("TermManager Tests", () => {
           "20000000",
           [fungibleToken2.address],
           ["150000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet2)
-          .externalLockCollateral(fungibleToken2.address, "5000000")
+          .externalLockCollateral(fungibleToken2.address, "5000000"),
       )
         .to.emit(termEventEmitter, "CollateralLocked")
         .withArgs(
           termIdHashed,
           wallet2.address,
           fungibleToken2.address,
-          "5000000"
+          "5000000",
         );
 
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal("155000000");
     });
     it("zero collateral balance reverts collateral unlocking", async () => {
       await expect(
         termRepoCollateralManager
           .connect(wallet2)
-          .externalUnlockCollateral(fungibleToken1.address, "0")
+          .externalUnlockCollateral(fungibleToken1.address, "0"),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          "InvalidParameters"
+          "InvalidParameters",
         )
         .withArgs("Zero amount");
     });
@@ -2291,7 +2286,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "150000000"
+          "150000000",
         );
 
       await termRepoServicer
@@ -2302,7 +2297,7 @@ describe("TermManager Tests", () => {
           "1",
           [fungibleToken2.address],
           ["15000000"],
-          "1"
+          "1",
         );
 
       await termRepoServicer
@@ -2315,26 +2310,26 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet2)
-          .externalUnlockCollateral(fungibleToken2.address, "150000001")
+          .externalUnlockCollateral(fungibleToken2.address, "150000001"),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "UnlockAmountGreaterThanCollateralBalance"
+        "UnlockAmountGreaterThanCollateralBalance",
       );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet2)
-          .externalLockCollateral(fungibleToken3.address, "5000000")
+          .externalLockCollateral(fungibleToken3.address, "5000000"),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          `CollateralTokenNotAllowed`
+          `CollateralTokenNotAllowed`,
         )
         .withArgs(fungibleToken3.address);
 
@@ -2345,10 +2340,10 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager
           .connect(wallet2)
-          .externalLockCollateral(fungibleToken2.address, "5000000")
+          .externalLockCollateral(fungibleToken2.address, "5000000"),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        `CollateralDepositClosed`
+        `CollateralDepositClosed`,
       );
     });
     it("loan and valid external single collateral type unlocking", async function () {
@@ -2358,13 +2353,13 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "50000000"
+          "50000000",
         );
 
       await expect(
         termRepoServicer
           .connect(termAuctionOfferLockerAddress)
-          .lockOfferAmount(wallet1.address, "15000000")
+          .lockOfferAmount(wallet1.address, "15000000"),
       )
         .to.emit(termEventEmitter, "OfferLockedByServicer")
         .withArgs(termIdHashed, wallet1.address, "15000000");
@@ -2372,7 +2367,7 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoServicer
           .connect(termAuctionOfferLockerAddress)
-          .unlockOfferAmount(wallet1.address, "5000000")
+          .unlockOfferAmount(wallet1.address, "5000000"),
       )
         .to.emit(termEventEmitter, "OfferUnlockedByServicer")
         .withArgs(termIdHashed, wallet1.address, "5000000");
@@ -2380,7 +2375,7 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoServicer
           .connect(termAuctionOfferLockerAddress)
-          .lockOfferAmount(wallet1.address, "5000000")
+          .lockOfferAmount(wallet1.address, "5000000"),
       )
         .to.emit(termEventEmitter, "OfferLockedByServicer")
         .withArgs(termIdHashed, wallet1.address, "5000000");
@@ -2391,7 +2386,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -2402,7 +2397,7 @@ describe("TermManager Tests", () => {
           "20000000",
           [fungibleToken2.address],
           ["50000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       const user = wallet2;
@@ -2410,21 +2405,21 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager
           .connect(user)
-          .externalUnlockCollateral(fungibleToken2.address, "5000000")
+          .externalUnlockCollateral(fungibleToken2.address, "5000000"),
       )
         .to.emit(termEventEmitter, "CollateralUnlocked")
         .withArgs(
           termIdHashed,
           wallet2.address,
           fungibleToken2.address,
-          "5000000"
+          "5000000",
         );
 
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal("45000000");
     });
     it("external unlock collateral reverts when not called by borrower", async function () {
@@ -2434,7 +2429,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "50000000"
+          "50000000",
         );
 
       await termRepoServicer
@@ -2447,7 +2442,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -2458,7 +2453,7 @@ describe("TermManager Tests", () => {
           "20000000",
           [fungibleToken2.address],
           ["50000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
     });
     it("external unlock collateral reverts when not valid collateral type and if during repurchase, unlock succeeds after repurchase", async function () {
@@ -2468,7 +2463,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "50000000"
+          "50000000",
         );
 
       await termRepoServicer
@@ -2481,7 +2476,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -2492,17 +2487,17 @@ describe("TermManager Tests", () => {
           "20000000",
           [fungibleToken2.address],
           ["50000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
       const user = wallet2;
       await expect(
         termRepoCollateralManager
           .connect(wallet2)
-          .externalUnlockCollateral(fungibleToken3.address, "5000000")
+          .externalUnlockCollateral(fungibleToken3.address, "5000000"),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          `CollateralTokenNotAllowed`
+          `CollateralTokenNotAllowed`,
         )
         .withArgs(fungibleToken3.address);
 
@@ -2512,24 +2507,24 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager
           .connect(user)
-          .externalUnlockCollateral(fungibleToken2.address, "100000")
+          .externalUnlockCollateral(fungibleToken2.address, "100000"),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "CollateralWithdrawalClosed"
+        "CollateralWithdrawalClosed",
       );
 
       await network.provider.send("evm_increaseTime", [60 * 15]);
       await expect(
         termRepoCollateralManager
           .connect(user)
-          .externalUnlockCollateral(fungibleToken2.address, "100000")
+          .externalUnlockCollateral(fungibleToken2.address, "100000"),
       )
         .to.emit(termEventEmitter, "CollateralUnlocked")
         .withArgs(
           termIdHashed,
           wallet2.address,
           fungibleToken2.address,
-          "100000"
+          "100000",
         );
     });
     it("external unlock collateral reverts when collateral falls below maintenance ratio", async function () {
@@ -2539,7 +2534,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "50000000"
+          "50000000",
         );
 
       await termRepoServicer
@@ -2552,7 +2547,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "15000000",
           "20000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -2563,7 +2558,7 @@ describe("TermManager Tests", () => {
           "20000000",
           [fungibleToken2.address],
           ["50000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       const user = wallet2;
@@ -2571,11 +2566,11 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager
           .connect(user)
-          .externalUnlockCollateral(fungibleToken2.address, "20000001")
+          .externalUnlockCollateral(fungibleToken2.address, "20000001"),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          `CollateralBelowMaintenanceRatios`
+          `CollateralBelowMaintenanceRatios`,
         )
         .withArgs(wallet2.address, fungibleToken2.address);
     });
@@ -2588,14 +2583,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "50000000"
+          "50000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "10000000"
+          "10000000",
         );
 
       await termRepoServicer
@@ -2608,7 +2603,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "80000000",
           "90000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -2619,7 +2614,7 @@ describe("TermManager Tests", () => {
           "90000000",
           [fungibleToken1.address, fungibleToken2.address],
           ["10000000", "50000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       const user = wallet3;
@@ -2637,7 +2632,7 @@ describe("TermManager Tests", () => {
           fungibleToken2.address,
           "10500000",
           "2000000",
-          false
+          false,
         );
 
       await expect(batchLiquidation)
@@ -2650,41 +2645,41 @@ describe("TermManager Tests", () => {
           fungibleToken1.address,
           "5250000",
           "1000000",
-          false
+          false,
         );
 
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.equal("70000000");
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal("39500000");
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("4750000");
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.eq("4750000");
 
       expect(await fungibleToken2.balanceOf(wallet3.address)).to.equal(
-        "308500000"
+        "308500000",
       );
       expect(await fungibleToken2.balanceOf(reserveAddress.address)).to.equal(
-        "2000000"
+        "2000000",
       );
       expect(await fungibleToken1.balanceOf(wallet3.address)).to.equal(
-        "4250000"
+        "4250000",
       );
       expect(await fungibleToken1.balanceOf(reserveAddress.address)).to.equal(
-        "1000000"
+        "1000000",
       );
     });
 
@@ -2695,14 +2690,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "50000000"
+          "50000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "30000000"
+          "30000000",
         );
 
       await termRepoServicer
@@ -2715,7 +2710,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "80000000",
           "90000000",
-          getBytesHash("offer-id-1")
+          getBytesHash("offer-id-1"),
         );
 
       await termRepoServicer
@@ -2726,18 +2721,18 @@ describe("TermManager Tests", () => {
           "90000000",
           [fungibleToken1.address, fungibleToken2.address],
           ["30000000", "50000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       // pausing reverts when not called by the admin
       await expect(
-        termRepoCollateralManager.connect(wallet2).pauseLiquidations()
+        termRepoCollateralManager.connect(wallet2).pauseLiquidations(),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await expect(
-        termRepoCollateralManager.connect(adminWallet).pauseLiquidations()
+        termRepoCollateralManager.connect(adminWallet).pauseLiquidations(),
       )
         .to.emit(termEventEmitter, "LiquidationsPaused")
         .withArgs(termIdHashed);
@@ -2745,21 +2740,21 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchLiquidation(wallet2.address, ["10000000", "10000000"])
+          .batchLiquidation(wallet2.address, ["10000000", "10000000"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "LiquidationsPaused"
+        "LiquidationsPaused",
       );
 
       // unpausing reverts when not called by the admin
       await expect(
-        termRepoCollateralManager.connect(wallet2).unpauseLiquidations()
+        termRepoCollateralManager.connect(wallet2).unpauseLiquidations(),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await expect(
-        termRepoCollateralManager.connect(adminWallet).unpauseLiquidations()
+        termRepoCollateralManager.connect(adminWallet).unpauseLiquidations(),
       )
         .to.emit(termEventEmitter, "LiquidationsUnpaused")
         .withArgs(termIdHashed);
@@ -2779,14 +2774,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "50000000"
+          "50000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "50000000"
+          "50000000",
         );
 
       await termRepoServicer
@@ -2799,7 +2794,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "80000000",
           "90000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -2810,21 +2805,21 @@ describe("TermManager Tests", () => {
           "90000000",
           [fungibleToken1.address, fungibleToken2.address],
           ["50000000", "50000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       const user = wallet3;
       await expect(
         termRepoCollateralManager
           .connect(user)
-          .batchLiquidation(wallet2.address, ["10000000"])
+          .batchLiquidation(wallet2.address, ["10000000"]),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          `InvalidParameters`
+          `InvalidParameters`,
         )
         .withArgs(
-          "Closure amounts array not same length as collateral tokens list"
+          "Closure amounts array not same length as collateral tokens list",
         );
     });
     it("revert invalid liquidations within shortfall", async function () {
@@ -2834,7 +2829,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "10000000"
+          "10000000",
         );
 
       await termRepoServicer
@@ -2847,7 +2842,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "80000000",
           "90000000",
-          getBytesHash("offer-id-1")
+          getBytesHash("offer-id-1"),
         );
 
       await termRepoServicer
@@ -2858,55 +2853,55 @@ describe("TermManager Tests", () => {
           "90000000",
           [fungibleToken2.address],
           ["10000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet2)
-          .batchLiquidation(wallet2.address, [2000, 20000])
+          .batchLiquidation(wallet2.address, [2000, 20000]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "SelfLiquidationNotPermitted"
+        "SelfLiquidationNotPermitted",
       );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchLiquidation(wallet2.address, [0, 0])
+          .batchLiquidation(wallet2.address, [0, 0]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "ZeroLiquidationNotPermitted"
+        "ZeroLiquidationNotPermitted",
       );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchLiquidation(wallet2.address, [ethers.constants.MaxUint256, 0])
+          .batchLiquidation(wallet2.address, [ethers.constants.MaxUint256, 0]),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          `InvalidParameters`
+          `InvalidParameters`,
         )
         .withArgs("closureAmounts cannot be uint max");
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchLiquidation(wallet2.address, [0, 20000000])
+          .batchLiquidation(wallet2.address, [0, 20000000]),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          `InsufficientCollateralForLiquidationRepayment`
+          `InsufficientCollateralForLiquidationRepayment`,
         )
         .withArgs(fungibleToken2.address);
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchLiquidation(wallet2.address, [0, 20000000000])
+          .batchLiquidation(wallet2.address, [0, 20000000000]),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "RepurchaseAmountTooHigh"
+        "RepurchaseAmountTooHigh",
       );
     });
     it("revert single liquidations not within shortfall", async function () {
@@ -2916,7 +2911,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "150000000"
+          "150000000",
         );
 
       await termRepoCollateralManager
@@ -2924,7 +2919,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "150000000"
+          "150000000",
         );
 
       await termRepoServicer
@@ -2937,7 +2932,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "80000000",
           "90000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -2948,16 +2943,16 @@ describe("TermManager Tests", () => {
           "90000000",
           [fungibleToken2.address],
           ["150000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchLiquidation(wallet2.address, ["20000000", "20000000"])
+          .batchLiquidation(wallet2.address, ["20000000", "20000000"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "BorrowerNotInShortfall"
+        "BorrowerNotInShortfall",
       );
     });
     it("disallow total shortfall liquidation ", async function () {
@@ -2966,7 +2961,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "100000"
+          "100000",
         );
 
       await termRepoServicer
@@ -2979,7 +2974,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "80000",
           "90000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -2990,22 +2985,22 @@ describe("TermManager Tests", () => {
           "90000",
           [fungibleToken2.address],
           ["100000"],
-          "10000"
+          "10000",
         );
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.eq("100000");
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchLiquidation(wallet2.address, ["0", "90000"])
+          .batchLiquidation(wallet2.address, ["0", "90000"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "ExceedsNetExposureCapOnLiquidation"
+        "ExceedsNetExposureCapOnLiquidation",
       );
     });
 
@@ -3030,13 +3025,13 @@ describe("TermManager Tests", () => {
           "400",
           [fungibleToken1.address],
           ["290"],
-          "100"
+          "100",
         );
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.eq("290");
 
       await termRepoCollateralManager
@@ -3044,13 +3039,13 @@ describe("TermManager Tests", () => {
         .batchLiquidation(wallet2.address, ["400", "0"]);
 
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.equal("0");
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.eq("0");
     });
 
@@ -3060,16 +3055,16 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "17000000"
+          "17000000",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchLiquidation(wallet2.address, ["29000000", "0"])
+          .batchLiquidation(wallet2.address, ["29000000", "0"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "ZeroBorrowerRepurchaseObligation"
+        "ZeroBorrowerRepurchaseObligation",
       );
     });
 
@@ -3079,7 +3074,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "17000000"
+          "17000000",
         );
 
       await termRepoServicer
@@ -3092,7 +3087,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "20000000",
           "30000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -3103,16 +3098,16 @@ describe("TermManager Tests", () => {
           "30000000",
           [fungibleToken1.address],
           ["17000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchLiquidation(wallet2.address, ["29000000", "0"])
+          .batchLiquidation(wallet2.address, ["29000000", "0"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "ExceedsNetExposureCapOnLiquidation"
+        "ExceedsNetExposureCapOnLiquidation",
       );
     });
   });
@@ -3124,14 +3119,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "50000000"
+          "50000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "10000000"
+          "10000000",
         );
 
       await termRepoServicer
@@ -3144,7 +3139,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "80000000",
           "90000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -3155,7 +3150,7 @@ describe("TermManager Tests", () => {
           "90000000",
           [fungibleToken1.address, fungibleToken2.address],
           ["10000000", "50000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       const f1W1BalanceBefore = await fungibleToken1.balanceOf(wallet1.address);
@@ -3178,7 +3173,7 @@ describe("TermManager Tests", () => {
           fungibleToken2.address,
           "10500000",
           "2000000",
-          false
+          false,
         );
 
       await expect(batchLiquidationWithRepoToken)
@@ -3191,41 +3186,45 @@ describe("TermManager Tests", () => {
           fungibleToken1.address,
           "5250000",
           "1000000",
-          false
+          false,
         );
 
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.equal("70000000");
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal("39500000");
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("4750000");
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.eq("4750000");
 
       expect(
-        (await fungibleToken2.balanceOf(wallet1.address)).sub(f2W1BalanceBefore)
+        (await fungibleToken2.balanceOf(wallet1.address)).sub(
+          f2W1BalanceBefore,
+        ),
       ).to.equal("8500000");
       expect(await fungibleToken2.balanceOf(reserveAddress.address)).to.equal(
-        "2000000"
+        "2000000",
       );
       expect(
-        (await fungibleToken1.balanceOf(wallet1.address)).sub(f1W1BalanceBefore)
+        (await fungibleToken1.balanceOf(wallet1.address)).sub(
+          f1W1BalanceBefore,
+        ),
       ).to.equal("4250000");
       expect(await fungibleToken1.balanceOf(reserveAddress.address)).to.equal(
-        "1000000"
+        "1000000",
       );
     });
 
@@ -3236,14 +3235,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "50000000"
+          "50000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "30000000"
+          "30000000",
         );
 
       await termRepoServicer
@@ -3256,7 +3255,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "80000000",
           "90000000",
-          getBytesHash("offer-id-1")
+          getBytesHash("offer-id-1"),
         );
 
       await termRepoServicer
@@ -3267,18 +3266,18 @@ describe("TermManager Tests", () => {
           "90000000",
           [fungibleToken1.address, fungibleToken2.address],
           ["30000000", "50000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       // pausing reverts when not called by the admin
       await expect(
-        termRepoCollateralManager.connect(wallet2).pauseLiquidations()
+        termRepoCollateralManager.connect(wallet2).pauseLiquidations(),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await expect(
-        termRepoCollateralManager.connect(adminWallet).pauseLiquidations()
+        termRepoCollateralManager.connect(adminWallet).pauseLiquidations(),
       )
         .to.emit(termEventEmitter, "LiquidationsPaused")
         .withArgs(termIdHashed);
@@ -3289,21 +3288,21 @@ describe("TermManager Tests", () => {
           .batchLiquidationWithRepoToken(wallet2.address, [
             "10000000",
             "10000000",
-          ])
+          ]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "LiquidationsPaused"
+        "LiquidationsPaused",
       );
 
       // unpausing reverts when not called by the admin
       await expect(
-        termRepoCollateralManager.connect(wallet2).unpauseLiquidations()
+        termRepoCollateralManager.connect(wallet2).unpauseLiquidations(),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await expect(
-        termRepoCollateralManager.connect(adminWallet).unpauseLiquidations()
+        termRepoCollateralManager.connect(adminWallet).unpauseLiquidations(),
       )
         .to.emit(termEventEmitter, "LiquidationsUnpaused")
         .withArgs(termIdHashed);
@@ -3322,14 +3321,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "50000000"
+          "50000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "50000000"
+          "50000000",
         );
 
       await termRepoServicer
@@ -3342,7 +3341,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "80000000",
           "90000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -3353,20 +3352,20 @@ describe("TermManager Tests", () => {
           "90000000",
           [fungibleToken1.address, fungibleToken2.address],
           ["50000000", "50000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchLiquidationWithRepoToken(wallet2.address, ["10000000"])
+          .batchLiquidationWithRepoToken(wallet2.address, ["10000000"]),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          `InvalidParameters`
+          `InvalidParameters`,
         )
         .withArgs(
-          "Closure amounts array not same length as collateral tokens list"
+          "Closure amounts array not same length as collateral tokens list",
         );
     });
     it("revert invalid repo token liquidations within shortfall", async function () {
@@ -3376,14 +3375,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "10000000"
+          "10000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet3.address,
           fungibleToken2.address,
-          "10000000"
+          "10000000",
         );
 
       await termRepoServicer
@@ -3396,7 +3395,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "80000000",
           "90000000",
-          getBytesHash("offer-id-1")
+          getBytesHash("offer-id-1"),
         );
 
       await termRepoServicer
@@ -3407,7 +3406,7 @@ describe("TermManager Tests", () => {
           "90000000",
           [fungibleToken2.address],
           ["10000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await termRepoServicer
@@ -3416,7 +3415,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "10000001",
           "20000001",
-          getBytesHash("offer-id-2")
+          getBytesHash("offer-id-2"),
         );
 
       await termRepoServicer
@@ -3427,25 +3426,25 @@ describe("TermManager Tests", () => {
           "20000001",
           [fungibleToken2.address],
           ["10000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet2)
-          .batchLiquidationWithRepoToken(wallet2.address, [2000, 20000])
+          .batchLiquidationWithRepoToken(wallet2.address, [2000, 20000]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "SelfLiquidationNotPermitted"
+        "SelfLiquidationNotPermitted",
       );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet1)
-          .batchLiquidationWithRepoToken(wallet2.address, [0, 0])
+          .batchLiquidationWithRepoToken(wallet2.address, [0, 0]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "ZeroLiquidationNotPermitted"
+        "ZeroLiquidationNotPermitted",
       );
 
       await expect(
@@ -3454,31 +3453,31 @@ describe("TermManager Tests", () => {
           .batchLiquidationWithRepoToken(wallet2.address, [
             ethers.constants.MaxUint256,
             0,
-          ])
+          ]),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          `InvalidParameters`
+          `InvalidParameters`,
         )
         .withArgs("closureRepoTokenAmounts cannot be uint max");
       await expect(
         termRepoCollateralManager
           .connect(wallet1)
-          .batchLiquidationWithRepoToken(wallet2.address, [0, 20000000])
+          .batchLiquidationWithRepoToken(wallet2.address, [0, 20000000]),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          `InsufficientCollateralForLiquidationRepayment`
+          `InsufficientCollateralForLiquidationRepayment`,
         )
         .withArgs(fungibleToken2.address);
 
       await expect(
         termRepoCollateralManager
           .connect(wallet1)
-          .batchLiquidationWithRepoToken(wallet2.address, [0, 90000001])
+          .batchLiquidationWithRepoToken(wallet2.address, [0, 90000001]),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "RepurchaseAmountTooHigh"
+        "RepurchaseAmountTooHigh",
       );
     });
     it("revert single liquidations not within shortfall", async function () {
@@ -3488,7 +3487,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "150000000"
+          "150000000",
         );
 
       await termRepoCollateralManager
@@ -3496,7 +3495,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "150000000"
+          "150000000",
         );
 
       await termRepoServicer
@@ -3509,7 +3508,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "80000000",
           "90000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -3520,7 +3519,7 @@ describe("TermManager Tests", () => {
           "90000000",
           [fungibleToken2.address],
           ["150000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       const user = wallet1;
@@ -3530,10 +3529,10 @@ describe("TermManager Tests", () => {
           .batchLiquidationWithRepoToken(wallet2.address, [
             "20000000",
             "20000000",
-          ])
+          ]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "BorrowerNotInShortfall"
+        "BorrowerNotInShortfall",
       );
     });
     it("disallow total shortfall liquidation with repo token ", async function () {
@@ -3542,7 +3541,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "100000"
+          "100000",
         );
 
       await termRepoCollateralManager
@@ -3550,7 +3549,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet3.address,
           fungibleToken2.address,
-          "100000"
+          "100000",
         );
 
       await termRepoServicer
@@ -3563,7 +3562,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "80000",
           "90000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -3572,7 +3571,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "10000",
           "20000",
-          getBytesHash("offer-2")
+          getBytesHash("offer-2"),
         );
 
       await termRepoServicer
@@ -3583,7 +3582,7 @@ describe("TermManager Tests", () => {
           "90000",
           [fungibleToken2.address],
           ["100000"],
-          "10000"
+          "10000",
         );
       await termRepoServicer
         .connect(termAuctionAddress)
@@ -3593,16 +3592,16 @@ describe("TermManager Tests", () => {
           "20000",
           [fungibleToken2.address],
           ["100000"],
-          "10000"
+          "10000",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet1)
-          .batchLiquidationWithRepoToken(wallet2.address, ["0", "90000"])
+          .batchLiquidationWithRepoToken(wallet2.address, ["0", "90000"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "ExceedsNetExposureCapOnLiquidation"
+        "ExceedsNetExposureCapOnLiquidation",
       );
     });
 
@@ -3635,7 +3634,7 @@ describe("TermManager Tests", () => {
           "400",
           [fungibleToken1.address],
           ["290"],
-          "100"
+          "100",
         );
 
       await termRepoServicer
@@ -3646,13 +3645,13 @@ describe("TermManager Tests", () => {
           "1400",
           [fungibleToken2.address],
           ["2000"],
-          "100"
+          "100",
         );
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.eq("290");
 
       const user = wallet1;
@@ -3661,13 +3660,13 @@ describe("TermManager Tests", () => {
         .batchLiquidationWithRepoToken(wallet2.address, ["400", "0"]);
 
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.equal("0");
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.eq("0");
     });
 
@@ -3677,16 +3676,16 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "17000000"
+          "17000000",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchLiquidationWithRepoToken(wallet2.address, ["29000000", "0"])
+          .batchLiquidationWithRepoToken(wallet2.address, ["29000000", "0"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "ZeroBorrowerRepurchaseObligation"
+        "ZeroBorrowerRepurchaseObligation",
       );
     });
 
@@ -3696,7 +3695,7 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "17000000"
+          "17000000",
         );
 
       await termRepoServicer
@@ -3709,7 +3708,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "20000000",
           "30000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -3720,16 +3719,16 @@ describe("TermManager Tests", () => {
           "30000000",
           [fungibleToken1.address],
           ["17000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet1)
-          .batchLiquidationWithRepoToken(wallet2.address, ["29000000", "0"])
+          .batchLiquidationWithRepoToken(wallet2.address, ["29000000", "0"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "ExceedsNetExposureCapOnLiquidation"
+        "ExceedsNetExposureCapOnLiquidation",
       );
     });
   });
@@ -3742,14 +3741,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "150000000"
+          "150000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "50000000"
+          "50000000",
         );
 
       await termRepoServicer
@@ -3762,7 +3761,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "20000000",
           "30000000",
-          getBytesHash("offer-id-1")
+          getBytesHash("offer-id-1"),
         );
 
       await termRepoServicer
@@ -3773,16 +3772,16 @@ describe("TermManager Tests", () => {
           "30000000",
           [fungibleToken1.address, fungibleToken2.address],
           ["50000000", "150000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchDefault(wallet2.address, ["10000000", "10000000"])
+          .batchDefault(wallet2.address, ["10000000", "10000000"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "DefaultsClosed"
+        "DefaultsClosed",
       );
 
       await network.provider.send("evm_increaseTime", [
@@ -3792,34 +3791,34 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchLiquidation(wallet2.address, ["20000000", "20000000"])
+          .batchLiquidation(wallet2.address, ["20000000", "20000000"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "ShortfallLiquidationsClosed"
+        "ShortfallLiquidationsClosed",
       );
 
       // batch default revaults due to repurchase being beyond borrow balance
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchDefault(wallet2.address, ["15000000", "15000001"])
+          .batchDefault(wallet2.address, ["15000000", "15000001"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "TotalRepaymentGreaterThangetBorrowerRepurchaseObligation"
+        "TotalRepaymentGreaterThangetBorrowerRepurchaseObligation",
       );
 
       // batch default revaults due to mismatched collateral token and repurchase lengths
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchDefault(wallet2.address, ["15000000"])
+          .batchDefault(wallet2.address, ["15000000"]),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          `InvalidParameters`
+          `InvalidParameters`,
         )
         .withArgs(
-          "Closure amounts array not same length as collateral tokens list"
+          "Closure amounts array not same length as collateral tokens list",
         );
 
       // partial batch default
@@ -3837,7 +3836,7 @@ describe("TermManager Tests", () => {
           fungibleToken2.address,
           "10500000",
           "2000000",
-          true
+          true,
         );
       await expect(batchDefault1)
         .to.emit(termEventEmitter, "Liquidation")
@@ -3849,49 +3848,49 @@ describe("TermManager Tests", () => {
           fungibleToken1.address,
           "5250000",
           "1000000",
-          true
+          true,
         );
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.eq("44750000");
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.eq("139500000");
 
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.equal("10000000");
 
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal("139500000");
 
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("44750000");
       expect(await fungibleToken2.balanceOf(wallet3.address)).to.equal(
-        "308500000"
+        "308500000",
       );
       expect(await fungibleToken2.balanceOf(reserveAddress.address)).to.equal(
-        "2000000"
+        "2000000",
       );
       expect(await fungibleToken1.balanceOf(wallet3.address)).to.equal(
-        "4250000"
+        "4250000",
       );
       expect(await fungibleToken1.balanceOf(reserveAddress.address)).to.equal(
-        "1000000"
+        "1000000",
       );
       /// default to 0 to remove all encumbered colltateral
       await termRepoCollateralManager
@@ -3900,14 +3899,14 @@ describe("TermManager Tests", () => {
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.eq(0);
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.eq(0);
 
       await termRepoCollateralManager
@@ -3916,8 +3915,8 @@ describe("TermManager Tests", () => {
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.eq(0);
     });
 
@@ -3928,14 +3927,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "50000000"
+          "50000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "50000000"
+          "50000000",
         );
 
       await termRepoServicer
@@ -3948,7 +3947,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "20000000",
           "30000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -3959,7 +3958,7 @@ describe("TermManager Tests", () => {
           "30000000",
           [fungibleToken1.address, fungibleToken2.address],
           ["50000000", "50000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await network.provider.send("evm_increaseTime", [
@@ -3967,7 +3966,7 @@ describe("TermManager Tests", () => {
       ]);
 
       await expect(
-        termRepoCollateralManager.connect(adminWallet).pauseLiquidations()
+        termRepoCollateralManager.connect(adminWallet).pauseLiquidations(),
       )
         .to.emit(termEventEmitter, "LiquidationsPaused")
         .withArgs(termIdHashed);
@@ -3975,14 +3974,14 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchDefault(wallet2.address, ["10000000", "10000000"])
+          .batchDefault(wallet2.address, ["10000000", "10000000"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "LiquidationsPaused"
+        "LiquidationsPaused",
       );
 
       await expect(
-        termRepoCollateralManager.connect(adminWallet).unpauseLiquidations()
+        termRepoCollateralManager.connect(adminWallet).unpauseLiquidations(),
       )
         .to.emit(termEventEmitter, "LiquidationsUnpaused")
         .withArgs(termIdHashed);
@@ -4001,14 +4000,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "50000000"
+          "50000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "40000000"
+          "40000000",
         );
 
       await termRepoServicer
@@ -4021,7 +4020,7 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "80000000",
           "90000000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -4032,16 +4031,16 @@ describe("TermManager Tests", () => {
           "90000000",
           [fungibleToken1.address, fungibleToken2.address],
           ["40000000", "50000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchDefault(wallet2.address, ["10000000", "10000000"])
+          .batchDefault(wallet2.address, ["10000000", "10000000"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "DefaultsClosed"
+        "DefaultsClosed",
       );
 
       await network.provider.send("evm_increaseTime", [
@@ -4051,63 +4050,63 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager
           .connect(wallet2)
-          .batchDefault(wallet2.address, ["10000000", "10000000"])
+          .batchDefault(wallet2.address, ["10000000", "10000000"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "SelfLiquidationNotPermitted"
+        "SelfLiquidationNotPermitted",
       );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchDefault(wallet2.address, ["10000000"])
+          .batchDefault(wallet2.address, ["10000000"]),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          `InvalidParameters`
+          `InvalidParameters`,
         )
         .withArgs(
-          "Closure amounts array not same length as collateral tokens list"
+          "Closure amounts array not same length as collateral tokens list",
         );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchDefault(wallet2.address, [0, 0])
+          .batchDefault(wallet2.address, [0, 0]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "ZeroLiquidationNotPermitted"
+        "ZeroLiquidationNotPermitted",
       );
 
       await expect(
         termRepoCollateralManager.batchDefault(wallet2.address, [
           ethers.constants.MaxUint256,
           "1000000",
-        ])
+        ]),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          "InvalidParameters"
+          "InvalidParameters",
         )
         .withArgs("closureAmounts cannot be uint max");
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchDefault(wallet1.address, ["0", "0"])
+          .batchDefault(wallet1.address, ["0", "0"]),
       ).to.be.revertedWithCustomError(
         termRepoCollateralManager,
-        "ZeroBorrowerRepurchaseObligation"
+        "ZeroBorrowerRepurchaseObligation",
       );
 
       await expect(
         termRepoCollateralManager
           .connect(wallet3)
-          .batchDefault(wallet2.address, ["90000000", "1"])
+          .batchDefault(wallet2.address, ["90000000", "1"]),
       )
         .to.be.revertedWithCustomError(
           termRepoCollateralManager,
-          `InsufficientCollateralForLiquidationRepayment`
+          `InsufficientCollateralForLiquidationRepayment`,
         )
         .withArgs(fungibleToken1.address);
 
@@ -4128,13 +4127,15 @@ describe("TermManager Tests", () => {
     });
     it("partially unlock rollover collateral to address", async function () {
       const termRepoRolloverManagerSigner = await ethers.getSigner(
-        termRepoRolloverManager.address
+        termRepoRolloverManager.address,
       );
 
       await expect(
-        termRepoCollateralManager.approveRolloverAuction(anotherAuction.address)
+        termRepoCollateralManager.approveRolloverAuction(
+          anotherAuction.address,
+        ),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x6e3cc031d23d7153f72e87cbfd113a0351c60d8ce52b8a31c944d543a384b7c9`
+        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x6e3cc031d23d7153f72e87cbfd113a0351c60d8ce52b8a31c944d543a384b7c9`,
       );
       await termRepoCollateralManager
         .connect(termRepoRolloverManagerSigner)
@@ -4145,14 +4146,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "50000000"
+          "50000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "40000000"
+          "40000000",
         );
       await termRepoServicer
         .connect(termAuctionOfferLockerAddress)
@@ -4166,13 +4167,15 @@ describe("TermManager Tests", () => {
           "60000",
           [fungibleToken1.address, fungibleToken2.address],
           ["50000000", "40000000"],
-          "100000000000"
+          "100000000000",
         );
 
       expect(
-        termRepoCollateralManager.approveRolloverAuction(anotherAuction.address)
+        termRepoCollateralManager.approveRolloverAuction(
+          anotherAuction.address,
+        ),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x6e14a979b95b01beecd617807f3738f4e067938da99755b16afdcf7148d313b7`
+        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x6e14a979b95b01beecd617807f3738f4e067938da99755b16afdcf7148d313b7`,
       );
 
       await expect(
@@ -4181,53 +4184,53 @@ describe("TermManager Tests", () => {
           .transferRolloverCollateral(
             wallet2.address,
             "500000000000000000",
-            wallet3.address
-          )
+            wallet3.address,
+          ),
       )
         .to.emit(termEventEmitter, "CollateralUnlocked")
         .withArgs(
           termIdHashed,
           wallet2.address,
           fungibleToken1.address,
-          "25000000"
+          "25000000",
         )
         .to.emit(termEventEmitter, "CollateralUnlocked")
         .withArgs(
           termIdHashed,
           wallet2.address,
           fungibleToken2.address,
-          "20000000"
+          "20000000",
         );
 
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("25000000");
 
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal("20000000");
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("25000000");
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal("20000000");
     });
     it("unlock all rollover collateral to address", async function () {
       const termRepoRolloverManagerSigner = await ethers.getSigner(
-        termRepoRolloverManager.address
+        termRepoRolloverManager.address,
       );
 
       await termRepoCollateralManager
@@ -4239,14 +4242,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken1.address,
-          "50000000"
+          "50000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet2.address,
           fungibleToken2.address,
-          "40000000"
+          "40000000",
         );
 
       await termRepoServicer
@@ -4261,13 +4264,15 @@ describe("TermManager Tests", () => {
           "6000",
           [fungibleToken1.address, fungibleToken2.address],
           ["50000000", "40000000"],
-          "100000000000"
+          "100000000000",
         );
 
       await expect(
-        termRepoCollateralManager.approveRolloverAuction(anotherAuction.address)
+        termRepoCollateralManager.approveRolloverAuction(
+          anotherAuction.address,
+        ),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x6e3cc031d23d7153f72e87cbfd113a0351c60d8ce52b8a31c944d543a384b7c9`
+        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x6e3cc031d23d7153f72e87cbfd113a0351c60d8ce52b8a31c944d543a384b7c9`,
       );
 
       await expect(
@@ -4276,48 +4281,48 @@ describe("TermManager Tests", () => {
           .transferRolloverCollateral(
             wallet2.address,
             "1000000000000000000",
-            wallet3.address
-          )
+            wallet3.address,
+          ),
       )
         .to.emit(termEventEmitter, "CollateralUnlocked")
         .withArgs(
           termIdHashed,
           wallet2.address,
           fungibleToken1.address,
-          "50000000"
+          "50000000",
         )
         .to.emit(termEventEmitter, "CollateralUnlocked")
         .withArgs(
           termIdHashed,
           wallet2.address,
           fungibleToken2.address,
-          "40000000"
+          "40000000",
         );
 
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("0");
 
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal("0");
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("0");
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken2.address
-        )
+          fungibleToken2.address,
+        ),
       ).to.equal("0");
     });
     it("accept rollover collateral from auction", async function () {
@@ -4327,27 +4332,27 @@ describe("TermManager Tests", () => {
           .acceptRolloverCollateral(
             wallet2.address,
             fungibleToken1.address,
-            "50000000"
-          )
+            "50000000",
+          ),
       )
         .to.emit(termRepoCollateralManager, "CollateralLocked")
         .withArgs(
           termIdHashed,
           wallet2.address,
           fungibleToken1.address,
-          "50000000"
+          "50000000",
         );
       expect(
         await termRepoCollateralManager.getCollateralBalance(
           wallet2.address,
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("50000000");
 
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
-          fungibleToken1.address
-        )
+          fungibleToken1.address,
+        ),
       ).to.equal("50000000");
     });
 
@@ -4363,10 +4368,10 @@ describe("TermManager Tests", () => {
             "500000",
             "550000",
             wallet3.address,
-            "1000000000000000000"
-          )
+            "1000000000000000000",
+          ),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x1d693f62a755e2b3c6494da41af454605b9006057cb3c79b6adda1378f2a50a7`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x1d693f62a755e2b3c6494da41af454605b9006057cb3c79b6adda1378f2a50a7`,
       );
       await expect(
         termRepoServicer
@@ -4376,14 +4381,14 @@ describe("TermManager Tests", () => {
             "500000",
             "550000",
             wallet3.address,
-            "500000000000000000"
-          )
+            "500000000000000000",
+          ),
       )
         .to.emit(termEventEmitter, "ExposureOpenedOnRolloverNew")
         .withArgs(termIdHashed, wallet1.address, "450000", "550000", "50000");
 
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet1.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet1.address),
       ).to.equal("550000");
 
       await network.provider.send("evm_increaseTime", [
@@ -4399,20 +4404,20 @@ describe("TermManager Tests", () => {
             "500000",
             "550000",
             wallet3.address,
-            "500000000000000000"
-          )
+            "500000000000000000",
+          ),
       ).to.be.revertedWithCustomError(termRepoServicer, "AfterMaturity");
     });
 
     it("collapse rollover position with loan from future term", async function () {
       const termRepoRolloverManagerSigner = await ethers.getSigner(
-        termRepoRolloverManager.address
+        termRepoRolloverManager.address,
       );
 
       await expect(
-        termRepoServicer.approveRolloverAuction(anotherAuction.address)
+        termRepoServicer.approveRolloverAuction(anotherAuction.address),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x6e3cc031d23d7153f72e87cbfd113a0351c60d8ce52b8a31c944d543a384b7c9`
+        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x6e3cc031d23d7153f72e87cbfd113a0351c60d8ce52b8a31c944d543a384b7c9`,
       );
       await termRepoServicer
         .connect(termRepoRolloverManagerSigner)
@@ -4423,14 +4428,14 @@ describe("TermManager Tests", () => {
         .auctionLockCollateral(
           wallet3.address,
           fungibleToken2.address,
-          "1000000"
+          "1000000",
         );
       await termRepoCollateralManager
         .connect(termAuctionBidLockerAddress)
         .auctionLockCollateral(
           wallet1.address,
           fungibleToken2.address,
-          "1000000"
+          "1000000",
         );
 
       await termRepoServicer
@@ -4444,7 +4449,7 @@ describe("TermManager Tests", () => {
           "600000",
           [fungibleToken2.address],
           ["1000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
 
       await termRepoServicer
@@ -4453,7 +4458,7 @@ describe("TermManager Tests", () => {
           wallet3.address,
           "590000",
           "600000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await termRepoServicer
@@ -4467,7 +4472,7 @@ describe("TermManager Tests", () => {
           "600000",
           [fungibleToken2.address],
           ["1000000"],
-          "1000000000000000000"
+          "1000000000000000000",
         );
       await termRepoServicer
         .connect(termAuctionAddress)
@@ -4475,21 +4480,21 @@ describe("TermManager Tests", () => {
           wallet1.address,
           "590000",
           "600000",
-          getBytesHash("offer-1")
+          getBytesHash("offer-1"),
         );
 
       await expect(
         termRepoServicer
           .connect(wallet2)
-          .closeExposureOnRolloverExisting(wallet1.address, "600001")
+          .closeExposureOnRolloverExisting(wallet1.address, "600001"),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xf4b6b486426e3c004413defb7013cd482f29189a98e074f1c202b2ac26536bb2`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xf4b6b486426e3c004413defb7013cd482f29189a98e074f1c202b2ac26536bb2`,
       );
 
       await expect(
         termRepoServicer
           .connect(anotherAuction)
-          .closeExposureOnRolloverExisting(wallet1.address, "600001")
+          .closeExposureOnRolloverExisting(wallet1.address, "600001"),
       ).to.be.revertedWithCustomError(termRepoServicer, "NotMaturedYet");
 
       await network.provider.send("evm_increaseTime", [
@@ -4499,39 +4504,39 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoServicer
           .connect(anotherAuction)
-          .closeExposureOnRolloverExisting(wallet1.address, "600001")
+          .closeExposureOnRolloverExisting(wallet1.address, "600001"),
       )
         .to.emit(termEventEmitter, "ExposureClosedOnRolloverExisting")
         .withArgs(termIdHashed, wallet1.address, "600000");
 
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet1.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet1.address),
       ).to.equal("0");
 
       expect(
-        await termRepoServicer.totalOutstandingRepurchaseExposure()
+        await termRepoServicer.totalOutstandingRepurchaseExposure(),
       ).to.equal("600000");
       expect(await termRepoServicer.totalRepurchaseCollected()).to.equal(
-        "600000"
+        "600000",
       );
 
       await expect(
         termRepoServicer
           .connect(anotherAuction)
-          .closeExposureOnRolloverExisting(wallet3.address, "500000")
+          .closeExposureOnRolloverExisting(wallet3.address, "500000"),
       )
         .to.emit(termEventEmitter, "ExposureClosedOnRolloverExisting")
         .withArgs(termIdHashed, wallet3.address, "500000");
 
       expect(
-        await termRepoServicer.getBorrowerRepurchaseObligation(wallet3.address)
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet3.address),
       ).to.equal("100000");
 
       expect(
-        await termRepoServicer.totalOutstandingRepurchaseExposure()
+        await termRepoServicer.totalOutstandingRepurchaseExposure(),
       ).to.equal("100000");
       expect(await termRepoServicer.totalRepurchaseCollected()).to.equal(
-        "1100000"
+        "1100000",
       );
 
       await network.provider.send("evm_increaseTime", [
@@ -4541,10 +4546,10 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoServicer
           .connect(anotherAuction)
-          .closeExposureOnRolloverExisting(wallet1.address, "600001")
+          .closeExposureOnRolloverExisting(wallet1.address, "600001"),
       ).to.be.revertedWithCustomError(
         termRepoServicer,
-        "AfterRepurchaseWindow"
+        "AfterRepurchaseWindow",
       );
     });
   });

@@ -13,7 +13,6 @@ describe("TermController Tests", () => {
   let potentialTermAddress: SignerWithAddress;
   let adminWallet: SignerWithAddress;
   let devopsWallet: SignerWithAddress;
-  let evergreenManagementWallet: SignerWithAddress;
 
   let termController: Contract;
 
@@ -33,7 +32,6 @@ describe("TermController Tests", () => {
       potentialTermAddress,
       adminWallet,
       devopsWallet,
-      evergreenManagementWallet,
     ] = await ethers.getSigners();
 
     const versionableFactory = await ethers.getContractFactory("Versionable");
@@ -41,9 +39,8 @@ describe("TermController Tests", () => {
     await versionable.deployed();
     expectedVersion = await versionable.version();
 
-    const TermController = await ethers.getContractFactory(
-      "TestTermController"
-    );
+    const TermController =
+      await ethers.getContractFactory("TestTermController");
 
     termController = await upgrades.deployProxy(
       TermController,
@@ -52,11 +49,10 @@ describe("TermController Tests", () => {
         originalProtocolReservesAddress.address,
         adminWallet.address,
         devopsWallet.address,
-        evergreenManagementWallet.address,
       ],
       {
         kind: "uups",
-      }
+      },
     );
   });
 
@@ -73,18 +69,19 @@ describe("TermController Tests", () => {
       await termController.connect(devopsWallet).upgrade(ownerAddress.address);
 
       await expect(
-        termController.connect(externalAddress).upgrade(externalAddress.address)
+        termController
+          .connect(externalAddress)
+          .upgrade(externalAddress.address),
       ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
       );
     });
   });
 
   describe("Improper initializations", async () => {
     it("Revert if treasury wallet is zero address", async () => {
-      const TermController = await ethers.getContractFactory(
-        "TestTermController"
-      );
+      const TermController =
+        await ethers.getContractFactory("TestTermController");
 
       await expect(
         upgrades.deployProxy(
@@ -94,18 +91,16 @@ describe("TermController Tests", () => {
             originalProtocolReservesAddress.address,
             adminWallet.address,
             devopsWallet.address,
-            evergreenManagementWallet.address,
           ],
           {
             kind: "uups",
-          }
-        )
+          },
+        ),
       ).to.be.revertedWith("treasury is zero address");
     });
     it("Revert if reserve wallet is zero address", async () => {
-      const TermController = await ethers.getContractFactory(
-        "TestTermController"
-      );
+      const TermController =
+        await ethers.getContractFactory("TestTermController");
 
       await expect(
         upgrades.deployProxy(
@@ -115,12 +110,11 @@ describe("TermController Tests", () => {
             ethers.constants.AddressZero,
             adminWallet.address,
             devopsWallet.address,
-            evergreenManagementWallet.address,
           ],
           {
             kind: "uups",
-          }
-        )
+          },
+        ),
       ).to.be.revertedWith("reserve is zero address");
     });
   });
@@ -130,17 +124,17 @@ describe("TermController Tests", () => {
       await expect(
         termController
           .connect(externalAddress)
-          .updateTreasuryAddress(externalAddress.address)
+          .updateTreasuryAddress(externalAddress.address),
       ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
       );
 
       await expect(
         termController
           .connect(externalAddress)
-          .updateProtocolReserveAddress(externalAddress.address)
+          .updateProtocolReserveAddress(externalAddress.address),
       ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
       );
     });
     it("External Addresses cannot add or remove a Term Finance Address", async () => {
@@ -148,17 +142,17 @@ describe("TermController Tests", () => {
       await expect(
         termController
           .connect(externalAddress)
-          .markTermDeployed(externalAddress.address)
+          .markTermDeployed(externalAddress.address),
       ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x9027349758afcb3649adbc1f090fcd4eb9187cfbbd22483c7d103367d7b50173`
+        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x9027349758afcb3649adbc1f090fcd4eb9187cfbbd22483c7d103367d7b50173`,
       );
 
       await expect(
         termController
           .connect(externalAddress)
-          .unmarkTermDeployed(externalAddress.address)
+          .unmarkTermDeployed(externalAddress.address),
       ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x9027349758afcb3649adbc1f090fcd4eb9187cfbbd22483c7d103367d7b50173`
+        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x9027349758afcb3649adbc1f090fcd4eb9187cfbbd22483c7d103367d7b50173`,
       );
     });
     it("Secured update of controller admin", async () => {
@@ -167,10 +161,10 @@ describe("TermController Tests", () => {
           .connect(externalAddress)
           .updateControllerAdminWallet(
             adminWallet.address,
-            externalAddress.address
-          )
+            externalAddress.address,
+          ),
       ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x0bb5a33d705086fce426ce4e2dd59328fcdddf3164b908c4c00fd1a185a702de`
+        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
       );
     });
   });
@@ -178,18 +172,18 @@ describe("TermController Tests", () => {
     it("Treasury external reads and succcssful owner updates", async () => {
       // Revert transaction if user is not granted role equal to keccak256("BURNER_ROLE")
       expect(
-        await termController.connect(externalAddress).getTreasuryAddress()
+        await termController.connect(externalAddress).getTreasuryAddress(),
       ).to.equal(originalTreasuryAddress.address);
       await expect(
         termController
           .connect(devopsWallet)
-          .updateTreasuryAddress(newTreasuryAddress.address)
+          .updateTreasuryAddress(newTreasuryAddress.address),
       )
         .to.emit(termController, "TreasuryAddressUpdated")
         .withArgs(originalTreasuryAddress.address, newTreasuryAddress.address);
 
       expect(
-        await termController.connect(externalAddress).getTreasuryAddress()
+        await termController.connect(externalAddress).getTreasuryAddress(),
       ).to.equal(newTreasuryAddress.address);
     });
 
@@ -199,7 +193,7 @@ describe("TermController Tests", () => {
       await expect(
         termController
           .connect(devopsWallet)
-          .updateTreasuryAddress(originalTreasuryAddress.address)
+          .updateTreasuryAddress(originalTreasuryAddress.address),
       ).to.be.revertedWith("No change in treasury address");
     });
     it("Protocol Reserves external reads and succcssful owner updates", async () => {
@@ -207,53 +201,53 @@ describe("TermController Tests", () => {
       expect(
         await termController
           .connect(externalAddress)
-          .getProtocolReserveAddress()
+          .getProtocolReserveAddress(),
       ).to.equal(originalProtocolReservesAddress.address);
       await expect(
         termController
           .connect(devopsWallet)
-          .updateProtocolReserveAddress(newProtocolResrvesAddress.address)
+          .updateProtocolReserveAddress(newProtocolResrvesAddress.address),
       )
         .to.emit(termController, "ProtocolReserveAddressUpdated")
         .withArgs(
           originalProtocolReservesAddress.address,
-          newProtocolResrvesAddress.address
+          newProtocolResrvesAddress.address,
         );
 
       expect(
         await termController
           .connect(externalAddress)
-          .getProtocolReserveAddress()
+          .getProtocolReserveAddress(),
       ).to.equal(newProtocolResrvesAddress.address);
     });
     it("Controller Admin wallet update", async () => {
       await expect(
         termController
-          .connect(evergreenManagementWallet)
+          .connect(devopsWallet)
           .updateControllerAdminWallet(
             constants.AddressZero,
-            newProtocolResrvesAddress.address
-          )
+            newProtocolResrvesAddress.address,
+          ),
       ).to.be.revertedWith(
-        "Old Controller Admin Wallet cannot be zero address"
+        "Old Controller Admin Wallet cannot be zero address",
       );
 
       await expect(
         termController
-          .connect(evergreenManagementWallet)
+          .connect(devopsWallet)
           .updateControllerAdminWallet(
             adminWallet.address,
-            constants.AddressZero
-          )
+            constants.AddressZero,
+          ),
       ).to.be.revertedWith(
-        "New Controller Admin Wallet cannot be zero address"
+        "New Controller Admin Wallet cannot be zero address",
       );
 
       await termController
-        .connect(evergreenManagementWallet)
+        .connect(devopsWallet)
         .updateControllerAdminWallet(
           adminWallet.address,
-          newProtocolResrvesAddress.address
+          newProtocolResrvesAddress.address,
         );
 
       await termController
@@ -262,7 +256,7 @@ describe("TermController Tests", () => {
       expect(
         await termController
           .connect(externalAddress)
-          .isTermDeployed(potentialTermAddress.address)
+          .isTermDeployed(potentialTermAddress.address),
       ).to.equal(true);
     });
     it("Protocol reserves update reverts when updated with current reserve address", async () => {
@@ -271,7 +265,9 @@ describe("TermController Tests", () => {
       await expect(
         termController
           .connect(devopsWallet)
-          .updateProtocolReserveAddress(originalProtocolReservesAddress.address)
+          .updateProtocolReserveAddress(
+            originalProtocolReservesAddress.address,
+          ),
       ).to.be.revertedWith("No change in protocol reserve address");
     });
     it("External Term Contract check and successful owner update and remove  ", async () => {
@@ -279,7 +275,7 @@ describe("TermController Tests", () => {
       expect(
         await termController
           .connect(externalAddress)
-          .isTermDeployed(potentialTermAddress.address)
+          .isTermDeployed(potentialTermAddress.address),
       ).to.equal(false);
       await termController
         .connect(adminWallet)
@@ -287,7 +283,7 @@ describe("TermController Tests", () => {
       expect(
         await termController
           .connect(externalAddress)
-          .isTermDeployed(potentialTermAddress.address)
+          .isTermDeployed(potentialTermAddress.address),
       ).to.equal(true);
       await termController
         .connect(adminWallet)
@@ -295,7 +291,7 @@ describe("TermController Tests", () => {
       expect(
         await termController
           .connect(externalAddress)
-          .isTermDeployed(potentialTermAddress.address)
+          .isTermDeployed(potentialTermAddress.address),
       ).to.equal(false);
     });
     it("Adding term contract that has already been added gets reverted", async () => {
@@ -303,7 +299,7 @@ describe("TermController Tests", () => {
       expect(
         await termController
           .connect(externalAddress)
-          .isTermDeployed(potentialTermAddress.address)
+          .isTermDeployed(potentialTermAddress.address),
       ).to.equal(false);
       await termController
         .connect(adminWallet)
@@ -311,7 +307,7 @@ describe("TermController Tests", () => {
       await expect(
         termController
           .connect(adminWallet)
-          .markTermDeployed(potentialTermAddress.address)
+          .markTermDeployed(potentialTermAddress.address),
       ).to.be.revertedWith("Contract is already in Term");
     });
     it("Removing a term contract not marked in controller reverts", async () => {
@@ -319,12 +315,12 @@ describe("TermController Tests", () => {
       expect(
         await termController
           .connect(externalAddress)
-          .isTermDeployed(potentialTermAddress.address)
+          .isTermDeployed(potentialTermAddress.address),
       ).to.equal(false);
       await expect(
         termController
           .connect(adminWallet)
-          .unmarkTermDeployed(potentialTermAddress.address)
+          .unmarkTermDeployed(potentialTermAddress.address),
       ).to.be.revertedWith("Contract is not in Term");
     });
   });

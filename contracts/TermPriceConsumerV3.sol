@@ -33,8 +33,6 @@ contract TermPriceConsumerV3 is
     // ========================================================================
 
     bytes32 public constant DEVOPS_ROLE = keccak256("DEVOPS_ROLE");
-    bytes32 public constant EVERGREEN_MANAGEMENT_ROLE =
-        keccak256("EVERGREEN_MANAGEMENT_ROLE");
 
     mapping(address => AggregatorV3Interface) internal priceFeeds;
 
@@ -46,14 +44,12 @@ contract TermPriceConsumerV3 is
     /// @notice Intializes with an array of token addresses, followed with an array of Chainlink aggregator addresses
     /// @notice https://docs.chain.link/docs/ethereum-addresses/
     function initialize(
-        address devopsWallet_,
-        address evergreenManagementWallet_
+        address devopsWallet_
     ) external initializer {
         UUPSUpgradeable.__UUPSUpgradeable_init();
         AccessControlUpgradeable.__AccessControl_init();
 
         _grantRole(DEVOPS_ROLE, devopsWallet_);
-        _grantRole(EVERGREEN_MANAGEMENT_ROLE, evergreenManagementWallet_);
     }
 
     /// @param token The address of the token to add a price feed for

@@ -207,19 +207,6 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "EVERGREEN_MANAGEMENT_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
     "inputs": [
       {
         "internalType": "address",
@@ -303,11 +290,6 @@
       {
         "internalType": "address",
         "name": "devopsWallet_",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "evergreenManagementWallet_",
         "type": "address"
       }
     ],

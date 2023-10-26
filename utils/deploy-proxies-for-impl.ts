@@ -6,17 +6,17 @@ import { TransactionResponse } from "@ethersproject/abstract-provider";
 export const checkDeploymentTxn = async (
   deploymentTxn: TransactionResponse | null | undefined,
   contractAddress: string,
-  confirmations = 3
+  confirmations = 3,
 ) => {
   if (!deploymentTxn) {
     throw new Error(
-      `No deployment transaction found for contract ${contractAddress}`
+      `No deployment transaction found for contract ${contractAddress}`,
     );
   }
   const receipt = await deploymentTxn?.wait(confirmations);
   if (!receipt) {
     throw new Error(
-      `No receipt found for contract deployment transaction ${deploymentTxn?.hash}`
+      `No receipt found for contract deployment transaction ${deploymentTxn?.hash}`,
     );
   }
   return {
@@ -30,25 +30,25 @@ export const deployContractUUPSProxyBeacon = async (
   contractName: string,
   proxyImpl: string,
   wallet: Signer,
-  initializationArgs: any[]
+  initializationArgs: any[],
 ): Promise<Contract> => {
   const confirmations = 3;
 
   const walletAddr = await wallet.getAddress();
 
   console.debug(
-    `Deploying ERC1967Proxy for ${contractName}: using wallet ${walletAddr}...`
+    `Deploying ERC1967Proxy for ${contractName}: using wallet ${walletAddr}...`,
   );
 
   const initializeData = contract.interface.encodeFunctionData(
     "initialize",
-    initializationArgs
+    initializationArgs,
   );
 
   const proxyFactory = new ContractFactory(
     ERC1967Proxy.abi,
     ERC1967Proxy.bytecode,
-    wallet
+    wallet,
   );
   const proxy = await proxyFactory.deploy(proxyImpl, initializeData);
   const proxyAddress = await proxy.getAddress();
@@ -56,7 +56,7 @@ export const deployContractUUPSProxyBeacon = async (
     await checkDeploymentTxn(
       proxy.deployTransaction,
       proxyAddress,
-      confirmations
+      confirmations,
     );
 
   const state = {
@@ -66,7 +66,7 @@ export const deployContractUUPSProxyBeacon = async (
       {
         transaction: proxyDeploymentTxn.hash,
         transactionFeesETH: formatEther(
-          proxyReceipt.gasUsed.mul(proxyReceipt.effectiveGasPrice)
+          proxyReceipt.gasUsed.mul(proxyReceipt.effectiveGasPrice),
         ),
         gasUsed: proxyReceipt.gasUsed.toString(),
         gasPriceGWEI: formatUnits(proxyReceipt.effectiveGasPrice, "gwei"),

@@ -69,62 +69,58 @@ describe("TermAuctionBidLocker", () => {
     await versionable.deployed();
     expectedVersion = await versionable.version();
 
-    const termEventEmitterFactory = await ethers.getContractFactory(
-      "TermEventEmitter"
-    );
+    const termEventEmitterFactory =
+      await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
       [devopsMultisig.address, wallet3.address, termInitializer.address],
-      { kind: "uups" }
+      { kind: "uups" },
     )) as TermEventEmitter;
 
-    testCollateralToken = await smock.fake<ERC20Upgradeable>(
-      "ERC20Upgradeable"
-    );
+    testCollateralToken =
+      await smock.fake<ERC20Upgradeable>("ERC20Upgradeable");
     await testCollateralToken.deployed();
     testBorrowedToken = await smock.fake<ERC20Upgradeable>("ERC20Upgradeable");
     await testBorrowedToken.deployed();
-    testUnapprovedToken = await smock.fake<ERC20Upgradeable>(
-      "ERC20Upgradeable"
-    );
+    testUnapprovedToken =
+      await smock.fake<ERC20Upgradeable>("ERC20Upgradeable");
     await testUnapprovedToken.deployed();
 
     const collatManagerFactory =
       await smock.mock<TermRepoCollateralManager__factory>(
-        "TermRepoCollateralManager"
+        "TermRepoCollateralManager",
       );
 
     pairOffTermRepoCollateralManager = await collatManagerFactory.deploy();
     await pairOffTermRepoCollateralManager.deployed();
     termRepoCollateralManager = await smock.fake<TermRepoCollateralManager>(
-      "TermRepoCollateralManager"
+      "TermRepoCollateralManager",
     );
     termRepoCollateralManager.initialCollateralRatios.returns(
-      "115" + "0".repeat(16)
+      "115" + "0".repeat(16),
     );
     termRepoCollateralManager.maintenanceCollateralRatios.returns(
-      "11" + "0".repeat(17)
+      "11" + "0".repeat(17),
     );
 
     termRepoServicer = await smock.fake<TermRepoServicer>("TermRepoServicer");
     await termRepoServicer.deployed();
 
-    const repoServicerFactory = await smock.mock<TermRepoServicer__factory>(
-      "TermRepoServicer"
-    );
+    const repoServicerFactory =
+      await smock.mock<TermRepoServicer__factory>("TermRepoServicer");
 
     pairOffTermRepoServicer = await repoServicerFactory.deploy();
     await pairOffTermRepoServicer.deployed();
     termRepoServicer.servicingFee.returns("1" + "0".repeat(17));
     pairOffTermRepoServicer.termRepoCollateralManager.returns(
-      pairOffTermRepoCollateralManager.address
+      pairOffTermRepoCollateralManager.address,
     );
 
     termOracle = await smock.fake<TermPriceConsumerV3>("TermPriceConsumerV3");
     await termOracle.deployed();
 
     const termAuctionBidLockerFactory = await ethers.getContractFactory(
-      "TestingTermAuctionBidLocker"
+      "TestingTermAuctionBidLocker",
     );
 
     const currentTimestamp = dayjs();
@@ -147,7 +143,7 @@ describe("TermAuctionBidLocker", () => {
         [testCollateralToken.address],
         termInitializer.address,
       ],
-      { kind: "uups" }
+      { kind: "uups" },
     )) as TestingTermAuctionBidLocker;
 
     await termEventEmitter
@@ -156,7 +152,7 @@ describe("TermAuctionBidLocker", () => {
 
     auctionIdHash = ethers.utils.solidityKeccak256(
       ["string"],
-      [auctionIdString]
+      [auctionIdString],
     );
 
     await expect(
@@ -169,10 +165,10 @@ describe("TermAuctionBidLocker", () => {
           termRepoCollateralManager.address,
           termOracle.address,
           devopsMultisig.address,
-          adminWallet.address
-        )
+          adminWallet.address,
+        ),
     ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`
+      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`,
     );
 
     await termAuctionBidLocker
@@ -184,7 +180,7 @@ describe("TermAuctionBidLocker", () => {
         termRepoCollateralManager.address,
         termOracle.address,
         devopsMultisig.address,
-        adminWallet.address
+        adminWallet.address,
       );
 
     await expect(
@@ -197,19 +193,19 @@ describe("TermAuctionBidLocker", () => {
           termRepoCollateralManager.address,
           termOracle.address,
           devopsMultisig.address,
-          adminWallet.address
-        )
+          adminWallet.address,
+        ),
     ).to.be.revertedWithCustomError(
       termAuctionBidLocker,
-      "AlreadyTermContractPaired"
+      "AlreadyTermContractPaired",
     );
 
     await expect(
       termAuctionBidLocker
         .connect(wallet2)
-        .pairRolloverManager(previousTermRepoRolloverManager.address)
+        .pairRolloverManager(previousTermRepoRolloverManager.address),
     ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
     );
     await termAuctionBidLocker
       .connect(adminWallet)
@@ -229,7 +225,7 @@ describe("TermAuctionBidLocker", () => {
     const revealTime = dayjs().add(1, "hour").unix();
     const auctionEndTime = dayjs().add(3, "hours").unix();
     const termAuctionBidLockerFactory = await ethers.getContractFactory(
-      "TestingTermAuctionBidLocker"
+      "TestingTermAuctionBidLocker",
     );
     await expect(
       upgrades.deployProxy(
@@ -246,14 +242,14 @@ describe("TermAuctionBidLocker", () => {
           [testCollateralToken.address],
           termInitializer.address,
         ],
-        { kind: "uups" }
-      )
+        { kind: "uups" },
+      ),
     )
       .to.be.revertedWithCustomError(
         {
           interface: termAuctionBidLockerFactory.interface,
         },
-        `AuctionStartsAfterReveal`
+        `AuctionStartsAfterReveal`,
       )
       .withArgs(auctionStartTime, revealTime);
   });
@@ -262,7 +258,7 @@ describe("TermAuctionBidLocker", () => {
     const revealTime = dayjs().add(2, "hours").unix();
     const auctionEndTime = dayjs().add(3, "hours").unix();
     const termAuctionBidLockerFactory = await ethers.getContractFactory(
-      "TestingTermAuctionBidLocker"
+      "TestingTermAuctionBidLocker",
     );
 
     const termAuctionBidLockerPairRevert = (await upgrades.deployProxy(
@@ -279,7 +275,7 @@ describe("TermAuctionBidLocker", () => {
         [testCollateralToken.address],
         termInitializer.address,
       ],
-      { kind: "uups" }
+      { kind: "uups" },
     )) as TestingTermAuctionBidLocker;
 
     await termEventEmitter
@@ -295,18 +291,18 @@ describe("TermAuctionBidLocker", () => {
           termRepoCollateralManager.address,
           termOracle.address,
           devopsMultisig.address,
-          adminWallet.address
-        )
+          adminWallet.address,
+        ),
     ).to.be.revertedWithCustomError(
       termAuctionBidLockerPairRevert,
-      "InvalidTermRepoServicer"
+      "InvalidTermRepoServicer",
     );
   });
 
   it("getAllBids (with empty expired rollovers and nonempty revealed/nonrevealed) reverts when missing bids and successfully decrements bid counter when input calldata complete", async () => {
     termRepoCollateralManager.initialCollateralRatios.returns(1);
     pairOffTermRepoServicer.endOfRepurchaseWindow.returns(
-      dayjs().subtract(2, "hour").unix()
+      dayjs().subtract(2, "hour").unix(),
     );
     await termAuctionBidLocker.addBid(
       {
@@ -320,7 +316,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "12345"
+      "12345",
     );
     await termAuctionBidLocker.addBid(
       {
@@ -334,7 +330,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "412838"
+      "412838",
     );
     await termAuctionBidLocker.addBid(
       {
@@ -348,22 +344,22 @@ describe("TermAuctionBidLocker", () => {
         isRollover: true,
         rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
       },
-      "781981"
+      "781981",
     );
 
     await termAuctionBidLocker.setRevealTime(
-      dayjs().subtract(1, "hour").unix()
+      dayjs().subtract(1, "hour").unix(),
     );
 
     await termAuctionBidLocker.revealBids(
       [getBytesHash("test-id-1")],
       ["10"],
-      ["12345"]
+      ["12345"],
     );
 
     // rollover not expired
     pairOffTermRepoServicer.endOfRepurchaseWindow.returns(
-      dayjs().add(2, "hour").unix().toString()
+      dayjs().add(2, "hour").unix().toString(),
     );
     await expect(
       termAuctionBidLocker
@@ -371,8 +367,8 @@ describe("TermAuctionBidLocker", () => {
         .getAllBids(
           [getBytesHash("test-id-1"), getBytesHash("test-id-3")],
           [],
-          []
-        )
+          [],
+        ),
     )
       .to.be.revertedWithCustomError(termAuctionBidLocker, "BidCountIncorrect")
       .withArgs(3);
@@ -383,8 +379,8 @@ describe("TermAuctionBidLocker", () => {
         .getAllBids(
           [getBytesHash("test-id-0"), getBytesHash("test-id-3")],
           [],
-          [getBytesHash("test-id-2")]
-        )
+          [getBytesHash("test-id-2")],
+        ),
     )
       .to.be.revertedWithCustomError(termAuctionBidLocker, `NonExistentBid`)
       .withArgs(getBytesHash("test-id-0"));
@@ -395,8 +391,8 @@ describe("TermAuctionBidLocker", () => {
         .getAllBids(
           [getBytesHash("test-id-1")],
           [getBytesHash("test-id-2"), getBytesHash("test-id-3")],
-          []
-        )
+          [],
+        ),
     )
       .to.be.revertedWithCustomError(termAuctionBidLocker, `NonRolloverBid`)
       .withArgs(getBytesHash("test-id-2"));
@@ -407,12 +403,12 @@ describe("TermAuctionBidLocker", () => {
         .getAllBids(
           [getBytesHash("test-id-1")],
           [getBytesHash("test-id-3")],
-          [getBytesHash("test-id-2")]
-        )
+          [getBytesHash("test-id-2")],
+        ),
     )
       .to.be.revertedWithCustomError(
         termAuctionBidLocker,
-        `NonExpiredRolloverBid`
+        `NonExpiredRolloverBid`,
       )
       .withArgs(getBytesHash("test-id-3"));
 
@@ -426,8 +422,8 @@ describe("TermAuctionBidLocker", () => {
             getBytesHash("test-id-3"),
           ],
           [],
-          []
-        )
+          [],
+        ),
     )
       .to.be.revertedWithCustomError(termAuctionBidLocker, `BidNotRevealed`)
       .withArgs(getBytesHash("test-id-2"));
@@ -437,8 +433,8 @@ describe("TermAuctionBidLocker", () => {
         .getAllBids(
           [getBytesHash("test-id-1")],
           [],
-          [getBytesHash("test-id-2"), getBytesHash("test-id-3")]
-        )
+          [getBytesHash("test-id-2"), getBytesHash("test-id-3")],
+        ),
     )
       .to.be.revertedWithCustomError(termAuctionBidLocker, `BidRevealed`)
       .withArgs(getBytesHash("test-id-3"));
@@ -449,11 +445,11 @@ describe("TermAuctionBidLocker", () => {
         .getAllBids(
           [getBytesHash("test-id-3"), getBytesHash("test-id-1")],
           [],
-          [getBytesHash("test-id-2")]
-        )
+          [getBytesHash("test-id-2")],
+        ),
     ).to.be.revertedWithCustomError(
       termAuctionBidLocker,
-      "RevealedBidsNotSorted"
+      "RevealedBidsNotSorted",
     );
 
     await termAuctionBidLocker
@@ -461,7 +457,7 @@ describe("TermAuctionBidLocker", () => {
       .getAllBids(
         [getBytesHash("test-id-1"), getBytesHash("test-id-3")],
         [],
-        [getBytesHash("test-id-2")]
+        [getBytesHash("test-id-2")],
       );
 
     expect(await termAuctionBidLocker.getBidCount()).to.eq(0);
@@ -480,15 +476,15 @@ describe("TermAuctionBidLocker", () => {
         isRollover: true,
         rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
       },
-      "71891"
+      "71891",
     );
     await termAuctionBidLocker.setRevealTime(
-      dayjs().subtract(1, "hour").unix()
+      dayjs().subtract(1, "hour").unix(),
     );
 
     // rollover not expired
     pairOffTermRepoServicer.endOfRepurchaseWindow.returns(
-      dayjs().add(2, "hour").unix().toString()
+      dayjs().add(2, "hour").unix().toString(),
     );
 
     // rollover bidder has less repurchase obligation than bid amount
@@ -504,7 +500,7 @@ describe("TermAuctionBidLocker", () => {
     await expect(
       termAuctionBidLocker
         .connect(termAuction)
-        .getAllBids([getBytesHash("test-id-1")], [], [])
+        .getAllBids([getBytesHash("test-id-1")], [], []),
     )
       .to.emit(termEventEmitter, "BidLocked")
       .withArgs(
@@ -518,7 +514,7 @@ describe("TermAuctionBidLocker", () => {
         ["500"],
         true,
         pairOffTermRepoServicer.address,
-        ethers.constants.AddressZero
+        ethers.constants.AddressZero,
       );
   });
 
@@ -535,15 +531,15 @@ describe("TermAuctionBidLocker", () => {
         isRollover: true,
         rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
       },
-      "71891"
+      "71891",
     );
     await termAuctionBidLocker.setRevealTime(
-      dayjs().subtract(1, "hour").unix()
+      dayjs().subtract(1, "hour").unix(),
     );
 
     // rollover not expired
     pairOffTermRepoServicer.endOfRepurchaseWindow.returns(
-      dayjs().add(2, "hour").unix().toString()
+      dayjs().add(2, "hour").unix().toString(),
     );
 
     // rollover bidder has less repurchase obligation than bid amount
@@ -559,7 +555,7 @@ describe("TermAuctionBidLocker", () => {
     await expect(
       termAuctionBidLocker
         .connect(termAuction)
-        .getAllBids([getBytesHash("test-id-1")], [], [])
+        .getAllBids([getBytesHash("test-id-1")], [], []),
     )
       .to.emit(termEventEmitter, "BidLocked")
       .withArgs(
@@ -573,7 +569,7 @@ describe("TermAuctionBidLocker", () => {
         ["300"],
         true,
         pairOffTermRepoServicer.address,
-        ethers.constants.AddressZero
+        ethers.constants.AddressZero,
       );
   });
 
@@ -590,15 +586,15 @@ describe("TermAuctionBidLocker", () => {
         isRollover: true,
         rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
       },
-      "71891"
+      "71891",
     );
     await termAuctionBidLocker.setRevealTime(
-      dayjs().subtract(1, "hour").unix()
+      dayjs().subtract(1, "hour").unix(),
     );
 
     // rollover not expired
     pairOffTermRepoServicer.endOfRepurchaseWindow.returns(
-      dayjs().add(2, "hour").unix().toString()
+      dayjs().add(2, "hour").unix().toString(),
     );
 
     // rollover bidder has less repurchase obligation than bid amount
@@ -609,11 +605,11 @@ describe("TermAuctionBidLocker", () => {
     await termAuctionBidLocker.testGetAllBids(
       [getBytesHash("test-id-1")],
       [],
-      []
+      [],
     );
 
     expect(
-      JSON.parse(JSON.stringify(await termAuctionBidLocker.bidsToUnlock(0)))[0]
+      JSON.parse(JSON.stringify(await termAuctionBidLocker.bidsToUnlock(0)))[0],
     ).to.eq(getBytesHash("test-id-1"));
   });
 
@@ -630,7 +626,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: true,
         rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
       },
-      "71891"
+      "71891",
     );
     await termAuctionBidLocker.addBid(
       {
@@ -644,7 +640,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "18190"
+      "18190",
     );
     await termAuctionBidLocker.addBid(
       {
@@ -658,15 +654,15 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "130848"
+      "130848",
     );
     await termAuctionBidLocker.setRevealTime(
-      dayjs().subtract(1, "hour").unix()
+      dayjs().subtract(1, "hour").unix(),
     );
 
     // rollover expired
     pairOffTermRepoServicer.endOfRepurchaseWindow.returns(
-      dayjs().subtract(2, "hour").unix().toString()
+      dayjs().subtract(2, "hour").unix().toString(),
     );
 
     await expect(
@@ -675,8 +671,8 @@ describe("TermAuctionBidLocker", () => {
         .getAllBids(
           [getBytesHash("test-id-1")],
           [],
-          [getBytesHash("test-id-2"), getBytesHash("test-id-3")]
-        )
+          [getBytesHash("test-id-2"), getBytesHash("test-id-3")],
+        ),
     )
       .to.be.revertedWithCustomError(termAuctionBidLocker, `RolloverBidExpired`)
       .withArgs(getBytesHash("test-id-1"));
@@ -687,8 +683,8 @@ describe("TermAuctionBidLocker", () => {
         .getAllBids(
           [],
           [getBytesHash("test-id-4")],
-          [getBytesHash("test-id-2"), getBytesHash("test-id-3")]
-        )
+          [getBytesHash("test-id-2"), getBytesHash("test-id-3")],
+        ),
     )
       .to.be.revertedWithCustomError(termAuctionBidLocker, `NonExistentBid`)
       .withArgs(getBytesHash("test-id-4"));
@@ -699,8 +695,8 @@ describe("TermAuctionBidLocker", () => {
         .getAllBids(
           [],
           [getBytesHash("test-id-1")],
-          [getBytesHash("test-id-2"), getBytesHash("test-id-4")]
-        )
+          [getBytesHash("test-id-2"), getBytesHash("test-id-4")],
+        ),
     )
       .to.be.revertedWithCustomError(termAuctionBidLocker, `NonExistentBid`)
       .withArgs(getBytesHash("test-id-4"));
@@ -710,7 +706,7 @@ describe("TermAuctionBidLocker", () => {
       .getAllBids(
         [],
         [getBytesHash("test-id-1")],
-        [getBytesHash("test-id-2"), getBytesHash("test-id-3")]
+        [getBytesHash("test-id-2"), getBytesHash("test-id-3")],
       );
     expect(await termAuctionBidLocker.getBidCount()).to.eq(0);
   });
@@ -729,7 +725,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "123123"
+      "123123",
     );
     await termAuctionBidLocker.addBid(
       {
@@ -743,7 +739,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "12310"
+      "12310",
     );
     await termAuctionBidLocker.addBid(
       {
@@ -757,7 +753,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "9778"
+      "9778",
     );
 
     await termAuctionBidLocker.setStartTime(dayjs().subtract(1, "hour").unix());
@@ -766,7 +762,7 @@ describe("TermAuctionBidLocker", () => {
     await expect(
       termAuctionBidLocker
         .connect(wallet3)
-        .unlockBids([getBytesHash("test-id-3")])
+        .unlockBids([getBytesHash("test-id-3")]),
     )
       .to.emit(termEventEmitter, "BidUnlocked")
       .withArgs(auctionIdHash, getBytesHash("test-id-3"));
@@ -777,16 +773,16 @@ describe("TermAuctionBidLocker", () => {
         .calledWith(
           wallet3.address,
           testCollateralToken.address,
-          BigNumber.from("1000")
-        )
+          BigNumber.from("1000"),
+        ),
     ).to.be.true;
 
     expect(
       JSON.parse(
         JSON.stringify(
-          await termAuctionBidLocker.lockedBid(getBytesHash("test-id-3"))
-        )
-      )
+          await termAuctionBidLocker.lockedBid(getBytesHash("test-id-3")),
+        ),
+      ),
     ).to.deep.equal([
       "0x0000000000000000000000000000000000000000000000000000000000000000",
       "0x0000000000000000000000000000000000000000",
@@ -817,7 +813,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "5772871823"
+      "5772871823",
     );
     await termAuctionBidLocker.addBid(
       {
@@ -831,7 +827,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "5772871823"
+      "5772871823",
     );
     await termAuctionBidLocker.addBid(
       {
@@ -845,7 +841,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "8127525"
+      "8127525",
     );
 
     await termAuctionBidLocker.setStartTime(dayjs().subtract(1, "hour").unix());
@@ -854,7 +850,7 @@ describe("TermAuctionBidLocker", () => {
     const testId7Id = await getGeneratedTenderId(
       getBytesHash("test-id-7"),
       termAuctionBidLocker,
-      wallet1
+      wallet1,
     );
 
     await expect(
@@ -865,7 +861,7 @@ describe("TermAuctionBidLocker", () => {
             bidder: wallet1.address,
             bidPriceHash: ethers.utils.solidityKeccak256(
               ["uint256", "uint256"],
-              ["15", "88888888"]
+              ["15", "88888888"],
             ),
             amount: "2000",
             collateralAmounts: ["1000"],
@@ -873,8 +869,8 @@ describe("TermAuctionBidLocker", () => {
             collateralTokens: [testCollateralToken.address],
           },
         ],
-        wallet2.address
-      )
+        wallet2.address,
+      ),
     )
       .to.emit(termEventEmitter, "BidLocked")
       .withArgs(
@@ -883,7 +879,7 @@ describe("TermAuctionBidLocker", () => {
         wallet1.address,
         ethers.utils.solidityKeccak256(
           ["uint256", "uint256"],
-          ["15", "88888888"]
+          ["15", "88888888"],
         ),
         "2000",
         testBorrowedToken.address,
@@ -891,23 +887,23 @@ describe("TermAuctionBidLocker", () => {
         ["1000"],
         false,
         ethers.constants.AddressZero,
-        wallet2.address
+        wallet2.address,
       );
 
     await termAuctionBidLocker.setRevealTime(
-      dayjs().subtract(1, "hour").unix()
+      dayjs().subtract(1, "hour").unix(),
     );
 
     await expect(
-      termAuctionBidLocker.revealBids([testId7Id], ["15"], ["88888888"])
+      termAuctionBidLocker.revealBids([testId7Id], ["15"], ["88888888"]),
     )
       .to.emit(termEventEmitter, "BidRevealed")
       .withArgs(auctionIdHash, testId7Id, "15");
 
     expect(
       JSON.parse(
-        JSON.stringify(await termAuctionBidLocker.lockedBid(testId7Id))
-      )
+        JSON.stringify(await termAuctionBidLocker.lockedBid(testId7Id)),
+      ),
     ).to.deep.equal([
       testId7Id,
       "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
@@ -942,11 +938,11 @@ describe("TermAuctionBidLocker", () => {
             collateralTokens: [testCollateralToken.address],
           },
         ],
-        wallet2.address
-      )
+        wallet2.address,
+      ),
     ).to.be.revertedWithCustomError(
       termAuctionBidLocker,
-      "InvalidSelfReferral"
+      "InvalidSelfReferral",
     );
   });
 
@@ -966,7 +962,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "5772871823"
+      "5772871823",
     );
     await termAuctionBidLocker.addBid(
       {
@@ -980,7 +976,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "5772871823"
+      "5772871823",
     );
     await termAuctionBidLocker.addBid(
       {
@@ -994,7 +990,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "812588125"
+      "812588125",
     );
 
     await termAuctionBidLocker.setStartTime(dayjs().subtract(1, "hour").unix());
@@ -1003,7 +999,7 @@ describe("TermAuctionBidLocker", () => {
     const testId7Id = await getGeneratedTenderId(
       getBytesHash("test-id-7"),
       termAuctionBidLocker,
-      wallet1
+      wallet1,
     );
 
     await expect(
@@ -1013,14 +1009,14 @@ describe("TermAuctionBidLocker", () => {
           bidder: wallet1.address,
           bidPriceHash: ethers.utils.solidityKeccak256(
             ["uint256", "uint256"],
-            ["15", "4444444"]
+            ["15", "4444444"],
           ),
           amount: "2000",
           collateralAmounts: ["1000"],
           purchaseToken: testBorrowedToken.address,
           collateralTokens: [testCollateralToken.address],
         },
-      ])
+      ]),
     )
       .to.emit(termEventEmitter, "BidLocked")
       .withArgs(
@@ -1029,7 +1025,7 @@ describe("TermAuctionBidLocker", () => {
         wallet1.address,
         ethers.utils.solidityKeccak256(
           ["uint256", "uint256"],
-          ["15", "4444444"]
+          ["15", "4444444"],
         ),
         "2000",
         testBorrowedToken.address,
@@ -1037,23 +1033,23 @@ describe("TermAuctionBidLocker", () => {
         ["1000"],
         false,
         ethers.constants.AddressZero,
-        ethers.constants.AddressZero
+        ethers.constants.AddressZero,
       );
 
     await termAuctionBidLocker.setRevealTime(
-      dayjs().subtract(1, "hour").unix()
+      dayjs().subtract(1, "hour").unix(),
     );
 
     await expect(
-      termAuctionBidLocker.revealBids([testId7Id], ["15"], ["4444444"])
+      termAuctionBidLocker.revealBids([testId7Id], ["15"], ["4444444"]),
     )
       .to.emit(termEventEmitter, "BidRevealed")
       .withArgs(auctionIdHash, testId7Id, "15");
 
     expect(
       JSON.parse(
-        JSON.stringify(await termAuctionBidLocker.lockedBid(testId7Id))
-      )
+        JSON.stringify(await termAuctionBidLocker.lockedBid(testId7Id)),
+      ),
     ).to.deep.equal([
       testId7Id,
       "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
@@ -1081,7 +1077,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "12941294"
+      "12941294",
     );
     const testRolloverId = getBytesHash(`someterm-${wallet1.address}`);
     const nonCompBidPrice = ethers.utils.solidityKeccak256(["uint256"], ["50"]);
@@ -1104,7 +1100,7 @@ describe("TermAuctionBidLocker", () => {
           isRollover: true,
           rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
           isRevealed: true,
-        })
+        }),
     )
       .to.emit(termEventEmitter, "BidLocked")
       .withArgs(
@@ -1118,13 +1114,13 @@ describe("TermAuctionBidLocker", () => {
         ["1000"],
         true,
         pairOffTermRepoServicer.address,
-        ethers.constants.AddressZero
+        ethers.constants.AddressZero,
       );
 
     expect(
       JSON.parse(
-        JSON.stringify(await termAuctionBidLocker.lockedBid(testRolloverId))
-      )
+        JSON.stringify(await termAuctionBidLocker.lockedBid(testRolloverId)),
+      ),
     ).to.deep.equal([
       testRolloverId,
       wallet1.address,
@@ -1156,7 +1152,7 @@ describe("TermAuctionBidLocker", () => {
           isRollover: true,
           rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
           isRevealed: true,
-        })
+        }),
     )
       .to.emit(termEventEmitter, "BidLocked")
       .withArgs(
@@ -1170,13 +1166,13 @@ describe("TermAuctionBidLocker", () => {
         ["1000"],
         true,
         pairOffTermRepoServicer.address,
-        ethers.constants.AddressZero
+        ethers.constants.AddressZero,
       );
 
     expect(
       JSON.parse(
-        JSON.stringify(await termAuctionBidLocker.lockedBid(testRolloverId))
-      )
+        JSON.stringify(await termAuctionBidLocker.lockedBid(testRolloverId)),
+      ),
     ).to.deep.equal([
       testRolloverId,
       wallet1.address,
@@ -1208,13 +1204,13 @@ describe("TermAuctionBidLocker", () => {
           isRollover: true,
           rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
           isRevealed: true,
-        })
+        }),
     )
       .to.emit(termEventEmitter, "BidUnlocked")
       .withArgs(auctionIdHash, testRolloverId);
 
     expect((await termAuctionBidLocker.lockedBid(testRolloverId)).amount).to.eq(
-      0
+      0,
     );
 
     expect(await termAuctionBidLocker.getBidCount()).to.eq(1);
@@ -1234,7 +1230,7 @@ describe("TermAuctionBidLocker", () => {
           isRollover: true,
           rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
           isRevealed: true,
-        })
+        }),
     )
       .to.be.revertedWithCustomError(termAuctionBidLocker, "NonExistentBid")
       .withArgs(testRolloverId);
@@ -1254,7 +1250,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "12941294"
+      "12941294",
     );
     const testRolloverId = getBytesHash(`someterm-${wallet1.address}`);
     const nonCompBidPrice = ethers.utils.solidityKeccak256(["uint256"], ["50"]);
@@ -1277,7 +1273,7 @@ describe("TermAuctionBidLocker", () => {
           isRollover: true,
           rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
           isRevealed: true,
-        })
+        }),
     )
       .to.be.revertedWithCustomError(termAuctionBidLocker, "NonExistentBid")
       .withArgs(testRolloverId);
@@ -1297,12 +1293,12 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "12312877143"
+      "12312877143",
     );
     const testRolloverId = getBytesHash(`someterm-${wallet1.address}`);
     const nonCompBidPrice = ethers.utils.solidityKeccak256(
       ["uint256"],
-      [ethers.constants.MaxUint256]
+      [ethers.constants.MaxUint256],
     );
 
     await termAuctionBidLocker.setStartTime(dayjs().subtract(1, "hour").unix());
@@ -1323,13 +1319,13 @@ describe("TermAuctionBidLocker", () => {
           isRollover: false,
           rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
           isRevealed: true,
-        })
+        }),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "NonRolloverBid");
 
     expect(
       JSON.parse(
-        JSON.stringify(await termAuctionBidLocker.lockedBid(testRolloverId))
-      )
+        JSON.stringify(await termAuctionBidLocker.lockedBid(testRolloverId)),
+      ),
     ).to.deep.equal([
       "0x0000000000000000000000000000000000000000000000000000000000000000",
       "0x0000000000000000000000000000000000000000",
@@ -1348,7 +1344,7 @@ describe("TermAuctionBidLocker", () => {
     const testRolloverId = getBytesHash(`someterm-${wallet1.address}`);
     const nonCompBidPrice = ethers.utils.solidityKeccak256(
       ["uint256"],
-      [ethers.constants.MaxUint256]
+      [ethers.constants.MaxUint256],
     );
 
     await termAuctionBidLocker.setStartTime(dayjs().subtract(1, "hour").unix());
@@ -1369,15 +1365,15 @@ describe("TermAuctionBidLocker", () => {
           isRollover: true,
           rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
           isRevealed: true,
-        })
+        }),
     )
       .to.be.revertedWithCustomError(termAuctionBidLocker, "BidAmountTooLow")
       .withArgs("1");
 
     expect(
       JSON.parse(
-        JSON.stringify(await termAuctionBidLocker.lockedBid(testRolloverId))
-      )
+        JSON.stringify(await termAuctionBidLocker.lockedBid(testRolloverId)),
+      ),
     ).to.deep.equal([
       "0x0000000000000000000000000000000000000000000000000000000000000000",
       "0x0000000000000000000000000000000000000000",
@@ -1396,7 +1392,7 @@ describe("TermAuctionBidLocker", () => {
     const testRolloverId = getBytesHash(`someterm-${wallet1.address}`);
     const nonCompBidPrice = ethers.utils.solidityKeccak256(
       ["uint256"],
-      [ethers.constants.MaxUint256]
+      [ethers.constants.MaxUint256],
     );
 
     await termAuctionBidLocker.setStartTime(dayjs().subtract(1, "hour").unix());
@@ -1417,16 +1413,16 @@ describe("TermAuctionBidLocker", () => {
           isRollover: true,
           rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
           isRevealed: true,
-        })
+        }),
     ).to.be.revertedWithCustomError(
       termAuctionBidLocker,
-      "InvalidPurchaseToken"
+      "InvalidPurchaseToken",
     );
 
     expect(
       JSON.parse(
-        JSON.stringify(await termAuctionBidLocker.lockedBid(testRolloverId))
-      )
+        JSON.stringify(await termAuctionBidLocker.lockedBid(testRolloverId)),
+      ),
     ).to.deep.equal([
       "0x0000000000000000000000000000000000000000000000000000000000000000",
       "0x0000000000000000000000000000000000000000",
@@ -1445,7 +1441,7 @@ describe("TermAuctionBidLocker", () => {
     const testRolloverId = getBytesHash(`someterm-${wallet1.address}`);
 
     termRepoCollateralManager.initialCollateralRatios.returns(
-      "10000000000000000000"
+      "10000000000000000000",
     );
     termOracle.usdValueOfTokens.returns({ mantissa: "10" });
 
@@ -1460,7 +1456,7 @@ describe("TermAuctionBidLocker", () => {
           bidder: wallet1.address,
           bidPriceHash: ethers.utils.solidityKeccak256(
             ["uint256"],
-            ["15000000"]
+            ["15000000"],
           ),
           bidPriceRevealed: "15000000",
           amount: "2000",
@@ -1470,7 +1466,7 @@ describe("TermAuctionBidLocker", () => {
           isRollover: true,
           rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
           isRevealed: true,
-        })
+        }),
     )
       .to.emit(termEventEmitter, "BidLocked")
       .withArgs(
@@ -1484,7 +1480,7 @@ describe("TermAuctionBidLocker", () => {
         ["1"],
         true,
         pairOffTermRepoServicer.address,
-        ethers.constants.AddressZero
+        ethers.constants.AddressZero,
       );
   });
   it("revealing bid with high price fails", async () => {
@@ -1500,19 +1496,19 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "1249913"
+      "1249913",
     );
 
     await termAuctionBidLocker.setRevealTime(
-      dayjs().subtract(1, "hour").unix()
+      dayjs().subtract(1, "hour").unix(),
     );
 
     await expect(
       termAuctionBidLocker.revealBids(
         [getBytesHash("test-id-1")],
         ["20000000000000000000000"],
-        ["1249913"]
-      )
+        ["1249913"],
+      ),
     )
       .to.be.revertedWithCustomError(termAuctionBidLocker, `TenderPriceTooHigh`)
       .withArgs(getBytesHash("test-id-1"), "100000000000000000000");
@@ -1532,15 +1528,15 @@ describe("TermAuctionBidLocker", () => {
           purchaseToken: testBorrowedToken.address,
           collateralTokens: [testCollateralToken.address],
         },
-      ])
+      ]),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "AuctionNotOpen");
   });
   it("locking bid after auction is closed reverts", async () => {
     await termAuctionBidLocker.setStartTime(
-      dayjs().subtract(2, "minute").unix()
+      dayjs().subtract(2, "minute").unix(),
     );
     await termAuctionBidLocker.setRevealTime(
-      dayjs().subtract(1, "hour").unix()
+      dayjs().subtract(1, "hour").unix(),
     );
 
     await expect(
@@ -1554,7 +1550,7 @@ describe("TermAuctionBidLocker", () => {
           purchaseToken: testBorrowedToken.address,
           collateralTokens: [testCollateralToken.address],
         },
-      ])
+      ]),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "AuctionNotOpen");
   });
   it("revealing bid before auction is revealing reverts", async () => {
@@ -1570,11 +1566,11 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "124192412"
+      "124192412",
     );
 
     await termAuctionBidLocker.setStartTime(
-      dayjs().subtract(2, "minute").unix()
+      dayjs().subtract(2, "minute").unix(),
     );
     await termAuctionBidLocker.setRevealTime(dayjs().add(1, "hour").unix());
 
@@ -1582,11 +1578,11 @@ describe("TermAuctionBidLocker", () => {
       termAuctionBidLocker.revealBids(
         [getBytesHash("test-id-1")],
         ["10"],
-        ["124192412"]
-      )
+        ["124192412"],
+      ),
     ).to.be.revertedWithCustomError(
       termAuctionBidLocker,
-      "AuctionNotRevealing"
+      "AuctionNotRevealing",
     );
   });
   it("editing a bid owned by a different user reverts", async () => {
@@ -1602,7 +1598,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "5818591"
+      "5818591",
     );
 
     await termAuctionBidLocker.setStartTime(dayjs().subtract(1, "hour").unix());
@@ -1615,14 +1611,14 @@ describe("TermAuctionBidLocker", () => {
           bidder: wallet2.address,
           bidPriceHash: ethers.utils.solidityKeccak256(
             ["uint256"],
-            ["15000000"]
+            ["15000000"],
           ),
           amount: "2000",
           purchaseToken: testBorrowedToken.address,
           collateralAmounts: ["1000"],
           collateralTokens: [testCollateralToken.address],
         },
-      ])
+      ]),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "BidNotOwned");
   });
   it("locking a bid with an unapproved purchase token fails", async () => {
@@ -1636,18 +1632,18 @@ describe("TermAuctionBidLocker", () => {
           bidder: wallet1.address,
           bidPriceHash: ethers.utils.solidityKeccak256(
             ["uint256"],
-            ["15000000"]
+            ["15000000"],
           ),
           amount: "2000",
           purchaseToken: testUnapprovedToken.address,
           collateralAmounts: ["1000"],
           collateralTokens: [testCollateralToken.address],
         },
-      ])
+      ]),
     )
       .to.be.revertedWithCustomError(
         termAuctionBidLocker,
-        `PurchaseTokenNotApproved`
+        `PurchaseTokenNotApproved`,
       )
       .withArgs(testUnapprovedToken.address);
   });
@@ -1662,14 +1658,14 @@ describe("TermAuctionBidLocker", () => {
           bidder: wallet1.address,
           bidPriceHash: ethers.utils.solidityKeccak256(
             ["uint256"],
-            ["15000000"]
+            ["15000000"],
           ),
           amount: "2000",
           purchaseToken: testBorrowedToken.address,
           collateralAmounts: ["1000"],
           collateralTokens: [testBorrowedToken.address],
         },
-      ])
+      ]),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, `MaxBidCountReached`);
   });
   it("locking a rollover bid reverts if max bid count reached", async () => {
@@ -1690,7 +1686,7 @@ describe("TermAuctionBidLocker", () => {
           isRollover: true,
           rolloverPairOffTermRepoServicer: pairOffTermRepoServicer.address,
           isRevealed: true,
-        })
+        }),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "MaxBidCountReached");
     expect(await termAuctionBidLocker.bidCount()).to.eq(1000);
   });
@@ -1705,18 +1701,18 @@ describe("TermAuctionBidLocker", () => {
           bidder: wallet1.address,
           bidPriceHash: ethers.utils.solidityKeccak256(
             ["uint256"],
-            ["15000000"]
+            ["15000000"],
           ),
           amount: "2000",
           purchaseToken: testBorrowedToken.address,
           collateralAmounts: ["1000"],
           collateralTokens: [testUnapprovedToken.address],
         },
-      ])
+      ]),
     )
       .to.be.revertedWithCustomError(
         termAuctionBidLocker,
-        `CollateralTokenNotApproved`
+        `CollateralTokenNotApproved`,
       )
       .withArgs(testUnapprovedToken.address);
   });
@@ -1734,7 +1730,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "81285128"
+      "81285128",
     );
 
     await termAuctionBidLocker.setStartTime(dayjs().subtract(1, "hour").unix());
@@ -1743,7 +1739,7 @@ describe("TermAuctionBidLocker", () => {
     await expect(
       termAuctionBidLocker
         .connect(wallet2)
-        .unlockBids([getBytesHash("test-id-1")])
+        .unlockBids([getBytesHash("test-id-1")]),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "BidNotOwned");
   });
   it("unlocking a rollover bid reverts", async () => {
@@ -1759,7 +1755,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: true,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "5758281"
+      "5758281",
     );
 
     await termAuctionBidLocker.setStartTime(dayjs().subtract(1, "hour").unix());
@@ -1768,7 +1764,7 @@ describe("TermAuctionBidLocker", () => {
     await expect(
       termAuctionBidLocker
         .connect(wallet1)
-        .unlockBids([getBytesHash("test-id-1")])
+        .unlockBids([getBytesHash("test-id-1")]),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "RolloverBid");
   });
   it("unlocking an bid with a different wallet reverts (unlockBids)", async () => {
@@ -1784,7 +1780,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "7258125"
+      "7258125",
     );
 
     await termAuctionBidLocker.setStartTime(dayjs().subtract(1, "hour").unix());
@@ -1793,14 +1789,14 @@ describe("TermAuctionBidLocker", () => {
     await expect(
       termAuctionBidLocker
         .connect(wallet2)
-        .unlockBids([getBytesHash("test-id-1")])
+        .unlockBids([getBytesHash("test-id-1")]),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "BidNotOwned");
   });
   it("unlocking nonexistent bids reverts", async () => {
     await expect(
       termAuctionBidLocker
         .connect(wallet2)
-        .unlockBids([getBytesHash("test-id-1")])
+        .unlockBids([getBytesHash("test-id-1")]),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "NonExistentBid");
   });
   it("revealing a bid with a modified price reverts", async () => {
@@ -1816,19 +1812,19 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "7518921"
+      "7518921",
     );
 
     await termAuctionBidLocker.setRevealTime(
-      dayjs().subtract(1, "hour").unix()
+      dayjs().subtract(1, "hour").unix(),
     );
 
     await expect(
       termAuctionBidLocker.revealBids(
         [getBytesHash("test-id-1")],
         ["11"],
-        ["7518921"]
-      )
+        ["7518921"],
+      ),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "BidPriceModified");
   });
   it("can pause and unpause (lock)", async () => {
@@ -1836,12 +1832,12 @@ describe("TermAuctionBidLocker", () => {
     termOracle.usdValueOfTokens.returns({ mantissa: "10" });
 
     await termAuctionBidLocker.setStartTime(
-      dayjs().subtract(10, "minute").unix()
+      dayjs().subtract(10, "minute").unix(),
     );
     await termAuctionBidLocker.setRevealTime(dayjs().add(10, "minute").unix());
 
     await expect(
-      termAuctionBidLocker.connect(adminWallet).pauseLocking()
+      termAuctionBidLocker.connect(adminWallet).pauseLocking(),
     ).to.emit(termEventEmitter, "BidLockingPaused");
     await expect(
       termAuctionBidLocker.connect(wallet1).lockBids([
@@ -1850,22 +1846,22 @@ describe("TermAuctionBidLocker", () => {
           bidder: wallet1.address,
           bidPriceHash: ethers.utils.solidityKeccak256(
             ["uint256"],
-            ["15000000"]
+            ["15000000"],
           ),
           amount: "2000",
           purchaseToken: testBorrowedToken.address,
           collateralAmounts: ["1"],
           collateralTokens: [testCollateralToken.address],
         },
-      ])
+      ]),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "LockingPaused");
     await expect(
-      termAuctionBidLocker.connect(adminWallet).unpauseLocking()
+      termAuctionBidLocker.connect(adminWallet).unpauseLocking(),
     ).to.emit(termEventEmitter, "BidLockingUnpaused");
     const testId1Id = await getGeneratedTenderId(
       getBytesHash("test-id-1"),
       termAuctionBidLocker,
-      wallet1
+      wallet1,
     );
     await expect(
       termAuctionBidLocker.connect(wallet1).lockBids([
@@ -1874,14 +1870,14 @@ describe("TermAuctionBidLocker", () => {
           bidder: wallet1.address,
           bidPriceHash: ethers.utils.solidityKeccak256(
             ["uint256"],
-            ["15000000"]
+            ["15000000"],
           ),
           amount: "2000",
           purchaseToken: testBorrowedToken.address,
           collateralAmounts: ["1"],
           collateralTokens: [testCollateralToken.address],
         },
-      ])
+      ]),
     )
       .to.emit(termEventEmitter, "BidLocked")
       .withArgs(
@@ -1895,7 +1891,7 @@ describe("TermAuctionBidLocker", () => {
         ["1"],
         false,
         ethers.constants.AddressZero,
-        ethers.constants.AddressZero
+        ethers.constants.AddressZero,
       );
   });
   it("can pause and unpause (unlock)", async () => {
@@ -1914,29 +1910,29 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "68247214"
+      "68247214",
     );
 
     await termAuctionBidLocker.setStartTime(
-      dayjs().subtract(10, "minute").unix()
+      dayjs().subtract(10, "minute").unix(),
     );
     await termAuctionBidLocker.setRevealTime(dayjs().add(10, "minute").unix());
 
     await expect(
-      termAuctionBidLocker.connect(adminWallet).pauseUnlocking()
+      termAuctionBidLocker.connect(adminWallet).pauseUnlocking(),
     ).to.emit(termEventEmitter, "BidUnlockingPaused");
     await expect(
       termAuctionBidLocker
         .connect(wallet1)
-        .unlockBids([getBytesHash("test-id-1")])
+        .unlockBids([getBytesHash("test-id-1")]),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "UnlockingPaused");
     await expect(
-      termAuctionBidLocker.connect(adminWallet).unpauseUnlocking()
+      termAuctionBidLocker.connect(adminWallet).unpauseUnlocking(),
     ).to.emit(termEventEmitter, "BidUnlockingUnpaused");
     await expect(
       termAuctionBidLocker
         .connect(wallet1)
-        .unlockBids([getBytesHash("test-id-1")])
+        .unlockBids([getBytesHash("test-id-1")]),
     )
       .to.emit(termEventEmitter, "BidUnlocked")
       .withArgs(auctionIdHash, getBytesHash("test-id-1"));
@@ -1982,25 +1978,25 @@ describe("TermAuctionBidLocker", () => {
           bidder: wallet1.address,
           bidPriceHash: ethers.utils.solidityKeccak256(
             ["uint256"],
-            ["15000000"]
+            ["15000000"],
           ),
           amount: "10000",
           purchaseToken: testBorrowedToken.address,
           collateralAmounts: ["10000"],
           collateralTokens: [testCollateralToken.address],
         },
-      ])
+      ]),
     )
       .to.be.revertedWithCustomError(
         termAuctionBidLocker,
-        "GeneratingExistingBid"
+        "GeneratingExistingBid",
       )
       .withArgs(
         await getGeneratedTenderId(
           getBytesHash("test-id-1"),
           termAuctionBidLocker,
-          wallet1
-        )
+          wallet1,
+        ),
       );
   });
   it("locking a bid with an amount too low reverts", async () => {
@@ -2016,14 +2012,14 @@ describe("TermAuctionBidLocker", () => {
           bidder: wallet1.address,
           bidPriceHash: ethers.utils.solidityKeccak256(
             ["uint256"],
-            ["15000000"]
+            ["15000000"],
           ),
           amount: "1",
           purchaseToken: testBorrowedToken.address,
           collateralAmounts: ["1000"],
           collateralTokens: [testCollateralToken.address],
         },
-      ])
+      ]),
     )
       .to.be.revertedWithCustomError(termAuctionBidLocker, "BidAmountTooLow")
       .withArgs(1);
@@ -2033,7 +2029,7 @@ describe("TermAuctionBidLocker", () => {
     await termAuctionBidLocker.setRevealTime(dayjs().add(1, "hour").unix());
 
     termRepoCollateralManager.initialCollateralRatios.returns(
-      "10000000000000000000"
+      "10000000000000000000",
     );
     termOracle.usdValueOfTokens.returns({ mantissa: "10" });
 
@@ -2044,17 +2040,17 @@ describe("TermAuctionBidLocker", () => {
           bidder: wallet1.address,
           bidPriceHash: ethers.utils.solidityKeccak256(
             ["uint256"],
-            ["15000000"]
+            ["15000000"],
           ),
           amount: "2000",
           purchaseToken: testBorrowedToken.address,
           collateralAmounts: ["1"],
           collateralTokens: [testCollateralToken.address],
         },
-      ])
+      ]),
     ).to.be.revertedWithCustomError(
       termAuctionBidLocker,
-      "CollateralAmountTooLow"
+      "CollateralAmountTooLow",
     );
   });
   it("editing a bid with less collateral unlocks user collateral", async () => {
@@ -2070,7 +2066,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "7264161"
+      "7264161",
     );
 
     await termAuctionBidLocker.setStartTime(dayjs().subtract(1, "hour").unix());
@@ -2086,14 +2082,14 @@ describe("TermAuctionBidLocker", () => {
           bidder: wallet1.address,
           bidPriceHash: ethers.utils.solidityKeccak256(
             ["uint256", "uint256"],
-            ["10000000000000000", "7264161"]
+            ["10000000000000000", "7264161"],
           ),
           amount: "300",
           purchaseToken: testBorrowedToken.address,
           collateralAmounts: ["200"],
           collateralTokens: [testCollateralToken.address],
         },
-      ])
+      ]),
     )
       .to.emit(termEventEmitter, "BidLocked")
       .withArgs(
@@ -2102,7 +2098,7 @@ describe("TermAuctionBidLocker", () => {
         wallet1.address,
         ethers.utils.solidityKeccak256(
           ["uint256", "uint256"],
-          ["10000000000000000", "7264161"]
+          ["10000000000000000", "7264161"],
         ),
         "300",
         testBorrowedToken.address,
@@ -2110,26 +2106,26 @@ describe("TermAuctionBidLocker", () => {
         ["200"],
         false,
         ethers.constants.AddressZero,
-        ethers.constants.AddressZero
+        ethers.constants.AddressZero,
       );
     expect(
-      termRepoCollateralManager.auctionUnlockCollateral
+      termRepoCollateralManager.auctionUnlockCollateral,
     ).to.have.been.calledWith(
       wallet1.address,
       testCollateralToken.address,
-      200
+      200,
     );
 
     await termAuctionBidLocker.setRevealTime(
-      dayjs().subtract(1, "hour").unix()
+      dayjs().subtract(1, "hour").unix(),
     );
 
     await expect(
       termAuctionBidLocker.revealBids(
         [getBytesHash("test-id-1")],
         ["10000000000000000"],
-        ["7264161"]
-      )
+        ["7264161"],
+      ),
     )
       .to.emit(termEventEmitter, "BidRevealed")
       .withArgs(auctionIdHash, getBytesHash("test-id-1"), "10000000000000000");
@@ -2137,15 +2133,15 @@ describe("TermAuctionBidLocker", () => {
     expect(
       JSON.parse(
         JSON.stringify(
-          await termAuctionBidLocker.lockedBid(getBytesHash("test-id-1"))
-        )
-      )
+          await termAuctionBidLocker.lockedBid(getBytesHash("test-id-1")),
+        ),
+      ),
     ).to.deep.equal([
       getBytesHash("test-id-1"),
       wallet1.address,
       ethers.utils.solidityKeccak256(
         ["uint256", "uint256"],
-        ["10000000000000000", "7264161"]
+        ["10000000000000000", "7264161"],
       ),
       BigNumber.from("10000000000000000").toJSON(),
       BigNumber.from("300").toJSON(),
@@ -2170,7 +2166,7 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "712612412"
+      "712612412",
     );
 
     await termAuctionBidLocker.setStartTime(dayjs().subtract(1, "hour").unix());
@@ -2186,14 +2182,14 @@ describe("TermAuctionBidLocker", () => {
           bidder: wallet1.address,
           bidPriceHash: ethers.utils.solidityKeccak256(
             ["uint256", "uint256"],
-            ["10000000000000000", "712612412"]
+            ["10000000000000000", "712612412"],
           ),
           amount: "600",
           purchaseToken: testBorrowedToken.address,
           collateralAmounts: ["800"],
           collateralTokens: [testCollateralToken.address],
         },
-      ])
+      ]),
     )
       .to.emit(termEventEmitter, "BidLocked")
       .withArgs(
@@ -2202,7 +2198,7 @@ describe("TermAuctionBidLocker", () => {
         wallet1.address,
         ethers.utils.solidityKeccak256(
           ["uint256", "uint256"],
-          ["10000000000000000", "712612412"]
+          ["10000000000000000", "712612412"],
         ),
         "600",
         testBorrowedToken.address,
@@ -2210,27 +2206,27 @@ describe("TermAuctionBidLocker", () => {
         ["800"],
         false,
         ethers.constants.AddressZero,
-        ethers.constants.AddressZero
+        ethers.constants.AddressZero,
       );
 
     expect(
-      termRepoCollateralManager.auctionLockCollateral
+      termRepoCollateralManager.auctionLockCollateral,
     ).to.have.been.calledWith(
       wallet1.address,
       testCollateralToken.address,
-      400
+      400,
     );
 
     await termAuctionBidLocker.setRevealTime(
-      dayjs().subtract(1, "hour").unix()
+      dayjs().subtract(1, "hour").unix(),
     );
 
     await expect(
       termAuctionBidLocker.revealBids(
         [getBytesHash("test-id-1")],
         ["10000000000000000"],
-        ["712612412"]
-      )
+        ["712612412"],
+      ),
     )
       .to.emit(termEventEmitter, "BidRevealed")
       .withArgs(auctionIdHash, getBytesHash("test-id-1"), "10000000000000000");
@@ -2238,15 +2234,15 @@ describe("TermAuctionBidLocker", () => {
     expect(
       JSON.parse(
         JSON.stringify(
-          await termAuctionBidLocker.lockedBid(getBytesHash("test-id-1"))
-        )
-      )
+          await termAuctionBidLocker.lockedBid(getBytesHash("test-id-1")),
+        ),
+      ),
     ).to.deep.equal([
       getBytesHash("test-id-1"),
       wallet1.address,
       ethers.utils.solidityKeccak256(
         ["uint256", "uint256"],
-        ["10000000000000000", "712612412"]
+        ["10000000000000000", "712612412"],
       ),
       BigNumber.from("10000000000000000").toJSON(),
       BigNumber.from("600").toJSON(),
@@ -2260,15 +2256,15 @@ describe("TermAuctionBidLocker", () => {
   });
   it("upgrade succeeds with admin and reverted if called by somebody else", async () => {
     await expect(
-      termAuctionBidLocker.connect(devopsMultisig).upgrade(wallet1.address)
+      termAuctionBidLocker.connect(devopsMultisig).upgrade(wallet1.address),
     )
       .to.emit(termEventEmitter, "TermContractUpgraded")
       .withArgs(termAuctionBidLocker.address, wallet1.address);
 
     await expect(
-      termAuctionBidLocker.connect(wallet2).upgrade(wallet1.address)
+      termAuctionBidLocker.connect(wallet2).upgrade(wallet1.address),
     ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
     );
   });
   it("revealing a bid with an invalid nonce reverts", async () => {
@@ -2284,19 +2280,19 @@ describe("TermAuctionBidLocker", () => {
         isRollover: false,
         rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
       },
-      "7518921"
+      "7518921",
     );
 
     await termAuctionBidLocker.setRevealTime(
-      dayjs().subtract(1, "hour").unix()
+      dayjs().subtract(1, "hour").unix(),
     );
 
     await expect(
       termAuctionBidLocker.revealBids(
         [getBytesHash("test-id-1")],
         ["11"],
-        ["123456"]
-      )
+        ["123456"],
+      ),
     ).to.be.revertedWithCustomError(termAuctionBidLocker, "BidPriceModified");
   });
   it("version returns the current contract version", async () => {

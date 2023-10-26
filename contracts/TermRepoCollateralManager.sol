@@ -227,7 +227,6 @@ contract TermRepoCollateralManager is
         _grantRole(DEVOPS_ROLE, devopsMultisig_);
         _grantRole(ADMIN_ROLE, adminWallet_);
 
-
         uint256[] memory maintenanceRatioList = new uint256[](
             collateralTokens.length
         );
