@@ -79,18 +79,17 @@ describe("TermRepoRolloverIntegration", () => {
     wallets = signers.splice(1, signers.length);
     adminWallet = signers[0];
 
-    const termEventEmitterFactory = await ethers.getContractFactory(
-      "TermEventEmitter"
-    );
+    const termEventEmitterFactory =
+      await ethers.getContractFactory("TermEventEmitter");
     const termPriceOracleFactory = await ethers.getContractFactory(
-      "TermPriceConsumerV3"
+      "TermPriceConsumerV3",
     );
     termOracle = (await upgrades.deployProxy(
       termPriceOracleFactory,
-      [wallets[4].address, wallets[5].address],
+      [wallets[4].address],
       {
         kind: "uups",
-      }
+      },
     )) as TermPriceConsumerV3;
 
     const purchaseTokenDecimals = 8;
@@ -103,7 +102,7 @@ describe("TermRepoRolloverIntegration", () => {
       "CT",
       collateralTokenDecimals,
       [],
-      []
+      [],
     );
     testPurchaseToken = await testTokenFactory.deploy();
     await testPurchaseToken.deployed();
@@ -112,30 +111,28 @@ describe("TermRepoRolloverIntegration", () => {
       "PT",
       purchaseTokenDecimals,
       [],
-      []
+      [],
     );
 
     termController = await smock.fake<TermController>("TermController");
     termController.isTermDeployed.returns(true);
 
-    const termInitializerFactory = await ethers.getContractFactory(
-      "TermInitializer"
-    );
+    const termInitializerFactory =
+      await ethers.getContractFactory("TermInitializer");
     termInitializer = await termInitializerFactory.deploy(
       adminWallet.address,
-      wallets[4].address
+      wallets[4].address,
     );
     await termInitializer.deployed();
 
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
       [wallets[4].address, wallets[5].address, termInitializer.address],
-      { kind: "uups" }
+      { kind: "uups" },
     )) as TermEventEmitter;
 
-    const mockPriceFeedFactory = await ethers.getContractFactory(
-      "TestPriceFeed"
-    );
+    const mockPriceFeedFactory =
+      await ethers.getContractFactory("TestPriceFeed");
     mockCollateralFeed = await mockPriceFeedFactory.deploy(
       collateralTokenDecimals,
       "",
@@ -144,7 +141,7 @@ describe("TermRepoRolloverIntegration", () => {
       1e10,
       1,
       1,
-      1
+      1,
     );
     mockPurchaseFeed = await mockPriceFeedFactory.deploy(
       purchaseTokenDecimals,
@@ -154,20 +151,20 @@ describe("TermRepoRolloverIntegration", () => {
       1e8,
       1,
       1,
-      1
+      1,
     );
 
     await termOracle
       .connect(wallets[4])
       .addNewTokenPriceFeed(
         testCollateralToken.address,
-        mockCollateralFeed.address
+        mockCollateralFeed.address,
       );
     await termOracle
       .connect(wallets[4])
       .addNewTokenPriceFeed(
         testPurchaseToken.address,
-        mockPurchaseFeed.address
+        mockPurchaseFeed.address,
       );
 
     const blockNumBefore = await ethers.provider.getBlockNumber();
@@ -233,12 +230,12 @@ describe("TermRepoRolloverIntegration", () => {
         auctionVersion: "0.1.0",
         mintExposureCap: "1000000000000000000",
       },
-      "uups"
+      "uups",
     );
 
     termIdHash = ethers.utils.solidityKeccak256(
       ["string"],
-      [maturityPeriod1.termRepoId]
+      [maturityPeriod1.termRepoId],
     );
 
     const treasury = Wallet.createRandom();
@@ -248,7 +245,7 @@ describe("TermRepoRolloverIntegration", () => {
       clearingPriceTestCSV_random1,
       testPurchaseToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const walletsByAddress = {} as { [address: string]: Signer };
@@ -258,25 +255,25 @@ describe("TermRepoRolloverIntegration", () => {
       const collateralToken = (await ethers.getContractAt(
         TestTokenABI,
         testCollateralToken.address,
-        managedWallet
+        managedWallet,
       )) as TestToken;
       const purchaseToken = (await ethers.getContractAt(
         TestTokenABI,
         testPurchaseToken.address,
-        managedWallet
+        managedWallet,
       )) as TestToken;
       let tx = await collateralToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await collateralToken.approve(
         maturityPeriod1.termRepoLocker.address,
-        "1" + "0".repeat(25)
+        "1" + "0".repeat(25),
       );
       await tx.wait();
       tx = await purchaseToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await purchaseToken.approve(
         maturityPeriod1.termRepoLocker.address,
-        "1" + "0".repeat(25)
+        "1" + "0".repeat(25),
       );
       await tx.wait();
     }
@@ -288,13 +285,13 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionBidLocker = (await ethers.getContractAt(
         TermAuctionBidLockerABI,
         maturityPeriod1.termAuctionBidLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionBidLocker;
       const submission = bidToSubmission(bid);
       const bidId = await getGeneratedTenderId(
         bid.id.toString() || "",
         termAuctionBidLocker,
-        wallet
+        wallet,
       );
 
       bidIdMappings.set(bid.id.toString(), bidId);
@@ -312,13 +309,13 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionOfferLocker = (await ethers.getContractAt(
         TermAuctionOfferLockerABI,
         maturityPeriod1.termAuctionOfferLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionOfferLocker;
 
       const offerId = await getGeneratedTenderId(
         offer.id.toString() || "",
         termAuctionOfferLocker,
-        wallet
+        wallet,
       );
 
       offerIdMappings.set(offer.id.toString(), offerId);
@@ -339,7 +336,7 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionBidLocker = (await ethers.getContractAt(
         TermAuctionBidLockerABI,
         maturityPeriod1.termAuctionBidLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionBidLocker;
 
       const bidId = bidIdMappings.get(bid.id.toString());
@@ -347,7 +344,7 @@ describe("TermRepoRolloverIntegration", () => {
       const tx = await termAuctionBidLocker.revealBids(
         [bidId],
         [bid.bidPriceRevealed || 0],
-        [BID_PRICE_NONCE]
+        [BID_PRICE_NONCE],
       );
       await tx.wait();
       revealedBids.push(bidId);
@@ -358,14 +355,14 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionOfferLocker = (await ethers.getContractAt(
         TermAuctionOfferLockerABI,
         maturityPeriod1.termAuctionOfferLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionOfferLocker;
 
       const offerId = offerIdMappings.get(offer.id.toString());
       const tx = await termAuctionOfferLocker.revealOffers(
         [offerId],
         [offer.offerPriceRevealed || 0],
-        [OFFER_PRICE_NONCE]
+        [OFFER_PRICE_NONCE],
       );
       await tx.wait();
       revealedOffers.push(offerId);
@@ -379,7 +376,7 @@ describe("TermRepoRolloverIntegration", () => {
     const auction = (await ethers.getContractAt(
       TermAuctionABI,
       maturityPeriod1.auction.address,
-      wallet
+      wallet,
     )) as TermAuction;
     await auction.completeAuction({
       revealedBidSubmissions: revealedBids,
@@ -420,12 +417,12 @@ describe("TermRepoRolloverIntegration", () => {
         auctionVersion: "0.1.0",
         mintExposureCap: "1000000000000000000",
       },
-      "uups"
+      "uups",
     );
 
     rolloverTermIdHash = ethers.utils.solidityKeccak256(
       ["string"],
-      [maturityPeriod2.termRepoId]
+      [maturityPeriod2.termRepoId],
     );
   });
 
@@ -439,7 +436,7 @@ describe("TermRepoRolloverIntegration", () => {
     const maturity1RolloverManager = (await ethers.getContractAt(
       TermRepoRolloverManagerABI,
       maturityPeriod1.rolloverManager.address,
-      signer
+      signer,
     )) as TermRepoRolloverManager;
 
     await approveRollover(
@@ -449,7 +446,7 @@ describe("TermRepoRolloverIntegration", () => {
         termAuctionBidLockerAddress:
           maturityPeriod2.termAuctionBidLocker.address,
       },
-      adminWallet
+      adminWallet,
     );
 
     const blockNumBefore = await ethers.provider.getBlockNumber();
@@ -462,46 +459,46 @@ describe("TermRepoRolloverIntegration", () => {
     const purchaseToken = (await ethers.getContractAt(
       TestTokenABI,
       testPurchaseToken.address,
-      signer
+      signer,
     )) as TestToken;
     const tp1BalanceBefore = await purchaseToken.balanceOf(
-      maturityPeriod1.termRepoLocker.address
+      maturityPeriod1.termRepoLocker.address,
     );
     expect(tp1BalanceBefore).to.eq(0);
 
     const collateralToken = (await ethers.getContractAt(
       TestTokenABI,
       testCollateralToken.address,
-      signer
+      signer,
     )) as TestToken;
 
     const ctTp1BalanceBefore = await collateralToken.balanceOf(
-      maturityPeriod1.termRepoLocker.address
+      maturityPeriod1.termRepoLocker.address,
     );
 
     const maturity1TermRepoServicer = (await ethers.getContractAt(
       TermRepoServicerABI,
       maturityPeriod1.termRepoServicer.address,
-      adminWallet
+      adminWallet,
     )) as TermRepoServicer;
 
     const maturity1CollateralManager = (await ethers.getContractAt(
       TermRepoCollateralManagerABI,
       maturityPeriod1.termRepoCollateralManager.address,
-      signer
+      signer,
     )) as TermRepoCollateralManager;
 
     const collateral1Before =
       await maturity1CollateralManager.getCollateralBalance(
         wallets[1].address,
-        testCollateralToken.address
+        testCollateralToken.address,
       );
 
     const managedWallet1 = new NonceManager(wallets[1] as any);
 
     const wallet1BalanceBeforeRollover =
       await maturity1TermRepoServicer.getBorrowerRepurchaseObligation(
-        wallets[1].address
+        wallets[1].address,
       );
     const wallet1RolloverAmount = wallet1BalanceBeforeRollover.div(2);
 
@@ -509,13 +506,13 @@ describe("TermRepoRolloverIntegration", () => {
       (await ethers.getContractAt(
         TermRepoRolloverManagerABI,
         maturityPeriod1.rolloverManager.address,
-        managedWallet1
+        managedWallet1,
       )) as TermRepoRolloverManager;
 
     const rolloverMat1BidPrice = "99" + "0".repeat(18);
     const rolloverMat1BidPriceHash = ethers.utils.solidityKeccak256(
       ["uint256", "uint256"],
-      [rolloverMat1BidPrice, BID_PRICE_NONCE]
+      [rolloverMat1BidPrice, BID_PRICE_NONCE],
     );
 
     const submission = {
@@ -527,7 +524,7 @@ describe("TermRepoRolloverIntegration", () => {
     await expect(
       maturity1RolloverManagerWallet1Connection
         .connect(wallets[1])
-        .electRollover(submission)
+        .electRollover(submission),
     )
       .to.emit(termEventEmitter, "RolloverElection")
       .withArgs(
@@ -536,17 +533,17 @@ describe("TermRepoRolloverIntegration", () => {
         wallets[1].address,
         maturityPeriod2.termAuctionBidLocker.address,
         wallet1RolloverAmount,
-        rolloverMat1BidPriceHash
+        rolloverMat1BidPriceHash,
       );
 
     expect(
       JSON.parse(
         JSON.stringify(
           await maturity1RolloverManager.getRolloverInstructions(
-            wallets[1].address
-          )
-        )
-      )
+            wallets[1].address,
+          ),
+        ),
+      ),
     ).to.deep.equal([
       maturityPeriod2.termAuctionBidLocker.address,
       BigNumber.from(wallet1RolloverAmount).toJSON(),
@@ -558,7 +555,7 @@ describe("TermRepoRolloverIntegration", () => {
       clearingPriceTestCSV_random1,
       testPurchaseToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
     const walletsByAddress = {} as { [address: string]: Signer };
     for (const wallet of wallets) {
@@ -567,25 +564,25 @@ describe("TermRepoRolloverIntegration", () => {
       const collateralToken = (await ethers.getContractAt(
         TestTokenABI,
         testCollateralToken.address,
-        managedWallet
+        managedWallet,
       )) as TestToken;
       const purchaseToken = (await ethers.getContractAt(
         TestTokenABI,
         testPurchaseToken.address,
-        managedWallet
+        managedWallet,
       )) as TestToken;
       let tx = await collateralToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await collateralToken.approve(
         maturityPeriod2.termRepoLocker.address,
-        "1" + "0".repeat(25)
+        "1" + "0".repeat(25),
       );
       await tx.wait();
       tx = await purchaseToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await purchaseToken.approve(
         maturityPeriod2.termRepoLocker.address,
-        "1" + "0".repeat(25)
+        "1" + "0".repeat(25),
       );
       await tx.wait();
     }
@@ -597,13 +594,13 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionBidLocker = (await ethers.getContractAt(
         TermAuctionBidLockerABI,
         maturityPeriod2.termAuctionBidLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionBidLocker;
       const submission = bidToSubmission(bid);
       const bidId = await getGeneratedTenderId(
         bid.id.toString() || "",
         termAuctionBidLocker,
-        wallet
+        wallet,
       );
 
       bidIdMappings.set(bid.id.toString(), bidId);
@@ -620,13 +617,13 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionOfferLocker = (await ethers.getContractAt(
         TermAuctionOfferLockerABI,
         maturityPeriod2.termAuctionOfferLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionOfferLocker;
 
       const offerId = await getGeneratedTenderId(
         offer.id.toString() || "",
         termAuctionOfferLocker,
-        wallet
+        wallet,
       );
 
       offerIdMappings.set(offer.id.toString(), offerId);
@@ -645,7 +642,7 @@ describe("TermRepoRolloverIntegration", () => {
     const termAuctionBidLocker = (await ethers.getContractAt(
       TermAuctionBidLockerABI,
       maturityPeriod2.termAuctionBidLocker.address,
-      wallets[0]
+      wallets[0],
     )) as TermAuctionBidLocker;
     for (const bid of bids) {
       const bidId = bidIdMappings.get(bid.id.toString());
@@ -653,19 +650,19 @@ describe("TermRepoRolloverIntegration", () => {
       const tx = await termAuctionBidLocker.revealBids(
         [bidId],
         [bid.bidPriceRevealed || 0],
-        [BID_PRICE_NONCE]
+        [BID_PRICE_NONCE],
       );
       await tx.wait();
       revealedBids2.push(bidId);
     }
     const rolloverMat1BidId = ethers.utils.solidityKeccak256(
       ["address", "address"],
-      [maturity1RolloverManager.address, wallets[1].address]
+      [maturity1RolloverManager.address, wallets[1].address],
     );
     const rolloverMat1RevealTx = await termAuctionBidLocker.revealBids(
       [rolloverMat1BidId],
       [rolloverMat1BidPrice],
-      [BID_PRICE_NONCE]
+      [BID_PRICE_NONCE],
     );
 
     rolloverMat1RevealTx.wait();
@@ -673,8 +670,8 @@ describe("TermRepoRolloverIntegration", () => {
     revealedBids2.push(
       ethers.utils.solidityKeccak256(
         ["address", "address"],
-        [maturity1RolloverManager.address, wallets[1].address]
-      )
+        [maturity1RolloverManager.address, wallets[1].address],
+      ),
     );
 
     const revealedOffers2 = [];
@@ -683,14 +680,14 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionOfferLocker = (await ethers.getContractAt(
         TermAuctionOfferLockerABI,
         maturityPeriod2.termAuctionOfferLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionOfferLocker;
 
       const offerId = offerIdMappings.get(offer.id.toString());
       const tx = await termAuctionOfferLocker.revealOffers(
         [offerId],
         [offer.offerPriceRevealed || 0],
-        [OFFER_PRICE_NONCE]
+        [OFFER_PRICE_NONCE],
       );
       await tx.wait();
       revealedOffers2.push(offerId);
@@ -703,12 +700,12 @@ describe("TermRepoRolloverIntegration", () => {
     const wallet = new NonceManager(wallets[0] as any);
     const term2IdHash = ethers.utils.solidityKeccak256(
       ["string"],
-      [maturityPeriod2.termRepoId]
+      [maturityPeriod2.termRepoId],
     );
     const auction = (await ethers.getContractAt(
       TermAuctionABI,
       maturityPeriod2.auction.address,
-      wallet
+      wallet,
     )) as TermAuction;
     await expect(
       auction.completeAuction({
@@ -717,7 +714,7 @@ describe("TermRepoRolloverIntegration", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: revealedOffers2,
         unrevealedOfferSubmissions: [],
-      })
+      }),
     )
       .to.emit(termEventEmitter, "ExposureOpenedOnRolloverNew")
       .withArgs(
@@ -725,27 +722,27 @@ describe("TermRepoRolloverIntegration", () => {
         wallets[1].address,
         wallet1RolloverAmount,
         anyValue,
-        anyValue
+        anyValue,
       )
       .to.emit(termEventEmitter, "ExposureClosedOnRolloverExisting")
       .withArgs(termIdHash, wallets[1].address, wallet1RolloverAmount);
     const postRolloverAuctionLoanBalance =
       await maturity1TermRepoServicer.getBorrowerRepurchaseObligation(
-        wallets[1].address
+        wallets[1].address,
       );
 
     const getBorrowerRepurchaseObligationRolloverPayment =
       wallet1BalanceBeforeRollover.sub(postRolloverAuctionLoanBalance);
 
     const tp1BalanceAfter = await purchaseToken.balanceOf(
-      maturityPeriod1.termRepoLocker.address
+      maturityPeriod1.termRepoLocker.address,
     );
     expect(tp1BalanceAfter).to.eq(
-      getBorrowerRepurchaseObligationRolloverPayment
+      getBorrowerRepurchaseObligationRolloverPayment,
     ); // TermRepoLocker is paid an amount eq to borrow balance collapse
 
     const tp2Balance = await purchaseToken.balanceOf(
-      maturityPeriod2.termRepoLocker.address
+      maturityPeriod2.termRepoLocker.address,
     );
 
     expect(tp2Balance).to.eq(0); // TermRepoLocker of rollover term balanced
@@ -753,26 +750,26 @@ describe("TermRepoRolloverIntegration", () => {
     const maturity2TermRepoServicer = (await ethers.getContractAt(
       TermRepoServicerABI,
       maturityPeriod2.termRepoServicer.address,
-      adminWallet
+      adminWallet,
     )) as TermRepoServicer;
 
     const term2getBorrowerRepurchaseObligation =
       await maturity2TermRepoServicer.getBorrowerRepurchaseObligation(
-        wallets[1].address
+        wallets[1].address,
       );
 
     expect(
       term2getBorrowerRepurchaseObligation.gte(
         wallet1BalanceBeforeRollover.add(
-          getBorrowerRepurchaseObligationRolloverPayment
-        )
-      )
+          getBorrowerRepurchaseObligationRolloverPayment,
+        ),
+      ),
     ).to.eq(true); // borrower balance in new term includes the rollover amount (assuming they get the same nonrollover loan in identical auction setup)
 
     const collateral1After =
       await maturity1CollateralManager.getCollateralBalance(
         wallets[1].address,
-        testCollateralToken.address
+        testCollateralToken.address,
       );
 
     const collateralUnlockedFromTerm1 = collateral1Before.sub(collateral1After);
@@ -785,40 +782,40 @@ describe("TermRepoRolloverIntegration", () => {
     const maturity2CollateralManager = (await ethers.getContractAt(
       TermRepoCollateralManagerABI,
       maturityPeriod2.termRepoCollateralManager.address,
-      adminWallet
+      adminWallet,
     )) as TermRepoCollateralManager;
 
     const collateral2 = await maturity2CollateralManager.getCollateralBalance(
       wallets[1].address,
-      testCollateralToken.address
+      testCollateralToken.address,
     );
     expect(
-      collateral2.eq(collateral1Before.add(collateralUnlockedFromTerm1))
+      collateral2.eq(collateral1Before.add(collateralUnlockedFromTerm1)),
     ).to.eq(true); // collateral in rollover term covers rollover loan
 
     const ctTp1BalanceAfter = await collateralToken.balanceOf(
-      maturityPeriod1.termRepoLocker.address
+      maturityPeriod1.termRepoLocker.address,
     );
 
     const collateralTransferredOutOfTp1 =
       ctTp1BalanceBefore.sub(ctTp1BalanceAfter);
 
     const ctTp2Balance = await collateralToken.balanceOf(
-      maturityPeriod2.termRepoLocker.address
+      maturityPeriod2.termRepoLocker.address,
     );
 
     expect(
-      ctTp2Balance.eq(ctTp1BalanceBefore.add(collateralTransferredOutOfTp1))
+      ctTp2Balance.eq(ctTp1BalanceBefore.add(collateralTransferredOutOfTp1)),
     ).to.eq(true); // collateral transferred to rollover term repo locker for rollover loan
 
     expect(
       JSON.parse(
         JSON.stringify(
           await maturity1RolloverManager.getRolloverInstructions(
-            wallets[1].address
-          )
-        )
-      )
+            wallets[1].address,
+          ),
+        ),
+      ),
     ).to.deep.equal([
       maturityPeriod2.termAuctionBidLocker.address,
       BigNumber.from(wallet1RolloverAmount).toJSON(),
@@ -833,7 +830,7 @@ describe("TermRepoRolloverIntegration", () => {
     const maturity1RolloverManager = (await ethers.getContractAt(
       TermRepoRolloverManagerABI,
       maturityPeriod1.rolloverManager.address,
-      signer
+      signer,
     )) as TermRepoRolloverManager;
 
     await approveRollover(
@@ -843,7 +840,7 @@ describe("TermRepoRolloverIntegration", () => {
         termAuctionBidLockerAddress:
           maturityPeriod2.termAuctionBidLocker.address,
       },
-      adminWallet
+      adminWallet,
     );
 
     const blockNumBefore = await ethers.provider.getBlockNumber();
@@ -856,24 +853,24 @@ describe("TermRepoRolloverIntegration", () => {
     const purchaseToken = (await ethers.getContractAt(
       TestTokenABI,
       testPurchaseToken.address,
-      signer
+      signer,
     )) as TestToken;
     const tp1BalanceBefore = await purchaseToken.balanceOf(
-      maturityPeriod1.termRepoLocker.address
+      maturityPeriod1.termRepoLocker.address,
     );
     expect(tp1BalanceBefore).to.eq(0);
 
     const maturity1TermRepoServicer = (await ethers.getContractAt(
       TermRepoServicerABI,
       maturityPeriod1.termRepoServicer.address,
-      signer
+      signer,
     )) as TermRepoServicer;
 
     const managedWallet1 = new NonceManager(wallets[1] as any);
 
     const wallet1BalanceBeforeRollover =
       await maturity1TermRepoServicer.getBorrowerRepurchaseObligation(
-        wallets[1].address
+        wallets[1].address,
       );
     const wallet1RolloverAmount = wallet1BalanceBeforeRollover.div(2);
 
@@ -881,13 +878,13 @@ describe("TermRepoRolloverIntegration", () => {
       (await ethers.getContractAt(
         TermRepoRolloverManagerABI,
         maturityPeriod1.rolloverManager.address,
-        managedWallet1
+        managedWallet1,
       )) as TermRepoRolloverManager;
 
     const rolloverMat1BidPrice = "99" + "0".repeat(18);
     const rolloverMat1BidPriceHash = ethers.utils.solidityKeccak256(
       ["uint256", "uint256"],
-      [rolloverMat1BidPrice, BID_PRICE_NONCE]
+      [rolloverMat1BidPrice, BID_PRICE_NONCE],
     );
 
     const submission = {
@@ -898,13 +895,13 @@ describe("TermRepoRolloverIntegration", () => {
 
     const rolloverMat1BidId = ethers.utils.solidityKeccak256(
       ["address", "address"],
-      [maturity1RolloverManager.address, wallets[1].address]
+      [maturity1RolloverManager.address, wallets[1].address],
     );
 
     await expect(
       maturity1RolloverManagerWallet1Connection
         .connect(wallets[1])
-        .electRollover(submission)
+        .electRollover(submission),
     )
       .to.emit(termEventEmitter, "RolloverElection")
       .withArgs(
@@ -913,7 +910,7 @@ describe("TermRepoRolloverIntegration", () => {
         wallets[1].address,
         maturityPeriod2.termAuctionBidLocker.address,
         wallet1RolloverAmount,
-        rolloverMat1BidPriceHash
+        rolloverMat1BidPriceHash,
       )
       .to.emit(termEventEmitter, "BidLocked")
       .withArgs(
@@ -927,18 +924,18 @@ describe("TermRepoRolloverIntegration", () => {
         anyValue,
         true,
         maturityPeriod1.termRepoServicer.address,
-        ethers.constants.AddressZero
+        ethers.constants.AddressZero,
       );
 
     expect(
       (await maturityPeriod2.termAuctionBidLocker.lockedBid(rolloverMat1BidId))
-        .amount
+        .amount,
     ).to.be.greaterThan(0);
 
     await expect(
       maturity1RolloverManagerWallet1Connection
         .connect(wallets[1])
-        .cancelRollover()
+        .cancelRollover(),
     )
       .to.emit(termEventEmitter, "RolloverCancellation")
       .withArgs(termIdHash, wallets[1].address)
@@ -947,7 +944,7 @@ describe("TermRepoRolloverIntegration", () => {
 
     expect(
       (await maturityPeriod2.termAuctionBidLocker.lockedBid(rolloverMat1BidId))
-        .amount
+        .amount,
     ).to.eq(0);
   });
 
@@ -957,7 +954,7 @@ describe("TermRepoRolloverIntegration", () => {
     const maturity1RolloverManager = (await ethers.getContractAt(
       TermRepoRolloverManagerABI,
       maturityPeriod1.rolloverManager.address,
-      signer
+      signer,
     )) as TermRepoRolloverManager;
 
     await approveRollover(
@@ -967,7 +964,7 @@ describe("TermRepoRolloverIntegration", () => {
         termAuctionBidLockerAddress:
           maturityPeriod2.termAuctionBidLocker.address,
       },
-      adminWallet
+      adminWallet,
     );
 
     const blockNumBefore = await ethers.provider.getBlockNumber();
@@ -980,48 +977,48 @@ describe("TermRepoRolloverIntegration", () => {
     const purchaseToken = (await ethers.getContractAt(
       TestTokenABI,
       testPurchaseToken.address,
-      signer
+      signer,
     )) as TestToken;
     const tp1BalanceBefore = await purchaseToken.balanceOf(
-      maturityPeriod1.termRepoLocker.address
+      maturityPeriod1.termRepoLocker.address,
     );
     expect(tp1BalanceBefore).to.eq(0);
 
     const collateralToken = (await ethers.getContractAt(
       TestTokenABI,
       testCollateralToken.address,
-      signer
+      signer,
     )) as TestToken;
 
     // eslint-disable-next-line no-unused-vars
     const ctTp1BalanceBefore = await collateralToken.balanceOf(
-      maturityPeriod1.termRepoLocker.address
+      maturityPeriod1.termRepoLocker.address,
     );
 
     const maturity1TermRepoServicer = (await ethers.getContractAt(
       TermRepoServicerABI,
       maturityPeriod1.termRepoServicer.address,
-      signer
+      signer,
     )) as TermRepoServicer;
 
     const maturity1CollateralManager = (await ethers.getContractAt(
       TermRepoCollateralManagerABI,
       maturityPeriod1.termRepoCollateralManager.address,
-      signer
+      signer,
     )) as TermRepoCollateralManager;
 
     // eslint-disable-next-line no-unused-vars
     const collateral1Before =
       await maturity1CollateralManager.getCollateralBalance(
         wallets[1].address,
-        testCollateralToken.address
+        testCollateralToken.address,
       );
 
     const managedWallet1 = new NonceManager(wallets[1] as any);
 
     const wallet1BalanceBeforeRollover =
       await maturity1TermRepoServicer.getBorrowerRepurchaseObligation(
-        wallets[1].address
+        wallets[1].address,
       );
     const wallet1RolloverAmount = wallet1BalanceBeforeRollover.div(2);
 
@@ -1029,13 +1026,13 @@ describe("TermRepoRolloverIntegration", () => {
       (await ethers.getContractAt(
         TermRepoRolloverManagerABI,
         maturityPeriod1.rolloverManager.address,
-        managedWallet1
+        managedWallet1,
       )) as TermRepoRolloverManager;
 
     const rolloverMat1BidPrice = "99" + "0".repeat(18);
     const rolloverMat1BidPriceHash = ethers.utils.solidityKeccak256(
       ["uint256", "uint256"],
-      [rolloverMat1BidPrice, BID_PRICE_NONCE]
+      [rolloverMat1BidPrice, BID_PRICE_NONCE],
     );
 
     const submission = {
@@ -1046,13 +1043,13 @@ describe("TermRepoRolloverIntegration", () => {
 
     const rolloverMat1BidId = ethers.utils.solidityKeccak256(
       ["address", "address"],
-      [maturity1RolloverManager.address, wallets[1].address]
+      [maturity1RolloverManager.address, wallets[1].address],
     );
 
     await expect(
       maturity1RolloverManagerWallet1Connection
         .connect(wallets[1])
-        .electRollover(submission)
+        .electRollover(submission),
     )
       .to.emit(termEventEmitter, "RolloverElection")
       .withArgs(
@@ -1061,7 +1058,7 @@ describe("TermRepoRolloverIntegration", () => {
         wallets[1].address,
         maturityPeriod2.termAuctionBidLocker.address,
         wallet1RolloverAmount,
-        rolloverMat1BidPriceHash
+        rolloverMat1BidPriceHash,
       )
       .to.emit(termEventEmitter, "BidLocked")
       .withArgs(
@@ -1075,17 +1072,17 @@ describe("TermRepoRolloverIntegration", () => {
         anyValue,
         true,
         maturityPeriod1.termRepoServicer.address,
-        ethers.constants.AddressZero
+        ethers.constants.AddressZero,
       );
 
     expect(
       JSON.parse(
         JSON.stringify(
           await maturity1RolloverManager.getRolloverInstructions(
-            wallets[1].address
-          )
-        )
-      )
+            wallets[1].address,
+          ),
+        ),
+      ),
     ).to.deep.equal([
       maturityPeriod2.termAuctionBidLocker.address,
       BigNumber.from(wallet1RolloverAmount).toJSON(),
@@ -1097,7 +1094,7 @@ describe("TermRepoRolloverIntegration", () => {
       clearingPriceTestCSV_random1,
       testPurchaseToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
     const walletsByAddress = {} as { [address: string]: Signer };
     for (const wallet of wallets) {
@@ -1106,25 +1103,25 @@ describe("TermRepoRolloverIntegration", () => {
       const collateralToken = (await ethers.getContractAt(
         TestTokenABI,
         testCollateralToken.address,
-        managedWallet
+        managedWallet,
       )) as TestToken;
       const purchaseToken = (await ethers.getContractAt(
         TestTokenABI,
         testPurchaseToken.address,
-        managedWallet
+        managedWallet,
       )) as TestToken;
       let tx = await collateralToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await collateralToken.approve(
         maturityPeriod2.termRepoLocker.address,
-        "1" + "0".repeat(25)
+        "1" + "0".repeat(25),
       );
       await tx.wait();
       tx = await purchaseToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await purchaseToken.approve(
         maturityPeriod2.termRepoLocker.address,
-        "1" + "0".repeat(25)
+        "1" + "0".repeat(25),
       );
       await tx.wait();
     }
@@ -1136,13 +1133,13 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionBidLocker = (await ethers.getContractAt(
         TermAuctionBidLockerABI,
         maturityPeriod2.termAuctionBidLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionBidLocker;
       const submission = bidToSubmission(bid);
       const bidId = await getGeneratedTenderId(
         bid.id.toString() || "",
         termAuctionBidLocker,
-        wallet
+        wallet,
       );
 
       bidIdMappings.set(bid.id.toString(), bidId);
@@ -1160,13 +1157,13 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionOfferLocker = (await ethers.getContractAt(
         TermAuctionOfferLockerABI,
         maturityPeriod2.termAuctionOfferLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionOfferLocker;
 
       const offerId = await getGeneratedTenderId(
         offer.id.toString() || "",
         termAuctionOfferLocker,
-        wallet
+        wallet,
       );
 
       offerIdMappings.set(offer.id.toString(), offerId);
@@ -1185,7 +1182,7 @@ describe("TermRepoRolloverIntegration", () => {
     const termAuctionBidLocker = (await ethers.getContractAt(
       TermAuctionBidLockerABI,
       maturityPeriod2.termAuctionBidLocker.address,
-      wallets[0]
+      wallets[0],
     )) as TermAuctionBidLocker;
     for (const bid of bids) {
       const bidId = bidIdMappings.get(bid.id.toString());
@@ -1193,7 +1190,7 @@ describe("TermRepoRolloverIntegration", () => {
       const tx = await termAuctionBidLocker.revealBids(
         [bidId],
         [bid.bidPriceRevealed || 0],
-        [BID_PRICE_NONCE]
+        [BID_PRICE_NONCE],
       );
       await tx.wait();
       revealedBids2.push(bidId);
@@ -1202,7 +1199,7 @@ describe("TermRepoRolloverIntegration", () => {
     const rolloverMat1RevealTx = await termAuctionBidLocker.revealBids(
       [rolloverMat1BidId],
       [rolloverMat1BidPrice],
-      [BID_PRICE_NONCE]
+      [BID_PRICE_NONCE],
     );
 
     rolloverMat1RevealTx.wait();
@@ -1210,8 +1207,8 @@ describe("TermRepoRolloverIntegration", () => {
     revealedBids2.push(
       ethers.utils.solidityKeccak256(
         ["address", "address"],
-        [maturity1RolloverManager.address, wallets[1].address]
-      )
+        [maturity1RolloverManager.address, wallets[1].address],
+      ),
     );
 
     const revealedOffers2 = [];
@@ -1220,14 +1217,14 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionOfferLocker = (await ethers.getContractAt(
         TermAuctionOfferLockerABI,
         maturityPeriod2.termAuctionOfferLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionOfferLocker;
 
       const offerId = offerIdMappings.get(offer.id.toString());
       const tx = await termAuctionOfferLocker.revealOffers(
         [offerId],
         [offer.offerPriceRevealed || 0],
-        [OFFER_PRICE_NONCE]
+        [OFFER_PRICE_NONCE],
       );
       await tx.wait();
       revealedOffers2.push(offerId);
@@ -1240,21 +1237,21 @@ describe("TermRepoRolloverIntegration", () => {
     const auction = (await ethers.getContractAt(
       TermAuctionABI,
       maturityPeriod2.auction.address,
-      adminWallet
+      adminWallet,
     )) as TermAuction;
     await auction.cancelAuctionForWithdrawal(
       [wallets[1].address],
-      [maturityPeriod1.termRepoServicer.address]
+      [maturityPeriod1.termRepoServicer.address],
     );
 
     expect(
       JSON.parse(
         JSON.stringify(
           await maturity1RolloverManager.getRolloverInstructions(
-            wallets[1].address
-          )
-        )
-      )
+            wallets[1].address,
+          ),
+        ),
+      ),
     ).to.deep.equal([
       maturityPeriod2.termAuctionBidLocker.address,
       BigNumber.from(wallet1RolloverAmount).toJSON(),
@@ -1269,7 +1266,7 @@ describe("TermRepoRolloverIntegration", () => {
     const maturity1RolloverManager = (await ethers.getContractAt(
       TermRepoRolloverManagerABI,
       maturityPeriod1.rolloverManager.address,
-      signer
+      signer,
     )) as TermRepoRolloverManager;
 
     await approveRollover(
@@ -1279,7 +1276,7 @@ describe("TermRepoRolloverIntegration", () => {
         termAuctionBidLockerAddress:
           maturityPeriod2.termAuctionBidLocker.address,
       },
-      adminWallet
+      adminWallet,
     );
 
     const blockNumBefore = await ethers.provider.getBlockNumber();
@@ -1292,46 +1289,46 @@ describe("TermRepoRolloverIntegration", () => {
     const purchaseToken = (await ethers.getContractAt(
       TestTokenABI,
       testPurchaseToken.address,
-      signer
+      signer,
     )) as TestToken;
     const tp1BalanceBefore = await purchaseToken.balanceOf(
-      maturityPeriod1.termRepoLocker.address
+      maturityPeriod1.termRepoLocker.address,
     );
     expect(tp1BalanceBefore).to.eq(0);
 
     const collateralToken = (await ethers.getContractAt(
       TestTokenABI,
       testCollateralToken.address,
-      signer
+      signer,
     )) as TestToken;
 
     const ctTp1BalanceBefore = await collateralToken.balanceOf(
-      maturityPeriod1.termRepoLocker.address
+      maturityPeriod1.termRepoLocker.address,
     );
 
     const maturity1TermRepoServicer = (await ethers.getContractAt(
       TermRepoServicerABI,
       maturityPeriod1.termRepoServicer.address,
-      signer
+      signer,
     )) as TermRepoServicer;
 
     const maturity1CollateralManager = (await ethers.getContractAt(
       TermRepoCollateralManagerABI,
       maturityPeriod1.termRepoCollateralManager.address,
-      signer
+      signer,
     )) as TermRepoCollateralManager;
 
     const collateral1Before =
       await maturity1CollateralManager.getCollateralBalance(
         wallets[1].address,
-        testCollateralToken.address
+        testCollateralToken.address,
       );
 
     const managedWallet1 = new NonceManager(wallets[1] as any);
 
     const wallet1BalanceBeforeRollover =
       await maturity1TermRepoServicer.getBorrowerRepurchaseObligation(
-        wallets[1].address
+        wallets[1].address,
       );
 
     const wallet1RolloverAmount = wallet1BalanceBeforeRollover.div(2);
@@ -1340,14 +1337,14 @@ describe("TermRepoRolloverIntegration", () => {
       (await ethers.getContractAt(
         TermRepoRolloverManagerABI,
         maturityPeriod1.rolloverManager.address,
-        managedWallet1
+        managedWallet1,
       )) as TermRepoRolloverManager;
 
     const rolloverMat2BidPrice = "99" + "0".repeat(18);
 
     const rolloverMat2BidPriceHash = ethers.utils.solidityKeccak256(
       ["uint256", "uint256"],
-      [rolloverMat2BidPrice, BID_PRICE_NONCE]
+      [rolloverMat2BidPrice, BID_PRICE_NONCE],
     );
 
     const submission = {
@@ -1359,7 +1356,7 @@ describe("TermRepoRolloverIntegration", () => {
     await expect(
       maturity1RolloverManagerWallet1Connection
         .connect(wallets[1])
-        .electRollover(submission)
+        .electRollover(submission),
     )
       .to.emit(termEventEmitter, "RolloverElection")
       .withArgs(
@@ -1368,17 +1365,17 @@ describe("TermRepoRolloverIntegration", () => {
         wallets[1].address,
         maturityPeriod2.termAuctionBidLocker.address,
         wallet1RolloverAmount,
-        rolloverMat2BidPriceHash
+        rolloverMat2BidPriceHash,
       );
 
     expect(
       JSON.parse(
         JSON.stringify(
           await maturity1RolloverManager.getRolloverInstructions(
-            wallets[1].address
-          )
-        )
-      )
+            wallets[1].address,
+          ),
+        ),
+      ),
     ).to.deep.equal([
       maturityPeriod2.termAuctionBidLocker.address,
       BigNumber.from(wallet1RolloverAmount).toJSON(),
@@ -1390,7 +1387,7 @@ describe("TermRepoRolloverIntegration", () => {
       clearingPriceTestCSV_random1,
       testPurchaseToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
     const walletsByAddress = {} as { [address: string]: Signer };
     for (const wallet of wallets) {
@@ -1399,25 +1396,25 @@ describe("TermRepoRolloverIntegration", () => {
       const collateralToken = (await ethers.getContractAt(
         TestTokenABI,
         testCollateralToken.address,
-        managedWallet
+        managedWallet,
       )) as TestToken;
       const purchaseToken = (await ethers.getContractAt(
         TestTokenABI,
         testPurchaseToken.address,
-        managedWallet
+        managedWallet,
       )) as TestToken;
       let tx = await collateralToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await collateralToken.approve(
         maturityPeriod2.termRepoLocker.address,
-        "1" + "0".repeat(25)
+        "1" + "0".repeat(25),
       );
       await tx.wait();
       tx = await purchaseToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await purchaseToken.approve(
         maturityPeriod2.termRepoLocker.address,
-        "1" + "0".repeat(25)
+        "1" + "0".repeat(25),
       );
       await tx.wait();
     }
@@ -1429,13 +1426,13 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionBidLocker = (await ethers.getContractAt(
         TermAuctionBidLockerABI,
         maturityPeriod2.termAuctionBidLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionBidLocker;
       const submission = bidToSubmission(bid);
       const bidId = await getGeneratedTenderId(
         bid.id.toString() || "",
         termAuctionBidLocker,
-        wallet
+        wallet,
       );
 
       bidIdMappings.set(bid.id.toString(), bidId);
@@ -1453,13 +1450,13 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionOfferLocker = (await ethers.getContractAt(
         TermAuctionOfferLockerABI,
         maturityPeriod2.termAuctionOfferLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionOfferLocker;
 
       const offerId = await getGeneratedTenderId(
         offer.id.toString() || "",
         termAuctionOfferLocker,
-        wallet
+        wallet,
       );
 
       offerIdMappings.set(offer.id.toString(), offerId);
@@ -1478,7 +1475,7 @@ describe("TermRepoRolloverIntegration", () => {
     const termAuctionBidLocker = (await ethers.getContractAt(
       TermAuctionBidLockerABI,
       maturityPeriod2.termAuctionBidLocker.address,
-      wallets[0]
+      wallets[0],
     )) as TermAuctionBidLocker;
     for (const bid of bids) {
       const bidId = bidIdMappings.get(bid.id.toString());
@@ -1486,7 +1483,7 @@ describe("TermRepoRolloverIntegration", () => {
       const tx = await termAuctionBidLocker.revealBids(
         [bidId],
         [bid.bidPriceRevealed || 0],
-        [BID_PRICE_NONCE]
+        [BID_PRICE_NONCE],
       );
       await tx.wait();
       revealedBids3.push(bidId);
@@ -1494,12 +1491,12 @@ describe("TermRepoRolloverIntegration", () => {
 
     const rolloverMat2BidId = ethers.utils.solidityKeccak256(
       ["address", "address"],
-      [maturity1RolloverManager.address, wallets[1].address]
+      [maturity1RolloverManager.address, wallets[1].address],
     );
     const rolloverMat2RevealTx = await termAuctionBidLocker.revealBids(
       [rolloverMat2BidId],
       [rolloverMat2BidPrice],
-      [BID_PRICE_NONCE]
+      [BID_PRICE_NONCE],
     );
 
     rolloverMat2RevealTx.wait();
@@ -1510,14 +1507,14 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionOfferLocker = (await ethers.getContractAt(
         TermAuctionOfferLockerABI,
         maturityPeriod2.termAuctionOfferLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionOfferLocker;
 
       const offerId = offerIdMappings.get(offer.id.toString());
       const tx = await termAuctionOfferLocker.revealOffers(
         [offerId],
         [offer.offerPriceRevealed || 0],
-        [OFFER_PRICE_NONCE]
+        [OFFER_PRICE_NONCE],
       );
       await tx.wait();
       revealedOffers3.push(offerId);
@@ -1530,7 +1527,7 @@ describe("TermRepoRolloverIntegration", () => {
     const auction = (await ethers.getContractAt(
       TermAuctionABI,
       maturityPeriod2.auction.address,
-      adminWallet
+      adminWallet,
     )) as TermAuction;
     await auction.completeAuction({
       revealedBidSubmissions: revealedBids3,
@@ -1541,12 +1538,12 @@ describe("TermRepoRolloverIntegration", () => {
     });
 
     const tp1BalanceAfter = await purchaseToken.balanceOf(
-      maturityPeriod1.termRepoLocker.address
+      maturityPeriod1.termRepoLocker.address,
     );
     expect(tp1BalanceAfter).to.eq(0); // TermRepoLocker is not paid any rollover amount
 
     const tp2Balance = await purchaseToken.balanceOf(
-      maturityPeriod2.termRepoLocker.address
+      maturityPeriod2.termRepoLocker.address,
     );
 
     expect(tp2Balance).to.eq(0); // TermRepoLocker of rollover term balanced
@@ -1554,12 +1551,12 @@ describe("TermRepoRolloverIntegration", () => {
     const maturity2TermRepoServicer = (await ethers.getContractAt(
       TermRepoServicerABI,
       maturityPeriod2.termRepoServicer.address,
-      adminWallet
+      adminWallet,
     )) as TermRepoServicer;
 
     const term2getBorrowerRepurchaseObligation =
       await maturity2TermRepoServicer.getBorrowerRepurchaseObligation(
-        wallets[1].address
+        wallets[1].address,
       );
 
     /* Some issues with the wallets causing this to be misaligned
@@ -1571,17 +1568,17 @@ describe("TermRepoRolloverIntegration", () => {
     const maturity2CollateralManager = (await ethers.getContractAt(
       TermRepoCollateralManagerABI,
       maturityPeriod2.termRepoCollateralManager.address,
-      adminWallet
+      adminWallet,
     )) as TermRepoCollateralManager;
 
     const collateral2 = await maturity2CollateralManager.getCollateralBalance(
       wallets[1].address,
-      testCollateralToken.address
+      testCollateralToken.address,
     );
     expect(collateral2.eq(collateral1Before)).to.eq(true); // collateral is same in both auctions since rollover was rejected
 
     const ctTp2Balance = await collateralToken.balanceOf(
-      maturityPeriod2.termRepoLocker.address
+      maturityPeriod2.termRepoLocker.address,
     );
 
     expect(ctTp2Balance.eq(ctTp1BalanceBefore)).to.eq(true); // collateral not transferred to rollover term repo locker for rollover loan
@@ -1592,7 +1589,7 @@ describe("TermRepoRolloverIntegration", () => {
     const maturity1RolloverManager = (await ethers.getContractAt(
       TermRepoRolloverManagerABI,
       maturityPeriod1.rolloverManager.address,
-      signer
+      signer,
     )) as TermRepoRolloverManager;
 
     await approveRollover(
@@ -1602,7 +1599,7 @@ describe("TermRepoRolloverIntegration", () => {
         termAuctionBidLockerAddress:
           maturityPeriod2.termAuctionBidLocker.address,
       },
-      adminWallet
+      adminWallet,
     );
 
     const blockNumBefore = await ethers.provider.getBlockNumber();
@@ -1615,24 +1612,24 @@ describe("TermRepoRolloverIntegration", () => {
     const purchaseToken = (await ethers.getContractAt(
       TestTokenABI,
       testPurchaseToken.address,
-      signer
+      signer,
     )) as TestToken;
     const tp1BalanceBefore = await purchaseToken.balanceOf(
-      maturityPeriod1.termRepoLocker.address
+      maturityPeriod1.termRepoLocker.address,
     );
     expect(tp1BalanceBefore).to.eq(0);
 
     const maturity1TermRepoServicer = (await ethers.getContractAt(
       TermRepoServicerABI,
       maturityPeriod1.termRepoServicer.address,
-      signer
+      signer,
     )) as TermRepoServicer;
 
     const managedWallet1 = new NonceManager(wallets[1] as any);
 
     const wallet1BalanceBeforeRollover =
       await maturity1TermRepoServicer.getBorrowerRepurchaseObligation(
-        wallets[1].address
+        wallets[1].address,
       );
     const wallet1RolloverAmount = wallet1BalanceBeforeRollover.div(2);
 
@@ -1640,14 +1637,14 @@ describe("TermRepoRolloverIntegration", () => {
       (await ethers.getContractAt(
         TermRepoRolloverManagerABI,
         maturityPeriod1.rolloverManager.address,
-        managedWallet1
+        managedWallet1,
       )) as TermRepoRolloverManager;
 
     const rolloverMat2BidPrice = "99" + "0".repeat(18);
 
     const rolloverMat2BidPriceHash = ethers.utils.solidityKeccak256(
       ["uint256", "uint256"],
-      [rolloverMat2BidPrice, BID_PRICE_NONCE]
+      [rolloverMat2BidPrice, BID_PRICE_NONCE],
     );
     const submission = {
       rolloverAuction: maturityPeriod2.termAuctionBidLocker.address,
@@ -1658,7 +1655,7 @@ describe("TermRepoRolloverIntegration", () => {
     await expect(
       maturity1RolloverManagerWallet1Connection
         .connect(wallets[1])
-        .electRollover(submission)
+        .electRollover(submission),
     )
       .to.emit(termEventEmitter, "RolloverElection")
       .withArgs(
@@ -1667,16 +1664,16 @@ describe("TermRepoRolloverIntegration", () => {
         wallets[1].address,
         maturityPeriod2.termAuctionBidLocker.address,
         wallet1RolloverAmount,
-        rolloverMat2BidPriceHash
+        rolloverMat2BidPriceHash,
       );
     expect(
       JSON.parse(
         JSON.stringify(
           await maturity1RolloverManager.getRolloverInstructions(
-            wallets[1].address
-          )
-        )
-      )
+            wallets[1].address,
+          ),
+        ),
+      ),
     ).to.deep.equal([
       maturityPeriod2.termAuctionBidLocker.address,
       BigNumber.from(wallet1RolloverAmount).toJSON(),
@@ -1688,7 +1685,7 @@ describe("TermRepoRolloverIntegration", () => {
       clearingPriceTestCSV_random1,
       testPurchaseToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
     const walletsByAddress = {} as { [address: string]: Signer };
     for (const wallet of wallets) {
@@ -1697,25 +1694,25 @@ describe("TermRepoRolloverIntegration", () => {
       const collateralToken = (await ethers.getContractAt(
         TestTokenABI,
         testCollateralToken.address,
-        managedWallet
+        managedWallet,
       )) as TestToken;
       const purchaseToken = (await ethers.getContractAt(
         TestTokenABI,
         testPurchaseToken.address,
-        managedWallet
+        managedWallet,
       )) as TestToken;
       let tx = await collateralToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await collateralToken.approve(
         maturityPeriod2.termRepoLocker.address,
-        "1" + "0".repeat(25)
+        "1" + "0".repeat(25),
       );
       await tx.wait();
       tx = await purchaseToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await purchaseToken.approve(
         maturityPeriod2.termRepoLocker.address,
-        "1" + "0".repeat(25)
+        "1" + "0".repeat(25),
       );
       await tx.wait();
     }
@@ -1727,13 +1724,13 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionBidLocker = (await ethers.getContractAt(
         TermAuctionBidLockerABI,
         maturityPeriod2.termAuctionBidLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionBidLocker;
       const submission = bidToSubmission(bid);
       const bidId = await getGeneratedTenderId(
         bid.id.toString() || "",
         termAuctionBidLocker,
-        wallet
+        wallet,
       );
 
       bidIdMappings.set(bid.id.toString(), bidId);
@@ -1750,13 +1747,13 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionOfferLocker = (await ethers.getContractAt(
         TermAuctionOfferLockerABI,
         maturityPeriod2.termAuctionOfferLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionOfferLocker;
 
       const offerId = await getGeneratedTenderId(
         offer.id.toString() || "",
         termAuctionOfferLocker,
-        wallet
+        wallet,
       );
 
       offerIdMappings.set(offer.id.toString(), offerId);
@@ -1775,7 +1772,7 @@ describe("TermRepoRolloverIntegration", () => {
     const termAuctionBidLocker = (await ethers.getContractAt(
       TermAuctionBidLockerABI,
       maturityPeriod2.termAuctionBidLocker.address,
-      wallets[0]
+      wallets[0],
     )) as TermAuctionBidLocker;
     for (const bid of bids) {
       const bidId = bidIdMappings.get(bid.id.toString());
@@ -1783,7 +1780,7 @@ describe("TermRepoRolloverIntegration", () => {
       const tx = await termAuctionBidLocker.revealBids(
         [bidId],
         [bid.bidPriceRevealed || 0],
-        [BID_PRICE_NONCE]
+        [BID_PRICE_NONCE],
       );
       await tx.wait();
       revealedBids4.push(bidId);
@@ -1791,12 +1788,12 @@ describe("TermRepoRolloverIntegration", () => {
 
     const rolloverMat2BidId = ethers.utils.solidityKeccak256(
       ["address", "address"],
-      [maturity1RolloverManager.address, wallets[1].address]
+      [maturity1RolloverManager.address, wallets[1].address],
     );
     const rolloverMat2RevealTx = await termAuctionBidLocker.revealBids(
       [rolloverMat2BidId],
       [rolloverMat2BidPrice],
-      [BID_PRICE_NONCE]
+      [BID_PRICE_NONCE],
     );
 
     rolloverMat2RevealTx.wait();
@@ -1809,14 +1806,14 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionOfferLocker = (await ethers.getContractAt(
         TermAuctionOfferLockerABI,
         maturityPeriod2.termAuctionOfferLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionOfferLocker;
 
       const offerId = offerIdMappings.get(offer.id.toString());
       const tx = await termAuctionOfferLocker.revealOffers(
         [offerId],
         [offer.offerPriceRevealed || 0],
-        [OFFER_PRICE_NONCE]
+        [OFFER_PRICE_NONCE],
       );
       await tx.wait();
       revealedOffers4.push(offerId);
@@ -1829,7 +1826,7 @@ describe("TermRepoRolloverIntegration", () => {
     const auction = (await ethers.getContractAt(
       TermAuctionABI,
       maturityPeriod2.auction.address,
-      adminWallet
+      adminWallet,
     )) as TermAuction;
     await auction.cancelAuction({
       revealedBidSubmissions: revealedBids4,
@@ -1843,10 +1840,10 @@ describe("TermRepoRolloverIntegration", () => {
       JSON.parse(
         JSON.stringify(
           await maturity1RolloverManager.getRolloverInstructions(
-            wallets[1].address
-          )
-        )
-      )
+            wallets[1].address,
+          ),
+        ),
+      ),
     ).to.deep.equal([
       maturityPeriod2.termAuctionBidLocker.address,
       BigNumber.from(wallet1RolloverAmount).toJSON(),
@@ -1861,7 +1858,7 @@ describe("TermRepoRolloverIntegration", () => {
     const maturity1RolloverManager = (await ethers.getContractAt(
       TermRepoRolloverManagerABI,
       maturityPeriod1.rolloverManager.address,
-      signer
+      signer,
     )) as TermRepoRolloverManager;
 
     await approveRollover(
@@ -1871,7 +1868,7 @@ describe("TermRepoRolloverIntegration", () => {
         termAuctionBidLockerAddress:
           maturityPeriod2.termAuctionBidLocker.address,
       },
-      adminWallet
+      adminWallet,
     );
 
     const blockNumBefore = await ethers.provider.getBlockNumber();
@@ -1884,24 +1881,24 @@ describe("TermRepoRolloverIntegration", () => {
     const purchaseToken = (await ethers.getContractAt(
       TestTokenABI,
       testPurchaseToken.address,
-      signer
+      signer,
     )) as TestToken;
     const tp1BalanceBefore = await purchaseToken.balanceOf(
-      maturityPeriod1.termRepoLocker.address
+      maturityPeriod1.termRepoLocker.address,
     );
     expect(tp1BalanceBefore).to.eq(0);
 
     const maturity1TermRepoServicer = (await ethers.getContractAt(
       TermRepoServicerABI,
       maturityPeriod1.termRepoServicer.address,
-      signer
+      signer,
     )) as TermRepoServicer;
 
     const managedWallet1 = new NonceManager(wallets[1] as any);
 
     const wallet1BalanceBeforeRollover =
       await maturity1TermRepoServicer.getBorrowerRepurchaseObligation(
-        wallets[1].address
+        wallets[1].address,
       );
     const wallet1RolloverAmount = wallet1BalanceBeforeRollover.div(2);
 
@@ -1909,14 +1906,14 @@ describe("TermRepoRolloverIntegration", () => {
       (await ethers.getContractAt(
         TermRepoRolloverManagerABI,
         maturityPeriod1.rolloverManager.address,
-        managedWallet1
+        managedWallet1,
       )) as TermRepoRolloverManager;
 
     const rolloverMat2BidPrice = "99" + "0".repeat(18);
 
     const rolloverMat2BidPriceHash = ethers.utils.solidityKeccak256(
       ["uint256", "uint256"],
-      [rolloverMat2BidPrice, BID_PRICE_NONCE]
+      [rolloverMat2BidPrice, BID_PRICE_NONCE],
     );
     const submission = {
       rolloverAuction: maturityPeriod2.termAuctionBidLocker.address,
@@ -1927,7 +1924,7 @@ describe("TermRepoRolloverIntegration", () => {
     await expect(
       maturity1RolloverManagerWallet1Connection
         .connect(wallets[1])
-        .electRollover(submission)
+        .electRollover(submission),
     )
       .to.emit(termEventEmitter, "RolloverElection")
       .withArgs(
@@ -1936,17 +1933,17 @@ describe("TermRepoRolloverIntegration", () => {
         wallets[1].address,
         maturityPeriod2.termAuctionBidLocker.address,
         wallet1RolloverAmount,
-        rolloverMat2BidPriceHash
+        rolloverMat2BidPriceHash,
       );
 
     expect(
       JSON.parse(
         JSON.stringify(
           await maturity1RolloverManager.getRolloverInstructions(
-            wallets[1].address
-          )
-        )
-      )
+            wallets[1].address,
+          ),
+        ),
+      ),
     ).to.deep.equal([
       maturityPeriod2.termAuctionBidLocker.address,
       BigNumber.from(wallet1RolloverAmount).toJSON(),
@@ -1958,7 +1955,7 @@ describe("TermRepoRolloverIntegration", () => {
       clearingPriceTestCSV_random1,
       testPurchaseToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
     const walletsByAddress = {} as { [address: string]: Signer };
     for (const wallet of wallets) {
@@ -1967,25 +1964,25 @@ describe("TermRepoRolloverIntegration", () => {
       const collateralToken = (await ethers.getContractAt(
         TestTokenABI,
         testCollateralToken.address,
-        managedWallet
+        managedWallet,
       )) as TestToken;
       const purchaseToken = (await ethers.getContractAt(
         TestTokenABI,
         testPurchaseToken.address,
-        managedWallet
+        managedWallet,
       )) as TestToken;
       let tx = await collateralToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await collateralToken.approve(
         maturityPeriod2.termRepoLocker.address,
-        "1" + "0".repeat(25)
+        "1" + "0".repeat(25),
       );
       await tx.wait();
       tx = await purchaseToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await purchaseToken.approve(
         maturityPeriod2.termRepoLocker.address,
-        "1" + "0".repeat(25)
+        "1" + "0".repeat(25),
       );
       await tx.wait();
     }
@@ -1997,13 +1994,13 @@ describe("TermRepoRolloverIntegration", () => {
       const termAuctionBidLocker = (await ethers.getContractAt(
         TermAuctionBidLockerABI,
         maturityPeriod2.termAuctionBidLocker.address,
-        wallet
+        wallet,
       )) as TermAuctionBidLocker;
       const submission = bidToSubmission(bid);
       const bidId = await getGeneratedTenderId(
         bid.id.toString() || "",
         termAuctionBidLocker,
-        wallet
+        wallet,
       );
 
       bidIdMappings.set(bid.id.toString(), bidId);
@@ -2021,7 +2018,7 @@ describe("TermRepoRolloverIntegration", () => {
     const termAuctionBidLocker = (await ethers.getContractAt(
       TermAuctionBidLockerABI,
       maturityPeriod2.termAuctionBidLocker.address,
-      wallets[0]
+      wallets[0],
     )) as TermAuctionBidLocker;
     for (const bid of bids) {
       const bidId = bidIdMappings.get(bid.id.toString());
@@ -2029,7 +2026,7 @@ describe("TermRepoRolloverIntegration", () => {
       const tx = await termAuctionBidLocker.revealBids(
         [bidId],
         [bid.bidPriceRevealed || 0],
-        [BID_PRICE_NONCE]
+        [BID_PRICE_NONCE],
       );
       await tx.wait();
       revealedBids4.push(bidId);
@@ -2037,12 +2034,12 @@ describe("TermRepoRolloverIntegration", () => {
 
     const rolloverMat2BidId = ethers.utils.solidityKeccak256(
       ["address", "address"],
-      [maturity1RolloverManager.address, wallets[1].address]
+      [maturity1RolloverManager.address, wallets[1].address],
     );
     const rolloverMat2RevealTx = await termAuctionBidLocker.revealBids(
       [rolloverMat2BidId],
       [rolloverMat2BidPrice],
-      [BID_PRICE_NONCE]
+      [BID_PRICE_NONCE],
     );
 
     rolloverMat2RevealTx.wait();
@@ -2057,7 +2054,7 @@ describe("TermRepoRolloverIntegration", () => {
     const auction = (await ethers.getContractAt(
       TermAuctionABI,
       maturityPeriod2.auction.address,
-      wallet
+      wallet,
     )) as TermAuction;
     await auction.completeAuction({
       revealedBidSubmissions: revealedBids4,
@@ -2071,10 +2068,10 @@ describe("TermRepoRolloverIntegration", () => {
       JSON.parse(
         JSON.stringify(
           await maturity1RolloverManager.getRolloverInstructions(
-            wallets[1].address
-          )
-        )
-      )
+            wallets[1].address,
+          ),
+        ),
+      ),
     ).to.deep.equal([
       maturityPeriod2.termAuctionBidLocker.address,
       BigNumber.from(wallet1RolloverAmount).toJSON(),

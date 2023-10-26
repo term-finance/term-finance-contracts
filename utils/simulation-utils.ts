@@ -48,7 +48,7 @@ export async function lockRandomizedTenders(
   minTenderAmount: number,
   signers: SignerWithAddress[],
   purchaseToken: string,
-  collateralTokens: string[]
+  collateralTokens: string[],
 ): Promise<[TenderReveal[], TenderReveal[]]> {
   const bidPrices = [];
   const offerPrices = [];
@@ -60,7 +60,7 @@ export async function lockRandomizedTenders(
     const bidPriceRevealed = randomInt(1, 100).toString() + "0".repeat(16);
     const bidPriceHash = solidityKeccak256(
       ["uint256", "uint256"],
-      [bidPriceRevealed, "12345"]
+      [bidPriceRevealed, "12345"],
     );
     const bidId = getBytesHash(randomInt(0, 10000000).toString());
     bidPrices.push({
@@ -79,7 +79,7 @@ export async function lockRandomizedTenders(
     };
     await bidLocker.connect(bidderWallet).lockBids([bid]);
     console.log(
-      `locked bid for bidder ${bidder} with details ${JSON.stringify(bid)}`
+      `locked bid for bidder ${bidder} with details ${JSON.stringify(bid)}`,
     );
 
     const offerorWallet = signers[randomInt(0, signers.length)];
@@ -89,7 +89,7 @@ export async function lockRandomizedTenders(
     const offerPriceRevealed = randomInt(1, 100).toString() + "0".repeat(16);
     const offerPriceHash = solidityKeccak256(
       ["uint256", "uint256"],
-      [offerPriceRevealed, "12345"]
+      [offerPriceRevealed, "12345"],
     );
     const offerId = getBytesHash(randomInt(0, 10000000).toString());
     offerPrices.push({
@@ -107,8 +107,8 @@ export async function lockRandomizedTenders(
     await offerLocker.connect(offerorWallet).lockOffers([offer]);
     console.log(
       `locked offer for offeror ${offeror} with details ${JSON.stringify(
-        offer
-      )}`
+        offer,
+      )}`,
     );
   }
   return [bidPrices, offerPrices];
@@ -119,8 +119,8 @@ export function parsePrice(price: string): string {
     .mulUnsafe(
       FixedNumber.from(
         "1" + "0".repeat(testDecimals),
-        `fixed128x${testDecimals}`
-      )
+        `fixed128x${testDecimals}`,
+      ),
     )
     .round(0)
     .toString();
@@ -134,11 +134,11 @@ export function getBytesHash(input: string): string {
 export async function getGeneratedTenderId(
   input: string,
   contract: Contract,
-  wallet: Signer
+  wallet: Signer,
 ) {
   return utils.solidityKeccak256(
     ["bytes32", "address", "address"],
-    [input, await wallet.getAddress(), contract.address.toLowerCase()]
+    [input, await wallet.getAddress(), contract.address.toLowerCase()],
   );
 }
 
@@ -147,7 +147,7 @@ export function parseBidsOffers(
   purchaseToken: string,
   collateralToken: string,
   wallets: SignerWithAddress[] = [],
-  delimiter: string = "\t"
+  delimiter: string = "\t",
 ): Promise<{
   bids: TermAuctionBidStruct[];
   offers: TermAuctionOfferStruct[];
@@ -185,7 +185,7 @@ export function parseBidsOffers(
               : wallets[parseInt(row[3]) - 1].address,
             bidPriceHash: solidityKeccak256(
               ["uint256", "uint256"],
-              [parsePrice(row[5]), "12345"]
+              [parsePrice(row[5]), "12345"],
             ),
             bidPriceRevealed: parsePrice(row[5]),
             amount: row[4],
@@ -211,7 +211,7 @@ export function parseBidsOffers(
               : wallets[parseInt(row[0]) - 1 + bids.length].address,
             offerPriceHash: solidityKeccak256(
               ["uint256", "uint256"],
-              [parsePrice(row[2]), "678910"]
+              [parsePrice(row[2]), "678910"],
             ),
             offerPriceRevealed: parsePrice(row[2]),
             amount: row[1],
@@ -224,7 +224,7 @@ export function parseBidsOffers(
 
       bids.sort((a, b) => {
         const diff = BigNumber.from(a.bidPriceRevealed).sub(
-          BigNumber.from(b.bidPriceRevealed)
+          BigNumber.from(b.bidPriceRevealed),
         );
         if (diff.eq(0)) {
           return 0;
@@ -233,7 +233,7 @@ export function parseBidsOffers(
       });
       offers.sort((a, b) => {
         const diff = BigNumber.from(a.offerPriceRevealed).sub(
-          BigNumber.from(b.offerPriceRevealed)
+          BigNumber.from(b.offerPriceRevealed),
         );
         if (diff.eq(0)) {
           return 0;
@@ -278,14 +278,14 @@ export async function approveTokens(
   tokenAddresses: string[],
   signers: Signer[],
   spenderAddress: string,
-  approveAmount: BigNumberish = "1" + "0".repeat(30)
+  approveAmount: BigNumberish = "1" + "0".repeat(30),
 ) {
   for (const signer of signers) {
     for (const tokenAddress of tokenAddresses) {
       const token = (await ethers.getContractAt(
         IERC20MetadataUpgradeableABI,
         tokenAddress,
-        signer
+        signer,
       )) as IERC20MetadataUpgradeable;
 
       const signerAddress = await signer.getAddress();
@@ -298,10 +298,10 @@ export async function approveTokens(
 
         console.log(
           `Approving ${commify(
-            formatUnits(approveAmount, tokenDecimals)
+            formatUnits(approveAmount, tokenDecimals),
           )} ${tokenSymbol} for: ${signerAddress}. Allowance was: ${commify(
-            formatUnits(allowance, tokenDecimals)
-          )} ${tokenSymbol}`
+            formatUnits(allowance, tokenDecimals),
+          )} ${tokenSymbol}`,
         );
         const tx = await token.approve(spenderAddress, approveAmount);
         await tx.wait();
@@ -313,11 +313,11 @@ export async function approveTokens(
 export async function filterAlreadyLockedBids(
   bidLockerAddress: string,
   bids: TermAuctionBidStruct[],
-  keepLocked = false
+  keepLocked = false,
 ) {
   const bidLocker = (await ethers.getContractAt(
     TermAuctionBidLockerABI,
-    bidLockerAddress
+    bidLockerAddress,
   )) as TermAuctionBidLocker;
 
   const filteredBids: TermAuctionBidStruct[] = [];
@@ -334,11 +334,11 @@ export async function filterAlreadyLockedBids(
 export async function filterAlreadyLockedOffers(
   offerLockerAddress: string,
   offers: TermAuctionOfferStruct[],
-  keepLocked = false
+  keepLocked = false,
 ) {
   const offerLocker = (await ethers.getContractAt(
     TermAuctionOfferLockerABI,
-    offerLockerAddress
+    offerLockerAddress,
   )) as TermAuctionOfferLocker;
 
   const filteredOffers: TermAuctionOfferStruct[] = [];
@@ -356,13 +356,13 @@ export async function lockBids(
   bidLockerAddress: string,
   bids: TermAuctionBidSubmissionStruct[],
   signers: { [address: string]: Signer },
-  signer?: Signer
+  signer?: Signer,
 ) {
   const sharedBidLocker = signer
     ? ((await ethers.getContractAt(
         TermAuctionBidLockerABI,
         bidLockerAddress,
-        signer
+        signer,
       )) as TermAuctionBidLocker)
     : undefined;
 
@@ -385,7 +385,7 @@ export async function lockBids(
       ((await ethers.getContractAt(
         TermAuctionBidLockerABI,
         bidLockerAddress,
-        signers[bidder]
+        signers[bidder],
       )) as TermAuctionBidLocker);
 
     await termAuctionBidLocker.connect(signers[bidder]).lockBids(bids);
@@ -397,13 +397,13 @@ export async function lockOffers(
   offerLockerAddress: string,
   offers: TermAuctionOfferSubmissionStruct[],
   signers: { [address: string]: Signer },
-  signer?: Signer
+  signer?: Signer,
 ) {
   const sharedOfferLocker = signer
     ? ((await ethers.getContractAt(
         TermAuctionOfferLockerABI,
         offerLockerAddress,
-        signer
+        signer,
       )) as TermAuctionOfferLocker)
     : undefined;
 
@@ -428,7 +428,7 @@ export async function lockOffers(
       ((await ethers.getContractAt(
         TermAuctionOfferLockerABI,
         offerLockerAddress,
-        signers[offeror]
+        signers[offeror],
       )) as TermAuctionOfferLocker);
 
     console.log(`Locking offers: ${JSON.stringify(offers, null, 2)}`);
@@ -440,11 +440,11 @@ export async function lockOffers(
 export async function revealBids(
   bidLockerAddress: string,
   bids: TermAuctionBidStruct[],
-  signers: { [address: string]: Signer }
+  signers: { [address: string]: Signer },
 ) {
   const termAuctionBidLocker = (await ethers.getContractAt(
     TermAuctionBidLockerABI,
-    bidLockerAddress
+    bidLockerAddress,
   )) as TermAuctionBidLocker;
 
   const ids = await Promise.all(
@@ -452,14 +452,14 @@ export async function revealBids(
       getGeneratedTenderId(
         bid.id.toString() || "",
         termAuctionBidLocker,
-        signers[bid.bidder.toString()]
-      )
-    )
+        signers[bid.bidder.toString()],
+      ),
+    ),
   );
   const prices = bids.map((bid) => bid.bidPriceRevealed);
   const nonces = Array(bids.length).fill("12345");
   console.log(
-    `Revealing bids: ${JSON.stringify([ids, prices, nonces], null, 2)}`
+    `Revealing bids: ${JSON.stringify([ids, prices, nonces], null, 2)}`,
   );
   await termAuctionBidLocker.revealBids(ids, prices, nonces);
   console.log(`Revealed bids: ${JSON.stringify(ids, null, 2)}`);
@@ -470,11 +470,11 @@ export async function revealBids(
 export async function revealOffers(
   offerLockerAddress: string,
   offers: TermAuctionOfferStruct[],
-  signers: { [address: string]: Signer }
+  signers: { [address: string]: Signer },
 ) {
   const termAuctionOfferLocker = (await ethers.getContractAt(
     TermAuctionOfferLockerABI,
-    offerLockerAddress
+    offerLockerAddress,
   )) as TermAuctionOfferLocker;
 
   const ids = await Promise.all(
@@ -482,14 +482,14 @@ export async function revealOffers(
       getGeneratedTenderId(
         offer.id.toString() || "",
         termAuctionOfferLocker,
-        signers[offer.offeror.toString()]
-      )
-    )
+        signers[offer.offeror.toString()],
+      ),
+    ),
   );
   const prices = offers.map((offer) => offer.offerPriceRevealed);
   const nonces = Array(offers.length).fill("678910");
   console.log(
-    `Revealing offers: ${JSON.stringify([ids, prices, nonces], null, 2)}`
+    `Revealing offers: ${JSON.stringify([ids, prices, nonces], null, 2)}`,
   );
   await termAuctionOfferLocker.revealOffers(ids, prices, nonces);
   console.log(`Revealed offers: ${JSON.stringify(ids, null, 2)}`);
@@ -500,12 +500,12 @@ export async function revealOffers(
 export async function completeAuctionInputFromTSV(
   tsv: string,
   purchaseTokenAddress: string,
-  collateralTokenAddress: string
+  collateralTokenAddress: string,
 ) {
   const { bids, offers } = await parseBidsOffers(
     tsv,
     purchaseTokenAddress,
-    collateralTokenAddress
+    collateralTokenAddress,
   );
 
   return {

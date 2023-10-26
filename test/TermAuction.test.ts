@@ -141,7 +141,7 @@ const clearingPriceTestCSV_rltest1 = `1	9000000000000	2.0	1	10000000000000	3.125
 function expectBigNumberEq(
   actual: BigNumber,
   expected: BigNumberish,
-  message: string = `Expected ${expected.toString()} but was ${actual.toString()}`
+  message: string = `Expected ${expected.toString()} but was ${actual.toString()}`,
 ): void {
   // eslint-disable-next-line no-unused-expressions
   expect(actual.eq(expected), message).to.be.true;
@@ -175,22 +175,21 @@ describe("TermAuction", () => {
     oracle = await smock.fake<TermPriceConsumerV3>("TermPriceConsumerV3");
     await oracle.deployed();
 
-    const termEventEmitterFactory = await ethers.getContractFactory(
-      "TermEventEmitter"
-    );
+    const termEventEmitterFactory =
+      await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
       [wallets[3].address, wallets[4].address, wallets[5].address],
-      { kind: "uups" }
+      { kind: "uups" },
     )) as TermEventEmitter;
 
     termAuctionBidLocker = await smock.fake<TermAuctionBidLocker>(
-      "TermAuctionBidLocker"
+      "TermAuctionBidLocker",
     );
     await termAuctionBidLocker.deployed();
 
     termAuctionOfferLocker = await smock.fake<TermAuctionOfferLocker>(
-      "TermAuctionOfferLocker"
+      "TermAuctionOfferLocker",
     );
     await termAuctionOfferLocker.deployed();
 
@@ -198,35 +197,32 @@ describe("TermAuction", () => {
     await termRepoServicer.deployed();
 
     termRepoCollateralManager = await smock.fake<TermRepoCollateralManager>(
-      "TermRepoCollateralManager"
+      "TermRepoCollateralManager",
     );
     await termRepoCollateralManager.deployed();
 
-    pastTermRepoServicer = await smock.fake<TermRepoServicer>(
-      "TermRepoServicer"
-    );
+    pastTermRepoServicer =
+      await smock.fake<TermRepoServicer>("TermRepoServicer");
     await pastTermRepoServicer.deployed();
 
     pastTermRepoCollateralManager = await smock.fake<TermRepoCollateralManager>(
-      "TermRepoCollateralManager"
+      "TermRepoCollateralManager",
     );
     await pastTermRepoCollateralManager.deployed();
 
     pastTermRepoRolloverManager = await smock.fake<TermRepoRolloverManager>(
-      "TermRepoRolloverManager"
+      "TermRepoRolloverManager",
     );
     await pastTermRepoRolloverManager.deployed();
 
-    testCollateralToken = await smock.fake<ERC20Upgradeable>(
-      "ERC20Upgradeable"
-    );
+    testCollateralToken =
+      await smock.fake<ERC20Upgradeable>("ERC20Upgradeable");
     await testCollateralToken.deployed();
     testBorrowedToken = await smock.fake<ERC20Upgradeable>("ERC20Upgradeable");
     await testBorrowedToken.deployed();
 
-    const termAuctionFactory = await ethers.getContractFactory(
-      "TestingTermAuction"
-    );
+    const termAuctionFactory =
+      await ethers.getContractFactory("TestingTermAuction");
 
     const endAuction = dayjs().subtract(10, "minute");
     const maturityTimestamp = endAuction.add(360, "day");
@@ -237,7 +233,7 @@ describe("TermAuction", () => {
 
     auctionIdHash = ethers.utils.solidityKeccak256(
       ["string"],
-      [auctionIdString]
+      [auctionIdString],
     );
 
     termAuction = (await upgrades.deployProxy(
@@ -254,7 +250,7 @@ describe("TermAuction", () => {
       ],
       {
         kind: "uups",
-      }
+      },
     )) as TestingTermAuction;
     await termEventEmitter
       .connect(wallets[5])
@@ -269,10 +265,10 @@ describe("TermAuction", () => {
           termAuctionOfferLocker.address,
           wallets[4].address,
           wallets[6].address,
-          "0.1.0"
-        )
+          "0.1.0",
+        ),
     ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`
+      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`,
     );
     await termAuction
       .connect(wallets[5])
@@ -283,7 +279,7 @@ describe("TermAuction", () => {
         termAuctionOfferLocker.address,
         wallets[4].address,
         wallets[6].address,
-        "0.1.0"
+        "0.1.0",
       );
     await expect(
       termAuction
@@ -295,8 +291,8 @@ describe("TermAuction", () => {
           termAuctionOfferLocker.address,
           wallets[4].address,
           wallets[6].address,
-          "0.1.0"
-        )
+          "0.1.0",
+        ),
     ).to.be.revertedWithCustomError(termAuction, "AlreadyTermContractPaired");
   });
 
@@ -313,7 +309,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_random1,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -342,7 +338,7 @@ describe("TermAuction", () => {
       await termAuction.calculateClearingPrice(
         revealedBids,
         revealedOffers,
-        "1"
+        "1",
       );
 
     expectBigNumberEq(clearingPrice, "495000000000000000");
@@ -359,7 +355,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_elasticsupply,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -388,7 +384,7 @@ describe("TermAuction", () => {
       await termAuction.calculateClearingPrice(
         revealedBids,
         revealedOffers,
-        "1"
+        "1",
       );
 
     expectBigNumberEq(clearingPrice, "340000000000000000");
@@ -400,7 +396,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_elasticdemand,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -429,7 +425,7 @@ describe("TermAuction", () => {
       await termAuction.calculateClearingPrice(
         revealedBids,
         revealedOffers,
-        "1"
+        "1",
       );
 
     expectBigNumberEq(clearingPrice, "625000000000000000");
@@ -441,7 +437,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_inelasticsupply,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -470,7 +466,7 @@ describe("TermAuction", () => {
       await termAuction.calculateClearingPrice(
         revealedBids,
         revealedOffers,
-        "1"
+        "1",
       );
 
     expectBigNumberEq(clearingPrice, "510000000000000000"); // 5.1%
@@ -482,7 +478,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_inelasticdemand,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -511,7 +507,7 @@ describe("TermAuction", () => {
       await termAuction.calculateClearingPrice(
         revealedBids,
         revealedOffers,
-        "1"
+        "1",
       );
 
     expectBigNumberEq(clearingPrice, "570000000000000000"); // 5.75%
@@ -523,7 +519,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_rltest1,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -552,7 +548,7 @@ describe("TermAuction", () => {
       await termAuction.calculateClearingPrice(
         revealedBids,
         revealedOffers,
-        "1"
+        "1",
       );
 
     expectBigNumberEq(clearingPrice, "256250000000000000"); // 2.5625%
@@ -566,7 +562,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_noClear,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -599,7 +595,7 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [],
-      })
+      }),
     )
       .to.emit(termEventEmitter, "AuctionCancelled")
       .withArgs(auctionIdHash, false, false);
@@ -610,7 +606,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_noClear,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedOffers: TermAuctionRevealedOfferStruct[] = [];
@@ -641,7 +637,7 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [],
-      })
+      }),
     )
       .to.emit(termEventEmitter, "AuctionCancelled")
       .withArgs(auctionIdHash, false, false);
@@ -652,7 +648,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_random1,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -688,14 +684,14 @@ describe("TermAuction", () => {
     termRepoServicer.isTermRepoBalanced.returns(true);
     termRepoServicer.openExposureOnRolloverNew.returns();
     termRepoServicer.termRepoCollateralManager.returns(
-      termRepoCollateralManager.address
+      termRepoCollateralManager.address,
     );
     pastTermRepoServicer.closeExposureOnRolloverExisting.returns();
     pastTermRepoServicer.termRepoCollateralManager.returns(
-      pastTermRepoCollateralManager.address
+      pastTermRepoCollateralManager.address,
     );
     pastTermRepoServicer.termRepoRolloverManager.returns(
-      pastTermRepoRolloverManager.address
+      pastTermRepoRolloverManager.address,
     );
     pastTermRepoRolloverManager.fulfillRollover.returns();
     pastTermRepoCollateralManager.transferRolloverCollateral.returns();
@@ -711,11 +707,11 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [bids[0].id],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [],
-      })
+      }),
     )
       .to.be.revertedWithCustomError(termAuction, `InvalidParameters`)
       .withArgs(
-        "All tender prices must be revealed for auction to be complete"
+        "All tender prices must be revealed for auction to be complete",
       );
 
     await expect(
@@ -725,11 +721,11 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [offers[0].id],
-      })
+      }),
     )
       .to.be.revertedWithCustomError(termAuction, `InvalidParameters`)
       .withArgs(
-        "All tender prices must be revealed for auction to be complete"
+        "All tender prices must be revealed for auction to be complete",
       );
 
     await termAuction.completeAuction({
@@ -752,7 +748,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_random2,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -788,14 +784,14 @@ describe("TermAuction", () => {
     termRepoServicer.isTermRepoBalanced.returns(true);
     termRepoServicer.openExposureOnRolloverNew.returns();
     termRepoServicer.termRepoCollateralManager.returns(
-      termRepoCollateralManager.address
+      termRepoCollateralManager.address,
     );
     pastTermRepoServicer.closeExposureOnRolloverExisting.returns();
     pastTermRepoServicer.termRepoCollateralManager.returns(
-      pastTermRepoCollateralManager.address
+      pastTermRepoCollateralManager.address,
     );
     pastTermRepoServicer.termRepoRolloverManager.returns(
-      pastTermRepoRolloverManager.address
+      pastTermRepoRolloverManager.address,
     );
     pastTermRepoRolloverManager.fulfillRollover.returns();
     pastTermRepoCollateralManager.transferRolloverCollateral.returns();
@@ -811,11 +807,11 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [bids[0].id],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [],
-      })
+      }),
     )
       .to.be.revertedWithCustomError(termAuction, `InvalidParameters`)
       .withArgs(
-        "All tender prices must be revealed for auction to be complete"
+        "All tender prices must be revealed for auction to be complete",
       );
 
     await expect(
@@ -825,11 +821,11 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [offers[0].id],
-      })
+      }),
     )
       .to.be.revertedWithCustomError(termAuction, `InvalidParameters`)
       .withArgs(
-        "All tender prices must be revealed for auction to be complete"
+        "All tender prices must be revealed for auction to be complete",
       );
 
     await expect(
@@ -839,7 +835,7 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [],
-      })
+      }),
     )
       .to.emit(termEventEmitter, "AuctionCancelled")
       .withArgs(auctionIdHash, true, false);
@@ -854,7 +850,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_elasticsupply,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -895,7 +891,7 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [],
-      })
+      }),
     )
       .to.emit(termEventEmitter, "BidAssigned")
       .withArgs(auctionIdHash, getBytesHash("test-bid-4"), anyValue)
@@ -918,7 +914,7 @@ describe("TermAuction", () => {
         anyValue,
         anyValue,
         anyValue,
-        "340000000000000000"
+        "340000000000000000",
       );
 
     const clearingPrice = await termAuction.clearingPrice();
@@ -934,7 +930,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_elasticdemand,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -975,7 +971,7 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [],
-      })
+      }),
     )
       .to.emit(termEventEmitter, "BidAssigned")
       .withArgs(auctionIdHash, getBytesHash("test-bid-16"), anyValue)
@@ -1012,7 +1008,7 @@ describe("TermAuction", () => {
         anyValue,
         anyValue,
         anyValue,
-        "625000000000000000"
+        "625000000000000000",
       );
 
     const clearingPrice = await termAuction.clearingPrice();
@@ -1027,7 +1023,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_inelasticsupply,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -1068,7 +1064,7 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [],
-      })
+      }),
     )
       .to.emit(termEventEmitter, "BidAssigned")
       .withArgs(auctionIdHash, getBytesHash("test-bid-4"), anyValue)
@@ -1101,7 +1097,7 @@ describe("TermAuction", () => {
         anyValue,
         anyValue,
         anyValue,
-        "510000000000000000"
+        "510000000000000000",
       );
 
     const clearingPrice = await termAuction.clearingPrice();
@@ -1116,7 +1112,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_noClear,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -1157,7 +1153,7 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [],
-      })
+      }),
     )
       .to.emit(termEventEmitter, "AuctionCancelled")
       .withArgs(auctionIdHash, true, false);
@@ -1168,7 +1164,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_random1,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -1239,7 +1235,7 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [],
-      })
+      }),
     )
       .to.emit(termEventEmitter, "AuctionCancelled")
       .withArgs(auctionIdHash, false, false);
@@ -1253,7 +1249,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_random1,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -1302,7 +1298,7 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [],
-      })
+      }),
     ).to.be.revertedWithCustomError(termAuction, "AuctionAlreadyCompleted");
   });
   it("completeAuction reverts if the auction is not closed", async () => {
@@ -1315,7 +1311,7 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [],
-      })
+      }),
     ).to.be.revertedWithCustomError(termAuction, "AuctionNotClosed");
   });
   it("upgrade succeeds with admin and reverted if called by somebody else", async () => {
@@ -1324,9 +1320,9 @@ describe("TermAuction", () => {
       .withArgs(termAuction.address, wallets[0].address);
 
     await expect(
-      termAuction.connect(wallets[1]).upgrade(wallets[0].address)
+      termAuction.connect(wallets[1]).upgrade(wallets[0].address),
     ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
     );
   });
   it("can pause and unpause completeAuction", async () => {
@@ -1334,7 +1330,7 @@ describe("TermAuction", () => {
       clearingPriceTestCSV_random1,
       testBorrowedToken.address,
       testCollateralToken.address,
-      wallets
+      wallets,
     );
 
     const revealedBids: TermAuctionRevealedBidStruct[] = [];
@@ -1369,7 +1365,7 @@ describe("TermAuction", () => {
     testBorrowedToken.decimals.returns(8);
 
     await expect(
-      termAuction.connect(wallets[6]).pauseCompleteAuction()
+      termAuction.connect(wallets[6]).pauseCompleteAuction(),
     ).to.emit(termEventEmitter, "CompleteAuctionPaused");
 
     await expect(
@@ -1379,11 +1375,11 @@ describe("TermAuction", () => {
         unrevealedBidSubmissions: [],
         revealedOfferSubmissions: [],
         unrevealedOfferSubmissions: [],
-      })
+      }),
     ).to.be.revertedWithCustomError(termAuction, "CompleteAuctionPaused");
 
     await expect(
-      termAuction.connect(wallets[6]).unpauseCompleteAuction()
+      termAuction.connect(wallets[6]).unpauseCompleteAuction(),
     ).to.emit(termEventEmitter, "CompleteAuctionUnpaused");
 
     await termAuction.completeAuction({

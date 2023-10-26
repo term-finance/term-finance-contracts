@@ -26,7 +26,7 @@ describe("deploy-utils", () => {
   let oracle: TermPriceConsumerV3;
   let termInitializer: TermInitializer;
   let controllerAdmin: SignerWithAddress;
-  let evergreenManagementWallet: SignerWithAddress;
+  let termDelisterWallet: SignerWithAddress;
   let testCollateralToken: FakeContract<ERC20Upgradeable>;
   let testBorrowedToken: FakeContract<ERC20Upgradeable>;
 
@@ -41,12 +41,11 @@ describe("deploy-utils", () => {
       deployApprove,
       adminWallet,
       controllerAdmin,
-      evergreenManagementWallet,
+      termDelisterWallet,
     ] = await ethers.getSigners();
 
-    const termControllerFactory = await ethers.getContractFactory(
-      "TermController"
-    );
+    const termControllerFactory =
+      await ethers.getContractFactory("TermController");
     termController = (await upgrades.deployProxy(
       termControllerFactory,
       [
@@ -54,49 +53,45 @@ describe("deploy-utils", () => {
         reserve.address,
         controllerAdmin.address,
         devopsMultisig.address,
-        evergreenManagementWallet.address,
       ],
       {
         kind: "uups",
-      }
+      },
     )) as TermController;
 
     const termPriceOracleFactory = await ethers.getContractFactory(
-      "TermPriceConsumerV3"
+      "TermPriceConsumerV3",
     );
     oracle = (await upgrades.deployProxy(
       termPriceOracleFactory,
-      [devopsMultisig.address, evergreenManagementWallet.address],
+      [devopsMultisig.address],
       {
         kind: "uups",
-      }
+      },
     )) as TermPriceConsumerV3;
 
-    const termInitializerFactory = await ethers.getContractFactory(
-      "TermInitializer"
-    );
+    const termInitializerFactory =
+      await ethers.getContractFactory("TermInitializer");
     termInitializer = await termInitializerFactory.deploy(
       deployApprove.address,
-      devopsMultisig.address
+      devopsMultisig.address,
     );
     await termInitializer.deployed();
 
-    const termEventEmitterFactory = await ethers.getContractFactory(
-      "TermEventEmitter"
-    );
+    const termEventEmitterFactory =
+      await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
       [
         devopsMultisig.address,
-        evergreenManagementWallet.address,
+        termDelisterWallet.address,
         termInitializer.address,
       ],
-      { kind: "uups" }
+      { kind: "uups" },
     )) as TermEventEmitter;
 
-    testCollateralToken = await smock.fake<ERC20Upgradeable>(
-      "ERC20Upgradeable"
-    );
+    testCollateralToken =
+      await smock.fake<ERC20Upgradeable>("ERC20Upgradeable");
     await testCollateralToken.deployed();
     testBorrowedToken = await smock.fake<ERC20Upgradeable>("ERC20Upgradeable");
     await testBorrowedToken.deployed();
@@ -104,7 +99,7 @@ describe("deploy-utils", () => {
     await termInitializer.pairTermContracts(
       termController.address,
       termEventEmitter.address,
-      oracle.address
+      oracle.address,
     );
   });
 
@@ -163,7 +158,7 @@ describe("deploy-utils", () => {
         auctionVersion: "0.1.0",
         mintExposureCap: "1000000000000000000",
       },
-      "uups"
+      "uups",
     );
   });
   /*
@@ -323,7 +318,7 @@ describe("deploy-utils", () => {
 
         termInitializerAddress: termInitializer.address,
       },
-      "uups"
+      "uups",
     );
   });
 });

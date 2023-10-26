@@ -35,13 +35,12 @@ describe("TermRepoToken Tests", () => {
     expectedVersion = await versionable.version();
     const TermRepoToken = await ethers.getContractFactory("TestTermRepoToken");
 
-    const termEventEmitterFactory = await ethers.getContractFactory(
-      "TermEventEmitter"
-    );
+    const termEventEmitterFactory =
+      await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
       [devopsMultisig.address, wallet2.address, termInitializer.address],
-      { kind: "uups" }
+      { kind: "uups" },
     )) as TermEventEmitter;
 
     const termIdString = "term-id-1";
@@ -65,7 +64,7 @@ describe("TermRepoToken Tests", () => {
       ],
       {
         kind: "uups",
-      }
+      },
     )) as TestTermRepoToken;
 
     await termRepoToken.deployed();
@@ -79,10 +78,10 @@ describe("TermRepoToken Tests", () => {
           contractAddress.address,
           termEventEmitter.address,
           devopsMultisig.address,
-          adminWallet.address
-        )
+          adminWallet.address,
+        ),
     ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`
+      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`,
     );
 
     await termRepoToken
@@ -91,7 +90,7 @@ describe("TermRepoToken Tests", () => {
         contractAddress.address,
         termEventEmitter.address,
         devopsMultisig.address,
-        adminWallet.address
+        adminWallet.address,
       );
     await expect(
       termRepoToken
@@ -100,8 +99,8 @@ describe("TermRepoToken Tests", () => {
           contractAddress.address,
           termEventEmitter.address,
           devopsMultisig.address,
-          adminWallet.address
-        )
+          adminWallet.address,
+        ),
     ).to.be.revertedWithCustomError(termRepoToken, "AlreadyTermContractPaired");
     termIdHashed = ethers.utils.solidityKeccak256(["string"], [termIdString]);
 
@@ -109,7 +108,7 @@ describe("TermRepoToken Tests", () => {
       termEventEmitter.filters.TermRepoTokenInitialized(null, null, null);
 
     const termRepoTokenIntializedEvents = await termEventEmitter.queryFilter(
-      termRepoTokenInitializedFilter
+      termRepoTokenInitializedFilter,
     );
 
     expect(termRepoTokenIntializedEvents.length).to.equal(1);
@@ -126,15 +125,15 @@ describe("TermRepoToken Tests", () => {
   describe("TermRepoToken Upgrades", async () => {
     it("TermRepoToken upgrade succeeds with admin and reverted if called by somebody else", async () => {
       await expect(
-        termRepoToken.connect(devopsMultisig).upgrade(wallet1.address)
+        termRepoToken.connect(devopsMultisig).upgrade(wallet1.address),
       )
         .to.emit(termEventEmitter, "TermContractUpgraded")
         .withArgs(termRepoToken.address, wallet1.address);
 
       await expect(
-        termRepoToken.connect(wallet2).upgrade(wallet1.address)
+        termRepoToken.connect(wallet2).upgrade(wallet1.address),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
       );
     });
   });
@@ -151,15 +150,15 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken
           .connect(wallet1)
-          .mintRedemptionValue(wallet1.address, 10000000)
+          .mintRedemptionValue(wallet1.address, 10000000),
       ).to.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6`
+        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6`,
       );
 
       await expect(
-        termRepoToken.connect(wallet1).mintTokens(wallet1.address, 10000000)
+        termRepoToken.connect(wallet1).mintTokens(wallet1.address, 10000000),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6`
+        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6`,
       );
     });
     it("Mint Calls by Minter Role succeeds", async () => {
@@ -179,9 +178,9 @@ describe("TermRepoToken Tests", () => {
     it("Mint Calls revert when minting is paused and succeed when unpaused.", async () => {
       // pausing reverts when not called by the admin
       await expect(
-        termRepoToken.connect(contractAddress).pauseMinting()
+        termRepoToken.connect(contractAddress).pauseMinting(),
       ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await expect(termRepoToken.connect(adminWallet).pauseMinting())
@@ -191,26 +190,26 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken
           .connect(contractAddress)
-          .mintRedemptionValue(wallet1.address, 10000000)
+          .mintRedemptionValue(wallet1.address, 10000000),
       ).to.be.revertedWithCustomError(
         termRepoToken,
-        "TermRepoTokenMintingPaused"
+        "TermRepoTokenMintingPaused",
       );
 
       await expect(
         termRepoToken
           .connect(contractAddress)
-          .mintTokens(wallet1.address, 10000000)
+          .mintTokens(wallet1.address, 10000000),
       ).to.be.revertedWithCustomError(
         termRepoToken,
-        "TermRepoTokenMintingPaused"
+        "TermRepoTokenMintingPaused",
       );
 
       // unpausing reverts when not called by the admin
       await expect(
-        termRepoToken.connect(contractAddress).unpauseMinting()
+        termRepoToken.connect(contractAddress).unpauseMinting(),
       ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await expect(termRepoToken.connect(adminWallet).unpauseMinting())
@@ -237,9 +236,9 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken
           .connect(wallet2)
-          .resetMintExposureCap("2000000000000000000")
+          .resetMintExposureCap("2000000000000000000"),
       ).to.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await termRepoToken
@@ -247,7 +246,7 @@ describe("TermRepoToken Tests", () => {
         .resetMintExposureCap("2000000000000000000");
 
       expect(await termRepoToken.mintExposureCap()).to.be.eq(
-        "2000000000000000000"
+        "2000000000000000000",
       );
     });
     it("Decrementing max direct mint supply", async () => {
@@ -261,7 +260,7 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken
           .connect(contractAddress)
-          .decrementMintExposureCap("2000000000000000000")
+          .decrementMintExposureCap("2000000000000000000"),
       ).to.revertedWithCustomError(termRepoToken, `MintExposureCapExceeded`);
     });
     it("Mint Call by Address Not granted Minter Role", async () => {
@@ -269,15 +268,15 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken
           .connect(wallet1)
-          .mintRedemptionValue(wallet1.address, 10000000)
+          .mintRedemptionValue(wallet1.address, 10000000),
       ).to.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6`
+        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6`,
       );
 
       await expect(
-        termRepoToken.connect(wallet1).mintTokens(wallet1.address, 10000000)
+        termRepoToken.connect(wallet1).mintTokens(wallet1.address, 10000000),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6`
+        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6`,
       );
     });
     it("Mint Calls by Minter Role succeeds", async () => {
@@ -297,9 +296,9 @@ describe("TermRepoToken Tests", () => {
     it("Mint Calls revert when minting is paused and succeed when unpaused.", async () => {
       // pausing reverts when not called by the admin
       await expect(
-        termRepoToken.connect(contractAddress).pauseMinting()
+        termRepoToken.connect(contractAddress).pauseMinting(),
       ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await expect(termRepoToken.connect(adminWallet).pauseMinting())
@@ -309,26 +308,26 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken
           .connect(contractAddress)
-          .mintRedemptionValue(wallet1.address, 10000000)
+          .mintRedemptionValue(wallet1.address, 10000000),
       ).to.be.revertedWithCustomError(
         termRepoToken,
-        "TermRepoTokenMintingPaused"
+        "TermRepoTokenMintingPaused",
       );
 
       await expect(
         termRepoToken
           .connect(contractAddress)
-          .mintTokens(wallet1.address, 10000000)
+          .mintTokens(wallet1.address, 10000000),
       ).to.be.revertedWithCustomError(
         termRepoToken,
-        "TermRepoTokenMintingPaused"
+        "TermRepoTokenMintingPaused",
       );
 
       // unpausing reverts when not called by the admin
       await expect(
-        termRepoToken.connect(contractAddress).unpauseMinting()
+        termRepoToken.connect(contractAddress).unpauseMinting(),
       ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await expect(termRepoToken.connect(adminWallet).unpauseMinting())
@@ -353,9 +352,9 @@ describe("TermRepoToken Tests", () => {
     it("Burn Call by Address Not granted Burner Role", async () => {
       // Revert transaction if user is not granted role equal to keccak256("BURNER_ROLE")
       await expect(
-        termRepoToken.connect(wallet1).burn(wallet1.address, 10)
+        termRepoToken.connect(wallet1).burn(wallet1.address, 10),
       ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x3c11d16cbaffd01df69ce1c404f6340ee057498f5f00246190ea54220576a848`
+        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x3c11d16cbaffd01df69ce1c404f6340ee057498f5f00246190ea54220576a848`,
       );
     });
     it("Burn Call by Burner Role succeeds", async () => {
@@ -366,7 +365,7 @@ describe("TermRepoToken Tests", () => {
         .connect(contractAddress)
         .burn(wallet1.address, 9000000);
       expect(await termRepoToken.mintExposureCap()).to.eq(
-        "1000000000009000000"
+        "1000000000009000000",
       );
 
       expect(await termRepoToken.balanceOf(wallet1.address)).to.equal(1000000);
@@ -378,9 +377,9 @@ describe("TermRepoToken Tests", () => {
         .mintRedemptionValue(wallet1.address, 10000000);
       // pausing reverts when not called by the admin
       await expect(
-        termRepoToken.connect(contractAddress).pauseBurning()
+        termRepoToken.connect(contractAddress).pauseBurning(),
       ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await expect(termRepoToken.connect(adminWallet).pauseBurning())
@@ -388,26 +387,26 @@ describe("TermRepoToken Tests", () => {
         .withArgs(termIdHashed);
 
       await expect(
-        termRepoToken.connect(contractAddress).burn(wallet1.address, 10000000)
+        termRepoToken.connect(contractAddress).burn(wallet1.address, 10000000),
       ).to.be.revertedWithCustomError(
         termRepoToken,
-        "TermRepoTokenBurningPaused"
+        "TermRepoTokenBurningPaused",
       );
 
       await expect(
         termRepoToken
           .connect(contractAddress)
-          .burnAndReturnValue(wallet1.address, 10000000)
+          .burnAndReturnValue(wallet1.address, 10000000),
       ).to.be.revertedWithCustomError(
         termRepoToken,
-        "TermRepoTokenBurningPaused"
+        "TermRepoTokenBurningPaused",
       );
 
       // unpausing reverts when not called by the admin
       await expect(
-        termRepoToken.connect(contractAddress).unpauseBurning()
+        termRepoToken.connect(contractAddress).unpauseBurning(),
       ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`
+        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
 
       await expect(termRepoToken.connect(adminWallet).unpauseBurning())

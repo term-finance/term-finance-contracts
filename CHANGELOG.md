@@ -33,3 +33,20 @@
 
 
 **Full Changelog**: https://github.com/term-finance/term-finance/compare/0.5.29...0.5.31
+
+## 0.5.32
+
+### What's Changed
+* [stylebot] Fixes for code style by @github-actions in https://github.com/term-finance/term-finance/pull/1126
+* Bump version to 0.5.32 by @github-actions in https://github.com/term-finance/term-finance/pull/1124
+* Bump crypto-js from 4.1.1 to 4.2.0 by @dependabot in https://github.com/term-finance/term-finance/pull/1122
+* Bump @types/node from 20.8.6 to 20.8.9 by @dependabot in https://github.com/term-finance/term-finance/pull/1125
+* Upgrades to yarn 4. by @robotoer in https://github.com/term-finance/term-finance/pull/1120
+* Bump prettier from 2.8.8 to 3.0.3 by @dependabot in https://github.com/term-finance/term-finance/pull/1128
+* Bump eslint-plugin-prettier from 4.2.1 to 5.0.1 by @dependabot in https://github.com/term-finance/term-finance/pull/1129
+* eliminate evergreen management role from protocol by @aazhou1 in https://github.com/term-finance/term-finance/pull/1132
+* [stylebot] Fixes for code style by @github-actions in https://github.com/term-finance/term-finance/pull/1133
+* Publishes latest docs. by @robotoer in https://github.com/term-finance/term-finance/pull/1134
+
+
+**Full Changelog**: https://github.com/term-finance/term-finance/compare/0.5.31...0.5.32

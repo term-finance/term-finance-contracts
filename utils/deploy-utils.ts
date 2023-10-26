@@ -76,7 +76,7 @@ function logGasCost(receipt: TransactionReceipt) {
 async function retry<T>(
   fn: () => Promise<T>,
   retriesLeft = 10,
-  interval = 30000
+  interval = 30000,
 ) {
   try {
     return await fn();
@@ -88,7 +88,7 @@ async function retry<T>(
     return await new Promise<T>((resolve) => {
       setTimeout(
         () => retry(fn, retriesLeft - 1, interval).then(resolve),
-        interval
+        interval,
       );
     });
   }
@@ -97,7 +97,7 @@ async function retry<T>(
 function getContractFactory(
   name: string,
   signer?: Signer,
-  libraries?: Libraries
+  libraries?: Libraries,
 ): Promise<ContractFactory> {
   const contractFactoryOptions: FactoryOptions = {};
   if (libraries) {
@@ -111,7 +111,7 @@ function getContractFactory(
 
 export async function deployLibrary(
   name: string,
-  signer: Signer | undefined = undefined
+  signer: Signer | undefined = undefined,
 ) {
   const contractFactory = await ethers.getContractFactory(name, signer);
   const deployedLibrary = await contractFactory.deploy();
@@ -128,7 +128,7 @@ export async function deployContract<T extends Contract = Contract>(
   kind: "uups" | "transparent" | "raw" = "uups",
   signer: Signer | undefined = undefined,
   libraries: Libraries | undefined = undefined,
-  skipInitialize = false
+  skipInitialize = false,
 ) {
   console.log(`Deploying ${name} with kind ${kind}...`);
 
@@ -156,7 +156,7 @@ export async function deployContract<T extends Contract = Contract>(
           timeout: 0,
         });
   console.log(
-    `${name} deployment txn: ${deployedContract.deployTransaction.hash}`
+    `${name} deployment txn: ${deployedContract.deployTransaction.hash}`,
   );
   await deployedContract.deployed();
   console.log(`${name} deployed to: ${deployedContract.address}`);
@@ -168,7 +168,7 @@ export async function upgradeContract<T extends Contract = Contract>(
   address: string,
   kind: "uups" | "transparent" = "uups",
   signer: Signer | undefined = undefined,
-  libraries: Libraries | undefined = undefined
+  libraries: Libraries | undefined = undefined,
 ) {
   const contractFactory = await getContractFactory(name, signer, libraries);
 
@@ -188,7 +188,7 @@ export async function upgradeContract<T extends Contract = Contract>(
 export async function scheduleCompleteAuctionTask(
   gelatoOps: GelatoOpsSDK,
   auction: Contract,
-  cid: string
+  cid: string,
 ) {
   // Create task using ops-sdk
   console.log("Creating automate task...");
@@ -205,14 +205,14 @@ export async function scheduleCompleteAuctionTask(
   await tx.wait();
   console.log(`Task created, taskId: ${taskId} (tx hash: ${tx.hash})`);
   console.log(
-    `> https://beta.app.gelato.network/task/${taskId}?chainId=${tx.chainId}`
+    `> https://beta.app.gelato.network/task/${taskId}?chainId=${tx.chainId}`,
   );
 }
 
 export async function scheduleBatchProcessRolloversTask(
   gelatoOps: GelatoOpsSDK,
   rolloverManager: Contract,
-  cid: string
+  cid: string,
 ) {
   // Create task using ops-sdk
   console.log("Creating automate task...");
@@ -229,7 +229,7 @@ export async function scheduleBatchProcessRolloversTask(
   await tx.wait();
   console.log(`Task created, taskId: ${taskId} (tx hash: ${tx.hash})`);
   console.log(
-    `> https://beta.app.gelato.network/task/${taskId}?chainId=${tx.chainId}`
+    `> https://beta.app.gelato.network/task/${taskId}?chainId=${tx.chainId}`,
   );
 }
 
@@ -240,19 +240,13 @@ export async function deployController(
   devopsWallet: string,
   evergreenManagementWallet: string,
   kind: "uups" | "transparent" | "raw" = "uups",
-  signer: Signer | undefined = undefined
+  signer: Signer | undefined = undefined,
 ): Promise<TermController> {
   const termControllerContract = await deployContract<TermController>(
     "TermController",
-    [
-      treasuryAddress,
-      protocolReserveAddress,
-      adminWallet,
-      devopsWallet,
-      evergreenManagementWallet,
-    ],
+    [treasuryAddress, protocolReserveAddress, adminWallet, devopsWallet],
     kind,
-    signer
+    signer,
   );
   return termControllerContract;
 }
@@ -262,13 +256,13 @@ export async function deployEventEmitter(
   termDelister: string,
   termInitializer: string,
   kind: "uups" | "transparent" | "raw" = "uups",
-  signer: Signer | undefined = undefined
+  signer: Signer | undefined = undefined,
 ): Promise<TermEventEmitter> {
   const termEventEmitterContract = await deployContract<TermEventEmitter>(
     "TermEventEmitter",
     [devopsWallet, termDelister, termInitializer],
     kind,
-    signer
+    signer,
   );
   return termEventEmitterContract;
 }
@@ -277,13 +271,13 @@ export async function deployPriceOracle(
   devopsWallet: string,
   evergreenManagementWallet: string,
   kind: "uups" | "transparent" | "raw" = "uups",
-  signer: Signer | undefined = undefined
+  signer: Signer | undefined = undefined,
 ): Promise<TermPriceConsumerV3> {
   const termPriceConsumer = await deployContract<TermPriceConsumerV3>(
     "TermPriceConsumerV3",
-    [devopsWallet, evergreenManagementWallet],
+    [devopsWallet],
     kind,
-    signer
+    signer,
   );
   return termPriceConsumer;
 }
@@ -291,23 +285,23 @@ export async function deployPriceOracle(
 export async function deployInitializer(
   termApprovalWallet: string,
   devopsWallet: string,
-  signer: Signer | undefined = undefined
+  signer: Signer | undefined = undefined,
 ): Promise<TermInitializer> {
   const contractFactory = (await getContractFactory(
     "TermInitializer",
     signer,
-    undefined
+    undefined,
   )) as TermInitializer__factory;
 
   const termInitializer = await contractFactory.deploy(
     termApprovalWallet,
-    devopsWallet
+    devopsWallet,
   );
   return termInitializer;
 }
 
 export async function deployMultiSend(
-  signer: Signer | undefined = undefined
+  signer: Signer | undefined = undefined,
 ): Promise<MultiSend> {
   const multisendFactory = await ethers.getContractFactory("MultiSend", signer);
   const multiSend = await multisendFactory.deploy();
@@ -317,14 +311,14 @@ export async function deployMultiSend(
 
 export async function whitelistContract(
   termController: TermController,
-  termAddress: string
+  termAddress: string,
 ) {
   await termController.markTermDeployed(termAddress);
 }
 
 export async function whitelistContractForEventEmitter(
   eventEmitter: TermEventEmitter,
-  termAddress: string
+  termAddress: string,
 ) {
   await eventEmitter.pairTermContract(termAddress);
 }
@@ -338,14 +332,14 @@ export async function deployTermContract<T extends Contract>(
   termController: TermController,
   termEventEmitter: TermEventEmitter,
   signer: Signer | undefined = undefined,
-  libraries: Libraries | undefined = undefined
+  libraries: Libraries | undefined = undefined,
 ) {
   const termContract = await deployContract(
     name,
     args,
     kind,
     signer,
-    libraries
+    libraries,
   );
 
   // TODO: Security issue if left whitelisted and deploy fails?
@@ -478,7 +472,7 @@ export async function deployMaturityPeriod(
     pairTermContractsThruGnosis?: boolean;
     scheduleGelatoOps?: boolean;
   },
-  kind: "uups" | "transparent" | "raw" = "uups"
+  kind: "uups" | "transparent" | "raw" = "uups",
 ): Promise<MaturityPeriodInfo> {
   const [defaultSigner] = await ethers.getSigners();
   const managedSigner = new NonceManager(defaultSigner as any);
@@ -490,25 +484,25 @@ export async function deployMaturityPeriod(
   const termController = (await ethers.getContractAt(
     TermControllerABI,
     termControllerAddress,
-    controllerAdmin
+    controllerAdmin,
   )) as TermController;
 
   const eventEmitter = (await ethers.getContractAt(
     TermEventEmitterABI,
     termEventEmitterAddress,
-    managedSigner
+    managedSigner,
   )) as TermEventEmitter;
   const oracle: TermPriceConsumerV3 = (await ethers.getContractAt(
     TermPriceConsumerV3ABI,
     termOracleAddress,
-    managedSigner
+    managedSigner,
   )) as TermPriceConsumerV3;
   const initializer: TermInitializer | undefined =
     termInitializerAddress && !pairTermContractsThruGnosis
       ? ((await ethers.getContractAt(
           TermInitializerABI,
           termInitializerAddress,
-          managedSigner
+          managedSigner,
         )) as TermInitializer)
       : undefined;
   const initializerForApproval: TermInitializer | undefined =
@@ -516,13 +510,13 @@ export async function deployMaturityPeriod(
       ? ((await ethers.getContractAt(
           TermInitializerABI,
           termInitializerAddress,
-          termApprovalMultisig
+          termApprovalMultisig,
         )) as TermInitializer)
       : undefined;
   const purchaseToken = (await ethers.getContractAt(
     IERC20MetadataUpgradeableABI,
     purchaseTokenAddress,
-    managedSigner
+    managedSigner,
   )) as IERC20MetadataUpgradeable;
 
   const purchaseTokenDecimals = await purchaseToken.decimals();
@@ -557,7 +551,7 @@ export async function deployMaturityPeriod(
     ? ((await ethers.getContractAt(
         termRepoServicerContractName,
         termRepoServicerAddress,
-        managedSigner
+        managedSigner,
       )) as TermRepoServicer)
     : termRepoServicerImplAddress
     ? ((await deployContractUUPSProxyBeacon(
@@ -575,7 +569,7 @@ export async function deployMaturityPeriod(
           termController.address,
           termEventEmitterAddress,
           initializerAddressDefined,
-        ]
+        ],
       )) as TermRepoServicer)
     : await deployTermContract<TermRepoServicer>(
         termRepoServicerContractName,
@@ -593,19 +587,19 @@ export async function deployMaturityPeriod(
         kind,
         termController,
         eventEmitter,
-        managedSigner
+        managedSigner,
       );
   const termRepoCollateralManager = collateralManagerAddress
     ? ((await ethers.getContractAt(
         termRepoCollateralManagerContractName,
         collateralManagerAddress,
-        managedSigner
+        managedSigner,
       )) as TermRepoCollateralManager)
     : collateralManagerImplAddress
     ? ((await deployContractUUPSProxyBeacon(
         await getContractFactory(
           termRepoCollateralManagerContractName,
-          managedSigner
+          managedSigner,
         ),
         termRepoCollateralManagerContractName,
         collateralManagerImplAddress || "",
@@ -619,7 +613,7 @@ export async function deployMaturityPeriod(
           collateralMetadatas,
           termEventEmitterAddress,
           initializerAddressDefined,
-        ]
+        ],
       )) as TermRepoCollateralManager)
     : await deployTermContract<TermRepoCollateralManager>(
         termRepoCollateralManagerContractName,
@@ -636,13 +630,13 @@ export async function deployMaturityPeriod(
         kind,
         termController,
         eventEmitter,
-        managedSigner
+        managedSigner,
       );
   const termRepoToken = termRepoTokenAddress
     ? ((await ethers.getContractAt(
         termRepoTokenContractName,
         termRepoTokenAddress,
-        managedSigner
+        managedSigner,
       )) as TermRepoToken)
     : termRepoTokenImplAddress
     ? ((await deployContractUUPSProxyBeacon(
@@ -665,7 +659,7 @@ export async function deployMaturityPeriod(
             collateralTokens: collateralTokenAddresses,
             maintenanceCollateralRatios,
           },
-        ]
+        ],
       )) as TermRepoToken)
     : await deployTermContract<TermRepoToken>(
         termRepoTokenContractName,
@@ -688,13 +682,13 @@ export async function deployMaturityPeriod(
         kind,
         termController,
         eventEmitter,
-        managedSigner
+        managedSigner,
       );
   const termRepoLocker = repoLockerAddress
     ? ((await ethers.getContractAt(
         termRepoLockerContractName,
         repoLockerAddress,
-        managedSigner
+        managedSigner,
       )) as TermRepoLocker)
     : repoLockerImplAddress
     ? ((await deployContractUUPSProxyBeacon(
@@ -702,7 +696,7 @@ export async function deployMaturityPeriod(
         termRepoLockerContractName,
         repoLockerImplAddress || "",
         managedSigner,
-        [termRepoId, initializerAddressDefined]
+        [termRepoId, initializerAddressDefined],
       )) as TermRepoLocker)
     : await deployTermContract<TermRepoLocker>(
         termRepoLockerContractName,
@@ -710,19 +704,19 @@ export async function deployMaturityPeriod(
         kind,
         termController,
         eventEmitter,
-        managedSigner
+        managedSigner,
       );
   const termAuctionBidLocker = bidLockerAddress
     ? ((await ethers.getContractAt(
         termAuctionBidLockerContractName,
         bidLockerAddress,
-        managedSigner
+        managedSigner,
       )) as TermAuctionBidLocker)
     : bidLockerImplAddress
     ? ((await deployContractUUPSProxyBeacon(
         await getContractFactory(
           termAuctionBidLockerContractName,
-          managedSigner
+          managedSigner,
         ),
         termAuctionBidLockerContractName,
         bidLockerImplAddress || "",
@@ -737,7 +731,7 @@ export async function deployMaturityPeriod(
           minimumTenderAmount,
           purchaseTokenAddress,
           collateralTokenAddresses,
-        ]
+        ],
       )) as TermAuctionBidLocker)
     : await deployTermContract<TermAuctionBidLocker>(
         termAuctionBidLockerContractName,
@@ -756,19 +750,19 @@ export async function deployMaturityPeriod(
         kind,
         termController,
         eventEmitter,
-        managedSigner
+        managedSigner,
       );
   const termAuctionOfferLocker = offerLockerAddress
     ? ((await ethers.getContractAt(
         termAuctionOfferLockerContractName,
         offerLockerAddress,
-        managedSigner
+        managedSigner,
       )) as TermAuctionOfferLocker)
     : offerLockerImplAddress
     ? ((await deployContractUUPSProxyBeacon(
         await getContractFactory(
           termAuctionOfferLockerContractName,
-          managedSigner
+          managedSigner,
         ),
         termAuctionOfferLockerContractName,
         offerLockerImplAddress || "",
@@ -782,7 +776,7 @@ export async function deployMaturityPeriod(
           minimumTenderAmount,
           purchaseTokenAddress,
           collateralTokenAddresses,
-        ]
+        ],
       )) as TermAuctionOfferLocker)
     : await deployTermContract<TermAuctionOfferLocker>(
         termAuctionOfferLockerContractName,
@@ -800,13 +794,13 @@ export async function deployMaturityPeriod(
         kind,
         termController,
         eventEmitter,
-        managedSigner
+        managedSigner,
       );
   const auction = auctionAddress
     ? ((await ethers.getContractAt(
         auctionContractName,
         auctionAddress,
-        managedSigner
+        managedSigner,
       )) as TermAuction)
     : auctionImplAddress
     ? ((await deployContractUUPSProxyBeacon(
@@ -822,7 +816,7 @@ export async function deployMaturityPeriod(
           redemptionTimestamp,
           purchaseTokenAddress,
           clearingPricePostProcessingOffset,
-        ]
+        ],
       )) as TermAuction)
     : await deployTermContract<TermAuction>(
         auctionContractName,
@@ -839,13 +833,13 @@ export async function deployMaturityPeriod(
         kind,
         termController,
         eventEmitter,
-        managedSigner
+        managedSigner,
       );
   const rolloverManager = rolloverManagerAddress
     ? ((await ethers.getContractAt(
         rolloverManagerContractName,
         rolloverManagerAddress,
-        managedSigner
+        managedSigner,
       )) as TermRepoRolloverManager)
     : rolloverManagerImplAddress
     ? ((await deployContractUUPSProxyBeacon(
@@ -859,7 +853,7 @@ export async function deployMaturityPeriod(
           termRepoCollateralManager.address,
           termController.address,
           initializerAddressDefined,
-        ]
+        ],
       )) as TermRepoRolloverManager)
     : await deployTermContract<TermRepoRolloverManager>(
         rolloverManagerContractName,
@@ -873,7 +867,7 @@ export async function deployMaturityPeriod(
         kind,
         termController,
         eventEmitter,
-        managedSigner
+        managedSigner,
       );
 
   if (!pairTermContractsThruGnosis) {
@@ -886,8 +880,8 @@ export async function deployMaturityPeriod(
         initializer.pairTermContracts(
           termController.address,
           eventEmitter.address,
-          oracle.address
-        )
+          oracle.address,
+        ),
       );
       console.log("Pairing term contracts using TermInitializer...");
       const receipt = await retry(() =>
@@ -905,8 +899,8 @@ export async function deployMaturityPeriod(
           devopsMultisig,
           adminWallet,
           termVersion,
-          auctionVersion
-        )
+          auctionVersion,
+        ),
       );
       console.log("TermInitializer setupTerm tx hash:", receipt.hash);
       logGasCost(await receipt.wait(3));
@@ -918,13 +912,13 @@ export async function deployMaturityPeriod(
     await scheduleCompleteAuctionTask(
       gelatoOps,
       auction,
-      getEnv(completeAuctionKeeperCID)
+      getEnv(completeAuctionKeeperCID),
     );
     console.log("Scheduling gelato task for batch process rollovers...");
     await scheduleBatchProcessRolloversTask(
       gelatoOps,
       rolloverManager,
-      getEnv(batchProcessRolloversKeeperCID)
+      getEnv(batchProcessRolloversKeeperCID),
     );
   }
 
@@ -998,7 +992,7 @@ export async function deployAdditionalAuction(
 
     scheduleGelatoOps?: boolean;
   },
-  kind: "uups" | "transparent" | "raw" = "uups"
+  kind: "uups" | "transparent" | "raw" = "uups",
 ): Promise<AdditionalAuctionInfo> {
   const [defaultSigner] = await ethers.getSigners();
   const managedSigner = new NonceManager(defaultSigner as any);
@@ -1009,7 +1003,7 @@ export async function deployAdditionalAuction(
     }
     gelatoOps = new GelatoOpsSDK(
       hre.network.config.chainId,
-      managedSigner as any
+      managedSigner as any,
     );
   }
   const termRepoId = v4();
@@ -1018,24 +1012,24 @@ export async function deployAdditionalAuction(
   const termController = (await ethers.getContractAt(
     TermControllerABI,
     termControllerAddress,
-    managedSigner
+    managedSigner,
   )) as TermController;
 
   const eventEmitter = (await ethers.getContractAt(
     TermEventEmitterABI,
     termEventEmitterAddress,
-    managedSigner
+    managedSigner,
   )) as TermEventEmitter;
   const oracle: TermPriceConsumerV3 = (await ethers.getContractAt(
     "TermPriceConsumerV3",
     termOracleAddress,
-    managedSigner
+    managedSigner,
   )) as TermPriceConsumerV3;
   const initializer: TermInitializer | undefined = termInitializerAddress
     ? ((await ethers.getContractAt(
         TermInitializerABI,
         termInitializerAddress,
-        managedSigner
+        managedSigner,
       )) as TermInitializer)
     : undefined;
   const initializerForApproval: TermInitializer | undefined =
@@ -1043,7 +1037,7 @@ export async function deployAdditionalAuction(
       ? ((await ethers.getContractAt(
           TermInitializerABI,
           termInitializerAddress,
-          termApprovalMultisig
+          termApprovalMultisig,
         )) as TermInitializer)
       : undefined;
 
@@ -1052,13 +1046,13 @@ export async function deployAdditionalAuction(
   const termRepoServicer: TermRepoServicer = (await ethers.getContractAt(
     "TermRepoServicer",
     termRepoServicerAddress,
-    managedSigner
+    managedSigner,
   )) as TermRepoServicer;
   const termRepoCollateralManager: TermRepoCollateralManager =
     (await ethers.getContractAt(
       "TermRepoCollateralManager",
       collateralManagerAddress,
-      managedSigner
+      managedSigner,
     )) as TermRepoCollateralManager;
 
   if (!termController.address) {
@@ -1070,7 +1064,7 @@ export async function deployAdditionalAuction(
     ? await ethers.getContractAt(
         "TermAuctionBidLocker",
         bidLockerAddress,
-        managedSigner
+        managedSigner,
       )
     : await deployTermContract<TermAuctionBidLocker>(
         "TermAuctionBidLocker",
@@ -1089,13 +1083,13 @@ export async function deployAdditionalAuction(
         kind,
         termController,
         eventEmitter,
-        managedSigner
+        managedSigner,
       );
   const termAuctionOfferLocker: TermAuctionOfferLocker = offerLockerAddress
     ? await ethers.getContractAt(
         "TermAuctionOfferLocker",
         offerLockerAddress,
-        managedSigner
+        managedSigner,
       )
     : await deployTermContract<TermAuctionOfferLocker>(
         "TermAuctionOfferLocker",
@@ -1113,7 +1107,7 @@ export async function deployAdditionalAuction(
         kind,
         termController,
         eventEmitter,
-        managedSigner
+        managedSigner,
       );
   const auction: TermAuction = auctionAddress
     ? await ethers.getContractAt("TermAuction", auctionAddress, managedSigner)
@@ -1132,7 +1126,7 @@ export async function deployAdditionalAuction(
         kind,
         termController,
         eventEmitter,
-        managedSigner
+        managedSigner,
       );
 
   console.log("pairing contracts with initializer");
@@ -1145,8 +1139,8 @@ export async function deployAdditionalAuction(
       initializer.pairTermContracts(
         termController.address,
         eventEmitter.address,
-        oracle.address
-      )
+        oracle.address,
+      ),
     );
     console.log("Pairing term contracts using TermInitializer...");
     const receipt = await retry(() =>
@@ -1158,8 +1152,8 @@ export async function deployAdditionalAuction(
         auction.address,
         devopsMultisig,
         adminWallet,
-        auctionVersion
-      )
+        auctionVersion,
+      ),
     );
     console.log("TermInitializer setupAuction tx hash:", receipt.hash);
     logGasCost(await receipt.wait(3));
@@ -1170,7 +1164,7 @@ export async function deployAdditionalAuction(
     await scheduleCompleteAuctionTask(
       gelatoOps,
       auction,
-      getEnv(completeAuctionKeeperCID)
+      getEnv(completeAuctionKeeperCID),
     );
   }
 
@@ -1190,7 +1184,7 @@ export async function deployAdditionalAuction(
 
 export const saveContractAddress = (
   addresses: Record<string, string>,
-  configFile = ".deployed-contracts.json"
+  configFile = ".deployed-contracts.json",
 ) => {
   // Load the existing addresses
   const existingAddresses = existsSync(configFile)
