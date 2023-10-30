@@ -50,3 +50,16 @@
 
 
 **Full Changelog**: https://github.com/term-finance/term-finance/compare/0.5.31...0.5.32
+
+## 0.5.33
+
+### What's Changed
+* Bump version to 0.5.33 by @github-actions in https://github.com/term-finance/term-finance/pull/1135
+* Bump solhint from 3.6.2 to 4.0.0 by @dependabot in https://github.com/term-finance/term-finance/pull/1137
+* Sigma-Prime-Fix: unlock previous rollover bid if relecting to different auction by @aazhou1 in https://github.com/term-finance/term-finance/pull/1136
+* [stylebot] Fixes for code style by @github-actions in https://github.com/term-finance/term-finance/pull/1139
+* Sigma Prime Fix: zero address check for term controller by @aazhou1 in https://github.com/term-finance/term-finance/pull/1138
+* [stylebot] Fixes for code style by @github-actions in https://github.com/term-finance/term-finance/pull/1140
+
+
+**Full Changelog**: https://github.com/term-finance/term-finance/compare/0.5.32...0.5.33

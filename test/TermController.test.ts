@@ -79,6 +79,44 @@ describe("TermController Tests", () => {
   });
 
   describe("Improper initializations", async () => {
+    it("Revert if controller admin is zero address", async () => {
+      const TermController =
+        await ethers.getContractFactory("TestTermController");
+
+      await expect(
+        upgrades.deployProxy(
+          TermController,
+          [
+            originalTreasuryAddress.address,
+            originalProtocolReservesAddress.address,
+            ethers.constants.AddressZero,
+            devopsWallet.address,
+          ],
+          {
+            kind: "uups",
+          },
+        ),
+      ).to.be.revertedWith("controller admin is zero address");
+    });
+    it("Revert if devops wallet is zero address", async () => {
+      const TermController =
+        await ethers.getContractFactory("TestTermController");
+
+      await expect(
+        upgrades.deployProxy(
+          TermController,
+          [
+            originalTreasuryAddress.address,
+            originalProtocolReservesAddress.address,
+            adminWallet.address,
+            ethers.constants.AddressZero,
+          ],
+          {
+            kind: "uups",
+          },
+        ),
+      ).to.be.revertedWith("devops wallet is zero address");
+    });
     it("Revert if treasury wallet is zero address", async () => {
       const TermController =
         await ethers.getContractFactory("TestTermController");

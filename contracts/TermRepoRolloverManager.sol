@@ -167,6 +167,12 @@ contract TermRepoRolloverManager is
             revert BorrowerRepurchaseObligationInsufficient();
         }
 
+        if(rolloverElections[borrower].rolloverAuction != address(0) && rolloverElections[borrower].rolloverAuction != termRepoRolloverElectionSubmission.rolloverAuction){
+            rolloverElections[borrower].rolloverAmount = 0;
+            _processRollover(borrower);
+        }
+
+
         rolloverElections[borrower] = TermRepoRolloverElection({
             rolloverAuction: termRepoRolloverElectionSubmission.rolloverAuction,
             rolloverAmount: termRepoRolloverElectionSubmission.rolloverAmount,
