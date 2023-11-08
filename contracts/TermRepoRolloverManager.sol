@@ -51,8 +51,8 @@ contract TermRepoRolloverManager is
     ITermController internal termController;
     ITermEventEmitter internal emitter;
 
-    // Mapping that returns true for approved Borrower Rollover Auctions
-    mapping(address => bool) internal approvedRolloverAuctions;
+    // Mapping that returns true for approved Borrower Rollover Auction Bid Lockers
+    mapping(address => bool) internal approvedRolloverAuctionBidLockers;
 
     // Borrow Rollover Ledger
     // For each borrower wallet address, keep ledger of borrow rollver election addresses.
@@ -143,12 +143,12 @@ contract TermRepoRolloverManager is
             revert ZeroBorrowerRepurchaseObligation();
         }
         if (
-            !approvedRolloverAuctions[
-                termRepoRolloverElectionSubmission.rolloverAuction
+            !approvedRolloverAuctionBidLockers[
+                termRepoRolloverElectionSubmission.rolloverAuctionBidLocker
             ]
         ) {
             revert RolloverAddressNotApproved(
-                termRepoRolloverElectionSubmission.rolloverAuction
+                termRepoRolloverElectionSubmission.rolloverAuctionBidLocker
             );
         }
 
@@ -167,8 +167,14 @@ contract TermRepoRolloverManager is
             revert BorrowerRepurchaseObligationInsufficient();
         }
 
+        if(rolloverElections[borrower].rolloverAuctionBidLocker != address(0) && rolloverElections[borrower].rolloverAuctionBidLocker != termRepoRolloverElectionSubmission.rolloverAuctionBidLocker){
+            rolloverElections[borrower].rolloverAmount = 0;
+            _processRollover(borrower);
+        }
+
+
         rolloverElections[borrower] = TermRepoRolloverElection({
-            rolloverAuction: termRepoRolloverElectionSubmission.rolloverAuction,
+            rolloverAuctionBidLocker: termRepoRolloverElectionSubmission.rolloverAuctionBidLocker,
             rolloverAmount: termRepoRolloverElectionSubmission.rolloverAmount,
             rolloverBidPriceHash: termRepoRolloverElectionSubmission
                 .rolloverBidPriceHash,
@@ -176,14 +182,14 @@ contract TermRepoRolloverManager is
         });
 
         ITermAuctionBidLocker auctionBidLocker = ITermAuctionBidLocker(
-            termRepoRolloverElectionSubmission.rolloverAuction
+            termRepoRolloverElectionSubmission.rolloverAuctionBidLocker
         );
 
         emitter.emitRolloverElection(
             termRepoId,
             auctionBidLocker.termRepoId(),
             borrower,
-            termRepoRolloverElectionSubmission.rolloverAuction,
+            termRepoRolloverElectionSubmission.rolloverAuctionBidLocker,
             termRepoRolloverElectionSubmission.rolloverAmount,
             termRepoRolloverElectionSubmission.rolloverBidPriceHash
         );
@@ -242,10 +248,8 @@ contract TermRepoRolloverManager is
     // ========================================================================
 
     /// @param auctionBidLocker The ABI for ITermAuctionBidLocker interface
-    /// @param termAuction The address of TermAuction contract to mark as eligible for rollover
     function approveRolloverAuction(
-        ITermAuctionBidLocker auctionBidLocker,
-        address termAuction
+        ITermAuctionBidLocker auctionBidLocker
     ) external onlyRole(ADMIN_ROLE) {
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp >= termRepoServicer.maturityTimestamp()) {
@@ -253,9 +257,6 @@ contract TermRepoRolloverManager is
         }
         if (!termController.isTermDeployed(address(auctionBidLocker))) {
             revert NotTermContract(address(auctionBidLocker));
-        }
-        if (!termController.isTermDeployed(termAuction)) {
-            revert NotTermContract(termAuction);
         }
 
         if (
@@ -294,7 +295,9 @@ contract TermRepoRolloverManager is
             }
         }
 
-        approvedRolloverAuctions[address(auctionBidLocker)] = true;
+        approvedRolloverAuctionBidLockers[address(auctionBidLocker)] = true;
+
+        address termAuction = address(auctionBidLocker.termAuction());
 
         termRepoServicer.approveRolloverAuction(termAuction);
         termRepoCollateralManager.approveRolloverAuction(termAuction);
@@ -311,7 +314,7 @@ contract TermRepoRolloverManager is
     function revokeRolloverApproval(
         ITermAuctionBidLocker auctionBidLocker
     ) external onlyRole(ADMIN_ROLE) {
-        approvedRolloverAuctions[address(auctionBidLocker)] = false;
+        approvedRolloverAuctionBidLockers[address(auctionBidLocker)] = false;
 
         emitter.emitRolloverTermApprovalRevoked(
             termRepoId,
@@ -329,7 +332,7 @@ contract TermRepoRolloverManager is
         ];
 
         ITermAuctionBidLocker termAuctionBidLocker = ITermAuctionBidLocker(
-            rolloverElection.rolloverAuction
+            rolloverElection.rolloverAuctionBidLocker
         );
 
         ITermRepoServicer futureTermRepoServicer = termAuctionBidLocker

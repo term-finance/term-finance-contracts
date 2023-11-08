@@ -1,6 +1,7 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
 pragma solidity ^0.8.18;
 
+import {ITermAuction} from "./ITermAuction.sol";
 import {ITermRepoServicer} from "./ITermRepoServicer.sol";
 import {TermAuctionBid} from "../lib/TermAuctionBid.sol";
 import {TermAuctionBidSubmission} from "../lib/TermAuctionBidSubmission.sol";
@@ -21,6 +22,8 @@ interface ITermAuctionBidLocker {
     function collateralTokens(
         IERC20Upgradeable token
     ) external view returns (bool);
+
+    function termAuction() external view returns (ITermAuction);
 
     function termRepoServicer() external view returns (ITermRepoServicer);
 

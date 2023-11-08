@@ -318,11 +318,6 @@
         "internalType": "contract ITermAuctionBidLocker",
         "name": "auctionBidLocker",
         "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "termAuction",
-        "type": "address"
       }
     ],
     "name": "approveRolloverAuction",
@@ -343,7 +338,7 @@
         "components": [
           {
             "internalType": "address",
-            "name": "rolloverAuction",
+            "name": "rolloverAuctionBidLocker",
             "type": "address"
           },
           {
@@ -413,7 +408,7 @@
         "components": [
           {
             "internalType": "address",
-            "name": "rolloverAuction",
+            "name": "rolloverAuctionBidLocker",
             "type": "address"
           },
           {

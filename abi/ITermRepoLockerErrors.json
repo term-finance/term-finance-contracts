@@ -1,6 +1,11 @@
 [
   {
     "inputs": [],
+    "name": "AlreadyTermContractPaired",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ERC20TransferFailed",
     "type": "error"
   },
