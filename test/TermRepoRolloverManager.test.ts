@@ -15,6 +15,7 @@ import {
   TermRepoServicer__factory,
   TestTermRepoRolloverManager,
 } from "../typechain-types";
+import { TermAuction } from "../typechain-types/contracts/TermAuction 2";
 
 describe("TermRepoRollover Tests", () => {
   let wallet1: SignerWithAddress;
@@ -41,6 +42,7 @@ describe("TermRepoRollover Tests", () => {
   let termEventEmitter: TermEventEmitter;
 
   let mockAuctionBidLocker: FakeContract<TermAuctionBidLocker>;
+  let mockAuction: FakeContract<TermAuction>;
 
   let termIdHashed: string;
 
@@ -112,6 +114,7 @@ describe("TermRepoRollover Tests", () => {
     await mockTermController.deployed();
 
     mockAuctionBidLocker = await smock.fake("TermAuctionBidLocker");
+    mockAuctionBidLocker.termAuction.returns(mockAuction);
 
     termRepoRolloverManager = (await upgrades.deployProxy(
       TermRepoRolloverManager,
@@ -236,7 +239,7 @@ describe("TermRepoRollover Tests", () => {
 
       await expect(
         termRepoRolloverManager.connect(wallet3).electRollover({
-          rolloverAuction: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
           rolloverAmount: "10000000000",
           rolloverBidPriceHash,
         }),
@@ -254,10 +257,7 @@ describe("TermRepoRollover Tests", () => {
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(
-            mockAuctionBidLocker.address,
-            auction.address,
-          ),
+          .approveRolloverAuction(mockAuctionBidLocker.address),
       ).to.be.revertedWithCustomError(
         termRepoRolloverManager,
         "MaturityReached",
@@ -306,10 +306,7 @@ describe("TermRepoRollover Tests", () => {
       await expect(
         termRepoRolloverManager
           .connect(wallet2)
-          .approveRolloverAuction(
-            mockAuctionBidLocker.address,
-            auction.address,
-          ),
+          .approveRolloverAuction(mockAuctionBidLocker.address),
       ).to.be.revertedWith(
         `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
       );
@@ -317,10 +314,7 @@ describe("TermRepoRollover Tests", () => {
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(
-            mockAuctionBidLocker.address,
-            auction.address,
-          ),
+          .approveRolloverAuction(mockAuctionBidLocker.address),
       )
         .to.emit(termEventEmitter, "RolloverTermApproved")
         .withArgs(termIdHashed, ethers.constants.HashZero);
@@ -366,10 +360,7 @@ describe("TermRepoRollover Tests", () => {
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(
-            mockAuctionBidLocker.address,
-            auction.address,
-          ),
+          .approveRolloverAuction(mockAuctionBidLocker.address),
       )
         .to.be.revertedWithCustomError(
           termRepoRolloverManager,
@@ -383,28 +374,7 @@ describe("TermRepoRollover Tests", () => {
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(
-            mockAuctionBidLocker.address,
-            auction.address,
-          ),
-      )
-        .to.be.revertedWithCustomError(
-          termRepoRolloverManager,
-          `NotTermContract`,
-        )
-        .withArgs(auction.address);
-
-      mockTermController.isTermDeployed
-        .whenCalledWith(auction.address)
-        .returns(true);
-
-      await expect(
-        termRepoRolloverManager
-          .connect(adminWallet)
-          .approveRolloverAuction(
-            mockAuctionBidLocker.address,
-            auction.address,
-          ),
+          .approveRolloverAuction(mockAuctionBidLocker.address),
       )
         .to.be.revertedWithCustomError(
           termRepoRolloverManager,
@@ -417,10 +387,7 @@ describe("TermRepoRollover Tests", () => {
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(
-            mockAuctionBidLocker.address,
-            auction.address,
-          ),
+          .approveRolloverAuction(mockAuctionBidLocker.address),
       )
         .to.be.revertedWithCustomError(
           termRepoRolloverManager,
@@ -469,10 +436,7 @@ describe("TermRepoRollover Tests", () => {
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(
-            mockAuctionBidLocker.address,
-            auction.address,
-          ),
+          .approveRolloverAuction(mockAuctionBidLocker.address),
       ).to.be.revertedWithCustomError(
         termRepoRolloverManager,
         "AuctionEndsAfterRepayment",
@@ -515,10 +479,7 @@ describe("TermRepoRollover Tests", () => {
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(
-            mockAuctionBidLocker.address,
-            auction.address,
-          ),
+          .approveRolloverAuction(mockAuctionBidLocker.address),
       ).to.be.revertedWithCustomError(
         termRepoRolloverManager,
         "AuctionEndsBeforeMaturity",
@@ -567,10 +528,7 @@ describe("TermRepoRollover Tests", () => {
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(
-            mockAuctionBidLocker.address,
-            auction.address,
-          ),
+          .approveRolloverAuction(mockAuctionBidLocker.address),
       )
         .to.emit(termEventEmitter, "RolloverTermApproved")
         .withArgs(termIdHashed, constants.HashZero);
@@ -642,7 +600,7 @@ describe("TermRepoRollover Tests", () => {
 
       await termRepoRolloverManager
         .connect(adminWallet)
-        .approveRolloverAuction(mockAuctionBidLocker.address, auction.address);
+        .approveRolloverAuction(mockAuctionBidLocker.address);
     });
     it("Rollover Term Election reverted if address is not approved", async () => {
       const rolloverBidPriceHash = ethers.utils.solidityKeccak256(
@@ -651,7 +609,7 @@ describe("TermRepoRollover Tests", () => {
       );
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuction: wallet1.address,
+          rolloverAuctionBidLocker: wallet1.address,
           rolloverAmount: "10000000000",
           rolloverBidPriceHash,
         }),
@@ -672,7 +630,7 @@ describe("TermRepoRollover Tests", () => {
       );
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuction: wallet1.address,
+          rolloverAuctionBidLocker: wallet1.address,
           rolloverAmount: "10000000000",
           rolloverBidPriceHash,
         }),
@@ -695,7 +653,7 @@ describe("TermRepoRollover Tests", () => {
       );
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuction: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
           rolloverAmount: "0",
           rolloverBidPriceHash,
         }),
@@ -729,7 +687,7 @@ describe("TermRepoRollover Tests", () => {
 
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuction: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
           rolloverAmount: "10000000000",
           rolloverBidPriceHash,
         }),
@@ -746,7 +704,7 @@ describe("TermRepoRollover Tests", () => {
 
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuction: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
           rolloverAmount: "20000000000",
           rolloverBidPriceHash,
         }),
@@ -770,7 +728,7 @@ describe("TermRepoRollover Tests", () => {
       ]);
       await expect(
         termRepoRolloverManager.connect(wallet2).electRollover({
-          rolloverAuction: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
           rolloverAmount: "30000000000",
           rolloverBidPriceHash,
         }),
@@ -797,7 +755,7 @@ describe("TermRepoRollover Tests", () => {
       ]);
       await expect(
         termRepoRolloverManager.connect(wallet2).electRollover({
-          rolloverAuction: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
           rolloverAmount: "40000000000",
           rolloverBidPriceHash,
         }),
@@ -858,7 +816,7 @@ describe("TermRepoRollover Tests", () => {
 
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuction: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
           rolloverAmount: "40000000000",
           rolloverBidPriceHash,
         }),
@@ -878,7 +836,7 @@ describe("TermRepoRollover Tests", () => {
 
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuction: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
           rolloverAmount: "40000000000",
           rolloverBidPriceHash,
         }),
@@ -898,7 +856,7 @@ describe("TermRepoRollover Tests", () => {
 
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuction: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
           rolloverAmount: "12000000000",
           rolloverBidPriceHash,
         }),

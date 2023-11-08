@@ -1353,6 +1353,19 @@
   },
   {
     "inputs": [],
+    "name": "termAuction",
+    "outputs": [
+      {
+        "internalType": "contract ITermAuction",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "termAuctionId",
     "outputs": [
       {

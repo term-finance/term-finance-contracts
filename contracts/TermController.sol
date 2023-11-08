@@ -59,6 +59,16 @@ contract TermController is
         UUPSUpgradeable.__UUPSUpgradeable_init();
         AccessControlUpgradeable.__AccessControl_init();
 
+        require(
+            controllerAdminWallet_ != address(0),
+            "controller admin is zero address"
+        );
+
+        require(
+            devopsWallet_ != address(0),
+            "devops wallet is zero address"
+        );
+
         _grantRole(CONTROLLER_ADMIN_ROLE, controllerAdminWallet_);
         _grantRole(DEVOPS_ROLE, devopsWallet_);
 

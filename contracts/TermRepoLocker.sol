@@ -38,6 +38,8 @@ contract TermRepoLocker is
     // ========================================================================
     bytes32 public termRepoId;
     bool public transfersPaused;
+    // Boolean indicating if term contracts paired
+    bool internal termContractPaired;
     ITermEventEmitter internal emitter;
 
     // ========================================================================
@@ -48,6 +50,14 @@ contract TermRepoLocker is
         if (transfersPaused) {
             revert TermRepoLockerTransfersPaused();
         }
+        _;
+    }
+
+    modifier notTermContractPaired() {
+        if (termContractPaired) {
+            revert AlreadyTermContractPaired();
+        }
+        termContractPaired = true;
         _;
     }
 
@@ -76,7 +86,7 @@ contract TermRepoLocker is
         ITermEventEmitter emitter_,
         address devopsMultisig_,
         address adminWallet_
-    ) external onlyRole(INITIALIZER_ROLE) {
+    ) external onlyRole(INITIALIZER_ROLE) notTermContractPaired {
         emitter = emitter_;
 
         _grantRole(SERVICER_ROLE, termRepoCollateralManager_);

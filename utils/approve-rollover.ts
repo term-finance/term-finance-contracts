@@ -50,7 +50,6 @@ export async function approveRollover(
 
   await rolloverManager.approveRolloverAuction(
     nextTerm.termAuctionBidLockerAddress,
-    nextTerm.auctionAddress,
   );
 
   console.log(

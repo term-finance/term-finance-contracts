@@ -50,3 +50,22 @@
 
 
 **Full Changelog**: https://github.com/term-finance/term-finance/compare/0.5.31...0.5.32
+
+## 0.6.0
+
+### What's Changed
+* Bump version to 0.5.34 by @github-actions in https://github.com/term-finance/term-finance/pull/1141
+* Bump @types/node from 20.8.9 to 20.8.10 by @dependabot in https://github.com/term-finance/term-finance/pull/1144
+* Bump @typescript-eslint/eslint-plugin from 6.9.0 to 6.9.1 by @dependabot in https://github.com/term-finance/term-finance/pull/1143
+* Bump @typescript-eslint/parser from 6.9.0 to 6.9.1 by @dependabot in https://github.com/term-finance/term-finance/pull/1142
+* Sigma Prime Fix: add already term paired modifier to term repo locker by @aazhou1 in https://github.com/term-finance/term-finance/pull/1145
+* Sigma Prime Fix: approve rollover with only bidlocker as param so auction is inferred/… by @aazhou1 in https://github.com/term-finance/term-finance/pull/1146
+* [stylebot] Fixes for code style by @github-actions in https://github.com/term-finance/term-finance/pull/1148
+* Bump hardhat from 2.18.3 to 2.19.0 by @dependabot in https://github.com/term-finance/term-finance/pull/1149
+* Adds github ref to manual/tool workflows. by @robotoer in https://github.com/term-finance/term-finance/pull/1151
+* Sigma Prime Fix: rename rolloverAuction to rolloverAuctionBidLocker by @aazhou1 in https://github.com/term-finance/term-finance/pull/1150
+* Bump sol2uml from 2.5.16 to 2.5.17 by @dependabot in https://github.com/term-finance/term-finance/pull/1153
+* Bump eslint from 8.52.0 to 8.53.0 by @dependabot in https://github.com/term-finance/term-finance/pull/1154
+
+
+**Full Changelog**: https://github.com/term-finance/term-finance/compare/0.5.33...0.6.0

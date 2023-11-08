@@ -12,7 +12,7 @@
         "components": [
           {
             "internalType": "address",
-            "name": "rolloverAuction",
+            "name": "rolloverAuctionBidLocker",
             "type": "address"
           },
           {
@@ -63,7 +63,7 @@
         "components": [
           {
             "internalType": "address",
-            "name": "rolloverAuction",
+            "name": "rolloverAuctionBidLocker",
             "type": "address"
           },
           {

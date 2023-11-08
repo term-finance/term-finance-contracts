@@ -363,6 +363,21 @@ describe("TermManager Tests", () => {
       "AlreadyTermContractPaired",
     );
 
+    await expect(
+      termRepoLocker
+        .connect(termInitializer)
+        .pairTermContracts(
+          termRepoCollateralManager.address,
+          termRepoServicer.address,
+          termEventEmitter.address,
+          devopsMultisig.address,
+          adminWallet.address,
+        ),
+    ).to.be.revertedWithCustomError(
+      termRepoCollateralManager,
+      "AlreadyTermContractPaired",
+    );
+
     const collateralManagerInitializedFilter =
       termEventEmitter.filters.TermRepoCollateralManagerInitialized(
         null,
@@ -1115,7 +1130,7 @@ describe("TermManager Tests", () => {
       termRepoRolloverManager.getRolloverInstructions
         .whenCalledWith(wallet2.address)
         .returns({
-          rolloverAuction: wallet3.address,
+          rolloverAuctionBidLocker: wallet3.address,
           rolloverAmount: "2000000",
           rolloverBidPriceHash: ethers.constants.HashZero,
           processed: false,
@@ -1153,7 +1168,7 @@ describe("TermManager Tests", () => {
       termRepoRolloverManager.getRolloverInstructions
         .whenCalledWith(wallet2.address)
         .returns({
-          rolloverAuction: wallet3.address,
+          rolloverAuctionBidLocker: wallet3.address,
           rolloverAmount: "2000000",
           rolloverBidPriceHash: ethers.constants.HashZero,
           processed: true,
@@ -1293,7 +1308,7 @@ describe("TermManager Tests", () => {
       termRepoRolloverManager.getRolloverInstructions
         .whenCalledWith(wallet2.address)
         .returns({
-          rolloverAuction: wallet3.address,
+          rolloverAuctionBidLocker: wallet3.address,
           rolloverAmount: "2000000",
           rolloverBidPriceHash: ethers.constants.HashZero,
           locked: false,
@@ -1313,7 +1328,7 @@ describe("TermManager Tests", () => {
       termRepoRolloverManager.getRolloverInstructions
         .whenCalledWith(wallet2.address)
         .returns({
-          rolloverAuction: wallet3.address,
+          rolloverAuctionBidLocker: wallet3.address,
           rolloverAmount: "2000000",
           rolloverBidPriceHash: ethers.constants.HashZero,
           locked: true,
@@ -1794,7 +1809,7 @@ describe("TermManager Tests", () => {
       termRepoRolloverManager.getRolloverInstructions
         .whenCalledWith(wallet2.address)
         .returns({
-          rolloverAuction: wallet3.address,
+          rolloverAuctionBidLocker: wallet3.address,
           rolloverAmount: "5000000",
           rolloverBidPriceHash: ethers.constants.HashZero,
           locked: false,
@@ -1962,7 +1977,7 @@ describe("TermManager Tests", () => {
       termRepoRolloverManager.getRolloverInstructions
         .whenCalledWith(wallet2.address)
         .returns({
-          rolloverAuction: wallet3.address,
+          rolloverAuctionBidLocker: wallet3.address,
           rolloverAmount: "5000000",
           rolloverBidPriceHash: ethers.constants.HashZero,
           locked: false,

@@ -61,6 +61,7 @@ describe("TermRepoRolloverIntegration", () => {
   let mockPurchaseFeed: AggregatorV3Interface;
   let maturityPeriod1: MaturityPeriodInfo;
   let maturityPeriod2: MaturityPeriodInfo;
+  let maturityPeriod3: MaturityPeriodInfo;
   let termIdHash: string;
   let rolloverTermIdHash: string;
   let snapshotId: string;
@@ -420,6 +421,40 @@ describe("TermRepoRolloverIntegration", () => {
       "uups",
     );
 
+    maturityPeriod3 = await deployMaturityPeriod(
+      {
+        termControllerAddress: termController.address,
+        termEventEmitterAddress: termEventEmitter.address,
+        termInitializerAddress: termInitializer.address,
+        termOracleAddress: termOracle.address,
+        auctionStartDate: auctionStart2.unix().toString(),
+        auctionRevealDate: auctionReveal2.unix().toString(),
+        auctionEndDate: auctionEnd2.unix().toString(),
+        maturityTimestamp: maturity2.unix().toString(),
+        servicerMaturityTimestamp: maturity2.unix().toString(),
+        minimumTenderAmount,
+        repurchaseWindow: repurchaseWindow.asSeconds().toString(),
+        redemptionBuffer: redemptionBuffer.asSeconds().toString(),
+        netExposureCapOnLiquidation,
+        deMinimisMarginThreshold,
+        liquidateDamangesDueToProtocol,
+        servicingFee,
+        maintenanceCollateralRatios: [maintenanceRatio],
+        initialCollateralRatios: [initialCollateralRatio],
+        liquidatedDamages: [liquidatedDamage],
+        purchaseTokenAddress: testPurchaseToken.address,
+        collateralTokenAddresses: [testCollateralToken.address],
+        termApprovalMultisig: adminWallet,
+        devopsMultisig: wallets[4].address,
+        adminWallet: adminWallet.address,
+        controllerAdmin: wallets[5],
+        termVersion: "0.1.0",
+        auctionVersion: "0.1.0",
+        mintExposureCap: "1000000000000000000",
+      },
+      "uups",
+    );
+
     rolloverTermIdHash = ethers.utils.solidityKeccak256(
       ["string"],
       [maturityPeriod2.termRepoId],
@@ -516,7 +551,7 @@ describe("TermRepoRolloverIntegration", () => {
     );
 
     const submission = {
-      rolloverAuction: maturityPeriod2.termAuctionBidLocker.address,
+      rolloverAuctionBidLocker: maturityPeriod2.termAuctionBidLocker.address,
       rolloverAmount: wallet1RolloverAmount,
       rolloverBidPriceHash: rolloverMat1BidPriceHash,
     } as TermRepoRolloverElectionSubmissionStruct;
@@ -824,6 +859,191 @@ describe("TermRepoRolloverIntegration", () => {
     ]);
   });
 
+  it("re-electing rollover to another approved auction cancels the previous rollover bid", async () => {
+    const signer = new NonceManager(wallets[0] as any);
+
+    const maturity1RolloverManager = (await ethers.getContractAt(
+      TermRepoRolloverManagerABI,
+      maturityPeriod1.rolloverManager.address,
+      signer,
+    )) as TermRepoRolloverManager;
+
+    await approveRollover(
+      { rolloverManagerAddress: maturityPeriod1.rolloverManager.address },
+      {
+        auctionAddress: maturityPeriod2.auction.address,
+        termAuctionBidLockerAddress:
+          maturityPeriod2.termAuctionBidLocker.address,
+      },
+      adminWallet,
+    );
+
+    await approveRollover(
+      { rolloverManagerAddress: maturityPeriod1.rolloverManager.address },
+      {
+        auctionAddress: maturityPeriod3.auction.address,
+        termAuctionBidLockerAddress:
+          maturityPeriod3.termAuctionBidLocker.address,
+      },
+      adminWallet,
+    );
+
+    const blockNumBefore = await ethers.provider.getBlockNumber();
+    const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+    const timestampBefore = blockBefore.timestamp;
+    await network.provider.send("evm_increaseTime", [
+      auctionStart2.unix() - timestampBefore,
+    ]);
+
+    const purchaseToken = (await ethers.getContractAt(
+      TestTokenABI,
+      testPurchaseToken.address,
+      signer,
+    )) as TestToken;
+    const tp1BalanceBefore = await purchaseToken.balanceOf(
+      maturityPeriod1.termRepoLocker.address,
+    );
+    expect(tp1BalanceBefore).to.eq(0);
+
+    const collateralToken = (await ethers.getContractAt(
+      TestTokenABI,
+      testCollateralToken.address,
+      signer,
+    )) as TestToken;
+
+    const ctTp1BalanceBefore = await collateralToken.balanceOf(
+      maturityPeriod1.termRepoLocker.address,
+    );
+
+    const maturity1TermRepoServicer = (await ethers.getContractAt(
+      TermRepoServicerABI,
+      maturityPeriod1.termRepoServicer.address,
+      adminWallet,
+    )) as TermRepoServicer;
+
+    const maturity1CollateralManager = (await ethers.getContractAt(
+      TermRepoCollateralManagerABI,
+      maturityPeriod1.termRepoCollateralManager.address,
+      signer,
+    )) as TermRepoCollateralManager;
+
+    const collateral1Before =
+      await maturity1CollateralManager.getCollateralBalance(
+        wallets[1].address,
+        testCollateralToken.address,
+      );
+
+    const managedWallet1 = new NonceManager(wallets[1] as any);
+
+    const wallet1BalanceBeforeRollover =
+      await maturity1TermRepoServicer.getBorrowerRepurchaseObligation(
+        wallets[1].address,
+      );
+    const wallet1RolloverAmount = wallet1BalanceBeforeRollover.div(2);
+
+    const maturity1RolloverManagerWallet1Connection =
+      (await ethers.getContractAt(
+        TermRepoRolloverManagerABI,
+        maturityPeriod1.rolloverManager.address,
+        managedWallet1,
+      )) as TermRepoRolloverManager;
+
+    const rolloverMat1BidPrice = "99" + "0".repeat(18);
+    const rolloverMat1BidPriceHash = ethers.utils.solidityKeccak256(
+      ["uint256", "uint256"],
+      [rolloverMat1BidPrice, BID_PRICE_NONCE],
+    );
+
+    const submission = {
+      rolloverAuctionBidLocker: maturityPeriod2.termAuctionBidLocker.address,
+      rolloverAmount: wallet1RolloverAmount,
+      rolloverBidPriceHash: rolloverMat1BidPriceHash,
+    } as TermRepoRolloverElectionSubmissionStruct;
+
+    const rolloverTermIdHash2 = ethers.utils.solidityKeccak256(
+      ["string"],
+      [maturityPeriod3.termRepoId],
+    );
+
+    await expect(
+      maturity1RolloverManagerWallet1Connection
+        .connect(wallets[1])
+        .electRollover(submission),
+    )
+      .to.emit(termEventEmitter, "RolloverElection")
+      .withArgs(
+        termIdHash,
+        rolloverTermIdHash,
+        wallets[1].address,
+        maturityPeriod2.termAuctionBidLocker.address,
+        wallet1RolloverAmount,
+        rolloverMat1BidPriceHash,
+      );
+
+    const rolloverBidId = ethers.utils.solidityKeccak256(
+      ["address", "address"],
+      [maturity1RolloverManager.address, wallets[1].address],
+    );
+
+    expect(
+      JSON.parse(
+        JSON.stringify(
+          await maturity1RolloverManager.getRolloverInstructions(
+            wallets[1].address,
+          ),
+        ),
+      ),
+    ).to.deep.equal([
+      maturityPeriod2.termAuctionBidLocker.address,
+      BigNumber.from(wallet1RolloverAmount).toJSON(),
+      rolloverMat1BidPriceHash,
+      false,
+    ]);
+
+    const maturity2BidLockerWallet1Connection = (await ethers.getContractAt(
+      TermAuctionBidLockerABI,
+      maturityPeriod2.termAuctionBidLocker.address,
+      managedWallet1,
+    )) as TermAuctionBidLocker;
+
+    // Rollover locked into rollover auction from maturity period 2
+
+    const lockedBidAuction2RolloverAttempt1 =
+      await maturity2BidLockerWallet1Connection.lockedBid(rolloverBidId);
+
+    expect(lockedBidAuction2RolloverAttempt1.amount).to.gt(
+      wallet1RolloverAmount,
+    );
+
+    const submission2 = {
+      rolloverAuctionBidLocker: maturityPeriod3.termAuctionBidLocker.address,
+      rolloverAmount: wallet1RolloverAmount,
+      rolloverBidPriceHash: rolloverMat1BidPriceHash,
+    } as TermRepoRolloverElectionSubmissionStruct;
+
+    await expect(
+      maturity1RolloverManagerWallet1Connection
+        .connect(wallets[1])
+        .electRollover(submission2),
+    )
+      .to.emit(termEventEmitter, "RolloverElection")
+      .withArgs(
+        termIdHash,
+        rolloverTermIdHash2,
+        wallets[1].address,
+        maturityPeriod3.termAuctionBidLocker.address,
+        wallet1RolloverAmount,
+        rolloverMat1BidPriceHash,
+      );
+
+    // rollover should be unlocked from maturity period 2 auction bid locker when rollover re-elected to maturity period 3
+
+    const lockedBidAuction2RolloverAttempt2 =
+      await maturity2BidLockerWallet1Connection.lockedBid(rolloverBidId);
+
+    expect(lockedBidAuction2RolloverAttempt2.amount).to.eq(0);
+  });
+
   it("bid rollovers locked and then unlocked when cancelled", async () => {
     const signer = new NonceManager(wallets[6] as any);
 
@@ -888,7 +1108,7 @@ describe("TermRepoRolloverIntegration", () => {
     );
 
     const submission = {
-      rolloverAuction: maturityPeriod2.termAuctionBidLocker.address,
+      rolloverAuctionBidLocker: maturityPeriod2.termAuctionBidLocker.address,
       rolloverAmount: wallet1RolloverAmount,
       rolloverBidPriceHash: rolloverMat1BidPriceHash,
     } as TermRepoRolloverElectionSubmissionStruct;
@@ -1036,7 +1256,7 @@ describe("TermRepoRolloverIntegration", () => {
     );
 
     const submission = {
-      rolloverAuction: maturityPeriod2.termAuctionBidLocker.address,
+      rolloverAuctionBidLocker: maturityPeriod2.termAuctionBidLocker.address,
       rolloverAmount: wallet1RolloverAmount,
       rolloverBidPriceHash: rolloverMat1BidPriceHash,
     } as TermRepoRolloverElectionSubmissionStruct;
@@ -1348,7 +1568,7 @@ describe("TermRepoRolloverIntegration", () => {
     );
 
     const submission = {
-      rolloverAuction: maturityPeriod2.termAuctionBidLocker.address,
+      rolloverAuctionBidLocker: maturityPeriod2.termAuctionBidLocker.address,
       rolloverAmount: wallet1RolloverAmount,
       rolloverBidPriceHash: rolloverMat2BidPriceHash,
     } as TermRepoRolloverElectionSubmissionStruct;
@@ -1647,7 +1867,7 @@ describe("TermRepoRolloverIntegration", () => {
       [rolloverMat2BidPrice, BID_PRICE_NONCE],
     );
     const submission = {
-      rolloverAuction: maturityPeriod2.termAuctionBidLocker.address,
+      rolloverAuctionBidLocker: maturityPeriod2.termAuctionBidLocker.address,
       rolloverAmount: wallet1RolloverAmount,
       rolloverBidPriceHash: rolloverMat2BidPriceHash,
     } as TermRepoRolloverElectionSubmissionStruct;
@@ -1916,7 +2136,7 @@ describe("TermRepoRolloverIntegration", () => {
       [rolloverMat2BidPrice, BID_PRICE_NONCE],
     );
     const submission = {
-      rolloverAuction: maturityPeriod2.termAuctionBidLocker.address,
+      rolloverAuctionBidLocker: maturityPeriod2.termAuctionBidLocker.address,
       rolloverAmount: wallet1RolloverAmount,
       rolloverBidPriceHash: rolloverMat2BidPriceHash,
     } as TermRepoRolloverElectionSubmissionStruct;

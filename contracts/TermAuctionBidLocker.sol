@@ -68,7 +68,7 @@ contract TermAuctionBidLocker is
     ITermRepoServicer public termRepoServicer;
     ITermPriceOracle internal termPriceOracle;
     ITermEventEmitter internal emitter;
-    ITermAuction internal termAuction;
+    ITermAuction public termAuction;
 
     // Auction in-progress state
     mapping(bytes32 => TermAuctionBid) internal bids;

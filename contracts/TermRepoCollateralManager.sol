@@ -60,7 +60,7 @@ contract TermRepoCollateralManager is
     // Boolean indicating if liquidations are paused
     bool public liquidationsPaused;
 
-    // Boolean indicatting if term contracts paired
+    // Boolean indicating if term contracts paired
     bool internal termContractPaired;
 
     // Number of Collateral Tokens Accepted By Term
