@@ -75,7 +75,7 @@ methods {
 // See: https://docs.term.finance/protocol/fees-and-penalties/liquidated-damages
 function liquidatedCollateral(
     mathint liquidatedDamages,
-    mathint liquidatedDamagesDueToProtocol,
+    mathint liquidateDamangesDueToProtocol,
     mathint closureAmount,
     mathint collateralTokenDecimals
 ) returns (mathint, mathint) {
@@ -89,10 +89,10 @@ function liquidatedCollateral(
 
     return (
         require_uint256(mulDivDownAbstract(fairValueLiquidation, require_uint256(10 ^ 18 + liquidatedDamages), 10 ^ 18) / divisor),
-        require_uint256(mulDivDownAbstract(fairValueLiquidation, require_uint256(liquidatedDamagesDueToProtocol),  10 ^ 18) / divisor)
+        require_uint256(mulDivDownAbstract(fairValueLiquidation, require_uint256(liquidateDamangesDueToProtocol),  10 ^ 18) / divisor)
     );
     // fairValueLiquidation * (10 ^ 18 + liquidatedDamages) / divisor,
-    // fairValueLiquidation * liquidatedDamagesDueToProtocol / divisor
+    // fairValueLiquidation * liquidateDamangesDueToProtocol / divisor
 }
 
 function mulDivDownAbstract(uint256 x, uint256 y, uint256 z) returns uint256 {
@@ -139,8 +139,8 @@ rule batchLiquidationSuccessfullyLiquidates(
     require(closureAmount < 2 ^ 255);
 
     require(servicerLiquidations.getBorrowerRepurchaseObligation(borrower) > 0);
-    require(liquidatedDamagesDueToProtocol() < 10 ^ 18);
-    require(liquidatedDamages(collateralTokenLiquidations) >= liquidatedDamagesDueToProtocol());
+    require(liquidateDamangesDueToProtocol() < 10 ^ 18);
+    require(liquidatedDamages(collateralTokenLiquidations) >= liquidateDamangesDueToProtocol());
 
     require(purchaseTokenLiquidations.decimals() <= 18);
     require(purchaseTokenLiquidations.decimals() > 0);
@@ -155,7 +155,7 @@ rule batchLiquidationSuccessfullyLiquidates(
     mathint protocolLiquidatedDamagesAmount;
     liquidationIncentiveAmount, protocolLiquidatedDamagesAmount = liquidatedCollateral(
         to_mathint(liquidatedDamages(collateralTokenLiquidations)),
-        to_mathint(liquidatedDamagesDueToProtocol()),
+        to_mathint(liquidateDamangesDueToProtocol()),
         to_mathint(closureAmount),
         to_mathint(collateralTokenLiquidations.decimals())
     );
@@ -218,9 +218,9 @@ rule batchLiquidateWithRepoTokenSuccessfullyLiquidates(
     require(controllerLiquidations.getProtocolReserveAddress() != termRepoLocker());
 
     require(servicerLiquidations.getBorrowerRepurchaseObligation(borrower) > 0);
-    require(liquidatedDamagesDueToProtocol() < 10 ^ 18);
+    require(liquidateDamangesDueToProtocol() < 10 ^ 18);
 
-    require(liquidatedDamages(collateralTokenLiquidations) >= liquidatedDamagesDueToProtocol());
+    require(liquidatedDamages(collateralTokenLiquidations) >= liquidateDamangesDueToProtocol());
 
     require(purchaseTokenLiquidations.decimals() <= 18);
     require(purchaseTokenLiquidations.decimals() > 0);
@@ -245,7 +245,7 @@ rule batchLiquidateWithRepoTokenSuccessfullyLiquidates(
     
     liquidationIncentiveAmount, protocolLiquidatedDamagesAmount = liquidatedCollateral(
         to_mathint(liquidatedDamages(collateralTokenLiquidations)),
-        to_mathint(liquidatedDamagesDueToProtocol()),
+        to_mathint(liquidateDamangesDueToProtocol()),
         to_mathint(closureAmount),
         to_mathint(collateralTokenLiquidations.decimals())
     );
@@ -303,8 +303,8 @@ rule batchDefaultSuccessfullyDefaults(
     require(closureAmount < 2 ^ 255); // Prevents Overflows
 
     require(servicerLiquidations.getBorrowerRepurchaseObligation(borrower) > 0);
-    require(liquidatedDamagesDueToProtocol() < 10 ^ 18);
-    require(liquidatedDamages(collateralTokenLiquidations) >= liquidatedDamagesDueToProtocol());
+    require(liquidateDamangesDueToProtocol() < 10 ^ 18);
+    require(liquidatedDamages(collateralTokenLiquidations) >= liquidateDamangesDueToProtocol());
 
     require(purchaseTokenLiquidations.decimals() <= 18);
     require(purchaseTokenLiquidations.decimals() > 0);
@@ -319,7 +319,7 @@ rule batchDefaultSuccessfullyDefaults(
     mathint protocolLiquidatedDamagesAmount;
     liquidationIncentiveAmount, protocolLiquidatedDamagesAmount = liquidatedCollateral(
         to_mathint(liquidatedDamages(collateralTokenLiquidations)),
-        to_mathint(liquidatedDamagesDueToProtocol()),
+        to_mathint(liquidateDamangesDueToProtocol()),
         to_mathint(closureAmount),
         to_mathint(collateralTokenLiquidations.decimals())
     );
@@ -495,7 +495,7 @@ rule batchLiquidationRevertsIfInvalid(
     require(servicerLiquidations.purchaseToken() == purchaseTokenLiquidations);
     require(servicerLiquidations.termRepoLocker() == lockerLiquidations);
     require(servicerLiquidations.termRepoToken() == repoTokenLiquidations);
-    require(liquidatedDamagesDueToProtocol() < expScale); //Protocol share will always be less than 1.
+    require(liquidateDamangesDueToProtocol() < expScale); //Protocol share will always be less than 1.
     require(servicerLiquidations.totalOutstandingRepurchaseExposure() >= servicerLiquidations.getBorrowerRepurchaseObligation(borrower)); //Proved in totalOutstandingRepurchaseExposureIsSumOfRepurchases of   termRepoServicer/stateVariables.spec 
     require(closureAmounts.length == 1);
     require(servicerLiquidations.shortfallHaircutMantissa() == 0); // Value must be 0 when liquidations are still available
@@ -576,7 +576,7 @@ rule batchLiquidationWithRepoTokenRevertsIfInvalid(
     require(servicerLiquidations.termRepoToken() == repoTokenLiquidations);
     require(servicerLiquidations.termRepoLocker() == lockerLiquidations);
     require(servicerLiquidations.termRepoToken() == repoTokenLiquidations);
-    require(liquidatedDamagesDueToProtocol() < expScale); //Protocol share will always be less than 1.
+    require(liquidateDamangesDueToProtocol() < expScale); //Protocol share will always be less than 1.
     require(repoTokenLiquidations.mintExposureCap() + closureAmounts[0] <= max_uint256); // prevent mint exposure cap from overflowing
     require(servicerLiquidations.totalOutstandingRepurchaseExposure() >= servicerLiquidations.getBorrowerRepurchaseObligation(borrower)); //Proved in totalOutstandingRepurchaseExposureIsSumOfRepurchases of   termRepoServicer/stateVariables.spec 
     require(closureAmounts.length == 1);
@@ -665,7 +665,7 @@ rule batchDefaultRevertsIfInvalid(
     require(collateralTokens(0) == collateralTokenLiquidations);
     require(purchaseToken() == purchaseTokenLiquidations);
     require(servicerLiquidations.purchaseToken() == purchaseTokenLiquidations);
-    require(liquidatedDamagesDueToProtocol() < expScale); //Protocol share will always be less than 1.
+    require(liquidateDamangesDueToProtocol() < expScale); //Protocol share will always be less than 1.
     require(servicerLiquidations.totalOutstandingRepurchaseExposure() >= servicerLiquidations.getBorrowerRepurchaseObligation(borrower)); //Proved in totalOutstandingRepurchaseExposureIsSumOfRepurchases of   termRepoServicer/stateVariables.spec 
     require(closureAmounts.length == 1);
     require(servicerLiquidations.shortfallHaircutMantissa() == 0); // Value must be 0 when defaults are still available
