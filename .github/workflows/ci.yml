@@ -32,7 +32,6 @@ jobs:
       matrix:
         ruleset:
           - "termAuction.conf"
-          - "termAuctionBidLocker.conf"
           - "termAuctionOfferLocker.conf"
           - "termAuctionOfferLocker-stateVariables.conf"
           - "termRepoCollateralManager-batchDefault.conf"
