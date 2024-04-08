@@ -209,9 +209,9 @@ rule noMethodsChangeLiquidateDamagesDueToProtocol(
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
     f.selector != sig:upgradeTo(address).selector
 } {
-    uint256 liquidateDamagesDueToProtocolBefore = liquidatedDamagesDueToProtocol();
+    uint256 liquidateDamagesDueToProtocolBefore = liquidateDamangesDueToProtocol();
     f(e, args);
-    uint256 liquidateDamagesDueToProtocolAfter = liquidatedDamagesDueToProtocol();
+    uint256 liquidateDamagesDueToProtocolAfter = liquidateDamangesDueToProtocol();
 
     assert liquidateDamagesDueToProtocolBefore == liquidateDamagesDueToProtocolAfter,
         "LiquidateDamagesDueToProtocol should not change";
