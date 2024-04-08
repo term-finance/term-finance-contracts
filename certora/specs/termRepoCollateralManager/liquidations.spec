@@ -20,7 +20,7 @@ methods {
     function isBorrowerInShortfall(address) external returns (bool) envfree;
     function deMinimisMarginThreshold() external returns (uint256) envfree;
     function liquidatedDamages(address) external returns (uint256) envfree;
-    function liquidatedDamagesDueToProtocol() external returns (uint256) envfree => CONSTANT;
+    function liquidateDamangesDueToProtocol() external returns (uint256) envfree => CONSTANT;
     function initialCollateralRatios(address) external returns (uint256) envfree;
     function maintenanceCollateralRatios(address) external returns (uint256) envfree;
     function harnessCollateralTokensLength() external returns (uint256) envfree;

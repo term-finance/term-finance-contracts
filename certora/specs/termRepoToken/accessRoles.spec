@@ -25,7 +25,6 @@ rule onlyRoleCanCallRevert(method f, calldataarg args, env e) filtered {
     && f.selector != sig:decreaseAllowance(address,uint256).selector
     && f.selector != sig:transferFrom(address,address,uint256).selector
     && f.selector != sig:transfer(address,uint256).selector
-    && f.selector != sig:permit(address,address,uint256,uint256,uint8,bytes32,bytes32).selector
     
 
 } {
@@ -50,8 +49,6 @@ rule onlyRoleCanCallStorage(method f, calldataarg args, env e) filtered {
     && f.selector != sig:decreaseAllowance(address,uint256).selector
     && f.selector != sig:transferFrom(address,address,uint256).selector
     && f.selector != sig:transfer(address,uint256).selector
-    && f.selector != sig:permit(address,address,uint256,uint256,uint8,bytes32,bytes32).selector
-
     } {
     storage storeBefore = lastStorage;
     currentContract.f(e,args);
