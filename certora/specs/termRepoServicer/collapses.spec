@@ -204,7 +204,6 @@ rule burnCollapseExposureRevertConditions(env e) {
     bool zeroAddressSender = e.msg.sender == 0;
     bool pastRepurchaseWindow = e.block.timestamp >= endOfRepurchaseWindow();
     bool zeroBorrowerRepurchaseObligation = getBorrowerRepurchaseObligation(e.msg.sender) == 0;
-    bool zeroMaxRepayment = maxRepayment == 0;
     bool servicerNotHaveRepoTokenBurnerRole = !collapsingRepoToken.hasRole(collapsingRepoToken.BURNER_ROLE(), currentContract);
     bool borrowerRepoTokenBalanceTooLow = (collapserRepoTokenBalanceBefore < collapseAmount && repaymentInTokens == collapseAmount) || (collapserRepoTokenBalanceBefore < maxRepaymentInRepoTokens && maxRepaymentInRepoTokens <= collapseAmount);
     bool repoTokenBurningPaused = collapsingRepoToken.burningPaused();
@@ -213,7 +212,7 @@ rule burnCollapseExposureRevertConditions(env e) {
     bool lockerTransfersPaused = collapsingLocker.transfersPaused() && maxRepaymentInRepoTokens <= collapseAmount && totalCollateral(e.msg.sender) > 0; // Only in the case of full repayment
     bool termRepoUnbalanced = (totalOutstandingRepurchaseExposure() - repaymentInPurchaseToken + totalRepurchaseCollected() ) / (10 ^ 4) != (((((collapsingRepoToken.totalSupply() -  repaymentInTokens) * expScale * collapsingRepoToken.redemptionValue()) / expScale ) / expScale) / 10 ^ 4);
 
-    bool isExpectedToRevert = payable || zeroAddressSender || pastRepurchaseWindow  || zeroBorrowerRepurchaseObligation || zeroMaxRepayment || servicerNotHaveRepoTokenBurnerRole || borrowerRepoTokenBalanceTooLow || repoTokenBurningPaused || noServicerRoleOnCollateralManager ||  collatManagerDoesNotHaveLockerServicerRole || lockerTransfersPaused || termRepoUnbalanced ;
+    bool isExpectedToRevert = payable || zeroAddressSender || pastRepurchaseWindow  || zeroMaxRepayment || servicerNotHaveRepoTokenBurnerRole || borrowerRepoTokenBalanceTooLow || repoTokenBurningPaused || noServicerRoleOnCollateralManager ||  collatManagerDoesNotHaveLockerServicerRole || lockerTransfersPaused || termRepoUnbalanced ;
 
     burnCollapseExposure@withrevert(e, amount);
 
