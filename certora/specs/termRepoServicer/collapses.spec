@@ -212,7 +212,7 @@ rule burnCollapseExposureRevertConditions(env e) {
     bool lockerTransfersPaused = collapsingLocker.transfersPaused() && maxRepaymentInRepoTokens <= collapseAmount && totalCollateral(e.msg.sender) > 0; // Only in the case of full repayment
     bool termRepoUnbalanced = (totalOutstandingRepurchaseExposure() - repaymentInPurchaseToken + totalRepurchaseCollected() ) / (10 ^ 4) != (((((collapsingRepoToken.totalSupply() -  repaymentInTokens) * expScale * collapsingRepoToken.redemptionValue()) / expScale ) / expScale) / 10 ^ 4);
 
-    bool isExpectedToRevert = payable || zeroAddressSender || pastRepurchaseWindow  || zeroMaxRepayment || servicerNotHaveRepoTokenBurnerRole || borrowerRepoTokenBalanceTooLow || repoTokenBurningPaused || noServicerRoleOnCollateralManager ||  collatManagerDoesNotHaveLockerServicerRole || lockerTransfersPaused || termRepoUnbalanced ;
+    bool isExpectedToRevert = payable || zeroAddressSender || pastRepurchaseWindow  || zeroBorrowerRepurchaseObligation || servicerNotHaveRepoTokenBurnerRole || borrowerRepoTokenBalanceTooLow || repoTokenBurningPaused || noServicerRoleOnCollateralManager ||  collatManagerDoesNotHaveLockerServicerRole || lockerTransfersPaused || termRepoUnbalanced ;
 
     burnCollapseExposure@withrevert(e, amount);
 
