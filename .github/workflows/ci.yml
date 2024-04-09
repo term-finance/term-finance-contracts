@@ -41,7 +41,7 @@ jobs:
           - "termRepoCollateralManager.conf"
           - "termRepoLocker.conf"
           - "termRepoRolloverManager.conf"
-          - "termRepoServicer.conf"
+          - "termRepoServicer-rollovers.conf"
           - "termRepoServicer-lockFulfill.conf"
           - "termRepoServicer-lockFulfillReverts.conf"
           - "termRepoServicer-mintCollapse.conf"
