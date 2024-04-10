@@ -12,8 +12,8 @@ jobs:
       - uses: actions/checkout@master
         with:
           fetch-depth: 0
-      - run: corepack enable
-      - uses: actions/setup-node@v3
+      # - run: corepack enable
+      - uses: actions/setup-node@v4
         with:
           node-version: "18.15"
           cache: yarn
@@ -25,3 +25,59 @@ jobs:
       - uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+  formal-verfication:
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      matrix:
+        ruleset:
+          - "termAuction.conf"
+          - "termAuctionOfferLocker.conf"
+          - "termAuctionOfferLocker-stateVariables.conf"
+          - "termRepoCollateralManager-batchDefault.conf"
+          - "termRepoCollateralManager-batchLiquidation.conf"
+          - "termRepoCollateralManager-batchLiquidationWithRepoToken.conf"
+          - "termRepoCollateralManager-stateVariables.conf"
+          - "termRepoCollateralManager.conf"
+          - "termRepoLocker.conf"
+          - "termRepoRolloverManager.conf"
+          - "termRepoServicer-rollovers.conf"
+          - "termRepoServicer-lockFulfill.conf"
+          - "termRepoServicer-lockFulfillReverts.conf"
+          - "termRepoServicer-mintCollapse.conf"
+          - "termRepoServicer-mintCollapseReverts.conf"
+          - "termRepoServicer-repaymentsRedemptions.conf"
+          - "termRepoServicer-repaymentsRedemptionsReverts.conf"
+          - "termRepoServicer-stateVariables.conf"
+          - "termRepoServicer.conf"
+          - "termRepoToken.conf"
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18.15"
+          cache: yarn
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          yarn install --immutable
+          yarn build
+      - run: |
+          pip3 install -r requirements.txt
+      - run: |
+          msg="${2:-"$(hostname) - ${conf_file} - $(date +%s)"}"
+
+          pip3 install solc-select
+          solc-select install ${SOLC_VERSION}
+
+          certoraRun "./certora/confs/${{ matrix.ruleset }}" \
+            --msg "$(hostname) - ${{ matrix.ruleset }} - $(date +%s)" \
+            --wait_for_results all \
+            --rule_sanity basic
+        env:
+          CERTORAKEY: ${{ secrets.CERTORAKEY }}
+          SOLC_VERSION: 0.8.18
