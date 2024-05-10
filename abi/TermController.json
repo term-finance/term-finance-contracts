@@ -177,6 +177,32 @@
   },
   {
     "inputs": [],
+    "name": "ADMIN_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "AUCTION_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "CONTROLLER_ADMIN_ROLE",
     "outputs": [
       {
@@ -204,6 +230,32 @@
   {
     "inputs": [],
     "name": "DEVOPS_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "INITIALIZER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "SPECIALIST_ROLE",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -247,6 +299,47 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "termRepoId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getTermAuctionResults",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "termAuctionId",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "auctionClearingRate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "auctionClearingBlockTimestamp",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct AuctionMetadata[]",
+        "name": "auctionMetadata",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "uint8",
+        "name": "numOfAuctions",
+        "type": "uint8"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "getTreasuryAddress",
     "outputs": [
@@ -257,6 +350,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "authedUser",
+        "type": "address"
+      }
+    ],
+    "name": "grantMintExposureAccess",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -322,6 +428,11 @@
         "internalType": "address",
         "name": "devopsWallet_",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "adminWallet_",
+        "type": "address"
       }
     ],
     "name": "initialize",
@@ -362,6 +473,32 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "auction",
+        "type": "address"
+      }
+    ],
+    "name": "pairAuction",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "initializer",
+        "type": "address"
+      }
+    ],
+    "name": "pairInitializer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "proxiableUUID",
     "outputs": [
@@ -378,6 +515,29 @@
     "inputs": [
       {
         "internalType": "bytes32",
+        "name": "termRepoId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "termAuctionId",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "uint256",
+        "name": "auctionClearingRate",
+        "type": "uint256"
+      }
+    ],
+    "name": "recordAuctionResult",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
         "name": "role",
         "type": "bytes32"
       },
@@ -388,6 +548,19 @@
       }
     ],
     "name": "renounceRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "revokedUser",
+        "type": "address"
+      }
+    ],
+    "name": "revokeMintExposureAccess",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -515,6 +688,25 @@
     "name": "upgradeToAndCall",
     "outputs": [],
     "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "authedUser",
+        "type": "address"
+      }
+    ],
+    "name": "verifyMintExposureAccess",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {

@@ -12,8 +12,8 @@ jobs:
       - uses: actions/checkout@master
         with:
           fetch-depth: 0
-      # - run: corepack enable
-      - uses: actions/setup-node@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v3
         with:
           node-version: "18.15"
           cache: yarn
@@ -32,6 +32,7 @@ jobs:
       matrix:
         ruleset:
           - "termAuction.conf"
+          - "termAuctionBidLocker.conf"
           - "termAuctionOfferLocker.conf"
           - "termAuctionOfferLocker-stateVariables.conf"
           - "termRepoCollateralManager-batchDefault.conf"
@@ -41,7 +42,7 @@ jobs:
           - "termRepoCollateralManager.conf"
           - "termRepoLocker.conf"
           - "termRepoRolloverManager.conf"
-          - "termRepoServicer-rollovers.conf"
+          - "termRepoServicer.conf"
           - "termRepoServicer-lockFulfill.conf"
           - "termRepoServicer-lockFulfillReverts.conf"
           - "termRepoServicer-mintCollapse.conf"
@@ -51,7 +52,6 @@ jobs:
           - "termRepoServicer-stateVariables.conf"
           - "termRepoServicer.conf"
           - "termRepoToken.conf"
-      fail-fast: false
     steps:
       - uses: actions/checkout@master
         with:
@@ -60,7 +60,7 @@ jobs:
         with:
           node-version: "18.15"
           cache: yarn
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
       - run: |

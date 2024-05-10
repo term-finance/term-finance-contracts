@@ -12,6 +12,7 @@ import { FakeContract, smock } from "@defi-wonderland/smock";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { BigNumber } from "ethers";
 
 dayjs.extend(duration);
 
@@ -53,6 +54,7 @@ describe("deploy-utils", () => {
         reserve.address,
         controllerAdmin.address,
         devopsMultisig.address,
+        adminWallet.address,
       ],
       {
         kind: "uups",
@@ -95,6 +97,10 @@ describe("deploy-utils", () => {
     await testCollateralToken.deployed();
     testBorrowedToken = await smock.fake<ERC20Upgradeable>("ERC20Upgradeable");
     await testBorrowedToken.deployed();
+
+    await termController
+      .connect(adminWallet)
+      .pairInitializer(termInitializer.address);
 
     await termInitializer.pairTermContracts(
       termController.address,

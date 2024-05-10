@@ -38,6 +38,7 @@ const config: HardhatUserConfig = {
       baseGoerli: "placeholder",
       mainnet: process.env.ETHERSCAN_API_KEY!,
       polygon_mumbai: process.env.ETHERSCAN_API_KEY!,
+      sepolia: process.env.ETHERSCAN_API_KEY!,
     },
     customChains: [
       {
@@ -156,6 +157,22 @@ if (goerliTestWallet && baseGoerliRPC) {
     chainId: 84531,
   };
 }
+
+// Setup base-goerli test network.
+const sepoliaRPC = process.env.SEPOLIA_RPC;
+if (goerliTestWallet && sepoliaRPC) {
+  if (!config.networks) {
+    config.networks = {};
+  }
+  config.networks.sepolia = {
+    url: sepoliaRPC,
+    accounts: [goerliTestWallet, ...(goerliTesterWallets || [])],
+    gas: "auto",
+    gasPrice: 35000000000,
+    chainId: 11155111,
+  };
+}
+
 const mumbaiRPC = process.env.MUMBAI_RPC;
 if (goerliTestWallet && mumbaiRPC) {
   if (!config.networks) {

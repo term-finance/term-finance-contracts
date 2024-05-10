@@ -269,7 +269,7 @@ export async function deployEventEmitter(
 
 export async function deployPriceOracle(
   devopsWallet: string,
-  evergreenManagementWallet: string,
+  refreshRateThreshold: string,
   kind: "uups" | "transparent" | "raw" = "uups",
   signer: Signer | undefined = undefined,
 ): Promise<TermPriceConsumerV3> {
@@ -554,41 +554,41 @@ export async function deployMaturityPeriod(
         managedSigner,
       )) as TermRepoServicer)
     : termRepoServicerImplAddress
-    ? ((await deployContractUUPSProxyBeacon(
-        await getContractFactory(termRepoServicerContractName, managedSigner),
-        termRepoServicerContractName,
-        termRepoServicerImplAddress || "",
-        managedSigner,
-        [
-          termRepoId,
-          servicerMaturityTimestamp,
-          repurchaseWindow,
-          redemptionBuffer,
-          servicingFee,
-          purchaseTokenAddress,
-          termController.address,
-          termEventEmitterAddress,
-          initializerAddressDefined,
-        ],
-      )) as TermRepoServicer)
-    : await deployTermContract<TermRepoServicer>(
-        termRepoServicerContractName,
-        [
-          termRepoId,
-          servicerMaturityTimestamp,
-          repurchaseWindow,
-          redemptionBuffer,
-          servicingFee,
-          purchaseTokenAddress,
-          termController.address,
-          termEventEmitterAddress,
-          initializerAddressDefined,
-        ],
-        kind,
-        termController,
-        eventEmitter,
-        managedSigner,
-      );
+      ? ((await deployContractUUPSProxyBeacon(
+          await getContractFactory(termRepoServicerContractName, managedSigner),
+          termRepoServicerContractName,
+          termRepoServicerImplAddress || "",
+          managedSigner,
+          [
+            termRepoId,
+            servicerMaturityTimestamp,
+            repurchaseWindow,
+            redemptionBuffer,
+            servicingFee,
+            purchaseTokenAddress,
+            termController.address,
+            termEventEmitterAddress,
+            initializerAddressDefined,
+          ],
+        )) as TermRepoServicer)
+      : await deployTermContract<TermRepoServicer>(
+          termRepoServicerContractName,
+          [
+            termRepoId,
+            servicerMaturityTimestamp,
+            repurchaseWindow,
+            redemptionBuffer,
+            servicingFee,
+            purchaseTokenAddress,
+            termController.address,
+            termEventEmitterAddress,
+            initializerAddressDefined,
+          ],
+          kind,
+          termController,
+          eventEmitter,
+          managedSigner,
+        );
   const termRepoCollateralManager = collateralManagerAddress
     ? ((await ethers.getContractAt(
         termRepoCollateralManagerContractName,
@@ -596,42 +596,42 @@ export async function deployMaturityPeriod(
         managedSigner,
       )) as TermRepoCollateralManager)
     : collateralManagerImplAddress
-    ? ((await deployContractUUPSProxyBeacon(
-        await getContractFactory(
+      ? ((await deployContractUUPSProxyBeacon(
+          await getContractFactory(
+            termRepoCollateralManagerContractName,
+            managedSigner,
+          ),
           termRepoCollateralManagerContractName,
+          collateralManagerImplAddress || "",
           managedSigner,
-        ),
-        termRepoCollateralManagerContractName,
-        collateralManagerImplAddress || "",
-        managedSigner,
-        [
-          termRepoId,
-          liquidateDamangesDueToProtocol,
-          netExposureCapOnLiquidation,
-          deMinimisMarginThreshold,
-          purchaseTokenAddress,
-          collateralMetadatas,
-          termEventEmitterAddress,
-          initializerAddressDefined,
-        ],
-      )) as TermRepoCollateralManager)
-    : await deployTermContract<TermRepoCollateralManager>(
-        termRepoCollateralManagerContractName,
-        [
-          termRepoId,
-          liquidateDamangesDueToProtocol,
-          netExposureCapOnLiquidation,
-          deMinimisMarginThreshold,
-          purchaseTokenAddress,
-          collateralMetadatas,
-          termEventEmitterAddress,
-          initializerAddressDefined,
-        ],
-        kind,
-        termController,
-        eventEmitter,
-        managedSigner,
-      );
+          [
+            termRepoId,
+            liquidateDamangesDueToProtocol,
+            netExposureCapOnLiquidation,
+            deMinimisMarginThreshold,
+            purchaseTokenAddress,
+            collateralMetadatas,
+            termEventEmitterAddress,
+            initializerAddressDefined,
+          ],
+        )) as TermRepoCollateralManager)
+      : await deployTermContract<TermRepoCollateralManager>(
+          termRepoCollateralManagerContractName,
+          [
+            termRepoId,
+            liquidateDamangesDueToProtocol,
+            netExposureCapOnLiquidation,
+            deMinimisMarginThreshold,
+            purchaseTokenAddress,
+            collateralMetadatas,
+            termEventEmitterAddress,
+            initializerAddressDefined,
+          ],
+          kind,
+          termController,
+          eventEmitter,
+          managedSigner,
+        );
   const termRepoToken = termRepoTokenAddress
     ? ((await ethers.getContractAt(
         termRepoTokenContractName,
@@ -639,51 +639,51 @@ export async function deployMaturityPeriod(
         managedSigner,
       )) as TermRepoToken)
     : termRepoTokenImplAddress
-    ? ((await deployContractUUPSProxyBeacon(
-        await getContractFactory(termRepoTokenContractName, managedSigner),
-        termRepoTokenContractName,
-        termRepoTokenImplAddress || "",
-        managedSigner,
-        [
-          termRepoId,
-          "TermRepoToken",
-          "TESTTF",
-          `${purchaseTokenDecimals}`,
-          "1000000000000000000",
-          mintExposureCap,
-          initializerAddressDefined,
-          {
-            redemptionTimestamp:
-              maturityTimestamp + repurchaseWindow + redemptionBuffer,
-            purchaseToken: purchaseTokenAddress,
-            collateralTokens: collateralTokenAddresses,
-            maintenanceCollateralRatios,
-          },
-        ],
-      )) as TermRepoToken)
-    : await deployTermContract<TermRepoToken>(
-        termRepoTokenContractName,
-        [
-          termRepoId,
-          "TermRepoToken",
-          "TESTTF",
-          `${purchaseTokenDecimals}`,
-          "1000000000000000000",
-          mintExposureCap,
-          initializerAddressDefined,
-          {
-            redemptionTimestamp:
-              maturityTimestamp + repurchaseWindow + redemptionBuffer,
-            purchaseToken: purchaseTokenAddress,
-            collateralTokens: collateralTokenAddresses,
-            maintenanceCollateralRatios,
-          },
-        ],
-        kind,
-        termController,
-        eventEmitter,
-        managedSigner,
-      );
+      ? ((await deployContractUUPSProxyBeacon(
+          await getContractFactory(termRepoTokenContractName, managedSigner),
+          termRepoTokenContractName,
+          termRepoTokenImplAddress || "",
+          managedSigner,
+          [
+            termRepoId,
+            "TermRepoToken",
+            "TESTTF",
+            `${purchaseTokenDecimals}`,
+            "1000000000000000000",
+            mintExposureCap,
+            initializerAddressDefined,
+            {
+              redemptionTimestamp:
+                maturityTimestamp + repurchaseWindow + redemptionBuffer,
+              termRepoServicer: termRepoServicer.address,
+              termRepoCollateralManager: termRepoCollateralManager.address,
+              purchaseToken: purchaseTokenAddress,
+            },
+          ],
+        )) as TermRepoToken)
+      : await deployTermContract<TermRepoToken>(
+          termRepoTokenContractName,
+          [
+            termRepoId,
+            "TermRepoToken",
+            "TESTTF",
+            `${purchaseTokenDecimals}`,
+            "1000000000000000000",
+            mintExposureCap,
+            initializerAddressDefined,
+            {
+              redemptionTimestamp:
+                maturityTimestamp + repurchaseWindow + redemptionBuffer,
+              termRepoServicer: termRepoServicer.address,
+              termRepoCollateralManager: termRepoCollateralManager.address,
+              purchaseToken: purchaseTokenAddress,
+            },
+          ],
+          kind,
+          termController,
+          eventEmitter,
+          managedSigner,
+        );
   const termRepoLocker = repoLockerAddress
     ? ((await ethers.getContractAt(
         termRepoLockerContractName,
@@ -691,21 +691,21 @@ export async function deployMaturityPeriod(
         managedSigner,
       )) as TermRepoLocker)
     : repoLockerImplAddress
-    ? ((await deployContractUUPSProxyBeacon(
-        await getContractFactory(termRepoLockerContractName, managedSigner),
-        termRepoLockerContractName,
-        repoLockerImplAddress || "",
-        managedSigner,
-        [termRepoId, initializerAddressDefined],
-      )) as TermRepoLocker)
-    : await deployTermContract<TermRepoLocker>(
-        termRepoLockerContractName,
-        [termRepoId, initializerAddressDefined],
-        kind,
-        termController,
-        eventEmitter,
-        managedSigner,
-      );
+      ? ((await deployContractUUPSProxyBeacon(
+          await getContractFactory(termRepoLockerContractName, managedSigner),
+          termRepoLockerContractName,
+          repoLockerImplAddress || "",
+          managedSigner,
+          [termRepoId, initializerAddressDefined],
+        )) as TermRepoLocker)
+      : await deployTermContract<TermRepoLocker>(
+          termRepoLockerContractName,
+          [termRepoId, initializerAddressDefined],
+          kind,
+          termController,
+          eventEmitter,
+          managedSigner,
+        );
   const termAuctionBidLocker = bidLockerAddress
     ? ((await ethers.getContractAt(
         termAuctionBidLockerContractName,
@@ -713,45 +713,45 @@ export async function deployMaturityPeriod(
         managedSigner,
       )) as TermAuctionBidLocker)
     : bidLockerImplAddress
-    ? ((await deployContractUUPSProxyBeacon(
-        await getContractFactory(
+      ? ((await deployContractUUPSProxyBeacon(
+          await getContractFactory(
+            termAuctionBidLockerContractName,
+            managedSigner,
+          ),
           termAuctionBidLockerContractName,
+          bidLockerImplAddress || "",
           managedSigner,
-        ),
-        termAuctionBidLockerContractName,
-        bidLockerImplAddress || "",
-        managedSigner,
-        [
-          termRepoId,
-          termAuctionId,
-          auctionStartDate,
-          auctionRevealDate,
-          auctionEndDate,
-          redemptionTimestamp,
-          minimumTenderAmount,
-          purchaseTokenAddress,
-          collateralTokenAddresses,
-        ],
-      )) as TermAuctionBidLocker)
-    : await deployTermContract<TermAuctionBidLocker>(
-        termAuctionBidLockerContractName,
-        [
-          termRepoId,
-          termAuctionId,
-          auctionStartDate,
-          auctionRevealDate,
-          auctionEndDate,
-          redemptionTimestamp,
-          minimumTenderAmount,
-          purchaseTokenAddress,
-          collateralTokenAddresses,
-          initializerAddressDefined,
-        ],
-        kind,
-        termController,
-        eventEmitter,
-        managedSigner,
-      );
+          [
+            termRepoId,
+            termAuctionId,
+            auctionStartDate,
+            auctionRevealDate,
+            auctionEndDate,
+            redemptionTimestamp,
+            minimumTenderAmount,
+            purchaseTokenAddress,
+            collateralTokenAddresses,
+          ],
+        )) as TermAuctionBidLocker)
+      : await deployTermContract<TermAuctionBidLocker>(
+          termAuctionBidLockerContractName,
+          [
+            termRepoId,
+            termAuctionId,
+            auctionStartDate,
+            auctionRevealDate,
+            auctionEndDate,
+            redemptionTimestamp,
+            minimumTenderAmount,
+            purchaseTokenAddress,
+            collateralTokenAddresses,
+            initializerAddressDefined,
+          ],
+          kind,
+          termController,
+          eventEmitter,
+          managedSigner,
+        );
   const termAuctionOfferLocker = offerLockerAddress
     ? ((await ethers.getContractAt(
         termAuctionOfferLockerContractName,
@@ -759,43 +759,43 @@ export async function deployMaturityPeriod(
         managedSigner,
       )) as TermAuctionOfferLocker)
     : offerLockerImplAddress
-    ? ((await deployContractUUPSProxyBeacon(
-        await getContractFactory(
+      ? ((await deployContractUUPSProxyBeacon(
+          await getContractFactory(
+            termAuctionOfferLockerContractName,
+            managedSigner,
+          ),
           termAuctionOfferLockerContractName,
+          offerLockerImplAddress || "",
           managedSigner,
-        ),
-        termAuctionOfferLockerContractName,
-        offerLockerImplAddress || "",
-        managedSigner,
-        [
-          termRepoId,
-          termAuctionId,
-          auctionStartDate,
-          auctionRevealDate,
-          auctionEndDate,
-          minimumTenderAmount,
-          purchaseTokenAddress,
-          collateralTokenAddresses,
-        ],
-      )) as TermAuctionOfferLocker)
-    : await deployTermContract<TermAuctionOfferLocker>(
-        termAuctionOfferLockerContractName,
-        [
-          termRepoId,
-          termAuctionId,
-          auctionStartDate,
-          auctionRevealDate,
-          auctionEndDate,
-          minimumTenderAmount,
-          purchaseTokenAddress,
-          collateralTokenAddresses,
-          initializerAddressDefined,
-        ],
-        kind,
-        termController,
-        eventEmitter,
-        managedSigner,
-      );
+          [
+            termRepoId,
+            termAuctionId,
+            auctionStartDate,
+            auctionRevealDate,
+            auctionEndDate,
+            minimumTenderAmount,
+            purchaseTokenAddress,
+            collateralTokenAddresses,
+          ],
+        )) as TermAuctionOfferLocker)
+      : await deployTermContract<TermAuctionOfferLocker>(
+          termAuctionOfferLockerContractName,
+          [
+            termRepoId,
+            termAuctionId,
+            auctionStartDate,
+            auctionRevealDate,
+            auctionEndDate,
+            minimumTenderAmount,
+            purchaseTokenAddress,
+            collateralTokenAddresses,
+            initializerAddressDefined,
+          ],
+          kind,
+          termController,
+          eventEmitter,
+          managedSigner,
+        );
   const auction = auctionAddress
     ? ((await ethers.getContractAt(
         auctionContractName,
@@ -803,38 +803,38 @@ export async function deployMaturityPeriod(
         managedSigner,
       )) as TermAuction)
     : auctionImplAddress
-    ? ((await deployContractUUPSProxyBeacon(
-        await getContractFactory(auctionContractName, managedSigner),
-        auctionContractName,
-        auctionImplAddress || "",
-        managedSigner,
-        [
-          termRepoId,
-          termAuctionId,
-          auctionEndDate,
-          auctionEndDate,
-          redemptionTimestamp,
-          purchaseTokenAddress,
-          clearingPricePostProcessingOffset,
-        ],
-      )) as TermAuction)
-    : await deployTermContract<TermAuction>(
-        auctionContractName,
-        [
-          termRepoId,
-          termAuctionId,
-          auctionEndDate,
-          auctionEndDate,
-          redemptionTimestamp,
-          purchaseTokenAddress,
-          initializerAddressDefined,
-          clearingPricePostProcessingOffset,
-        ],
-        kind,
-        termController,
-        eventEmitter,
-        managedSigner,
-      );
+      ? ((await deployContractUUPSProxyBeacon(
+          await getContractFactory(auctionContractName, managedSigner),
+          auctionContractName,
+          auctionImplAddress || "",
+          managedSigner,
+          [
+            termRepoId,
+            termAuctionId,
+            auctionEndDate,
+            auctionEndDate,
+            redemptionTimestamp,
+            purchaseTokenAddress,
+            clearingPricePostProcessingOffset,
+          ],
+        )) as TermAuction)
+      : await deployTermContract<TermAuction>(
+          auctionContractName,
+          [
+            termRepoId,
+            termAuctionId,
+            auctionEndDate,
+            auctionEndDate,
+            redemptionTimestamp,
+            purchaseTokenAddress,
+            initializerAddressDefined,
+            clearingPricePostProcessingOffset,
+          ],
+          kind,
+          termController,
+          eventEmitter,
+          managedSigner,
+        );
   const rolloverManager = rolloverManagerAddress
     ? ((await ethers.getContractAt(
         rolloverManagerContractName,
@@ -842,33 +842,33 @@ export async function deployMaturityPeriod(
         managedSigner,
       )) as TermRepoRolloverManager)
     : rolloverManagerImplAddress
-    ? ((await deployContractUUPSProxyBeacon(
-        await getContractFactory(rolloverManagerContractName, managedSigner),
-        rolloverManagerContractName,
-        rolloverManagerImplAddress || "",
-        managedSigner,
-        [
-          termRepoId,
-          termRepoServicer.address,
-          termRepoCollateralManager.address,
-          termController.address,
-          initializerAddressDefined,
-        ],
-      )) as TermRepoRolloverManager)
-    : await deployTermContract<TermRepoRolloverManager>(
-        rolloverManagerContractName,
-        [
-          termRepoId,
-          termRepoServicer.address,
-          termRepoCollateralManager.address,
-          termController.address,
-          initializerAddressDefined,
-        ],
-        kind,
-        termController,
-        eventEmitter,
-        managedSigner,
-      );
+      ? ((await deployContractUUPSProxyBeacon(
+          await getContractFactory(rolloverManagerContractName, managedSigner),
+          rolloverManagerContractName,
+          rolloverManagerImplAddress || "",
+          managedSigner,
+          [
+            termRepoId,
+            termRepoServicer.address,
+            termRepoCollateralManager.address,
+            termController.address,
+            initializerAddressDefined,
+          ],
+        )) as TermRepoRolloverManager)
+      : await deployTermContract<TermRepoRolloverManager>(
+          rolloverManagerContractName,
+          [
+            termRepoId,
+            termRepoServicer.address,
+            termRepoCollateralManager.address,
+            termController.address,
+            initializerAddressDefined,
+          ],
+          kind,
+          termController,
+          eventEmitter,
+          managedSigner,
+        );
 
   if (!pairTermContractsThruGnosis) {
     if (initializer && initializerForApproval) {
@@ -961,7 +961,9 @@ export async function deployAdditionalAuction(
     termApprovalMultisig,
     devopsMultisig,
     adminWallet,
+    controllerAdmin,
     auctionVersion,
+    termRepoIdUnhashed,
     clearingPricePostProcessingOffset = "1",
     clearingPriceDelta = "5000000",
 
@@ -987,8 +989,10 @@ export async function deployAdditionalAuction(
     termApprovalMultisig: Signer;
     devopsMultisig: string;
     adminWallet: string;
+    controllerAdmin: Signer;
     auctionVersion: string;
     clearingPricePostProcessingOffset: string;
+    termRepoIdUnhashed: string;
 
     scheduleGelatoOps?: boolean;
   },
@@ -1006,13 +1010,12 @@ export async function deployAdditionalAuction(
       managedSigner as any,
     );
   }
-  const termRepoId = v4();
   const termAuctionId = v4();
 
   const termController = (await ethers.getContractAt(
     TermControllerABI,
     termControllerAddress,
-    managedSigner,
+    controllerAdmin,
   )) as TermController;
 
   const eventEmitter = (await ethers.getContractAt(
@@ -1048,6 +1051,10 @@ export async function deployAdditionalAuction(
     termRepoServicerAddress,
     managedSigner,
   )) as TermRepoServicer;
+
+  const termRepoId =
+    termRepoIdUnhashed ?? (await termRepoServicer.termRepoId());
+
   const termRepoCollateralManager: TermRepoCollateralManager =
     (await ethers.getContractAt(
       "TermRepoCollateralManager",

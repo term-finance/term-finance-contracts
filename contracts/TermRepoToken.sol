@@ -3,6 +3,7 @@ pragma solidity ^0.8.18;
 
 import {ExponentialNoError} from "./lib/ExponentialNoError.sol";
 import {TermRepoTokenConfig} from "./lib/TermRepoTokenConfig.sol";
+import {ITermRepoCollateralManager} from "./interfaces/ITermRepoCollateralManager.sol";
 import {ITermRepoToken} from "./interfaces/ITermRepoToken.sol";
 import {ITermRepoTokenErrors} from "./interfaces/ITermRepoTokenErrors.sol";
 import {ITermEventEmitter} from "./interfaces/ITermEventEmitter.sol";
@@ -10,6 +11,9 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+
+import {ERC20PermitUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20PermitUpgradeable.sol";
+
 import {Versionable} from "./lib/Versionable.sol";
 
 /// @author TermLabs
@@ -19,6 +23,7 @@ import {Versionable} from "./lib/Versionable.sol";
 contract TermRepoToken is
     Initializable,
     ERC20Upgradeable,
+    ERC20PermitUpgradeable,
     UUPSUpgradeable,
     AccessControlUpgradeable,
     ExponentialNoError,
@@ -95,6 +100,7 @@ contract TermRepoToken is
         TermRepoTokenConfig calldata config_
     ) external initializer {
         ERC20Upgradeable.__ERC20_init(name_, symbol_);
+        ERC20PermitUpgradeable.__ERC20Permit_init(name_);
         UUPSUpgradeable.__UUPSUpgradeable_init();
         AccessControlUpgradeable.__AccessControl_init();
 
@@ -103,6 +109,7 @@ contract TermRepoToken is
         // slither-disable-start reentrancy-no-eth events-maths
         decimalPlaces = decimalPlaces_;
         redemptionValue = redemptionValue_;
+        require(config_.purchaseToken != address(0) && config_.termRepoCollateralManager != address(0) && config_.termRepoServicer != address(0), "zero address in config");
         config = config_;
         // slither-disable-end reentrancy-no-eth events-maths
 
@@ -260,6 +267,19 @@ contract TermRepoToken is
     /// @return uint8 A uint8 that specifies how many decimal places a token has
     function decimals() public view virtual override returns (uint8) {
         return decimalPlaces;
+    }
+
+    /// @return collateralTokens An array of collateral token addresses eligible to serve as collateral backing this repoToken
+    /// @return maintenanceRatios An array of maintenance ratios applicable to each collateral token backing this repoToken
+    function getCollateralRequirements() external view returns (address[] memory collateralTokens, uint256[] memory maintenanceRatios) {
+        ITermRepoCollateralManager collateralManager = ITermRepoCollateralManager(config.termRepoCollateralManager);
+        uint256 numOfCollateralTokens = uint256(collateralManager.numOfAcceptedCollateralTokens());
+        collateralTokens = new address[](numOfCollateralTokens);
+        maintenanceRatios = new uint256[](numOfCollateralTokens);
+        for (uint256 i = 0; i < numOfCollateralTokens; ++i){
+            collateralTokens[i] = collateralManager.collateralTokens(i);
+            maintenanceRatios[i] = collateralManager.maintenanceCollateralRatios(collateralTokens[i]);
+        }
     }
 
     // ========================================================================

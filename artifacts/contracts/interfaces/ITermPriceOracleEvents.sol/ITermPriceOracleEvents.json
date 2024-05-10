@@ -19,7 +19,39 @@
           "type": "address"
         }
       ],
+      "name": "SubscribeFallbackPriceFeed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "tokenPriceAggregator",
+          "type": "address"
+        }
+      ],
       "name": "SubscribePriceFeed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "name": "UnsubscribeFallbackPriceFeed",
       "type": "event"
     },
     {

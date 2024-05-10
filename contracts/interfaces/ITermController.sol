@@ -1,6 +1,8 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
 pragma solidity ^0.8.18;
 
+import {AuctionMetadata} from "../lib/AuctionMetadata.sol";
+
 /// @notice ITermController is an interface that defines events and functions of the Controller contract.
 interface ITermController {
     // ========================================================================
@@ -19,9 +21,17 @@ interface ITermController {
         address contractAddress
     ) external view returns (bool);
 
+    /// @notice Returns history of all completed auctions within a term
+    /// @param termRepoId term repo id to look up
+    function getTermAuctionResults(bytes32 termRepoId) external view returns (AuctionMetadata[] memory auctionMetadata, uint8 numOfAuctions);
+
     // ========================================================================
     // = Admin Functions ======================================================
     // ========================================================================
+
+    /// @notice Initializer function to pair a new Term Auction with the controller
+    /// @param auction    new auction address
+    function pairAuction(address auction) external;
 
     /// @notice Admin function to update the Term Finance treasury wallet address
     /// @param treasuryWallet    new treasury address
@@ -40,4 +50,19 @@ interface ITermController {
     /// @notice Admin function to remove a contract from Controller
     /// @param termContract    term contract address to remove
     function unmarkTermDeployed(address termContract) external;
+
+    /// @notice View Function to lookup if authedUser is granted mint exposure access
+    /// @param authedUser    address to check for mint exposure access
+    function verifyMintExposureAccess(
+        address authedUser
+    ) external view returns (bool);
+
+    
+    /// @notice Function for auction to add new auction completion information
+    /// @param termId    term Id auction belongs to
+    /// @param auctionId auction Id for auction
+    /// @param auctionClearingRate auction clearing rate
+    function recordAuctionResult(bytes32 termId, bytes32 auctionId, uint256 auctionClearingRate) external;
+
+    
 }

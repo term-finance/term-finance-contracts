@@ -18,5 +18,6 @@ interface ITermRepoServicerErrors {
     error RedemptionPeriodNotOpen();
     error RepurchaseAmountTooHigh();
     error ZeroBorrowerRepurchaseObligation();
+    error ZeroMaxRepurchase();
     error ZeroTermRepoTokenBalance();
 }
