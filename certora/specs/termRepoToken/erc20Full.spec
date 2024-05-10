@@ -26,14 +26,16 @@ methods {
 // functionality 
 definition canIncreaseAllowance(method f) returns bool = 
 	f.selector == sig:approve(address,uint256).selector || 
-    f.selector == sig:increaseAllowance(address,uint256).selector
+    f.selector == sig:increaseAllowance(address,uint256).selector ||
+    f.selector == sig:permit(address,address,uint256,uint256,uint8,bytes32,bytes32).selector
 ;
     
 
 definition canDecreaseAllowance(method f) returns bool = 
 	f.selector == sig:approve(address,uint256).selector ||
     f.selector == sig:decreaseAllowance(address,uint256).selector || 
-	f.selector == sig:transferFrom(address,address,uint256).selector
+	f.selector == sig:transferFrom(address,address,uint256).selector ||
+    f.selector == sig:permit(address,address,uint256,uint256,uint8,bytes32,bytes32).selector
 ;
 
 definition canIncreaseBalance(method f) returns bool = 
@@ -260,13 +262,15 @@ rule onlyHolderOfSpenderCanChangeAllowance(method f, env e) filtered { f ->
     assert (
         allowanceAfter > allowanceBefore
     ) => (
-        ((f.selector == sig:approve(address,uint256).selector || f.selector == sig:increaseAllowance(address,uint256).selector) && e.msg.sender == holder)
+        ((f.selector == sig:approve(address,uint256).selector || f.selector == sig:increaseAllowance(address,uint256).selector) && e.msg.sender == holder) ||
+        f.selector == sig:permit(address,address,uint256,uint256,uint8,bytes32,bytes32).selector
 
     );
 
     assert (
         allowanceAfter < allowanceBefore
     ) => (
+        f.selector == sig:permit(address,address,uint256,uint256,uint8,bytes32,bytes32).selector ||
         (f.selector == sig:transferFrom(address,address,uint256).selector && e.msg.sender == spender) ||
         ((f.selector == sig:approve(address,uint256).selector || f.selector == sig:decreaseAllowance(address,uint256).selector) && e.msg.sender == holder )
     );

@@ -2,7 +2,14 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import dayjs from "dayjs";
 import { ethers, network, upgrades } from "hardhat";
-import { TermEventEmitter, TestTermRepoToken } from "../typechain-types";
+import {
+  TermEventEmitter,
+  TermRepoCollateralManager,
+  TermRepoCollateralManager__factory,
+  TestTermRepoToken,
+} from "../typechain-types";
+import { FakeContract, smock } from "@defi-wonderland/smock";
+import { BigNumber } from "ethers";
 
 describe("TermRepoToken Tests", () => {
   let wallet1: SignerWithAddress;
@@ -11,7 +18,9 @@ describe("TermRepoToken Tests", () => {
   let devopsMultisig: SignerWithAddress;
   let adminWallet: SignerWithAddress;
   let contractAddress: SignerWithAddress;
+  let collateralToken: SignerWithAddress;
   let termEventEmitter: TermEventEmitter;
+  let mockTermRepoCollateralManager: FakeContract<TermRepoCollateralManager>;
 
   let termRepoToken: TestTermRepoToken;
   let termIdHashed: string;
@@ -27,6 +36,7 @@ describe("TermRepoToken Tests", () => {
       termInitializer,
       devopsMultisig,
       adminWallet,
+      collateralToken,
     ] = await ethers.getSigners();
 
     const versionableFactory = await ethers.getContractFactory("Versionable");
@@ -43,6 +53,21 @@ describe("TermRepoToken Tests", () => {
       { kind: "uups" },
     )) as TermEventEmitter;
 
+    const mockTermRepoCollateralManagerFactory =
+      await smock.mock<TermRepoCollateralManager__factory>(
+        "TermRepoCollateralManager",
+      );
+    const mockTermRepoCollateralManager =
+      await mockTermRepoCollateralManagerFactory.deploy();
+    await mockTermRepoCollateralManager.deployed();
+    mockTermRepoCollateralManager.numOfAcceptedCollateralTokens.returns(1);
+    mockTermRepoCollateralManager.collateralTokens
+      .whenCalledWith(0)
+      .returns(collateralToken.address);
+    mockTermRepoCollateralManager.maintenanceCollateralRatios
+      .whenCalledWith(collateralToken.address)
+      .returns("150000000000000000000");
+
     const termIdString = "term-id-1";
 
     termRepoToken = (await upgrades.deployProxy(
@@ -57,9 +82,9 @@ describe("TermRepoToken Tests", () => {
         termInitializer.address,
         {
           redemptionTimestamp: dayjs().unix(),
-          purchaseToken: "0x0000000000000000000000000000000000000000",
-          collateralTokens: ["0x0000000000000000000000000000000000000000"],
-          maintenanceCollateralRatios: ["1000000000000000000"],
+          purchaseToken: "0x0000000000000000000000000000000000000002",
+          termRepoServicer: "0x0000000000000000000000000000000000000001",
+          termRepoCollateralManager: mockTermRepoCollateralManager.address,
         },
       ],
       {
@@ -141,6 +166,16 @@ describe("TermRepoToken Tests", () => {
   describe("Getter functions", async () => {
     it("Decimals function", async () => {
       expect(await termRepoToken.decimals()).to.eq(6);
+    });
+    it("Collateral Data function", async () => {
+      const repoTokenCollateralData =
+        await termRepoToken.getCollateralRequirements();
+      expect(JSON.parse(JSON.stringify(repoTokenCollateralData))).to.deep.equal(
+        [
+          [collateralToken.address],
+          [BigNumber.from("150000000000000000000").toJSON()],
+        ],
+      );
     });
   });
 

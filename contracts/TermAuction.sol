@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import {ITermAuctionBidLocker} from "./interfaces/ITermAuctionBidLocker.sol";
 import {ITermAuctionErrors} from "./interfaces/ITermAuctionErrors.sol";
 import {ITermAuctionOfferLocker} from "./interfaces/ITermAuctionOfferLocker.sol";
+import {ITermController} from "./interfaces/ITermController.sol";
 import {ITermEventEmitter} from "./interfaces/ITermEventEmitter.sol";
 import {ITermRepoCollateralManager} from "./interfaces/ITermRepoCollateralManager.sol";
 import {ITermRepoRolloverManager} from "./interfaces/ITermRepoRolloverManager.sol";
@@ -85,6 +86,7 @@ contract TermAuction is
     ITermAuctionOfferLocker public termAuctionOfferLocker;
     IERC20MetadataUpgradeable public purchaseToken;
     ITermEventEmitter internal emitter;
+    ITermController public controller;
 
     // Completed auction state
     uint256 public clearingPrice;
@@ -166,6 +168,7 @@ contract TermAuction is
 
     function pairTermContracts(
         ITermEventEmitter emitter_,
+        ITermController controller_,
         ITermRepoServicer termRepoServicer_,
         ITermAuctionBidLocker termAuctionBidLocker_,
         ITermAuctionOfferLocker termAuctionOfferLocker_,
@@ -174,6 +177,7 @@ contract TermAuction is
         string calldata version_
     ) external onlyRole(INITIALIZER_ROLE) notTermContractPaired {
         emitter = emitter_;
+        controller = controller_;
 
         termRepoServicer = termRepoServicer_;
         termAuctionBidLocker = termAuctionBidLocker_;
@@ -272,6 +276,8 @@ contract TermAuction is
                 totalAssignedOffers,
                 clearingPrice
             );
+
+            controller.recordAuctionResult(termRepoId, termAuctionId, clearingPrice);
         } else {
             // Return sorted bid funds.
             for (uint256 i = 0; i < sortedBids.length; ++i) {

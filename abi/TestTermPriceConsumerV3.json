@@ -1,5 +1,15 @@
 [
   {
+    "inputs": [],
+    "name": "GracePeriodNotOver",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidPrice",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -8,6 +18,21 @@
       }
     ],
     "name": "NoPriceFeed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PricesStale",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SequencerDownError",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroPrice",
     "type": "error"
   },
   {
@@ -146,7 +171,39 @@
         "type": "address"
       }
     ],
+    "name": "SubscribeFallbackPriceFeed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "tokenPriceAggregator",
+        "type": "address"
+      }
+    ],
     "name": "SubscribePriceFeed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "UnsubscribeFallbackPriceFeed",
     "type": "event"
   },
   {
@@ -212,9 +269,70 @@
         "internalType": "address",
         "name": "tokenPriceAggregator",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "refreshRateThreshold",
+        "type": "uint256"
+      }
+    ],
+    "name": "addNewTokenFallbackPriceFeed",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenPriceAggregator",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "refreshRateThreshold",
+        "type": "uint256"
       }
     ],
     "name": "addNewTokenPriceFeed",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenPriceAggregator",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "tokenPriceAggregatorRefreshRateThreshold",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "fallbackPriceAggregator",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fallbackPriceAggregatorRefreshRateThreshold",
+        "type": "uint256"
+      }
+    ],
+    "name": "addNewTokenPriceFeedAndFallbackPriceFeed",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -304,6 +422,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "removeFallbackTokenPriceFeed",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

@@ -87,6 +87,11 @@
   },
   {
     "inputs": [],
+    "name": "ZeroMaxRepurchase",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ZeroTermRepoTokenBalance",
     "type": "error"
   },
@@ -531,19 +536,6 @@
       }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "authedUser",
-        "type": "address"
-      }
-    ],
-    "name": "grantMintExposureAccess",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

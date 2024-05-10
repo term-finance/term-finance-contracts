@@ -13,6 +13,7 @@ import {
   TermPriceConsumerV3,
   TestingTermAuction,
   TermRepoRolloverManager,
+  TermController,
 } from "../typechain-types";
 import { BigNumber, BigNumberish } from "ethers";
 import dayjs from "dayjs";
@@ -152,6 +153,7 @@ describe("TermAuction", () => {
   let oracle: FakeContract<TermPriceConsumerV3>;
   let testCollateralToken: FakeContract<ERC20Upgradeable>;
   let testBorrowedToken: FakeContract<ERC20Upgradeable>;
+  let termController: FakeContract<TermController>;
   let termEventEmitter: TermEventEmitter;
   let termAuction: TestingTermAuction;
   let termRepoServicer: FakeContract<TermRepoServicer>;
@@ -215,6 +217,9 @@ describe("TermAuction", () => {
     );
     await pastTermRepoRolloverManager.deployed();
 
+    termController = await smock.fake<TermController>("TermController");
+    await termController.deployed();
+
     testCollateralToken =
       await smock.fake<ERC20Upgradeable>("ERC20Upgradeable");
     await testCollateralToken.deployed();
@@ -260,6 +265,7 @@ describe("TermAuction", () => {
         .connect(wallets[1])
         .pairTermContracts(
           termEventEmitter.address,
+          termController.address,
           termRepoServicer.address,
           termAuctionBidLocker.address,
           termAuctionOfferLocker.address,
@@ -274,6 +280,7 @@ describe("TermAuction", () => {
       .connect(wallets[5])
       .pairTermContracts(
         termEventEmitter.address,
+        termController.address,
         termRepoServicer.address,
         termAuctionBidLocker.address,
         termAuctionOfferLocker.address,
@@ -286,6 +293,7 @@ describe("TermAuction", () => {
         .connect(wallets[5])
         .pairTermContracts(
           termEventEmitter.address,
+          termController.address,
           termRepoServicer.address,
           termAuctionBidLocker.address,
           termAuctionOfferLocker.address,
