@@ -11,4 +11,13 @@ interface ITermPriceOracleEvents {
     /// @notice Event emitted when a price feed is removed from price oracle.
     /// @param token The address of the token
     event UnsubscribePriceFeed(address token);
+
+    /// @notice Event emitted when a new fallback price feed is added or updated to price oracle.
+    /// @param token The address of the token fee subscribe
+    /// @param tokenPriceAggregator The proxy price aggregator address subscribed
+    event SubscribeFallbackPriceFeed(address token, address tokenPriceAggregator);
+
+    /// @notice Event emitted when a fallback price feed is removed from price oracle.
+    /// @param token The address of the token
+    event UnsubscribeFallbackPriceFeed(address token);
 }

@@ -7,17 +7,13 @@ import {ITermRepoCollateralManager} from "./interfaces/ITermRepoCollateralManage
 import {ITermRepoCollateralManagerErrors} from "./interfaces/ITermRepoCollateralManagerErrors.sol";
 import {ITermRepoLocker} from "./interfaces/ITermRepoLocker.sol";
 import {ITermRepoServicer} from "./interfaces/ITermRepoServicer.sol";
-import {ITermRepoToken} from "./interfaces/ITermRepoToken.sol";
 import {ITermPriceOracle} from "./interfaces/ITermPriceOracle.sol";
-import {ITermRepoRolloverManager} from "./interfaces/ITermRepoRolloverManager.sol";
 import {Collateral} from "./lib/Collateral.sol";
 import {ExponentialNoError} from "./lib/ExponentialNoError.sol";
 import {TermAuctionGroup} from "./lib/TermAuctionGroup.sol";
 import {TermPriceConsumerV3} from "./TermPriceConsumerV3.sol";
 import {TermRepoLocker} from "./TermRepoLocker.sol";
 import {TermRepoServicer} from "./TermRepoServicer.sol";
-import {TermRepoToken} from "./TermRepoToken.sol";
-import {TermRepoRolloverElection} from "./lib/TermRepoRolloverElection.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -70,7 +66,7 @@ contract TermRepoCollateralManager is
     uint256 public deMinimisMarginThreshold;
 
     // Collateral Seizures Share for Protocol in Liquidations
-    uint256 public liquidateDamangesDueToProtocol;
+    uint256 public liquidatedDamagesDueToProtocol;
 
     //Max percentage collateralization of repurchase after liquidation
     uint256 public netExposureCapOnLiquidation;
@@ -150,7 +146,7 @@ contract TermRepoCollateralManager is
 
     function initialize(
         string calldata termRepoId_,
-        uint256 liquidateDamangesDueToProtocol_,
+        uint256 liquidatedDamagesDueToProtocol_,
         uint256 netExposureCapOnLiquidation_,
         uint256 deMinimisMarginThreshold_,
         address purchaseToken_,
@@ -166,7 +162,7 @@ contract TermRepoCollateralManager is
         liquidationsPaused = false;
 
         // slither-disable-start reentrancy-no-eth events-maths
-        liquidateDamangesDueToProtocol = liquidateDamangesDueToProtocol_;
+        liquidatedDamagesDueToProtocol = liquidatedDamagesDueToProtocol_;
 
         netExposureCapOnLiquidation = netExposureCapOnLiquidation_;
         deMinimisMarginThreshold = deMinimisMarginThreshold_;
@@ -270,6 +266,7 @@ contract TermRepoCollateralManager is
     ) external isCollateralTokenAccepted(collateralToken) {
         address borrower = msg.sender;
 
+        // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > termRepoServicer.endOfRepurchaseWindow()) {
             revert CollateralDepositClosed();
         }
@@ -299,6 +296,7 @@ contract TermRepoCollateralManager is
         if (
             // solhint-disable-next-line not-rely-on-time
             block.timestamp >= termRepoServicer.endOfRepurchaseWindow() &&
+            // solhint-disable-next-line not-rely-on-time
             block.timestamp < termRepoServicer.redemptionTimestamp()
         ) {
             revert CollateralWithdrawalClosed();
@@ -1062,7 +1060,7 @@ contract TermRepoCollateralManager is
 
         Exp memory protocolSeizureAmount = mul_(
             latestPriceValueCollateralAmount,
-            Exp({mantissa: liquidateDamangesDueToProtocol})
+            Exp({mantissa: liquidatedDamagesDueToProtocol})
         );
 
         // this is equivalent to usdValueOfClosureAmount / discountedPriceofCollateralToken

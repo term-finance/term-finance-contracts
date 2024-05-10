@@ -3,10 +3,14 @@ pragma solidity ^0.8.18;
 
 import {ITermController} from "./interfaces/ITermController.sol";
 import {ITermControllerEvents} from "./interfaces/ITermControllerEvents.sol";
+
+import {TermAuctionResults} from "./lib/TermAuctionResults.sol";
+import {AuctionMetadata} from "./lib/AuctionMetadata.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Versionable} from "./lib/Versionable.sol";
+
 
 /// @author TermLabs
 /// @title Term Controller
@@ -24,9 +28,13 @@ contract TermController is
     // = Access Roles =========================================================
     // ========================================================================
 
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant AUCTION_ROLE = keccak256("AUCTION_ROLE");
     bytes32 public constant CONTROLLER_ADMIN_ROLE =
         keccak256("CONTROLLER_ADMIN_ROLE");
     bytes32 public constant DEVOPS_ROLE = keccak256("DEVOPS_ROLE");
+    bytes32 public constant INITIALIZER_ROLE = keccak256("INITIALIZER_ROLE");
+    bytes32 public constant SPECIALIST_ROLE = keccak256("SPECIALIST_ROLE");
 
     // ========================================================================
     // = State Variables ======================================================
@@ -41,6 +49,9 @@ contract TermController is
     // Mapping which returns true for contract addresses deployed by Term Finance Protocol
     mapping(address => bool) internal termAddresses;
 
+    // Mapping which returns a TermAuctionResults object for each termId.
+    mapping(bytes32 => TermAuctionResults) internal termAuctionResults;
+
     // ========================================================================
     // = Deploy  ==============================================================
     // ========================================================================
@@ -54,7 +65,8 @@ contract TermController is
         address treasuryWallet_,
         address protocolReserveWallet_,
         address controllerAdminWallet_,
-        address devopsWallet_
+        address devopsWallet_,
+        address adminWallet_
     ) external initializer {
         UUPSUpgradeable.__UUPSUpgradeable_init();
         AccessControlUpgradeable.__AccessControl_init();
@@ -69,8 +81,14 @@ contract TermController is
             "devops wallet is zero address"
         );
 
+        require(
+            adminWallet_ != address(0),
+            "admin wallet is zero address"
+        );
+
         _grantRole(CONTROLLER_ADMIN_ROLE, controllerAdminWallet_);
         _grantRole(DEVOPS_ROLE, devopsWallet_);
+        _grantRole(ADMIN_ROLE, adminWallet_);
 
         require(treasuryWallet_ != address(0), "treasury is zero address");
         treasuryWallet = treasuryWallet_;
@@ -81,6 +99,15 @@ contract TermController is
         );
         protocolReserveWallet = protocolReserveWallet_;
     }
+
+    function pairInitializer(address initializer) external onlyRole(ADMIN_ROLE) {
+        _grantRole(INITIALIZER_ROLE, initializer);
+    }
+
+    function pairAuction (address auction) external onlyRole(INITIALIZER_ROLE) {
+        _grantRole(AUCTION_ROLE, auction);
+    }
+
 
     // ========================================================================
     // = Interface/API ========================================================
@@ -97,6 +124,11 @@ contract TermController is
         return protocolReserveWallet;
     }
 
+    function getTermAuctionResults(bytes32 termRepoId) external view returns (AuctionMetadata[] memory auctionMetadata, uint8 numOfAuctions){
+        auctionMetadata =  termAuctionResults[termRepoId].auctionMetadata;
+        numOfAuctions = termAuctionResults[termRepoId].numOfAuctions;
+    }
+
     /// @notice External view function which returns whether contract address is deployed by Term Finance Protocol
     /// @param contractAddress The input contract address to query
     /// @return Whether the given address is deployed by Term Finance Protocol
@@ -104,6 +136,13 @@ contract TermController is
         address contractAddress
     ) external view returns (bool) {
         return _isTermDeployed(contractAddress);
+    }
+
+     /// @param authedUser The address of user to check access for mint exposure
+    function verifyMintExposureAccess(
+        address authedUser
+    ) external view returns (bool) {
+        return hasRole(SPECIALIST_ROLE, authedUser);
     }
 
     // ========================================================================
@@ -190,6 +229,32 @@ contract TermController is
         require(_isTermDeployed(termContract), "Contract is not in Term");
 
         delete termAddresses[termContract];
+    }
+
+    /// @param authedUser The address of user granted access to create mint exposure
+    function grantMintExposureAccess(
+        address authedUser
+    ) external onlyRole(ADMIN_ROLE) {
+        _grantRole(SPECIALIST_ROLE, authedUser);
+    }
+
+    /// @param revokedUser The address of user to revoke access to create mint exposure
+    function revokeMintExposureAccess(
+        address revokedUser
+    ) external onlyRole(ADMIN_ROLE) {
+        _revokeRole(SPECIALIST_ROLE, revokedUser);
+    }
+
+    function recordAuctionResult(bytes32 termRepoId, bytes32 termAuctionId, uint256 auctionClearingRate) external onlyRole(AUCTION_ROLE) {
+    
+        TermAuctionResults storage term = termAuctionResults[termRepoId];
+        AuctionMetadata memory auctionMetadata = AuctionMetadata({
+            termAuctionId: termAuctionId,
+            auctionClearingRate: auctionClearingRate,
+            auctionClearingBlockTimestamp: block.timestamp
+        });
+        term.auctionMetadata.push(auctionMetadata);
+        term.numOfAuctions++;   
     }
 
     function _isTermDeployed(

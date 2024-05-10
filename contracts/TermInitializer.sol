@@ -138,7 +138,42 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             "Non-Term TA"
         );
 
+        require(
+            address(termContractGroup.termRepoServicer) != address(0),
+            "Zero Address Servicer"
+        );
+        require(
+            address(termContractGroup.termRepoCollateralManager) != address(0),
+            "Zero Address Collateral Manager"
+        );
+        require(
+            address(termContractGroup.termRepoLocker) != address(0),
+            "Zero Address Locker"
+        );
+        require(
+            address(termContractGroup.termRepoToken) != address(0),
+            "Zero Address RepoToken"
+        );
+        require(
+            address(termContractGroup.rolloverManager) != address(0),
+            "Zero Address RolloverManager"
+        );
+        require(
+            address(termContractGroup.termAuctionBidLocker) != address(0),
+            "Zero Address termAuctionBidLocker"
+        );
+        require(
+            address(termContractGroup.termAuctionOfferLocker) != address(0),
+            "Zero Address termAuctionOfferLocker"
+        );
+        require(
+            address(termContractGroup.auction) != address(0),
+            "Zero Address auction"
+        );
+
         emitter.pairTermContract(address(termContractGroup.termRepoLocker));
+
+        controller.pairAuction(address(termContractGroup.auction));
 
         termContractGroup.termRepoLocker.pairTermContracts(
             address(termContractGroup.termRepoCollateralManager),
@@ -183,6 +218,7 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
         emitter.pairTermContract(address(termContractGroup.auction));
         termContractGroup.auction.pairTermContracts(
             emitter,
+            controller,
             termContractGroup.termRepoServicer,
             termContractGroup.termAuctionBidLocker,
             termContractGroup.termAuctionOfferLocker,
@@ -258,6 +294,22 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
         );
         require(controller.isTermDeployed(address(auction)), "Non-Term TA");
 
+        require(
+            address(termAuctionBidLocker) != address(0),
+            "Zero Address termAuctionBidLocker"
+        );
+        require(
+            address(termAuctionOfferLocker) != address(0),
+            "Zero Address termAuctionOfferLocker"
+        );
+        require(
+            address(auction) != address(0),
+            "Zero Address auction"
+        );
+
+
+        controller.pairAuction(address(auction));
+
         emitter.pairTermContract(address(termAuctionBidLocker));
         termAuctionBidLocker.pairTermContracts(
             address(auction),
@@ -281,6 +333,7 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
         emitter.pairTermContract(address(auction));
         auction.pairTermContracts(
             emitter,
+            controller,
             termRepoServicer,
             termAuctionBidLocker,
             termAuctionOfferLocker,

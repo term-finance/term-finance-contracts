@@ -126,33 +126,18 @@
   "ast": {
     "absolutePath": "contracts/FiatTokenProxy.sol",
     "exportedSymbols": {
-      "AddressUtils": [
-        54
-      ],
-      "AdminUpgradeabilityProxy": [
-        303
-      ],
-      "FiatTokenProxy": [
-        316
-      ],
-      "Proxy": [
-        37
-      ],
-      "UpgradeabilityProxy": [
-        126
-      ]
+      "AddressUtils": [54],
+      "AdminUpgradeabilityProxy": [303],
+      "FiatTokenProxy": [316],
+      "Proxy": [37],
+      "UpgradeabilityProxy": [126]
     },
     "id": 317,
     "nodeType": "SourceUnit",
     "nodes": [
       {
         "id": 1,
-        "literals": [
-          "solidity",
-          "^",
-          "0.4",
-          ".24"
-        ],
+        "literals": ["solidity", "^", "0.4", ".24"],
         "nodeType": "PragmaDirective",
         "src": "0:24:0"
       },
@@ -163,9 +148,7 @@
         "documentation": "@title Proxy\n@dev Implements delegation of calls to other contracts, with proper\nforwarding of return values and bubbling of failures.\nIt defines a fallback function that delegates all calls to the address\nreturned by the abstract _implementation() internal function.",
         "fullyImplemented": false,
         "id": 37,
-        "linearizedBaseContracts": [
-          37
-        ],
+        "linearizedBaseContracts": [37],
         "name": "Proxy",
         "nodeType": "ContractDefinition",
         "nodes": [
@@ -560,9 +543,7 @@
         "documentation": "Utility library of inline functions on addresses",
         "fullyImplemented": true,
         "id": 54,
-        "linearizedBaseContracts": [
-          54
-        ],
+        "linearizedBaseContracts": [54],
         "name": "AddressUtils",
         "nodeType": "ContractDefinition",
         "nodes": [
@@ -797,17 +778,12 @@
             "src": "3461:5:0"
           }
         ],
-        "contractDependencies": [
-          37
-        ],
+        "contractDependencies": [37],
         "contractKind": "contract",
         "documentation": "@title UpgradeabilityProxy\n@dev This contract implements a proxy that allows to change the\nimplementation address to which it will delegate.\nSuch a change is called an implementation upgrade.",
         "fullyImplemented": true,
         "id": 126,
-        "linearizedBaseContracts": [
-          126,
-          37
-        ],
+        "linearizedBaseContracts": [126, 37],
         "name": "UpgradeabilityProxy",
         "nodeType": "ContractDefinition",
         "nodes": [
@@ -1146,9 +1122,7 @@
               "src": "4425:92:0",
               "statements": [
                 {
-                  "assignments": [
-                    87
-                  ],
+                  "assignments": [87],
                   "declarations": [
                     {
                       "constant": false,
@@ -1554,10 +1528,7 @@
                       "id": 111,
                       "name": "require",
                       "nodeType": "Identifier",
-                      "overloadedDeclarations": [
-                        334,
-                        335
-                      ],
+                      "overloadedDeclarations": [334, 335],
                       "referencedDeclaration": 335,
                       "src": "5000:7:0",
                       "typeDescriptions": {
@@ -1584,9 +1555,7 @@
                   "src": "5000:114:0"
                 },
                 {
-                  "assignments": [
-                    120
-                  ],
+                  "assignments": [120],
                   "declarations": [
                     {
                       "constant": false,
@@ -1739,19 +1708,12 @@
             "src": "5692:19:0"
           }
         ],
-        "contractDependencies": [
-          126,
-          37
-        ],
+        "contractDependencies": [126, 37],
         "contractKind": "contract",
         "documentation": "@title AdminUpgradeabilityProxy\n@dev This contract combines an upgradeability proxy with an authorization\nmechanism for administrative tasks.\nAll external functions in this contract must be guarded by the\n`ifAdmin` modifier. See ethereum/solidity#3864 for a Solidity\nfeature proposal that would enable this to be done automatically.",
         "fullyImplemented": true,
         "id": 303,
-        "linearizedBaseContracts": [
-          303,
-          126,
-          37
-        ],
+        "linearizedBaseContracts": [303, 126, 37],
         "name": "AdminUpgradeabilityProxy",
         "nodeType": "ContractDefinition",
         "nodes": [
@@ -2451,9 +2413,7 @@
                       "id": 192,
                       "name": "_implementation",
                       "nodeType": "Identifier",
-                      "overloadedDeclarations": [
-                        92
-                      ],
+                      "overloadedDeclarations": [92],
                       "referencedDeclaration": 92,
                       "src": "7170:15:0",
                       "typeDescriptions": {
@@ -2687,10 +2647,7 @@
                       "id": 203,
                       "name": "require",
                       "nodeType": "Identifier",
-                      "overloadedDeclarations": [
-                        334,
-                        335
-                      ],
+                      "overloadedDeclarations": [334, 335],
                       "referencedDeclaration": 335,
                       "src": "7430:7:0",
                       "typeDescriptions": {
@@ -3316,10 +3273,7 @@
                       "id": 248,
                       "name": "require",
                       "nodeType": "Identifier",
-                      "overloadedDeclarations": [
-                        334,
-                        335
-                      ],
+                      "overloadedDeclarations": [334, 335],
                       "referencedDeclaration": 334,
                       "src": "8532:7:0",
                       "typeDescriptions": {
@@ -3454,9 +3408,7 @@
               "src": "8686:82:0",
               "statements": [
                 {
-                  "assignments": [
-                    268
-                  ],
+                  "assignments": [268],
                   "declarations": [
                     {
                       "constant": false,
@@ -3591,9 +3543,7 @@
               "src": "8930:87:0",
               "statements": [
                 {
-                  "assignments": [
-                    279
-                  ],
+                  "assignments": [279],
                   "declarations": [
                     {
                       "constant": false,
@@ -3842,10 +3792,7 @@
                       "id": 287,
                       "name": "require",
                       "nodeType": "Identifier",
-                      "overloadedDeclarations": [
-                        334,
-                        335
-                      ],
+                      "overloadedDeclarations": [334, 335],
                       "referencedDeclaration": 335,
                       "src": "9132:7:0",
                       "typeDescriptions": {
@@ -3957,12 +3904,7 @@
       },
       {
         "id": 304,
-        "literals": [
-          "solidity",
-          "^",
-          "0.4",
-          ".24"
-        ],
+        "literals": ["solidity", "^", "0.4", ".24"],
         "nodeType": "PragmaDirective",
         "src": "10394:24:0"
       },
@@ -3987,21 +3929,12 @@
             "src": "10558:24:0"
           }
         ],
-        "contractDependencies": [
-          126,
-          37,
-          303
-        ],
+        "contractDependencies": [126, 37, 303],
         "contractKind": "contract",
         "documentation": "@title FiatTokenProxy\n@dev This contract proxies FiatToken calls and enables FiatToken upgrades",
         "fullyImplemented": true,
         "id": 316,
-        "linearizedBaseContracts": [
-          316,
-          303,
-          126,
-          37
-        ],
+        "linearizedBaseContracts": [316, 303, 126, 37],
         "name": "FiatTokenProxy",
         "nodeType": "ContractDefinition",
         "nodes": [
@@ -4122,133 +4055,62 @@
     "branches": {
       "0": {
         "AdminUpgradeabilityProxy._willFallback": {
-          "20": [
-            9140,
-            9162,
-            true
-          ]
+          "20": [9140, 9162, true]
         },
         "AdminUpgradeabilityProxy.admin": {
-          "19": [
-            6458,
-            6480,
-            false
-          ]
+          "19": [6458, 6480, false]
         },
         "AdminUpgradeabilityProxy.changeAdmin": {
-          "18": [
-            7438,
-            7460,
-            true
-          ]
+          "18": [7438, 7460, true]
         },
         "AdminUpgradeabilityProxy.upgradeToAndCall": {
-          "17": [
-            8540,
-            8581,
-            true
-          ]
+          "17": [8540, 8581, true]
         },
         "UpgradeabilityProxy._setImplementation": {
-          "21": [
-            5008,
-            5050,
-            true
-          ]
+          "21": [5008, 5050, true]
         }
       }
     },
     "statements": {
       "0": {
         "AddressUtils.isContract": {
-          "16": [
-            3125,
-            3140
-          ]
+          "16": [3125, 3140]
         },
         "AdminUpgradeabilityProxy._willFallback": {
-          "11": [
-            9132,
-            9217
-          ],
-          "12": [
-            9223,
-            9244
-          ]
+          "11": [9132, 9217],
+          "12": [9223, 9244]
         },
         "AdminUpgradeabilityProxy.admin": {
-          "10": [
-            7007,
-            7022
-          ]
+          "10": [7007, 7022]
         },
         "AdminUpgradeabilityProxy.changeAdmin": {
-          "7": [
-            7430,
-            7519
-          ],
-          "8": [
-            7525,
-            7562
-          ],
-          "9": [
-            7568,
-            7587
-          ]
+          "7": [7430, 7519],
+          "8": [7525, 7562],
+          "9": [7568, 7587]
         },
         "AdminUpgradeabilityProxy.implementation": {
-          "6": [
-            7163,
-            7187
-          ]
+          "6": [7163, 7187]
         },
         "AdminUpgradeabilityProxy.upgradeTo": {
-          "3": [
-            7845,
-            7874
-          ]
+          "3": [7845, 7874]
         },
         "AdminUpgradeabilityProxy.upgradeToAndCall": {
-          "4": [
-            8497,
-            8526
-          ],
-          "5": [
-            8532,
-            8582
-          ]
+          "4": [8497, 8526],
+          "5": [8532, 8582]
         },
         "Proxy.<fallback>": {
-          "0": [
-            507,
-            518
-          ]
+          "0": [507, 518]
         },
         "Proxy._fallback": {
-          "1": [
-            2042,
-            2057
-          ],
-          "2": [
-            2063,
-            2091
-          ]
+          "1": [2042, 2057],
+          "2": [2063, 2091]
         },
         "UpgradeabilityProxy._setImplementation": {
-          "15": [
-            5000,
-            5114
-          ]
+          "15": [5000, 5114]
         },
         "UpgradeabilityProxy._upgradeTo": {
-          "13": [
-            4714,
-            4751
-          ],
-          "14": [
-            4757,
-            4789
-          ]
+          "13": [4714, 4751],
+          "14": [4757, 4789]
         }
       }
     }
@@ -4292,394 +4154,268 @@
     },
     "title": "FiatTokenProxy"
   },
-  "offset": [
-    10531,
-    10684
-  ],
+  "offset": [10531, 10684],
   "opcodes": "PUSH1 0x80 PUSH1 0x40 MSTORE PUSH1 0x4 CALLDATASIZE LT PUSH2 0x6C JUMPI PUSH4 0xFFFFFFFF PUSH29 0x100000000000000000000000000000000000000000000000000000000 PUSH1 0x0 CALLDATALOAD DIV AND PUSH4 0x3659CFE6 DUP2 EQ PUSH2 0x76 JUMPI DUP1 PUSH4 0x4F1EF286 EQ PUSH2 0x97 JUMPI DUP1 PUSH4 0x5C60DA1B EQ PUSH2 0xB7 JUMPI DUP1 PUSH4 0x8F283970 EQ PUSH2 0xE8 JUMPI DUP1 PUSH4 0xF851A440 EQ PUSH2 0x109 JUMPI JUMPDEST PUSH2 0x74 PUSH2 0x11E JUMP JUMPDEST STOP JUMPDEST CALLVALUE DUP1 ISZERO PUSH2 0x82 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH2 0x74 PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB PUSH1 0x4 CALLDATALOAD AND PUSH2 0x138 JUMP JUMPDEST PUSH2 0x74 PUSH1 0x4 DUP1 CALLDATALOAD PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB AND SWAP1 PUSH1 0x24 DUP1 CALLDATALOAD SWAP1 DUP2 ADD SWAP2 ADD CALLDATALOAD PUSH2 0x172 JUMP JUMPDEST CALLVALUE DUP1 ISZERO PUSH2 0xC3 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH2 0xCC PUSH2 0x1EA JUMP JUMPDEST PUSH1 0x40 DUP1 MLOAD PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB SWAP1 SWAP3 AND DUP3 MSTORE MLOAD SWAP1 DUP2 SWAP1 SUB PUSH1 0x20 ADD SWAP1 RETURN JUMPDEST CALLVALUE DUP1 ISZERO PUSH2 0xF4 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH2 0x74 PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB PUSH1 0x4 CALLDATALOAD AND PUSH2 0x227 JUMP JUMPDEST CALLVALUE DUP1 ISZERO PUSH2 0x115 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST POP PUSH2 0xCC PUSH2 0x339 JUMP JUMPDEST PUSH2 0x126 PUSH2 0x364 JUMP JUMPDEST PUSH2 0x136 PUSH2 0x131 PUSH2 0x411 JUMP JUMPDEST PUSH2 0x436 JUMP JUMPDEST JUMP JUMPDEST PUSH2 0x140 PUSH2 0x45A JUMP JUMPDEST PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB AND CALLER PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB AND EQ ISZERO PUSH2 0x167 JUMPI PUSH2 0x162 DUP2 PUSH2 0x47F JUMP JUMPDEST PUSH2 0x16F JUMP JUMPDEST PUSH2 0x16F PUSH2 0x11E JUMP JUMPDEST POP JUMP JUMPDEST PUSH2 0x17A PUSH2 0x45A JUMP JUMPDEST PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB AND CALLER PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB AND EQ ISZERO PUSH2 0x1DD JUMPI PUSH2 0x19C DUP4 PUSH2 0x47F JUMP JUMPDEST ADDRESS PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB AND CALLVALUE DUP4 DUP4 PUSH1 0x40 MLOAD DUP1 DUP4 DUP4 DUP1 DUP3 DUP5 CALLDATACOPY DUP3 ADD SWAP2 POP POP SWAP3 POP POP POP PUSH1 0x0 PUSH1 0x40 MLOAD DUP1 DUP4 SUB DUP2 DUP6 DUP8 GAS CALL SWAP3 POP POP POP ISZERO ISZERO PUSH2 0x1D8 JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST PUSH2 0x1E5 JUMP JUMPDEST PUSH2 0x1E5 PUSH2 0x11E JUMP JUMPDEST POP POP POP JUMP JUMPDEST PUSH1 0x0 PUSH2 0x1F4 PUSH2 0x45A JUMP JUMPDEST PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB AND CALLER PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB AND EQ ISZERO PUSH2 0x21C JUMPI PUSH2 0x215 PUSH2 0x411 JUMP JUMPDEST SWAP1 POP PUSH2 0x224 JUMP JUMPDEST PUSH2 0x224 PUSH2 0x11E JUMP JUMPDEST SWAP1 JUMP JUMPDEST PUSH2 0x22F PUSH2 0x45A JUMP JUMPDEST PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB AND CALLER PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB AND EQ ISZERO PUSH2 0x167 JUMPI PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB DUP2 AND ISZERO ISZERO PUSH2 0x2E5 JUMPI PUSH1 0x40 DUP1 MLOAD PUSH32 0x8C379A000000000000000000000000000000000000000000000000000000000 DUP2 MSTORE PUSH1 0x20 PUSH1 0x4 DUP3 ADD MSTORE PUSH1 0x36 PUSH1 0x24 DUP3 ADD MSTORE PUSH32 0x43616E6E6F74206368616E6765207468652061646D696E206F6620612070726F PUSH1 0x44 DUP3 ADD MSTORE PUSH32 0x787920746F20746865207A65726F206164647265737300000000000000000000 PUSH1 0x64 DUP3 ADD MSTORE SWAP1 MLOAD SWAP1 DUP2 SWAP1 SUB PUSH1 0x84 ADD SWAP1 REVERT JUMPDEST PUSH32 0x7E644D79422F17C01E4894B5F4F588D331EBFA28653D42AE832DC59E38C9798F PUSH2 0x30E PUSH2 0x45A JUMP JUMPDEST PUSH1 0x40 DUP1 MLOAD PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB SWAP3 DUP4 AND DUP2 MSTORE SWAP2 DUP5 AND PUSH1 0x20 DUP4 ADD MSTORE DUP1 MLOAD SWAP2 DUP3 SWAP1 SUB ADD SWAP1 LOG1 PUSH2 0x162 DUP2 PUSH2 0x4C7 JUMP JUMPDEST PUSH1 0x0 PUSH2 0x343 PUSH2 0x45A JUMP JUMPDEST PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB AND CALLER PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB AND EQ ISZERO PUSH2 0x21C JUMPI PUSH2 0x215 PUSH2 0x45A JUMP JUMPDEST PUSH2 0x36C PUSH2 0x45A JUMP JUMPDEST PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB AND CALLER EQ ISZERO PUSH2 0x409 JUMPI PUSH1 0x40 DUP1 MLOAD PUSH32 0x8C379A000000000000000000000000000000000000000000000000000000000 DUP2 MSTORE PUSH1 0x20 PUSH1 0x4 DUP3 ADD MSTORE PUSH1 0x32 PUSH1 0x24 DUP3 ADD MSTORE PUSH32 0x43616E6E6F742063616C6C2066616C6C6261636B2066756E6374696F6E206672 PUSH1 0x44 DUP3 ADD MSTORE PUSH32 0x6F6D207468652070726F78792061646D696E0000000000000000000000000000 PUSH1 0x64 DUP3 ADD MSTORE SWAP1 MLOAD SWAP1 DUP2 SWAP1 SUB PUSH1 0x84 ADD SWAP1 REVERT JUMPDEST PUSH2 0x136 PUSH2 0x136 JUMP JUMPDEST PUSH32 0x7050C9E0F4CA769C69BD3A8EF740BC37934F8E2C036E5A723FD8EE048ED3F8C3 SLOAD SWAP1 JUMP JUMPDEST CALLDATASIZE PUSH1 0x0 DUP1 CALLDATACOPY PUSH1 0x0 DUP1 CALLDATASIZE PUSH1 0x0 DUP5 GAS DELEGATECALL RETURNDATASIZE PUSH1 0x0 DUP1 RETURNDATACOPY DUP1 DUP1 ISZERO PUSH2 0x455 JUMPI RETURNDATASIZE PUSH1 0x0 RETURN JUMPDEST RETURNDATASIZE PUSH1 0x0 REVERT JUMPDEST PUSH32 0x10D6A54A4754C8869D6886B5F5D7FBFA5B4522237EA5C60D11BC4E7A1FF9390B SLOAD SWAP1 JUMP JUMPDEST PUSH2 0x488 DUP2 PUSH2 0x4EB JUMP JUMPDEST PUSH1 0x40 DUP1 MLOAD PUSH1 0x1 PUSH1 0xA0 PUSH1 0x2 EXP SUB DUP4 AND DUP2 MSTORE SWAP1 MLOAD PUSH32 0xBC7CD75A20EE27FD9ADEBAB32041F755214DBC6BFFA90CC0225B39DA2E5C2D3B SWAP2 DUP2 SWAP1 SUB PUSH1 0x20 ADD SWAP1 LOG1 POP JUMP JUMPDEST PUSH32 0x10D6A54A4754C8869D6886B5F5D7FBFA5B4522237EA5C60D11BC4E7A1FF9390B SSTORE JUMP JUMPDEST PUSH1 0x0 PUSH2 0x4F6 DUP3 PUSH2 0x5AE JUMP JUMPDEST ISZERO ISZERO PUSH2 0x589 JUMPI PUSH1 0x40 DUP1 MLOAD PUSH32 0x8C379A000000000000000000000000000000000000000000000000000000000 DUP2 MSTORE PUSH1 0x20 PUSH1 0x4 DUP3 ADD MSTORE PUSH1 0x3B PUSH1 0x24 DUP3 ADD MSTORE PUSH32 0x43616E6E6F742073657420612070726F787920696D706C656D656E746174696F PUSH1 0x44 DUP3 ADD MSTORE PUSH32 0x6E20746F2061206E6F6E2D636F6E747261637420616464726573730000000000 PUSH1 0x64 DUP3 ADD MSTORE SWAP1 MLOAD SWAP1 DUP2 SWAP1 SUB PUSH1 0x84 ADD SWAP1 REVERT JUMPDEST POP PUSH32 0x7050C9E0F4CA769C69BD3A8EF740BC37934F8E2C036E5A723FD8EE048ED3F8C3 SSTORE JUMP JUMPDEST PUSH1 0x0 SWAP1 EXTCODESIZE GT SWAP1 JUMP STOP LOG1 PUSH6 0x627A7A723058 KECCAK256 CALLDATASIZE PUSH1 0x3B PUSH32 0x708EA754290C07E8632B06D7FA54B9344D068CD602048EA9B7A4B65800290000 ",
   "pcMap": {
     "0": {
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH1",
       "path": "0",
       "value": "0x80"
     },
     "2": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH1",
       "path": "0",
       "value": "0x40"
     },
     "4": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "MSTORE",
       "path": "0"
     },
     "5": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH1",
       "path": "0",
       "value": "0x4"
     },
     "7": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "CALLDATASIZE",
       "path": "0"
     },
     "8": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "LT",
       "path": "0"
     },
     "9": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH2",
       "path": "0",
       "value": "0x6C"
     },
     "12": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "JUMPI",
       "path": "0"
     },
     "13": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH4",
       "path": "0",
       "value": "0xFFFFFFFF"
     },
     "18": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH29",
       "path": "0",
       "value": "0x100000000000000000000000000000000000000000000000000000000"
     },
     "48": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH1",
       "path": "0",
       "value": "0x0"
     },
     "50": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "CALLDATALOAD",
       "path": "0"
     },
     "51": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "DIV",
       "path": "0"
     },
     "52": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "AND",
       "path": "0"
     },
     "53": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH4",
       "path": "0",
       "value": "0x3659CFE6"
     },
     "58": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "DUP2",
       "path": "0"
     },
     "59": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "EQ",
       "path": "0"
     },
     "60": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH2",
       "path": "0",
       "value": "0x76"
     },
     "63": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "JUMPI",
       "path": "0"
     },
     "64": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "DUP1",
       "path": "0"
     },
     "65": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH4",
       "path": "0",
       "value": "0x4F1EF286"
     },
     "70": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "EQ",
       "path": "0"
     },
     "71": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH2",
       "path": "0",
       "value": "0x97"
     },
     "74": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "JUMPI",
       "path": "0"
     },
     "75": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "DUP1",
       "path": "0"
     },
     "76": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH4",
       "path": "0",
       "value": "0x5C60DA1B"
     },
     "81": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "EQ",
       "path": "0"
     },
     "82": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH2",
       "path": "0",
       "value": "0xB7"
     },
     "85": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "JUMPI",
       "path": "0"
     },
     "86": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "DUP1",
       "path": "0"
     },
     "87": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH4",
       "path": "0",
       "value": "0x8F283970"
     },
     "92": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "EQ",
       "path": "0"
     },
     "93": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH2",
       "path": "0",
       "value": "0xE8"
     },
     "96": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "JUMPI",
       "path": "0"
     },
     "97": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "DUP1",
       "path": "0"
     },
     "98": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH4",
       "path": "0",
       "value": "0xF851A440"
     },
     "103": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "EQ",
       "path": "0"
     },
     "104": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "PUSH2",
       "path": "0",
       "value": "0x109"
     },
     "107": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "JUMPI",
       "path": "0"
     },
     "108": {
       "fn": null,
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "JUMPDEST",
       "path": "0"
     },
     "109": {
       "fn": "Proxy.<fallback>",
-      "offset": [
-        507,
-        518
-      ],
+      "offset": [507, 518],
       "op": "PUSH2",
       "path": "0",
       "statement": 0,
@@ -4687,10 +4423,7 @@
     },
     "112": {
       "fn": "Proxy.<fallback>",
-      "offset": [
-        507,
-        516
-      ],
+      "offset": [507, 516],
       "op": "PUSH2",
       "path": "0",
       "value": "0x11E"
@@ -4698,45 +4431,30 @@
     "115": {
       "fn": "Proxy.<fallback>",
       "jump": "i",
-      "offset": [
-        507,
-        518
-      ],
+      "offset": [507, 518],
       "op": "JUMP",
       "path": "0"
     },
     "116": {
       "fn": "Proxy.<fallback>",
-      "offset": [
-        507,
-        518
-      ],
+      "offset": [507, 518],
       "op": "JUMPDEST",
       "path": "0"
     },
     "117": {
-      "offset": [
-        10531,
-        10684
-      ],
+      "offset": [10531, 10684],
       "op": "STOP",
       "path": "0"
     },
     "118": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7776,
-        7879
-      ],
+      "offset": [7776, 7879],
       "op": "JUMPDEST",
       "path": "0"
     },
     "119": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7776,
-        7879
-      ],
+      "offset": [7776, 7879],
       "op": "CALLVALUE",
       "path": "0"
     },
@@ -4763,10 +4481,7 @@
     "129": {
       "dev": "Cannot send ether to nonpayable function",
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7776,
-        7879
-      ],
+      "offset": [7776, 7879],
       "op": "REVERT",
       "path": "0"
     },
@@ -4778,10 +4493,7 @@
     },
     "132": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7776,
-        7879
-      ],
+      "offset": [7776, 7879],
       "op": "PUSH2",
       "path": "0",
       "value": "0x74"
@@ -4806,95 +4518,65 @@
     },
     "143": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7776,
-        7879
-      ],
+      "offset": [7776, 7879],
       "op": "PUSH1",
       "path": "0",
       "value": "0x4"
     },
     "145": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7776,
-        7879
-      ],
+      "offset": [7776, 7879],
       "op": "CALLDATALOAD",
       "path": "0"
     },
     "146": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7776,
-        7879
-      ],
+      "offset": [7776, 7879],
       "op": "AND",
       "path": "0"
     },
     "147": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7776,
-        7879
-      ],
+      "offset": [7776, 7879],
       "op": "PUSH2",
       "path": "0",
       "value": "0x138"
     },
     "150": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7776,
-        7879
-      ],
+      "offset": [7776, 7879],
       "op": "JUMP",
       "path": "0"
     },
     "151": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "JUMPDEST",
       "path": "0"
     },
     "152": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "PUSH2",
       "path": "0",
       "value": "0x74"
     },
     "155": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "PUSH1",
       "path": "0",
       "value": "0x4"
     },
     "157": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "DUP1",
       "path": "0"
     },
     "158": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "CALLDATALOAD",
       "path": "0"
     },
@@ -4918,138 +4600,93 @@
     },
     "167": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "AND",
       "path": "0"
     },
     "168": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "SWAP1",
       "path": "0"
     },
     "169": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "PUSH1",
       "path": "0",
       "value": "0x24"
     },
     "171": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "DUP1",
       "path": "0"
     },
     "172": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "CALLDATALOAD",
       "path": "0"
     },
     "173": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "SWAP1",
       "path": "0"
     },
     "174": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "DUP2",
       "path": "0"
     },
     "175": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "ADD",
       "path": "0"
     },
     "176": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "SWAP2",
       "path": "0"
     },
     "177": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "ADD",
       "path": "0"
     },
     "178": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "CALLDATALOAD",
       "path": "0"
     },
     "179": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "PUSH2",
       "path": "0",
       "value": "0x172"
     },
     "182": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "JUMP",
       "path": "0"
     },
     "183": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "JUMPDEST",
       "path": "0"
     },
     "184": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "CALLVALUE",
       "path": "0"
     },
@@ -5076,10 +4713,7 @@
     "194": {
       "dev": "Cannot send ether to nonpayable function",
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "REVERT",
       "path": "0"
     },
@@ -5088,76 +4722,52 @@
     },
     "196": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "POP",
       "path": "0"
     },
     "197": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "PUSH2",
       "path": "0",
       "value": "0xCC"
     },
     "200": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "PUSH2",
       "path": "0",
       "value": "0x1EA"
     },
     "203": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "JUMP",
       "path": "0"
     },
     "204": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "JUMPDEST",
       "path": "0"
     },
     "205": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "PUSH1",
       "path": "0",
       "value": "0x40"
     },
     "207": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "DUP1",
       "path": "0"
     },
     "208": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "MLOAD",
       "path": "0"
     },
@@ -5181,146 +4791,98 @@
     },
     "217": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "SWAP1",
       "path": "0"
     },
     "218": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "SWAP3",
       "path": "0"
     },
     "219": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "AND",
       "path": "0"
     },
     "220": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "DUP3",
       "path": "0"
     },
     "221": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "MSTORE",
       "path": "0"
     },
     "222": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "MLOAD",
       "path": "0"
     },
     "223": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "SWAP1",
       "path": "0"
     },
     "224": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "DUP2",
       "path": "0"
     },
     "225": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "SWAP1",
       "path": "0"
     },
     "226": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "SUB",
       "path": "0"
     },
     "227": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "PUSH1",
       "path": "0",
       "value": "0x20"
     },
     "229": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "ADD",
       "path": "0"
     },
     "230": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "SWAP1",
       "path": "0"
     },
     "231": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "RETURN",
       "path": "0"
     },
     "232": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7368,
-        7592
-      ],
+      "offset": [7368, 7592],
       "op": "JUMPDEST",
       "path": "0"
     },
     "233": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7368,
-        7592
-      ],
+      "offset": [7368, 7592],
       "op": "CALLVALUE",
       "path": "0"
     },
@@ -5347,10 +4909,7 @@
     "243": {
       "dev": "Cannot send ether to nonpayable function",
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7368,
-        7592
-      ],
+      "offset": [7368, 7592],
       "op": "REVERT",
       "path": "0"
     },
@@ -5362,10 +4921,7 @@
     },
     "246": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7368,
-        7592
-      ],
+      "offset": [7368, 7592],
       "op": "PUSH2",
       "path": "0",
       "value": "0x74"
@@ -5390,66 +4946,45 @@
     },
     "257": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7368,
-        7592
-      ],
+      "offset": [7368, 7592],
       "op": "PUSH1",
       "path": "0",
       "value": "0x4"
     },
     "259": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7368,
-        7592
-      ],
+      "offset": [7368, 7592],
       "op": "CALLDATALOAD",
       "path": "0"
     },
     "260": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7368,
-        7592
-      ],
+      "offset": [7368, 7592],
       "op": "AND",
       "path": "0"
     },
     "261": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7368,
-        7592
-      ],
+      "offset": [7368, 7592],
       "op": "PUSH2",
       "path": "0",
       "value": "0x227"
     },
     "264": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7368,
-        7592
-      ],
+      "offset": [7368, 7592],
       "op": "JUMP",
       "path": "0"
     },
     "265": {
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        6944,
-        7027
-      ],
+      "offset": [6944, 7027],
       "op": "JUMPDEST",
       "path": "0"
     },
     "266": {
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        6944,
-        7027
-      ],
+      "offset": [6944, 7027],
       "op": "CALLVALUE",
       "path": "0"
     },
@@ -5476,10 +5011,7 @@
     "276": {
       "dev": "Cannot send ether to nonpayable function",
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        6944,
-        7027
-      ],
+      "offset": [6944, 7027],
       "op": "REVERT",
       "path": "0"
     },
@@ -5488,57 +5020,39 @@
     },
     "278": {
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        6944,
-        7027
-      ],
+      "offset": [6944, 7027],
       "op": "POP",
       "path": "0"
     },
     "279": {
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        6944,
-        7027
-      ],
+      "offset": [6944, 7027],
       "op": "PUSH2",
       "path": "0",
       "value": "0xCC"
     },
     "282": {
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        6944,
-        7027
-      ],
+      "offset": [6944, 7027],
       "op": "PUSH2",
       "path": "0",
       "value": "0x339"
     },
     "285": {
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        6944,
-        7027
-      ],
+      "offset": [6944, 7027],
       "op": "JUMP",
       "path": "0"
     },
     "286": {
       "fn": "Proxy._fallback",
-      "offset": [
-        2006,
-        2096
-      ],
+      "offset": [2006, 2096],
       "op": "JUMPDEST",
       "path": "0"
     },
     "287": {
       "fn": "Proxy._fallback",
-      "offset": [
-        2042,
-        2057
-      ],
+      "offset": [2042, 2057],
       "op": "PUSH2",
       "path": "0",
       "statement": 1,
@@ -5546,10 +5060,7 @@
     },
     "290": {
       "fn": "Proxy._fallback",
-      "offset": [
-        2042,
-        2055
-      ],
+      "offset": [2042, 2055],
       "op": "PUSH2",
       "path": "0",
       "value": "0x364"
@@ -5557,28 +5068,19 @@
     "293": {
       "fn": "Proxy._fallback",
       "jump": "i",
-      "offset": [
-        2042,
-        2057
-      ],
+      "offset": [2042, 2057],
       "op": "JUMP",
       "path": "0"
     },
     "294": {
       "fn": "Proxy._fallback",
-      "offset": [
-        2042,
-        2057
-      ],
+      "offset": [2042, 2057],
       "op": "JUMPDEST",
       "path": "0"
     },
     "295": {
       "fn": "Proxy._fallback",
-      "offset": [
-        2063,
-        2091
-      ],
+      "offset": [2063, 2091],
       "op": "PUSH2",
       "path": "0",
       "statement": 2,
@@ -5586,20 +5088,14 @@
     },
     "298": {
       "fn": "Proxy._fallback",
-      "offset": [
-        2073,
-        2090
-      ],
+      "offset": [2073, 2090],
       "op": "PUSH2",
       "path": "0",
       "value": "0x131"
     },
     "301": {
       "fn": "Proxy._fallback",
-      "offset": [
-        2073,
-        2088
-      ],
+      "offset": [2073, 2088],
       "op": "PUSH2",
       "path": "0",
       "value": "0x411"
@@ -5607,28 +5103,19 @@
     "304": {
       "fn": "Proxy._fallback",
       "jump": "i",
-      "offset": [
-        2073,
-        2090
-      ],
+      "offset": [2073, 2090],
       "op": "JUMP",
       "path": "0"
     },
     "305": {
       "fn": "Proxy._fallback",
-      "offset": [
-        2073,
-        2090
-      ],
+      "offset": [2073, 2090],
       "op": "JUMPDEST",
       "path": "0"
     },
     "306": {
       "fn": "Proxy._fallback",
-      "offset": [
-        2063,
-        2072
-      ],
+      "offset": [2063, 2072],
       "op": "PUSH2",
       "path": "0",
       "value": "0x436"
@@ -5636,74 +5123,50 @@
     "309": {
       "fn": "Proxy._fallback",
       "jump": "i",
-      "offset": [
-        2063,
-        2091
-      ],
+      "offset": [2063, 2091],
       "op": "JUMP",
       "path": "0"
     },
     "310": {
       "fn": "Proxy._fallback",
-      "offset": [
-        2063,
-        2091
-      ],
+      "offset": [2063, 2091],
       "op": "JUMPDEST",
       "path": "0"
     },
     "311": {
       "fn": "Proxy._fallback",
       "jump": "o",
-      "offset": [
-        2006,
-        2096
-      ],
+      "offset": [2006, 2096],
       "op": "JUMP",
       "path": "0"
     },
     "312": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7776,
-        7879
-      ],
+      "offset": [7776, 7879],
       "op": "JUMPDEST",
       "path": "0"
     },
     "313": {
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "PUSH2",
       "path": "0",
       "value": "0x140"
     },
     "316": {
-      "offset": [
-        6472,
-        6478
-      ],
+      "offset": [6472, 6478],
       "op": "PUSH2",
       "path": "0",
       "value": "0x45A"
     },
     "319": {
       "jump": "i",
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "JUMP",
       "path": "0"
     },
     "320": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "JUMPDEST",
       "path": "0"
     },
@@ -5726,18 +5189,12 @@
       "op": "SUB"
     },
     "329": {
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "AND",
       "path": "0"
     },
     "330": {
-      "offset": [
-        6458,
-        6468
-      ],
+      "offset": [6458, 6468],
       "op": "CALLER",
       "path": "0"
     },
@@ -5760,54 +5217,36 @@
       "op": "SUB"
     },
     "339": {
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "AND",
       "path": "0"
     },
     "340": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "EQ",
       "path": "0"
     },
     "341": {
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "ISZERO",
       "path": "0"
     },
     "342": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "PUSH2",
       "path": "0",
       "value": "0x167"
     },
     "345": {
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "JUMPI",
       "path": "0"
     },
     "346": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7845,
-        7874
-      ],
+      "offset": [7845, 7874],
       "op": "PUSH2",
       "path": "0",
       "statement": 3,
@@ -5815,19 +5254,13 @@
     },
     "349": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7856,
-        7873
-      ],
+      "offset": [7856, 7873],
       "op": "DUP2",
       "path": "0"
     },
     "350": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7845,
-        7855
-      ],
+      "offset": [7845, 7855],
       "op": "PUSH2",
       "path": "0",
       "value": "0x47F"
@@ -5835,146 +5268,98 @@
     "353": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
       "jump": "i",
-      "offset": [
-        7845,
-        7874
-      ],
+      "offset": [7845, 7874],
       "op": "JUMP",
       "path": "0"
     },
     "354": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7845,
-        7874
-      ],
+      "offset": [7845, 7874],
       "op": "JUMPDEST",
       "path": "0"
     },
     "355": {
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "PUSH2",
       "path": "0",
       "value": "0x16F"
     },
     "358": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "JUMP",
       "path": "0"
     },
     "359": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "JUMPDEST",
       "path": "0"
     },
     "360": {
-      "offset": [
-        6512,
-        6523
-      ],
+      "offset": [6512, 6523],
       "op": "PUSH2",
       "path": "0",
       "value": "0x16F"
     },
     "363": {
-      "offset": [
-        6512,
-        6521
-      ],
+      "offset": [6512, 6521],
       "op": "PUSH2",
       "path": "0",
       "value": "0x11E"
     },
     "366": {
       "jump": "i",
-      "offset": [
-        6512,
-        6523
-      ],
+      "offset": [6512, 6523],
       "op": "JUMP",
       "path": "0"
     },
     "367": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        6512,
-        6523
-      ],
+      "offset": [6512, 6523],
       "op": "JUMPDEST",
       "path": "0"
     },
     "368": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
-      "offset": [
-        7776,
-        7879
-      ],
+      "offset": [7776, 7879],
       "op": "POP",
       "path": "0"
     },
     "369": {
       "fn": "AdminUpgradeabilityProxy.upgradeTo",
       "jump": "o",
-      "offset": [
-        7776,
-        7879
-      ],
+      "offset": [7776, 7879],
       "op": "JUMP",
       "path": "0"
     },
     "370": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "JUMPDEST",
       "path": "0"
     },
     "371": {
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "PUSH2",
       "path": "0",
       "value": "0x17A"
     },
     "374": {
-      "offset": [
-        6472,
-        6478
-      ],
+      "offset": [6472, 6478],
       "op": "PUSH2",
       "path": "0",
       "value": "0x45A"
     },
     "377": {
       "jump": "i",
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "JUMP",
       "path": "0"
     },
     "378": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "JUMPDEST",
       "path": "0"
     },
@@ -5997,18 +5382,12 @@
       "op": "SUB"
     },
     "387": {
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "AND",
       "path": "0"
     },
     "388": {
-      "offset": [
-        6458,
-        6468
-      ],
+      "offset": [6458, 6468],
       "op": "CALLER",
       "path": "0"
     },
@@ -6031,54 +5410,36 @@
       "op": "SUB"
     },
     "397": {
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "AND",
       "path": "0"
     },
     "398": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "EQ",
       "path": "0"
     },
     "399": {
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "ISZERO",
       "path": "0"
     },
     "400": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "PUSH2",
       "path": "0",
       "value": "0x1DD"
     },
     "403": {
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "JUMPI",
       "path": "0"
     },
     "404": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8497,
-        8526
-      ],
+      "offset": [8497, 8526],
       "op": "PUSH2",
       "path": "0",
       "statement": 4,
@@ -6086,19 +5447,13 @@
     },
     "407": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8508,
-        8525
-      ],
+      "offset": [8508, 8525],
       "op": "DUP4",
       "path": "0"
     },
     "408": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8497,
-        8507
-      ],
+      "offset": [8497, 8507],
       "op": "PUSH2",
       "path": "0",
       "value": "0x47F"
@@ -6106,28 +5461,19 @@
     "411": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
       "jump": "i",
-      "offset": [
-        8497,
-        8526
-      ],
+      "offset": [8497, 8526],
       "op": "JUMP",
       "path": "0"
     },
     "412": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8497,
-        8526
-      ],
+      "offset": [8497, 8526],
       "op": "JUMPDEST",
       "path": "0"
     },
     "413": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8548,
-        8552
-      ],
+      "offset": [8548, 8552],
       "op": "ADDRESS",
       "path": "0",
       "statement": 5
@@ -6152,365 +5498,245 @@
     },
     "422": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8558
-      ],
+      "offset": [8540, 8558],
       "op": "AND",
       "path": "0"
     },
     "423": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8565,
-        8574
-      ],
+      "offset": [8565, 8574],
       "op": "CALLVALUE",
       "path": "0"
     },
     "424": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8576,
-        8580
-      ],
+      "offset": [8576, 8580],
       "op": "DUP4",
       "path": "0"
     },
     "425": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8576,
-        8580
-      ],
+      "offset": [8576, 8580],
       "op": "DUP4",
       "path": "0"
     },
     "426": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "PUSH1",
       "path": "0",
       "value": "0x40"
     },
     "428": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "MLOAD",
       "path": "0"
     },
     "429": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "DUP1",
       "path": "0"
     },
     "430": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "DUP4",
       "path": "0"
     },
     "431": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "DUP4",
       "path": "0"
     },
     "432": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "DUP1",
       "path": "0"
     },
     "433": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "DUP3",
       "path": "0"
     },
     "434": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "DUP5",
       "path": "0"
     },
     "435": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "CALLDATACOPY",
       "path": "0"
     },
     "436": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "DUP3",
       "path": "0"
     },
     "437": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "ADD",
       "path": "0"
     },
     "438": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "SWAP2",
       "path": "0"
     },
     "439": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "POP",
       "path": "0"
     },
     "440": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "POP",
       "path": "0"
     },
     "441": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "SWAP3",
       "path": "0"
     },
     "442": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "POP",
       "path": "0"
     },
     "443": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "POP",
       "path": "0"
     },
     "444": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "POP",
       "path": "0"
     },
     "445": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "PUSH1",
       "path": "0",
       "value": "0x0"
     },
     "447": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "PUSH1",
       "path": "0",
       "value": "0x40"
     },
     "449": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "MLOAD",
       "path": "0"
     },
     "450": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "DUP1",
       "path": "0"
     },
     "451": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "DUP4",
       "path": "0"
     },
     "452": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "SUB",
       "path": "0"
     },
     "453": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "DUP2",
       "path": "0"
     },
     "454": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "DUP6",
       "path": "0"
     },
     "455": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "DUP8",
       "path": "0"
     },
     "456": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "GAS",
       "path": "0"
     },
     "457": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "CALL",
       "path": "0"
     },
     "458": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "SWAP3",
       "path": "0"
     },
     "459": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "POP",
       "path": "0"
     },
     "460": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "POP",
       "path": "0"
     },
     "461": {
       "branch": 17,
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8540,
-        8581
-      ],
+      "offset": [8540, 8581],
       "op": "POP",
       "path": "0"
     },
     "462": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8532,
-        8582
-      ],
+      "offset": [8532, 8582],
       "op": "ISZERO",
       "path": "0"
     },
     "463": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8532,
-        8582
-      ],
+      "offset": [8532, 8582],
       "op": "ISZERO",
       "path": "0"
     },
     "464": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8532,
-        8582
-      ],
+      "offset": [8532, 8582],
       "op": "PUSH2",
       "path": "0",
       "value": "0x1D8"
@@ -6518,202 +5744,136 @@
     "467": {
       "branch": 17,
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8532,
-        8582
-      ],
+      "offset": [8532, 8582],
       "op": "JUMPI",
       "path": "0"
     },
     "468": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8532,
-        8582
-      ],
+      "offset": [8532, 8582],
       "op": "PUSH1",
       "path": "0",
       "value": "0x0"
     },
     "470": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8532,
-        8582
-      ],
+      "offset": [8532, 8582],
       "op": "DUP1",
       "path": "0"
     },
     "471": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8532,
-        8582
-      ],
+      "offset": [8532, 8582],
       "op": "REVERT",
       "path": "0"
     },
     "472": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8532,
-        8582
-      ],
+      "offset": [8532, 8582],
       "op": "JUMPDEST",
       "path": "0"
     },
     "473": {
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "PUSH2",
       "path": "0",
       "value": "0x1E5"
     },
     "476": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "JUMP",
       "path": "0"
     },
     "477": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "JUMPDEST",
       "path": "0"
     },
     "478": {
-      "offset": [
-        6512,
-        6523
-      ],
+      "offset": [6512, 6523],
       "op": "PUSH2",
       "path": "0",
       "value": "0x1E5"
     },
     "481": {
-      "offset": [
-        6512,
-        6521
-      ],
+      "offset": [6512, 6521],
       "op": "PUSH2",
       "path": "0",
       "value": "0x11E"
     },
     "484": {
       "jump": "i",
-      "offset": [
-        6512,
-        6523
-      ],
+      "offset": [6512, 6523],
       "op": "JUMP",
       "path": "0"
     },
     "485": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        6512,
-        6523
-      ],
+      "offset": [6512, 6523],
       "op": "JUMPDEST",
       "path": "0"
     },
     "486": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "POP",
       "path": "0"
     },
     "487": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "POP",
       "path": "0"
     },
     "488": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "POP",
       "path": "0"
     },
     "489": {
       "fn": "AdminUpgradeabilityProxy.upgradeToAndCall",
       "jump": "o",
-      "offset": [
-        8401,
-        8587
-      ],
+      "offset": [8401, 8587],
       "op": "JUMP",
       "path": "0"
     },
     "490": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "JUMPDEST",
       "path": "0"
     },
     "491": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7148,
-        7155
-      ],
+      "offset": [7148, 7155],
       "op": "PUSH1",
       "path": "0",
       "value": "0x0"
     },
     "493": {
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "PUSH2",
       "path": "0",
       "value": "0x1F4"
     },
     "496": {
-      "offset": [
-        6472,
-        6478
-      ],
+      "offset": [6472, 6478],
       "op": "PUSH2",
       "path": "0",
       "value": "0x45A"
     },
     "499": {
       "jump": "i",
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "JUMP",
       "path": "0"
     },
     "500": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "JUMPDEST",
       "path": "0"
     },
@@ -6736,18 +5896,12 @@
       "op": "SUB"
     },
     "509": {
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "AND",
       "path": "0"
     },
     "510": {
-      "offset": [
-        6458,
-        6468
-      ],
+      "offset": [6458, 6468],
       "op": "CALLER",
       "path": "0"
     },
@@ -6770,54 +5924,36 @@
       "op": "SUB"
     },
     "519": {
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "AND",
       "path": "0"
     },
     "520": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "EQ",
       "path": "0"
     },
     "521": {
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "ISZERO",
       "path": "0"
     },
     "522": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "PUSH2",
       "path": "0",
       "value": "0x21C"
     },
     "525": {
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "JUMPI",
       "path": "0"
     },
     "526": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7170,
-        7187
-      ],
+      "offset": [7170, 7187],
       "op": "PUSH2",
       "path": "0",
       "statement": 6,
@@ -6825,10 +5961,7 @@
     },
     "529": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7170,
-        7185
-      ],
+      "offset": [7170, 7185],
       "op": "PUSH2",
       "path": "0",
       "value": "0x411"
@@ -6836,164 +5969,110 @@
     "532": {
       "fn": "AdminUpgradeabilityProxy.implementation",
       "jump": "i",
-      "offset": [
-        7170,
-        7187
-      ],
+      "offset": [7170, 7187],
       "op": "JUMP",
       "path": "0"
     },
     "533": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7170,
-        7187
-      ],
+      "offset": [7170, 7187],
       "op": "JUMPDEST",
       "path": "0"
     },
     "534": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7163,
-        7187
-      ],
+      "offset": [7163, 7187],
       "op": "SWAP1",
       "path": "0"
     },
     "535": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7163,
-        7187
-      ],
+      "offset": [7163, 7187],
       "op": "POP",
       "path": "0"
     },
     "536": {
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "PUSH2",
       "path": "0",
       "value": "0x224"
     },
     "539": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "JUMP",
       "path": "0"
     },
     "540": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "JUMPDEST",
       "path": "0"
     },
     "541": {
-      "offset": [
-        6512,
-        6523
-      ],
+      "offset": [6512, 6523],
       "op": "PUSH2",
       "path": "0",
       "value": "0x224"
     },
     "544": {
-      "offset": [
-        6512,
-        6521
-      ],
+      "offset": [6512, 6521],
       "op": "PUSH2",
       "path": "0",
       "value": "0x11E"
     },
     "547": {
       "jump": "i",
-      "offset": [
-        6512,
-        6523
-      ],
+      "offset": [6512, 6523],
       "op": "JUMP",
       "path": "0"
     },
     "548": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        6512,
-        6523
-      ],
+      "offset": [6512, 6523],
       "op": "JUMPDEST",
       "path": "0"
     },
     "549": {
       "fn": "AdminUpgradeabilityProxy.implementation",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "SWAP1",
       "path": "0"
     },
     "550": {
       "fn": "AdminUpgradeabilityProxy.implementation",
       "jump": "o",
-      "offset": [
-        7091,
-        7192
-      ],
+      "offset": [7091, 7192],
       "op": "JUMP",
       "path": "0"
     },
     "551": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7368,
-        7592
-      ],
+      "offset": [7368, 7592],
       "op": "JUMPDEST",
       "path": "0"
     },
     "552": {
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "PUSH2",
       "path": "0",
       "value": "0x22F"
     },
     "555": {
-      "offset": [
-        6472,
-        6478
-      ],
+      "offset": [6472, 6478],
       "op": "PUSH2",
       "path": "0",
       "value": "0x45A"
     },
     "558": {
       "jump": "i",
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "JUMP",
       "path": "0"
     },
     "559": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "JUMPDEST",
       "path": "0"
     },
@@ -7016,18 +6095,12 @@
       "op": "SUB"
     },
     "568": {
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "AND",
       "path": "0"
     },
     "569": {
-      "offset": [
-        6458,
-        6468
-      ],
+      "offset": [6458, 6468],
       "op": "CALLER",
       "path": "0"
     },
@@ -7050,45 +6123,30 @@
       "op": "SUB"
     },
     "578": {
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "AND",
       "path": "0"
     },
     "579": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "EQ",
       "path": "0"
     },
     "580": {
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "ISZERO",
       "path": "0"
     },
     "581": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "PUSH2",
       "path": "0",
       "value": "0x167"
     },
     "584": {
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "JUMPI",
       "path": "0"
     },
@@ -7112,48 +6170,33 @@
     },
     "593": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7438,
-        7460
-      ],
+      "offset": [7438, 7460],
       "op": "DUP2",
       "path": "0",
       "statement": 7
     },
     "594": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7438,
-        7460
-      ],
+      "offset": [7438, 7460],
       "op": "AND",
       "path": "0"
     },
     "595": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7438,
-        7460
-      ],
+      "offset": [7438, 7460],
       "op": "ISZERO",
       "path": "0"
     },
     "596": {
       "branch": 18,
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7438,
-        7460
-      ],
+      "offset": [7438, 7460],
       "op": "ISZERO",
       "path": "0"
     },
     "597": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "PUSH2",
       "path": "0",
       "value": "0x2E5"
@@ -7161,363 +6204,246 @@
     "600": {
       "branch": 18,
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "JUMPI",
       "path": "0"
     },
     "601": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "PUSH1",
       "path": "0",
       "value": "0x40"
     },
     "603": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "DUP1",
       "path": "0"
     },
     "604": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "MLOAD",
       "path": "0"
     },
     "605": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "PUSH32",
       "path": "0",
       "value": "0x8C379A000000000000000000000000000000000000000000000000000000000"
     },
     "638": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "DUP2",
       "path": "0"
     },
     "639": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "MSTORE",
       "path": "0"
     },
     "640": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "PUSH1",
       "path": "0",
       "value": "0x20"
     },
     "642": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "PUSH1",
       "path": "0",
       "value": "0x4"
     },
     "644": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "DUP3",
       "path": "0"
     },
     "645": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "ADD",
       "path": "0"
     },
     "646": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "MSTORE",
       "path": "0"
     },
     "647": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "PUSH1",
       "path": "0",
       "value": "0x36"
     },
     "649": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "PUSH1",
       "path": "0",
       "value": "0x24"
     },
     "651": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "DUP3",
       "path": "0"
     },
     "652": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "ADD",
       "path": "0"
     },
     "653": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "MSTORE",
       "path": "0"
     },
     "654": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "PUSH32",
       "path": "0",
       "value": "0x43616E6E6F74206368616E6765207468652061646D696E206F6620612070726F"
     },
     "687": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "PUSH1",
       "path": "0",
       "value": "0x44"
     },
     "689": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "DUP3",
       "path": "0"
     },
     "690": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "ADD",
       "path": "0"
     },
     "691": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "MSTORE",
       "path": "0"
     },
     "692": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "PUSH32",
       "path": "0",
       "value": "0x787920746F20746865207A65726F206164647265737300000000000000000000"
     },
     "725": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "PUSH1",
       "path": "0",
       "value": "0x64"
     },
     "727": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "DUP3",
       "path": "0"
     },
     "728": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "ADD",
       "path": "0"
     },
     "729": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "MSTORE",
       "path": "0"
     },
     "730": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "SWAP1",
       "path": "0"
     },
     "731": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "MLOAD",
       "path": "0"
     },
     "732": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "SWAP1",
       "path": "0"
     },
     "733": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "DUP2",
       "path": "0"
     },
     "734": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "SWAP1",
       "path": "0"
     },
     "735": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "SUB",
       "path": "0"
     },
     "736": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "PUSH1",
       "path": "0",
       "value": "0x84"
     },
     "738": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "ADD",
       "path": "0"
     },
     "739": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "SWAP1",
       "path": "0"
     },
     "740": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "REVERT",
       "path": "0"
     },
     "741": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7430,
-        7519
-      ],
+      "offset": [7430, 7519],
       "op": "JUMPDEST",
       "path": "0"
     },
     "742": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "PUSH32",
       "path": "0",
       "statement": 8,
@@ -7525,20 +6451,14 @@
     },
     "775": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7543,
-        7551
-      ],
+      "offset": [7543, 7551],
       "op": "PUSH2",
       "path": "0",
       "value": "0x30E"
     },
     "778": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7543,
-        7549
-      ],
+      "offset": [7543, 7549],
       "op": "PUSH2",
       "path": "0",
       "value": "0x45A"
@@ -7546,47 +6466,32 @@
     "781": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
       "jump": "i",
-      "offset": [
-        7543,
-        7551
-      ],
+      "offset": [7543, 7551],
       "op": "JUMP",
       "path": "0"
     },
     "782": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7543,
-        7551
-      ],
+      "offset": [7543, 7551],
       "op": "JUMPDEST",
       "path": "0"
     },
     "783": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "PUSH1",
       "path": "0",
       "value": "0x40"
     },
     "785": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "DUP1",
       "path": "0"
     },
     "786": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "MLOAD",
       "path": "0"
     },
@@ -7610,200 +6515,134 @@
     },
     "795": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "SWAP3",
       "path": "0"
     },
     "796": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "DUP4",
       "path": "0"
     },
     "797": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "AND",
       "path": "0"
     },
     "798": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "DUP2",
       "path": "0"
     },
     "799": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "MSTORE",
       "path": "0"
     },
     "800": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "SWAP2",
       "path": "0"
     },
     "801": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "DUP5",
       "path": "0"
     },
     "802": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "AND",
       "path": "0"
     },
     "803": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "PUSH1",
       "path": "0",
       "value": "0x20"
     },
     "805": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "DUP4",
       "path": "0"
     },
     "806": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "ADD",
       "path": "0"
     },
     "807": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "MSTORE",
       "path": "0"
     },
     "808": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "DUP1",
       "path": "0"
     },
     "809": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "MLOAD",
       "path": "0"
     },
     "810": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "SWAP2",
       "path": "0"
     },
     "811": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "DUP3",
       "path": "0"
     },
     "812": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "SWAP1",
       "path": "0"
     },
     "813": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "SUB",
       "path": "0"
     },
     "814": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "ADD",
       "path": "0"
     },
     "815": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "SWAP1",
       "path": "0"
     },
     "816": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7530,
-        7562
-      ],
+      "offset": [7530, 7562],
       "op": "LOG1",
       "path": "0"
     },
     "817": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7568,
-        7587
-      ],
+      "offset": [7568, 7587],
       "op": "PUSH2",
       "path": "0",
       "statement": 9,
@@ -7811,19 +6650,13 @@
     },
     "820": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7578,
-        7586
-      ],
+      "offset": [7578, 7586],
       "op": "DUP2",
       "path": "0"
     },
     "821": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
-      "offset": [
-        7568,
-        7577
-      ],
+      "offset": [7568, 7577],
       "op": "PUSH2",
       "path": "0",
       "value": "0x4C7"
@@ -7831,65 +6664,44 @@
     "824": {
       "fn": "AdminUpgradeabilityProxy.changeAdmin",
       "jump": "i",
-      "offset": [
-        7568,
-        7587
-      ],
+      "offset": [7568, 7587],
       "op": "JUMP",
       "path": "0"
     },
     "825": {
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        6944,
-        7027
-      ],
+      "offset": [6944, 7027],
       "op": "JUMPDEST",
       "path": "0"
     },
     "826": {
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        6992,
-        6999
-      ],
+      "offset": [6992, 6999],
       "op": "PUSH1",
       "path": "0",
       "value": "0x0"
     },
     "828": {
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "PUSH2",
       "path": "0",
       "value": "0x343"
     },
     "831": {
-      "offset": [
-        6472,
-        6478
-      ],
+      "offset": [6472, 6478],
       "op": "PUSH2",
       "path": "0",
       "value": "0x45A"
     },
     "834": {
       "jump": "i",
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "JUMP",
       "path": "0"
     },
     "835": {
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        6472,
-        6480
-      ],
+      "offset": [6472, 6480],
       "op": "JUMPDEST",
       "path": "0"
     },
@@ -7912,18 +6724,12 @@
       "op": "SUB"
     },
     "844": {
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "AND",
       "path": "0"
     },
     "845": {
-      "offset": [
-        6458,
-        6468
-      ],
+      "offset": [6458, 6468],
       "op": "CALLER",
       "path": "0"
     },
@@ -7946,56 +6752,38 @@
       "op": "SUB"
     },
     "854": {
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "AND",
       "path": "0"
     },
     "855": {
       "branch": 19,
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        6458,
-        6480
-      ],
+      "offset": [6458, 6480],
       "op": "EQ",
       "path": "0"
     },
     "856": {
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "ISZERO",
       "path": "0"
     },
     "857": {
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "PUSH2",
       "path": "0",
       "value": "0x21C"
     },
     "860": {
       "branch": 19,
-      "offset": [
-        6454,
-        6530
-      ],
+      "offset": [6454, 6530],
       "op": "JUMPI",
       "path": "0"
     },
     "861": {
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        7014,
-        7022
-      ],
+      "offset": [7014, 7022],
       "op": "PUSH2",
       "path": "0",
       "statement": 10,
@@ -8003,10 +6791,7 @@
     },
     "864": {
       "fn": "AdminUpgradeabilityProxy.admin",
-      "offset": [
-        7014,
-        7020
-      ],
+      "offset": [7014, 7020],
       "op": "PUSH2",
       "path": "0",
       "value": "0x45A"
@@ -8014,28 +6799,19 @@
     "867": {
       "fn": "AdminUpgradeabilityProxy.admin",
       "jump": "i",
-      "offset": [
-        7014,
-        7022
-      ],
+      "offset": [7014, 7022],
       "op": "JUMP",
       "path": "0"
     },
     "868": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9092,
-        9249
-      ],
+      "offset": [9092, 9249],
       "op": "JUMPDEST",
       "path": "0"
     },
     "869": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9154,
-        9162
-      ],
+      "offset": [9154, 9162],
       "op": "PUSH2",
       "path": "0",
       "statement": 11,
@@ -8043,10 +6819,7 @@
     },
     "872": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9154,
-        9160
-      ],
+      "offset": [9154, 9160],
       "op": "PUSH2",
       "path": "0",
       "value": "0x45A"
@@ -8054,19 +6827,13 @@
     "875": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
       "jump": "i",
-      "offset": [
-        9154,
-        9162
-      ],
+      "offset": [9154, 9162],
       "op": "JUMP",
       "path": "0"
     },
     "876": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9154,
-        9162
-      ],
+      "offset": [9154, 9162],
       "op": "JUMPDEST",
       "path": "0"
     },
@@ -8090,47 +6857,32 @@
     },
     "885": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9140,
-        9162
-      ],
+      "offset": [9140, 9162],
       "op": "AND",
       "path": "0"
     },
     "886": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9140,
-        9150
-      ],
+      "offset": [9140, 9150],
       "op": "CALLER",
       "path": "0"
     },
     "887": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9140,
-        9162
-      ],
+      "offset": [9140, 9162],
       "op": "EQ",
       "path": "0"
     },
     "888": {
       "branch": 20,
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9140,
-        9162
-      ],
+      "offset": [9140, 9162],
       "op": "ISZERO",
       "path": "0"
     },
     "889": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "PUSH2",
       "path": "0",
       "value": "0x409"
@@ -8138,363 +6890,246 @@
     "892": {
       "branch": 20,
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "JUMPI",
       "path": "0"
     },
     "893": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "PUSH1",
       "path": "0",
       "value": "0x40"
     },
     "895": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "DUP1",
       "path": "0"
     },
     "896": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "MLOAD",
       "path": "0"
     },
     "897": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "PUSH32",
       "path": "0",
       "value": "0x8C379A000000000000000000000000000000000000000000000000000000000"
     },
     "930": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "DUP2",
       "path": "0"
     },
     "931": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "MSTORE",
       "path": "0"
     },
     "932": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "PUSH1",
       "path": "0",
       "value": "0x20"
     },
     "934": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "PUSH1",
       "path": "0",
       "value": "0x4"
     },
     "936": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "DUP3",
       "path": "0"
     },
     "937": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "ADD",
       "path": "0"
     },
     "938": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "MSTORE",
       "path": "0"
     },
     "939": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "PUSH1",
       "path": "0",
       "value": "0x32"
     },
     "941": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "PUSH1",
       "path": "0",
       "value": "0x24"
     },
     "943": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "DUP3",
       "path": "0"
     },
     "944": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "ADD",
       "path": "0"
     },
     "945": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "MSTORE",
       "path": "0"
     },
     "946": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "PUSH32",
       "path": "0",
       "value": "0x43616E6E6F742063616C6C2066616C6C6261636B2066756E6374696F6E206672"
     },
     "979": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "PUSH1",
       "path": "0",
       "value": "0x44"
     },
     "981": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "DUP3",
       "path": "0"
     },
     "982": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "ADD",
       "path": "0"
     },
     "983": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "MSTORE",
       "path": "0"
     },
     "984": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "PUSH32",
       "path": "0",
       "value": "0x6F6D207468652070726F78792061646D696E0000000000000000000000000000"
     },
     "1017": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "PUSH1",
       "path": "0",
       "value": "0x64"
     },
     "1019": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "DUP3",
       "path": "0"
     },
     "1020": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "ADD",
       "path": "0"
     },
     "1021": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "MSTORE",
       "path": "0"
     },
     "1022": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "SWAP1",
       "path": "0"
     },
     "1023": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "MLOAD",
       "path": "0"
     },
     "1024": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "SWAP1",
       "path": "0"
     },
     "1025": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "DUP2",
       "path": "0"
     },
     "1026": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "SWAP1",
       "path": "0"
     },
     "1027": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "SUB",
       "path": "0"
     },
     "1028": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "PUSH1",
       "path": "0",
       "value": "0x84"
     },
     "1030": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "ADD",
       "path": "0"
     },
     "1031": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "SWAP1",
       "path": "0"
     },
     "1032": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "REVERT",
       "path": "0"
     },
     "1033": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9132,
-        9217
-      ],
+      "offset": [9132, 9217],
       "op": "JUMPDEST",
       "path": "0"
     },
     "1034": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9223,
-        9244
-      ],
+      "offset": [9223, 9244],
       "op": "PUSH2",
       "path": "0",
       "statement": 12,
@@ -8502,10 +7137,7 @@
     },
     "1037": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
-      "offset": [
-        9223,
-        9242
-      ],
+      "offset": [9223, 9242],
       "op": "PUSH2",
       "path": "0",
       "value": "0x136"
@@ -8513,379 +7145,256 @@
     "1040": {
       "fn": "AdminUpgradeabilityProxy._willFallback",
       "jump": "i",
-      "offset": [
-        9223,
-        9244
-      ],
+      "offset": [9223, 9244],
       "op": "JUMP",
       "path": "0"
     },
     "1041": {
       "fn": "UpgradeabilityProxy._implementation",
-      "offset": [
-        4361,
-        4517
-      ],
+      "offset": [4361, 4517],
       "op": "JUMPDEST",
       "path": "0"
     },
     "1042": {
-      "offset": [
-        3890,
-        3956
-      ],
+      "offset": [3890, 3956],
       "op": "PUSH32",
       "path": "0",
       "value": "0x7050C9E0F4CA769C69BD3A8EF740BC37934F8E2C036E5A723FD8EE048ED3F8C3"
     },
     "1075": {
       "fn": "UpgradeabilityProxy._implementation",
-      "offset": [
-        4496,
-        4507
-      ],
+      "offset": [4496, 4507],
       "op": "SLOAD",
       "path": "0"
     },
     "1076": {
       "fn": "UpgradeabilityProxy._implementation",
-      "offset": [
-        4496,
-        4507
-      ],
+      "offset": [4496, 4507],
       "op": "SWAP1",
       "path": "0"
     },
     "1077": {
       "fn": "UpgradeabilityProxy._implementation",
       "jump": "o",
-      "offset": [
-        4480,
-        4513
-      ],
+      "offset": [4480, 4513],
       "op": "JUMP",
       "path": "0"
     },
     "1078": {
       "fn": "Proxy._delegate",
-      "offset": [
-        932,
-        1663
-      ],
+      "offset": [932, 1663],
       "op": "JUMPDEST",
       "path": "0"
     },
     "1079": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1234,
-        1246
-      ],
+      "offset": [1234, 1246],
       "op": "CALLDATASIZE",
       "path": "0"
     },
     "1080": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1231,
-        1232
-      ],
+      "offset": [1231, 1232],
       "op": "PUSH1",
       "path": "0",
       "value": "0x0"
     },
     "1082": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1228,
-        1229
-      ],
+      "offset": [1228, 1229],
       "op": "DUP1",
       "path": "0"
     },
     "1083": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1215,
-        1247
-      ],
+      "offset": [1215, 1247],
       "op": "CALLDATACOPY",
       "path": "0"
     },
     "1084": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1424,
-        1425
-      ],
+      "offset": [1424, 1425],
       "op": "PUSH1",
       "path": "0",
       "value": "0x0"
     },
     "1086": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1421,
-        1422
-      ],
+      "offset": [1421, 1422],
       "op": "DUP1",
       "path": "0"
     },
     "1087": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1407,
-        1419
-      ],
+      "offset": [1407, 1419],
       "op": "CALLDATASIZE",
       "path": "0"
     },
     "1088": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1404,
-        1405
-      ],
+      "offset": [1404, 1405],
       "op": "PUSH1",
       "path": "0",
       "value": "0x0"
     },
     "1090": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1388,
-        1402
-      ],
+      "offset": [1388, 1402],
       "op": "DUP5",
       "path": "0"
     },
     "1091": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1383,
-        1386
-      ],
+      "offset": [1383, 1386],
       "op": "GAS",
       "path": "0"
     },
     "1092": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1370,
-        1426
-      ],
+      "offset": [1370, 1426],
       "op": "DELEGATECALL",
       "path": "0"
     },
     "1093": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1488,
-        1502
-      ],
+      "offset": [1488, 1502],
       "op": "RETURNDATASIZE",
       "path": "0"
     },
     "1094": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1485,
-        1486
-      ],
+      "offset": [1485, 1486],
       "op": "PUSH1",
       "path": "0",
       "value": "0x0"
     },
     "1096": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1482,
-        1483
-      ],
+      "offset": [1482, 1483],
       "op": "DUP1",
       "path": "0"
     },
     "1097": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1467,
-        1503
-      ],
+      "offset": [1467, 1503],
       "op": "RETURNDATACOPY",
       "path": "0"
     },
     "1098": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1518,
-        1524
-      ],
+      "offset": [1518, 1524],
       "op": "DUP1",
       "path": "0"
     },
     "1099": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1573,
-        1609
-      ],
+      "offset": [1573, 1609],
       "op": "DUP1",
       "path": "0"
     },
     "1100": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1573,
-        1609
-      ],
+      "offset": [1573, 1609],
       "op": "ISZERO",
       "path": "0"
     },
     "1101": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1573,
-        1609
-      ],
+      "offset": [1573, 1609],
       "op": "PUSH2",
       "path": "0",
       "value": "0x455"
     },
     "1104": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1573,
-        1609
-      ],
+      "offset": [1573, 1609],
       "op": "JUMPI",
       "path": "0"
     },
     "1105": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1636,
-        1650
-      ],
+      "offset": [1636, 1650],
       "op": "RETURNDATASIZE",
       "path": "0"
     },
     "1106": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1633,
-        1634
-      ],
+      "offset": [1633, 1634],
       "op": "PUSH1",
       "path": "0",
       "value": "0x0"
     },
     "1108": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1626,
-        1651
-      ],
+      "offset": [1626, 1651],
       "op": "RETURN",
       "path": "0"
     },
     "1109": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1573,
-        1609
-      ],
+      "offset": [1573, 1609],
       "op": "JUMPDEST",
       "path": "0"
     },
     "1110": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1592,
-        1606
-      ],
+      "offset": [1592, 1606],
       "op": "RETURNDATASIZE",
       "path": "0"
     },
     "1111": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1589,
-        1590
-      ],
+      "offset": [1589, 1590],
       "op": "PUSH1",
       "path": "0",
       "value": "0x0"
     },
     "1113": {
       "fn": "Proxy._delegate",
-      "offset": [
-        1582,
-        1607
-      ],
+      "offset": [1582, 1607],
       "op": "REVERT",
       "path": "0"
     },
     "1114": {
       "fn": "AdminUpgradeabilityProxy._admin",
-      "offset": [
-        8632,
-        8768
-      ],
+      "offset": [8632, 8768],
       "op": "JUMPDEST",
       "path": "0"
     },
     "1115": {
-      "offset": [
-        6173,
-        6239
-      ],
+      "offset": [6173, 6239],
       "op": "PUSH32",
       "path": "0",
       "value": "0x10D6A54A4754C8869D6886B5F5D7FBFA5B4522237EA5C60D11BC4E7A1FF9390B"
     },
     "1148": {
       "fn": "AdminUpgradeabilityProxy._admin",
-      "offset": [
-        8747,
-        8758
-      ],
+      "offset": [8747, 8758],
       "op": "SLOAD",
       "path": "0"
     },
     "1149": {
       "fn": "AdminUpgradeabilityProxy._admin",
-      "offset": [
-        8747,
-        8758
-      ],
+      "offset": [8747, 8758],
       "op": "SWAP1",
       "path": "0"
     },
     "1150": {
       "fn": "AdminUpgradeabilityProxy._admin",
       "jump": "o",
-      "offset": [
-        8732,
-        8764
-      ],
+      "offset": [8732, 8764],
       "op": "JUMP",
       "path": "0"
     },
     "1151": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4652,
-        4794
-      ],
+      "offset": [4652, 4794],
       "op": "JUMPDEST",
       "path": "0"
     },
     "1152": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4714,
-        4751
-      ],
+      "offset": [4714, 4751],
       "op": "PUSH2",
       "path": "0",
       "statement": 13,
@@ -8893,19 +7402,13 @@
     },
     "1155": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4733,
-        4750
-      ],
+      "offset": [4733, 4750],
       "op": "DUP2",
       "path": "0"
     },
     "1156": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4714,
-        4732
-      ],
+      "offset": [4714, 4732],
       "op": "PUSH2",
       "path": "0",
       "value": "0x4EB"
@@ -8913,28 +7416,19 @@
     "1159": {
       "fn": "UpgradeabilityProxy._upgradeTo",
       "jump": "i",
-      "offset": [
-        4714,
-        4751
-      ],
+      "offset": [4714, 4751],
       "op": "JUMP",
       "path": "0"
     },
     "1160": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4714,
-        4751
-      ],
+      "offset": [4714, 4751],
       "op": "JUMPDEST",
       "path": "0"
     },
     "1161": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "PUSH1",
       "path": "0",
       "statement": 14,
@@ -8942,19 +7436,13 @@
     },
     "1163": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "DUP1",
       "path": "0"
     },
     "1164": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "MLOAD",
       "path": "0"
     },
@@ -8978,222 +7466,150 @@
     },
     "1173": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "DUP4",
       "path": "0"
     },
     "1174": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "AND",
       "path": "0"
     },
     "1175": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "DUP2",
       "path": "0"
     },
     "1176": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "MSTORE",
       "path": "0"
     },
     "1177": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "SWAP1",
       "path": "0"
     },
     "1178": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "MLOAD",
       "path": "0"
     },
     "1179": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "PUSH32",
       "path": "0",
       "value": "0xBC7CD75A20EE27FD9ADEBAB32041F755214DBC6BFFA90CC0225B39DA2E5C2D3B"
     },
     "1212": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "SWAP2",
       "path": "0"
     },
     "1213": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "DUP2",
       "path": "0"
     },
     "1214": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "SWAP1",
       "path": "0"
     },
     "1215": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "SUB",
       "path": "0"
     },
     "1216": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "PUSH1",
       "path": "0",
       "value": "0x20"
     },
     "1218": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "ADD",
       "path": "0"
     },
     "1219": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "SWAP1",
       "path": "0"
     },
     "1220": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4762,
-        4789
-      ],
+      "offset": [4762, 4789],
       "op": "LOG1",
       "path": "0"
     },
     "1221": {
       "fn": "UpgradeabilityProxy._upgradeTo",
-      "offset": [
-        4652,
-        4794
-      ],
+      "offset": [4652, 4794],
       "op": "POP",
       "path": "0"
     },
     "1222": {
       "fn": "UpgradeabilityProxy._upgradeTo",
       "jump": "o",
-      "offset": [
-        4652,
-        4794
-      ],
+      "offset": [4652, 4794],
       "op": "JUMP",
       "path": "0"
     },
     "1223": {
       "fn": "AdminUpgradeabilityProxy._setAdmin",
-      "offset": [
-        8884,
-        9017
-      ],
+      "offset": [8884, 9017],
       "op": "JUMPDEST",
       "path": "0"
     },
     "1224": {
-      "offset": [
-        6173,
-        6239
-      ],
+      "offset": [6173, 6239],
       "op": "PUSH32",
       "path": "0",
       "value": "0x10D6A54A4754C8869D6886B5F5D7FBFA5B4522237EA5C60D11BC4E7A1FF9390B"
     },
     "1257": {
       "fn": "AdminUpgradeabilityProxy._setAdmin",
-      "offset": [
-        8985,
-        9007
-      ],
+      "offset": [8985, 9007],
       "op": "SSTORE",
       "path": "0"
     },
     "1258": {
       "fn": "AdminUpgradeabilityProxy._setAdmin",
       "jump": "o",
-      "offset": [
-        8977,
-        9013
-      ],
+      "offset": [8977, 9013],
       "op": "JUMP",
       "path": "0"
     },
     "1259": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        4931,
-        5220
-      ],
+      "offset": [4931, 5220],
       "op": "JUMPDEST",
       "path": "0"
     },
     "1260": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5121,
-        5133
-      ],
+      "offset": [5121, 5133],
       "op": "PUSH1",
       "path": "0",
       "value": "0x0"
     },
     "1262": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5008,
-        5050
-      ],
+      "offset": [5008, 5050],
       "op": "PUSH2",
       "path": "0",
       "statement": 15,
@@ -9201,19 +7617,13 @@
     },
     "1265": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5032,
-        5049
-      ],
+      "offset": [5032, 5049],
       "op": "DUP3",
       "path": "0"
     },
     "1266": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5008,
-        5031
-      ],
+      "offset": [5008, 5031],
       "op": "PUSH2",
       "path": "0",
       "value": "0x5AE"
@@ -9221,47 +7631,32 @@
     "1269": {
       "fn": "UpgradeabilityProxy._setImplementation",
       "jump": "i",
-      "offset": [
-        5008,
-        5050
-      ],
+      "offset": [5008, 5050],
       "op": "JUMP",
       "path": "0"
     },
     "1270": {
       "branch": 21,
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5008,
-        5050
-      ],
+      "offset": [5008, 5050],
       "op": "JUMPDEST",
       "path": "0"
     },
     "1271": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "ISZERO",
       "path": "0"
     },
     "1272": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "ISZERO",
       "path": "0"
     },
     "1273": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "PUSH2",
       "path": "0",
       "value": "0x589"
@@ -9269,354 +7664,240 @@
     "1276": {
       "branch": 21,
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "JUMPI",
       "path": "0"
     },
     "1277": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "PUSH1",
       "path": "0",
       "value": "0x40"
     },
     "1279": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "DUP1",
       "path": "0"
     },
     "1280": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "MLOAD",
       "path": "0"
     },
     "1281": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "PUSH32",
       "path": "0",
       "value": "0x8C379A000000000000000000000000000000000000000000000000000000000"
     },
     "1314": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "DUP2",
       "path": "0"
     },
     "1315": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "MSTORE",
       "path": "0"
     },
     "1316": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "PUSH1",
       "path": "0",
       "value": "0x20"
     },
     "1318": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "PUSH1",
       "path": "0",
       "value": "0x4"
     },
     "1320": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "DUP3",
       "path": "0"
     },
     "1321": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "ADD",
       "path": "0"
     },
     "1322": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "MSTORE",
       "path": "0"
     },
     "1323": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "PUSH1",
       "path": "0",
       "value": "0x3B"
     },
     "1325": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "PUSH1",
       "path": "0",
       "value": "0x24"
     },
     "1327": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "DUP3",
       "path": "0"
     },
     "1328": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "ADD",
       "path": "0"
     },
     "1329": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "MSTORE",
       "path": "0"
     },
     "1330": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "PUSH32",
       "path": "0",
       "value": "0x43616E6E6F742073657420612070726F787920696D706C656D656E746174696F"
     },
     "1363": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "PUSH1",
       "path": "0",
       "value": "0x44"
     },
     "1365": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "DUP3",
       "path": "0"
     },
     "1366": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "ADD",
       "path": "0"
     },
     "1367": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "MSTORE",
       "path": "0"
     },
     "1368": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "PUSH32",
       "path": "0",
       "value": "0x6E20746F2061206E6F6E2D636F6E747261637420616464726573730000000000"
     },
     "1401": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "PUSH1",
       "path": "0",
       "value": "0x64"
     },
     "1403": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "DUP3",
       "path": "0"
     },
     "1404": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "ADD",
       "path": "0"
     },
     "1405": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "MSTORE",
       "path": "0"
     },
     "1406": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "SWAP1",
       "path": "0"
     },
     "1407": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "MLOAD",
       "path": "0"
     },
     "1408": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "SWAP1",
       "path": "0"
     },
     "1409": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "DUP2",
       "path": "0"
     },
     "1410": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "SWAP1",
       "path": "0"
     },
     "1411": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "SUB",
       "path": "0"
     },
     "1412": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "PUSH1",
       "path": "0",
       "value": "0x84"
     },
     "1414": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "ADD",
       "path": "0"
     },
     "1415": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "SWAP1",
       "path": "0"
     },
     "1416": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "REVERT",
       "path": "0"
     },
     "1417": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5000,
-        5114
-      ],
+      "offset": [5000, 5114],
       "op": "JUMPDEST",
       "path": "0"
     },
@@ -9624,96 +7905,66 @@
       "op": "POP"
     },
     "1419": {
-      "offset": [
-        3890,
-        3956
-      ],
+      "offset": [3890, 3956],
       "op": "PUSH32",
       "path": "0",
       "value": "0x7050C9E0F4CA769C69BD3A8EF740BC37934F8E2C036E5A723FD8EE048ED3F8C3"
     },
     "1452": {
       "fn": "UpgradeabilityProxy._setImplementation",
-      "offset": [
-        5179,
-        5210
-      ],
+      "offset": [5179, 5210],
       "op": "SSTORE",
       "path": "0"
     },
     "1453": {
       "fn": "UpgradeabilityProxy._setImplementation",
       "jump": "o",
-      "offset": [
-        5171,
-        5216
-      ],
+      "offset": [5171, 5216],
       "op": "JUMP",
       "path": "0"
     },
     "1454": {
       "fn": "AddressUtils.isContract",
-      "offset": [
-        2569,
-        3145
-      ],
+      "offset": [2569, 3145],
       "op": "JUMPDEST",
       "path": "0"
     },
     "1455": {
       "fn": "AddressUtils.isContract",
-      "offset": [
-        2626,
-        2630
-      ],
+      "offset": [2626, 2630],
       "op": "PUSH1",
       "path": "0",
       "value": "0x0"
     },
     "1457": {
       "fn": "AddressUtils.isContract",
-      "offset": [
-        3101,
-        3118
-      ],
+      "offset": [3101, 3118],
       "op": "SWAP1",
       "path": "0"
     },
     "1458": {
       "fn": "AddressUtils.isContract",
-      "offset": [
-        3101,
-        3118
-      ],
+      "offset": [3101, 3118],
       "op": "EXTCODESIZE",
       "path": "0"
     },
     "1459": {
       "fn": "AddressUtils.isContract",
-      "offset": [
-        3132,
-        3140
-      ],
+      "offset": [3132, 3140],
       "op": "GT",
       "path": "0",
       "statement": 16
     },
     "1460": {
       "fn": "AddressUtils.isContract",
-      "offset": [
-        3132,
-        3140
-      ],
+      "offset": [3132, 3140],
       "op": "SWAP1",
       "path": "0"
     },
     "1461": {
       "fn": "AddressUtils.isContract",
       "jump": "o",
-      "offset": [
-        2569,
-        3145
-      ],
+      "offset": [2569, 3145],
       "op": "JUMP",
       "path": "0"
     }

@@ -176,15 +176,27 @@ describe("TermManager Tests", () => {
 
     await testOracleConsumer
       .connect(devopsMultisig)
-      .addNewTokenPriceFeed(fungibleToken1.address, fungibleToken1Feed.address);
+      .addNewTokenPriceFeed(
+        fungibleToken1.address,
+        fungibleToken1Feed.address,
+        0,
+      );
 
     await testOracleConsumer
       .connect(devopsMultisig)
-      .addNewTokenPriceFeed(fungibleToken2.address, fungibleToken2Feed.address);
+      .addNewTokenPriceFeed(
+        fungibleToken2.address,
+        fungibleToken2Feed.address,
+        0,
+      );
 
     await testOracleConsumer
       .connect(devopsMultisig)
-      .addNewTokenPriceFeed(fungibleToken3.address, fungibleToken3Feed.address);
+      .addNewTokenPriceFeed(
+        fungibleToken3.address,
+        fungibleToken3Feed.address,
+        0,
+      );
 
     const mockTermControllerFactory =
       await smock.mock<TermController__factory>("TermController");
@@ -277,8 +289,8 @@ describe("TermManager Tests", () => {
         {
           redemptionTimestamp: dayjs().unix(),
           purchaseToken: fungibleToken3.address,
-          collateralTokens: [fungibleToken1.address, fungibleToken2.address],
-          maintenanceCollateralRatios: ["1000000000000000000"],
+          termRepoServicer: termRepoServicer.address,
+          termRepoCollateralManager: termRepoCollateralManager.address,
         },
       ],
       {
@@ -1135,6 +1147,10 @@ describe("TermManager Tests", () => {
           rolloverBidPriceHash: ethers.constants.HashZero,
           processed: false,
         });
+      await expect(termRepoServicer.connect(wallet2).submitRepurchasePayment(0))
+        .to.be.revertedWithCustomError(termRepoServicer, "InvalidParameters")
+        .withArgs("zero amount");
+
       await expect(
         termRepoServicer
           .connect(wallet2)
@@ -1710,7 +1726,7 @@ describe("TermManager Tests", () => {
           ["15000000"],
           "1000000000000000000",
         );
-
+      termController.verifyMintExposureAccess.returns(false);
       await expect(
         termRepoServicer
           .connect(wallet2)
@@ -1720,21 +1736,7 @@ describe("TermManager Tests", () => {
         "NoMintOpenExposureAccess",
       );
 
-      await expect(
-        termRepoServicer
-          .connect(wallet2)
-          .grantMintExposureAccess(wallet2.address),
-      ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
-      );
-
-      await expect(
-        termRepoServicer
-          .connect(adminWallet)
-          .grantMintExposureAccess(wallet2.address),
-      )
-        .to.emit(termEventEmitter, "MintExposureAccessGranted")
-        .withArgs(termIdHashed, wallet2.address);
+      termController.verifyMintExposureAccess.returns(true);
 
       // primary dealer mint reverts due to invalid collateral array
       await expect(
@@ -1883,6 +1885,8 @@ describe("TermManager Tests", () => {
 
       let user: SignerWithAddress = wallet2;
 
+      termController.verifyMintExposureAccess.returns(false);
+
       await expect(
         termRepoServicer
           .connect(user)
@@ -1892,17 +1896,7 @@ describe("TermManager Tests", () => {
         "NoMintOpenExposureAccess",
       );
 
-      await expect(
-        termRepoServicer
-          .connect(wallet2)
-          .grantMintExposureAccess(wallet2.address),
-      ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
-      );
-
-      await termRepoServicer
-        .connect(adminWallet)
-        .grantMintExposureAccess(wallet2.address);
+      termController.verifyMintExposureAccess.returns(true);
 
       // primary dealer mint reverts due to invalid collateral array
       await expect(
@@ -1998,6 +1992,139 @@ describe("TermManager Tests", () => {
       ).to.equal(0);
     });
 
+    it("valid create position loan and full collapse around a non fulfilled complete rollover reverts", async function () {
+      await termRepoCollateralManager
+        .connect(termAuctionBidLockerAddress)
+        .auctionLockCollateral(
+          wallet1.address,
+          fungibleToken1.address,
+          "15000000",
+        );
+
+      await termRepoServicer
+        .connect(termAuctionOfferLockerAddress)
+        .lockOfferAmount(wallet2.address, "15000000");
+
+      await termRepoServicer
+        .connect(termAuctionAddress)
+        .fulfillOffer(
+          wallet2.address,
+          "15000000",
+          "20000000",
+          getBytesHash("offer-1"),
+        );
+
+      await termRepoServicer
+        .connect(termAuctionAddress)
+        .fulfillBid(
+          wallet1.address,
+          "15000000",
+          "20000000",
+          [fungibleToken1.address],
+          ["15000000"],
+          "1000000000000000000",
+        );
+
+      let user: SignerWithAddress = wallet2;
+
+      termController.verifyMintExposureAccess.returns(false);
+
+      await expect(
+        termRepoServicer
+          .connect(user)
+          .mintOpenExposure("20000000", ["0", "50000000"]),
+      ).to.be.revertedWithCustomError(
+        termRepoServicer,
+        "NoMintOpenExposureAccess",
+      );
+
+      termController.verifyMintExposureAccess.returns(true);
+
+      // primary dealer mint reverts due to invalid collateral array
+      await expect(
+        termRepoServicer
+          .connect(user)
+          .mintOpenExposure("20000000", ["15000000"]),
+      )
+        .to.be.revertedWithCustomError(termRepoServicer, `InvalidParameters`)
+        .withArgs(
+          "Collateral Amounts array not same length as collateral tokens list",
+        );
+
+      // primary dealer mint reverts due to insufficient collateral
+      await expect(
+        termRepoServicer
+          .connect(user)
+          .mintOpenExposure("20000000", ["0", "15000000"]),
+      ).to.be.revertedWithCustomError(
+        termRepoServicer,
+        "InsufficientCollateral",
+      );
+
+      await network.provider.send("evm_setNextBlockTimestamp", [
+        termStartTimestamp + 60 * 60 * 12 * 360,
+      ]);
+
+      await network.provider.send("evm_mine");
+
+      await expect(
+        termRepoServicer
+          .connect(user)
+          .mintOpenExposure("20000000", ["0", "50000000"]),
+      )
+        .to.emit(termEventEmitter, "BidFulfilled")
+        .withArgs(
+          termIdHashed,
+          wallet2.address,
+          "17944445",
+          "20000000",
+          "2055555",
+        )
+        .to.emit(termEventEmitter, "TermRepoTokenMint")
+        .withArgs(
+          termIdHashed,
+          wallet2.address,
+          "17944445",
+          "2055555",
+          "20000000",
+        );
+
+      expect(
+        await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
+      ).to.eq("20000000");
+
+      expect(await testTermRepoToken.balanceOf(wallet2.address)).to.eq(
+        "37944445",
+      );
+      expect(await testTermRepoToken.balanceOf(treasuryWallet.address)).to.eq(
+        "2055555",
+      );
+
+      // revert if attempt to collapse with no borrow balance
+      await expect(
+        termRepoServicer.connect(wallet3).burnCollapseExposure("37944445"),
+      ).to.be.revertedWithCustomError(
+        termRepoServicer,
+        "ZeroBorrowerRepurchaseObligation",
+      );
+
+      user = wallet2;
+
+      termRepoRolloverManager.getRolloverInstructions
+        .whenCalledWith(wallet2.address)
+        .returns({
+          rolloverAuctionBidLocker: wallet3.address,
+          rolloverAmount: "20000000",
+          rolloverBidPriceHash: ethers.constants.HashZero,
+          locked: false,
+          processed: false,
+        });
+
+      await expect(
+        termRepoServicer.connect(user).burnCollapseExposure("37944445"),
+      ).to.be.revertedWithCustomError(termRepoServicer, "ZeroMaxRepurchase");
+    });
+
     it("valid loan (with protocol loan share) after term maturity and partial collapse", async function () {
       // borrower locks collateral
       await termRepoCollateralManager
@@ -2085,6 +2212,15 @@ describe("TermManager Tests", () => {
       ]);
 
       const user = wallet2;
+      termRepoRolloverManager.getRolloverInstructions
+        .whenCalledWith(wallet2.address)
+        .returns({
+          rolloverAuctionBidLocker: wallet3.address,
+          rolloverAmount: "0",
+          rolloverBidPriceHash: ethers.constants.HashZero,
+          locked: false,
+          processed: true,
+        });
       await expect(
         termRepoServicer.connect(user).burnCollapseExposure("10000000"),
       )

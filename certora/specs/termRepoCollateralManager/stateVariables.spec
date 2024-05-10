@@ -21,7 +21,7 @@ methods {
     function _._isAcceptedCollateralToken(address token) internal => collateralTokenSupported(token) expect (bool) ALL;
     function initialCollateralRatios(address) external returns (uint256) envfree;
     function maintenanceCollateralRatios(address) external returns (uint256) envfree;
-    function liquidateDamangesDueToProtocol() external returns (uint256) envfree;
+    function liquidatedDamagesDueToProtocol() external returns (uint256) envfree;
     function netExposureCapOnLiquidation() external returns (uint256) envfree;
     function termRepoId() external returns (bytes32) envfree;
     function repoServicer() external returns (address) envfree;
@@ -209,9 +209,9 @@ rule noMethodsChangeLiquidateDamagesDueToProtocol(
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
     f.selector != sig:upgradeTo(address).selector
 } {
-    uint256 liquidateDamagesDueToProtocolBefore = liquidateDamangesDueToProtocol();
+    uint256 liquidateDamagesDueToProtocolBefore = liquidatedDamagesDueToProtocol();
     f(e, args);
-    uint256 liquidateDamagesDueToProtocolAfter = liquidateDamangesDueToProtocol();
+    uint256 liquidateDamagesDueToProtocolAfter = liquidatedDamagesDueToProtocol();
 
     assert liquidateDamagesDueToProtocolBefore == liquidateDamagesDueToProtocolAfter,
         "LiquidateDamagesDueToProtocol should not change";

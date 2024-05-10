@@ -208,6 +208,10 @@ contract TermRepoServicer is
     function submitRepurchasePayment(uint256 amount) external {
         address borrower = msg.sender;
 
+        if (amount == 0) {
+            revert InvalidParameters("zero amount");
+        }
+
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp >= endOfRepurchaseWindow) {
             revert AfterRepurchaseWindow();
@@ -257,6 +261,10 @@ contract TermRepoServicer is
         );
 
         uint256 maxRepurchaseAmount = _getMaxRepaymentAroundRollover(borrower);
+
+        if (maxRepurchaseAmount == 0){
+            revert ZeroMaxRepurchase();
+        }
 
         uint256 termRepoTokenValueOfRepurchase = div_(
             Exp({
@@ -317,7 +325,7 @@ contract TermRepoServicer is
     ) external {
         address borrower = msg.sender;
 
-        if (!hasRole(SPECIALIST_ROLE, borrower)) {
+        if (!termController.verifyMintExposureAccess(borrower)) {
             revert NoMintOpenExposureAccess();
         }
 
@@ -716,14 +724,6 @@ contract TermRepoServicer is
     // ========================================================================
     // = Admin Functions ======================================================
     // ========================================================================
-
-    /// @param authedUser The address of user granted acces to create mint exposure
-    function grantMintExposureAccess(
-        address authedUser
-    ) external onlyRole(ADMIN_ROLE) {
-        _grantRole(SPECIALIST_ROLE, authedUser);
-        emitter.emitMintExposureAccessGranted(termRepoId, authedUser);
-    }
 
     /// @param termAuctionGroup A struct containing contract addresses of a Term Auction deployment to pair for a reopening of a TermRepo
     function reopenToNewAuction(
