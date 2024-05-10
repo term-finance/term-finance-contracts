@@ -55,7 +55,7 @@ function expectBigNumberEq(
 
 describe("TermAuctionIntegration", () => {
   let wallets: SignerWithAddress[];
-  let termController: FakeContract<TermController>;
+  let termController: TermController;
   let testCollateralToken: TestToken;
   let testPurchaseToken: TestToken;
   let mockCollateralFeed: TestPriceFeed;
@@ -65,6 +65,8 @@ describe("TermAuctionIntegration", () => {
   let maturityPeriodOffset0: MaturityPeriodInfo;
   let auctionIdOffset1Hash: string;
   let auctionIdOffset0Hash: string;
+  let termRepoIdOffset1Hash: string;
+  let termRepoIdOffset0Hash: string;
   let snapshotId: string;
   let termEventEmitter: TermEventEmitter;
   let termOracle: TermPriceConsumerV3;
@@ -108,6 +110,26 @@ describe("TermAuctionIntegration", () => {
       },
     )) as TermPriceConsumerV3;
 
+    const termControllerFactory =
+      await ethers.getContractFactory("TermController");
+
+    termController = (await upgrades.deployProxy(
+      termControllerFactory,
+      [
+        wallets[7].address,
+        wallets[8].address,
+        wallets[5].address,
+        wallets[4].address,
+        wallets[6].address,
+      ],
+      {
+        kind: "uups",
+      },
+    )) as TermController;
+
+    const termEventEmitterFactory =
+      await ethers.getContractFactory("TermEventEmitter");
+
     const termInitializerFactory =
       await ethers.getContractFactory("TermInitializer");
     termInitializer = await termInitializerFactory.deploy(
@@ -115,17 +137,20 @@ describe("TermAuctionIntegration", () => {
       wallets[3].address,
     );
     await termInitializer.deployed();
+    await termController
+      .connect(wallets[6])
+      .pairInitializer(termInitializer.address);
 
-    const termEventEmitterFactory =
-      await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
       [wallets[4].address, wallets[5].address, termInitializer.address],
       { kind: "uups" },
     )) as TermEventEmitter;
-
-    termController = await smock.fake<TermController>("TermController");
-    termController.isTermDeployed.returns(true);
+    await termInitializer.pairTermContracts(
+      termController.address,
+      termEventEmitter.address,
+      termOracle.address,
+    );
 
     const mockPriceFeedFactory =
       await ethers.getContractFactory("TestPriceFeed");
@@ -155,12 +180,14 @@ describe("TermAuctionIntegration", () => {
       .addNewTokenPriceFeed(
         testCollateralToken.address,
         mockCollateralFeed.address,
+        0,
       );
     await termOracle
       .connect(wallets[4])
       .addNewTokenPriceFeed(
         testPurchaseToken.address,
         mockPurchaseFeed.address,
+        0,
       );
 
     const auctionStart = dayjs().subtract(1, "minute");
@@ -260,6 +287,14 @@ describe("TermAuctionIntegration", () => {
       ["string"],
       [maturityPeriodOffset0.termAuctionId],
     );
+    termRepoIdOffset1Hash = ethers.utils.solidityKeccak256(
+      ["string"],
+      [maturityPeriodOffset1.termRepoId],
+    );
+    termRepoIdOffset0Hash = ethers.utils.solidityKeccak256(
+      ["string"],
+      [maturityPeriodOffset0.termRepoId],
+    );
   });
 
   afterEach(async () => {
@@ -267,9 +302,6 @@ describe("TermAuctionIntegration", () => {
   });
 
   it("completeAuction completes an auction - random1 - offset 1", async () => {
-    const treasury = Wallet.createRandom();
-    termController.getTreasuryAddress.returns(treasury.address);
-
     const { bids, offers } = await parseBidsOffers(
       clearingPriceTestCSV_random1,
       testPurchaseToken.address,
@@ -409,15 +441,15 @@ describe("TermAuctionIntegration", () => {
       wallet,
     )) as TermAuction;
 
-    await expect(
-      auction.completeAuction({
-        revealedBidSubmissions: revealedBids,
-        expiredRolloverBids: [],
-        unrevealedBidSubmissions: [],
-        revealedOfferSubmissions: revealedOffers,
-        unrevealedOfferSubmissions: [],
-      }),
-    )
+    const completeAuctionTx = await auction.completeAuction({
+      revealedBidSubmissions: revealedBids,
+      expiredRolloverBids: [],
+      unrevealedBidSubmissions: [],
+      revealedOfferSubmissions: revealedOffers,
+      unrevealedOfferSubmissions: [],
+    });
+
+    expect(completeAuctionTx)
       .to.emit(termEventEmitter, "BidAssigned")
       .withArgs(
         auctionIdOffset1Hash,
@@ -446,13 +478,33 @@ describe("TermAuctionIntegration", () => {
         "545000000000000000",
       );
 
+    const tx = await completeAuctionTx.wait();
+
     const clearingPrice = await auction.clearingPrice();
     expectBigNumberEq(clearingPrice, "545000000000000000");
+
+    const termAuctionHistory = await termController.getTermAuctionResults(
+      termRepoIdOffset1Hash,
+    );
+
+    const termAuctionHistoryJson = JSON.parse(
+      JSON.stringify(termAuctionHistory),
+    );
+    const blockNumber = tx.blockNumber;
+    const block = await ethers.provider.getBlock(blockNumber);
+
+    expect(termAuctionHistoryJson).to.deep.eq([
+      [
+        [
+          auctionIdOffset1Hash,
+          BigNumber.from("545000000000000000").toJSON(),
+          BigNumber.from(block.timestamp).toJSON(),
+        ],
+      ],
+      1,
+    ]);
   });
   it("completeAuction completes an auction - random1 - offset 0", async () => {
-    const treasury = Wallet.createRandom();
-    termController.getTreasuryAddress.returns(treasury.address);
-
     const { bids, offers } = await parseBidsOffers(
       clearingPriceTestCSV_random1,
       testPurchaseToken.address,
@@ -633,9 +685,6 @@ describe("TermAuctionIntegration", () => {
     expectBigNumberEq(clearingPrice, "525000000000000000");
   });
   it("cancelAuctionForWithdrawal cancels auction and allows participants to withdraw funds...complete auction reverts after", async () => {
-    const treasury = Wallet.createRandom();
-    termController.getTreasuryAddress.returns(treasury.address);
-
     const { bids, offers } = await parseBidsOffers(
       clearingPriceTestCSV_random1,
       testPurchaseToken.address,
@@ -927,9 +976,6 @@ describe("TermAuctionIntegration", () => {
     }
   });
   it("completeAuction cancels an auction when all bids are undercollateralized after collateral price tanks", async () => {
-    const treasury = Wallet.createRandom();
-    termController.getTreasuryAddress.returns(treasury.address);
-
     const { bids, offers } = await parseBidsOffers(
       clearingPriceTestCSV_random1,
       testPurchaseToken.address,
@@ -1122,7 +1168,9 @@ describe("TermAuctionIntegration", () => {
         maturityPeriodOffset1.termRepoCollateralManager.address,
       termApprovalMultisig: wallets[7],
       devopsMultisig: wallets[4].address,
+      controllerAdmin: wallets[5],
       adminWallet: wallets[6].address,
+      termRepoIdUnhashed: maturityPeriodOffset1.termRepoId,
       auctionVersion: "0.1.0",
     });
 
@@ -1130,9 +1178,6 @@ describe("TermAuctionIntegration", () => {
       ["string"],
       [auctionGroup2.termAuctionId],
     );
-
-    const treasury = Wallet.createRandom();
-    termController.getTreasuryAddress.returns(treasury.address);
 
     const { bids, offers } = await parseBidsOffers(
       clearingPriceTestCSV_random1,
@@ -1272,15 +1317,15 @@ describe("TermAuctionIntegration", () => {
       wallet,
     )) as TermAuction;
 
-    await expect(
-      auction.completeAuction({
-        revealedBidSubmissions: revealedBids,
-        expiredRolloverBids: [],
-        unrevealedBidSubmissions: [],
-        revealedOfferSubmissions: revealedOffers,
-        unrevealedOfferSubmissions: [],
-      }),
-    )
+    const completeAuctionTx = await auction.completeAuction({
+      revealedBidSubmissions: revealedBids,
+      expiredRolloverBids: [],
+      unrevealedBidSubmissions: [],
+      revealedOfferSubmissions: revealedOffers,
+      unrevealedOfferSubmissions: [],
+    });
+
+    await expect(completeAuctionTx)
       .to.emit(termEventEmitter, "BidAssigned")
       .withArgs(
         auctionId2,
@@ -1311,6 +1356,29 @@ describe("TermAuctionIntegration", () => {
 
     const clearingPrice = await auction.clearingPrice();
     expectBigNumberEq(clearingPrice, "545000000000000000");
+
+    const tx = await completeAuctionTx.wait();
+
+    const termAuctionHistory = await termController.getTermAuctionResults(
+      termRepoIdOffset1Hash,
+    );
+
+    const termAuctionHistoryJson = JSON.parse(
+      JSON.stringify(termAuctionHistory),
+    );
+    const blockNumber = tx.blockNumber;
+    const block = await ethers.provider.getBlock(blockNumber);
+
+    expect(termAuctionHistoryJson).to.deep.eq([
+      [
+        [
+          auctionId2,
+          BigNumber.from("545000000000000000").toJSON(),
+          BigNumber.from(block.timestamp).toJSON(),
+        ],
+      ],
+      1,
+    ]);
   });
 });
 /* eslint-enable camelcase */

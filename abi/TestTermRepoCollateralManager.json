@@ -803,7 +803,7 @@
       },
       {
         "internalType": "uint256",
-        "name": "liquidateDamangesDueToProtocol_",
+        "name": "liquidatedDamagesDueToProtocol_",
         "type": "uint256"
       },
       {
@@ -907,8 +907,14 @@
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "liquidateDamangesDueToProtocol",
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "liquidatedDamages",
     "outputs": [
       {
         "internalType": "uint256",
@@ -920,14 +926,8 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "liquidatedDamages",
+    "inputs": [],
+    "name": "liquidatedDamagesDueToProtocol",
     "outputs": [
       {
         "internalType": "uint256",

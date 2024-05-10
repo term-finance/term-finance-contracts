@@ -443,6 +443,19 @@
   },
   {
     "inputs": [],
+    "name": "controller",
+    "outputs": [
+      {
+        "internalType": "contract ITermController",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "dayCountFractionMantissa",
     "outputs": [
       {
@@ -568,6 +581,11 @@
       {
         "internalType": "contract ITermEventEmitter",
         "name": "emitter_",
+        "type": "address"
+      },
+      {
+        "internalType": "contract ITermController",
+        "name": "controller_",
         "type": "address"
       },
       {

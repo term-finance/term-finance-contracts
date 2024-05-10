@@ -146,12 +146,14 @@ describe("simulation-utils", () => {
       .addNewTokenPriceFeed(
         testCollateralToken.address,
         mockCollateralFeed.address,
+        0,
       );
     await termOracle
       .connect(wallets[4])
       .addNewTokenPriceFeed(
         testPurchaseToken.address,
         mockPurchaseFeed.address,
+        0,
       );
 
     const blockNumBefore = await ethers.provider.getBlockNumber();

@@ -1,6 +1,6 @@
 import * as dotenv from "dotenv";
 
-import { HardhatUserConfig } from "hardhat/config";
+import { HardhatUserConfig, task } from "hardhat/config";
 import "@nomiclabs/hardhat-etherscan";
 import "@nomiclabs/hardhat-ethers";
 import "@nomicfoundation/hardhat-chai-matchers";
@@ -12,6 +12,7 @@ import "hardhat-abi-exporter";
 import "hardhat-contract-sizer";
 import "solidity-coverage";
 import * as tdly from "@tenderly/hardhat-tenderly";
+import * as fs from "fs";
 
 dotenv.config();
 tdly.setup();
@@ -38,6 +39,7 @@ const config: HardhatUserConfig = {
       baseGoerli: "placeholder",
       mainnet: process.env.ETHERSCAN_API_KEY!,
       polygon_mumbai: process.env.ETHERSCAN_API_KEY!,
+      sepolia: process.env.ETHERSCAN_API_KEY!,
     },
     customChains: [
       {
@@ -156,6 +158,22 @@ if (goerliTestWallet && baseGoerliRPC) {
     chainId: 84531,
   };
 }
+
+// Setup base-goerli test network.
+const sepoliaRPC = process.env.SEPOLIA_RPC;
+if (goerliTestWallet && sepoliaRPC) {
+  if (!config.networks) {
+    config.networks = {};
+  }
+  config.networks.sepolia = {
+    url: sepoliaRPC,
+    accounts: [goerliTestWallet, ...(goerliTesterWallets || [])],
+    gas: "auto",
+    gasPrice: 35000000000,
+    chainId: 11155111,
+  };
+}
+
 const mumbaiRPC = process.env.MUMBAI_RPC;
 if (goerliTestWallet && mumbaiRPC) {
   if (!config.networks) {
@@ -200,5 +218,24 @@ if (tenderlyTestWallet && tenderlyForkUrl) {
     gasMultiplier: 2,
   };
 }
+
+// Custom task to log the standard JSON input
+task(
+  "logStandardJsonInput",
+  "Prints the standard JSON input of the compilation",
+  async (_, { artifacts }) => {
+    const artifactPaths = await artifacts.getArtifactPaths();
+
+    artifactPaths.forEach((path) => {
+      const artifact = require(path);
+      console.log(JSON.stringify(artifact._format, null, 2));
+      // Optionally write to a file
+      fs.writeFileSync(
+        `./artifacts/${artifact.contractName}-input.json`,
+        JSON.stringify(artifact._format, null, 2),
+      );
+    });
+  },
+);
 
 export default config;

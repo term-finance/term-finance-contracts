@@ -1,7 +1,7 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
 pragma solidity ^0.8.18;
 
-import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
 contract TestPriceFeed is AggregatorV3Interface {
     uint8 private _decimals;
@@ -74,8 +74,16 @@ contract TestPriceFeed is AggregatorV3Interface {
     {
         return (_roundId, _answer, _startedAt, _updatedAt, _answeredInRound);
     }
+    // test utility function to set the answer to zero after it's been added
+    function setAnswerToZero() external {
+        _answer = 0;
+    }
 
     function setAnswer(int256 answer_) public {
         _answer = answer_;
+    }
+
+    function setStartedAt(uint256 startedAt_) public {
+        _startedAt = startedAt_;
     }
 }

@@ -4,6 +4,16 @@
   "sourceName": "contracts/interfaces/ITermPriceOracleErrors.sol",
   "abi": [
     {
+      "inputs": [],
+      "name": "GracePeriodNotOver",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidPrice",
+      "type": "error"
+    },
+    {
       "inputs": [
         {
           "internalType": "address",
@@ -12,6 +22,21 @@
         }
       ],
       "name": "NoPriceFeed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "PricesStale",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "SequencerDownError",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ZeroPrice",
       "type": "error"
     }
   ],

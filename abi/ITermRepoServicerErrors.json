@@ -82,6 +82,11 @@
   },
   {
     "inputs": [],
+    "name": "ZeroMaxRepurchase",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "ZeroTermRepoTokenBalance",
     "type": "error"
   }

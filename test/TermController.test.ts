@@ -1,6 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
-import { Contract, constants } from "ethers";
+import { BigNumber, Contract, constants } from "ethers";
+import { solidityKeccak256 } from "ethers/lib/utils";
 import { ethers, network, upgrades } from "hardhat";
 
 describe("TermController Tests", () => {
@@ -12,7 +13,11 @@ describe("TermController Tests", () => {
   let newProtocolResrvesAddress: SignerWithAddress;
   let potentialTermAddress: SignerWithAddress;
   let adminWallet: SignerWithAddress;
+  let controllerAdminWallet: SignerWithAddress;
   let devopsWallet: SignerWithAddress;
+  let initializer: SignerWithAddress;
+  let auction: SignerWithAddress;
+  let auction2: SignerWithAddress;
 
   let termController: Contract;
 
@@ -31,7 +36,11 @@ describe("TermController Tests", () => {
       newTreasuryAddress,
       potentialTermAddress,
       adminWallet,
+      controllerAdminWallet,
       devopsWallet,
+      initializer,
+      auction,
+      auction2,
     ] = await ethers.getSigners();
 
     const versionableFactory = await ethers.getContractFactory("Versionable");
@@ -47,13 +56,21 @@ describe("TermController Tests", () => {
       [
         originalTreasuryAddress.address,
         originalProtocolReservesAddress.address,
-        adminWallet.address,
+        controllerAdminWallet.address,
         devopsWallet.address,
+        adminWallet.address,
       ],
       {
         kind: "uups",
       },
     );
+
+    await expect(termController.pairInitializer(potentialTermAddress.address))
+      .to.be.reverted;
+
+    await termController
+      .connect(adminWallet)
+      .pairInitializer(initializer.address);
   });
 
   beforeEach(async () => {
@@ -91,6 +108,7 @@ describe("TermController Tests", () => {
             originalProtocolReservesAddress.address,
             ethers.constants.AddressZero,
             devopsWallet.address,
+            adminWallet.address,
           ],
           {
             kind: "uups",
@@ -108,14 +126,35 @@ describe("TermController Tests", () => {
           [
             originalTreasuryAddress.address,
             originalProtocolReservesAddress.address,
-            adminWallet.address,
+            controllerAdminWallet.address,
             ethers.constants.AddressZero,
+            adminWallet.address,
           ],
           {
             kind: "uups",
           },
         ),
       ).to.be.revertedWith("devops wallet is zero address");
+    });
+    it("Revert if admin wallet is zero address", async () => {
+      const TermController =
+        await ethers.getContractFactory("TestTermController");
+
+      await expect(
+        upgrades.deployProxy(
+          TermController,
+          [
+            originalTreasuryAddress.address,
+            originalProtocolReservesAddress.address,
+            controllerAdminWallet.address,
+            devopsWallet.address,
+            ethers.constants.AddressZero,
+          ],
+          {
+            kind: "uups",
+          },
+        ),
+      ).to.be.revertedWith("admin wallet is zero address");
     });
     it("Revert if treasury wallet is zero address", async () => {
       const TermController =
@@ -127,8 +166,9 @@ describe("TermController Tests", () => {
           [
             ethers.constants.AddressZero,
             originalProtocolReservesAddress.address,
-            adminWallet.address,
+            controllerAdminWallet.address,
             devopsWallet.address,
+            adminWallet.address,
           ],
           {
             kind: "uups",
@@ -146,8 +186,9 @@ describe("TermController Tests", () => {
           [
             originalTreasuryAddress.address,
             ethers.constants.AddressZero,
-            adminWallet.address,
+            controllerAdminWallet.address,
             devopsWallet.address,
+            adminWallet.address,
           ],
           {
             kind: "uups",
@@ -198,7 +239,7 @@ describe("TermController Tests", () => {
         termController
           .connect(externalAddress)
           .updateControllerAdminWallet(
-            adminWallet.address,
+            controllerAdminWallet.address,
             externalAddress.address,
           ),
       ).to.be.revertedWith(
@@ -274,7 +315,7 @@ describe("TermController Tests", () => {
         termController
           .connect(devopsWallet)
           .updateControllerAdminWallet(
-            adminWallet.address,
+            controllerAdminWallet.address,
             constants.AddressZero,
           ),
       ).to.be.revertedWith(
@@ -284,7 +325,7 @@ describe("TermController Tests", () => {
       await termController
         .connect(devopsWallet)
         .updateControllerAdminWallet(
-          adminWallet.address,
+          controllerAdminWallet.address,
           newProtocolResrvesAddress.address,
         );
 
@@ -316,7 +357,7 @@ describe("TermController Tests", () => {
           .isTermDeployed(potentialTermAddress.address),
       ).to.equal(false);
       await termController
-        .connect(adminWallet)
+        .connect(controllerAdminWallet)
         .markTermDeployed(potentialTermAddress.address);
       expect(
         await termController
@@ -324,7 +365,7 @@ describe("TermController Tests", () => {
           .isTermDeployed(potentialTermAddress.address),
       ).to.equal(true);
       await termController
-        .connect(adminWallet)
+        .connect(controllerAdminWallet)
         .unmarkTermDeployed(potentialTermAddress.address);
       expect(
         await termController
@@ -340,11 +381,11 @@ describe("TermController Tests", () => {
           .isTermDeployed(potentialTermAddress.address),
       ).to.equal(false);
       await termController
-        .connect(adminWallet)
+        .connect(controllerAdminWallet)
         .markTermDeployed(potentialTermAddress.address);
       await expect(
         termController
-          .connect(adminWallet)
+          .connect(controllerAdminWallet)
           .markTermDeployed(potentialTermAddress.address),
       ).to.be.revertedWith("Contract is already in Term");
     });
@@ -357,10 +398,112 @@ describe("TermController Tests", () => {
       ).to.equal(false);
       await expect(
         termController
-          .connect(adminWallet)
+          .connect(controllerAdminWallet)
           .unmarkTermDeployed(potentialTermAddress.address),
       ).to.be.revertedWith("Contract is not in Term");
     });
+  });
+  it("Granting and revoking mint exposure access with approved admin wallet", async () => {
+    expect(
+      await termController.verifyMintExposureAccess(
+        potentialTermAddress.address,
+      ),
+    ).eq(false);
+
+    await expect(
+      termController
+        .connect(controllerAdminWallet)
+        .grantMintExposureAccess(potentialTermAddress.address),
+    ).to.be.reverted;
+
+    await termController
+      .connect(adminWallet)
+      .grantMintExposureAccess(potentialTermAddress.address);
+
+    expect(
+      await termController.verifyMintExposureAccess(
+        potentialTermAddress.address,
+      ),
+    ).eq(true);
+
+    await expect(
+      termController
+        .connect(controllerAdminWallet)
+        .revokeMintExposureAccess(potentialTermAddress.address),
+    ).to.be.reverted;
+
+    await termController
+      .connect(adminWallet)
+      .revokeMintExposureAccess(potentialTermAddress.address);
+
+    expect(
+      await termController.verifyMintExposureAccess(
+        potentialTermAddress.address,
+      ),
+    ).eq(false);
+  });
+  it("new auction added successfully", async () => {
+    await expect(termController.pairAuction(potentialTermAddress.address)).to.be
+      .reverted;
+
+    await termController.connect(initializer).pairAuction(auction.address);
+
+    const termId = solidityKeccak256(["string"], ["termId"]);
+
+    const auctionId = solidityKeccak256(["string"], ["auctionId"]);
+
+    const auctionId2 = solidityKeccak256(["string"], ["auctionId2"]);
+
+    await expect(
+      termController
+        .connect(potentialTermAddress)
+        .recordAuctionResult(termId, auctionId, "100"),
+    ).to.be.reverted;
+
+    const addNewAuctionCompletionTx = await termController
+      .connect(auction)
+      .recordAuctionResult(termId, auctionId, "100");
+
+    const tx = addNewAuctionCompletionTx.wait();
+    const blockNumber = tx.blockNumber;
+    const block = await ethers.provider.getBlock(blockNumber);
+
+    await termController.connect(initializer).pairAuction(auction2.address);
+
+    const addNewAuctionCompletionTx2 = await termController
+      .connect(auction2)
+      .recordAuctionResult(termId, auctionId2, "200");
+
+    const tx2 = addNewAuctionCompletionTx2.wait();
+
+    const termAuctionHistory =
+      await termController.getTermAuctionResults(termId);
+
+    const termAuctionHistoryJson = JSON.parse(
+      JSON.stringify(termAuctionHistory),
+    );
+
+    const blockNumber2 = tx2.blockNumber;
+    const block2 = await ethers.provider.getBlock(blockNumber2);
+
+    console.log(block);
+    console.log(block2);
+
+    expect(termAuctionHistoryJson).to.deep.eq([
+      [
+        [
+          auctionId,
+          BigNumber.from("100").toJSON(),
+          BigNumber.from(block.timestamp).toJSON(),
+        ],
+        [
+          auctionId2,
+          BigNumber.from("200").toJSON(),
+          BigNumber.from(block2.timestamp).toJSON(),
+        ],
+      ],
+      2,
+    ]);
   });
   it("version returns the current contract version", async () => {
     expect(await termController.version()).to.eq(expectedVersion);

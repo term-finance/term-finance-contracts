@@ -7,8 +7,11 @@ struct TermRepoTokenConfig {
     uint256 redemptionTimestamp;
     /// @dev The purchase token in which this Term Repo Token is denominated and is redeemable for
     address purchaseToken;
-    /// @dev A list of collateral token addresses backing a Term Repo associated with this Term Repo Token
-    address[] collateralTokens;
-    /// @dev A list of the maintenance margin ratios applied to each eligible collateral token
-    uint256[] maintenanceCollateralRatios;
+
+    //@dev termRepoServicer paired with this repo token
+    address termRepoServicer;
+
+    //@dev termRepoCollateralManager paired with this repo token
+    address termRepoCollateralManager;
+    
 }

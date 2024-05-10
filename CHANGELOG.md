@@ -69,3 +69,7 @@
 
 
 **Full Changelog**: https://github.com/term-finance/term-finance/compare/0.5.33...0.6.0
+
+## 0.9.0
+
+#**Full Changelog**: https://github.com/term-finance/term-finance/compare/0.8.0...0.9.0
