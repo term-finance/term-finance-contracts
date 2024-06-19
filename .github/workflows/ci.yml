@@ -32,6 +32,9 @@ jobs:
         ruleset:
           - "termAuction.conf"
           - "termAuctionBidLocker.conf"
+          - "termAuctionBidLocker-locking.conf"
+          - "termAuctionBidLocker-lockingReverts.conf"
+          - "termAuctionBidLocker-stateVariables.conf"
           - "termAuctionOfferLocker.conf"
           - "termAuctionOfferLocker-stateVariables.conf"
           - "termRepoCollateralManager-batchDefault.conf"
