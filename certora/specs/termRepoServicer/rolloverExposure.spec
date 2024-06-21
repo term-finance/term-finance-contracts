@@ -1,3 +1,4 @@
+using TermController as rolloverExposureController;
 using TermRepoLocker as rolloverExposureLocker;
 using TermRepoRolloverManager as rolloverExposureRolloverManager;
 using TermRepoCollateralManagerHarness as rolloverExposureRepaymentCollateralManager;
@@ -50,6 +51,9 @@ rule openExposureOnRolloverNewIntegrity(env e) {
     require(rolloverExposureLocker != previousTermRepoLocker);
     require(rolloverExposureLocker != 100); // Protecting locker from using treasury address;
     require(previousTermRepoLocker != 100); // Protecting previous locker from using treasury address;
+    require(rolloverExposureController.getTreasuryAddress() != e.msg.sender); // Protecting treasury from calling this function
+    require(rolloverExposureController.getTreasuryAddress() != rolloverExposureLocker); // Protecting locker from using treasury address;
+    require(rolloverExposureController.getTreasuryAddress() != previousTermRepoLocker); // Protecting previous locker from using treasury address;
 
     mathint balanceBefore = getBorrowerRepurchaseObligation(borrower);
     mathint tokenBalanceTermRepoLockerBefore = rolloverExposureToken.balanceOf(rolloverExposureLocker);
