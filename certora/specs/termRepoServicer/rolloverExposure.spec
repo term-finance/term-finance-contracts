@@ -56,7 +56,8 @@ rule openExposureOnRolloverNewIntegrity(env e) {
     require(rolloverExposureController.getTreasuryAddress() != e.msg.sender); // Protecting treasury from calling this function
     require(rolloverExposureController.getTreasuryAddress() != rolloverExposureLocker); // Protecting locker from using treasury address;
     require(rolloverExposureController.getTreasuryAddress() != previousTermRepoLocker); // Protecting previous locker from using treasury address;
-
+    require(e.msg.sender != 0); // Protecting from zero address
+    
     mathint balanceBefore = getBorrowerRepurchaseObligation(borrower);
     mathint tokenBalanceTermRepoLockerBefore = rolloverExposureToken.balanceOf(rolloverExposureLocker);
     mathint tokenBalancePreviousTermRepoLockerBefore = rolloverExposureToken.balanceOf(previousTermRepoLocker);
