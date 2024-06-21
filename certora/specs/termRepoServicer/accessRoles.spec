@@ -68,7 +68,6 @@ rule onlyRoleCanCallStorage(method f, calldataarg args, env e) filtered {
         || hasRole(AUCTIONEER(),e.msg.sender)
         || hasRole(COLLATERAL_MANAGER(),e.msg.sender)
         || hasRole(DEVOPS_ROLE(),e.msg.sender)
-        || hasRole(SPECIALIST_ROLE(),e.msg.sender)
         || hasRole(ROLLOVER_MANAGER(),e.msg.sender)
         || hasRole(ROLLOVER_TARGET_AUCTIONEER_ROLE(),e.msg.sender)
         || hasRole(INITIALIZER_ROLE(),e.msg.sender)
