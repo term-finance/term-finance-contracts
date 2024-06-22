@@ -25,10 +25,6 @@ methods {
     // function _.transferTokenFromWallet(address,address,uint256) external => DISPATCHER(true);
     // function _.transferTokenToWallet(address,address,uint256) external => DISPATCHER(true);
 
-    // TermController
-    function TermController.getTreasuryAddress() external => ALWAYS(100);
-    function TermController.getProtocolReserveAddress() external => ALWAYS(100);
-
 
     // // TermRepoRolloverManager
     // function _.getRolloverInstructions(address) external => DISPATCHER(true);
