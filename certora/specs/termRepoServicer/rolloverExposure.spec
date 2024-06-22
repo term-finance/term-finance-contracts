@@ -36,8 +36,6 @@ methods {
     function DummyERC20A.balanceOf(address) external returns(uint256) envfree;
     function DummyERC20A.totalSupply() external returns(uint256) envfree;
 
-    function TermController.getTreasuryAddress() external => ALWAYS(100);
-
 }
 
 rule openExposureOnRolloverNewIntegrity(env e) {
@@ -54,11 +52,7 @@ rule openExposureOnRolloverNewIntegrity(env e) {
     require(rolloverExposureLocker != previousTermRepoLocker);
     require(rolloverExposureLocker != 100); // Protecting locker from using treasury address;
     require(previousTermRepoLocker != 100); // Protecting previous locker from using treasury address;
-    require(rolloverExposureController.getTreasuryAddress() != e.msg.sender); // Protecting treasury from calling this function
-    require(rolloverExposureController.getTreasuryAddress() != rolloverExposureLocker); // Protecting locker from using treasury address;
-    require(rolloverExposureController.getTreasuryAddress() != previousTermRepoLocker); // Protecting previous locker from using treasury address;
     require(e.msg.sender != 0); // Protecting from zero address
-    require(rolloverExposureController.getTreasuryAddress() != borrower); // Protecting from borrower address
 
     mathint balanceBefore = getBorrowerRepurchaseObligation(borrower);
     mathint tokenBalanceTermRepoLockerBefore = rolloverExposureToken.balanceOf(rolloverExposureLocker);
