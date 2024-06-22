@@ -36,7 +36,8 @@ methods {
     function DummyERC20A.balanceOf(address) external returns(uint256) envfree;
     function DummyERC20A.totalSupply() external returns(uint256) envfree;
 
-    function TermController.getTreasuryAddress() external returns (address) envfree;
+    function _.getTreasuryAddress() external => ALWAYS(100);
+
 }
 
 rule openExposureOnRolloverNewIntegrity(env e) {
