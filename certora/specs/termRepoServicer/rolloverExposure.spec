@@ -36,7 +36,7 @@ methods {
     function DummyERC20A.balanceOf(address) external returns(uint256) envfree;
     function DummyERC20A.totalSupply() external returns(uint256) envfree;
 
-    function _.getTreasuryAddress() external => ALWAYS(100);
+    function TermController.getTreasuryAddress() external => ALWAYS(100);
 
 }
 
