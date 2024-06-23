@@ -32,7 +32,6 @@ rule onlyRoleCanCallRevert(method f, calldataarg args, env e) filtered {
     && f.selector != sig:redeemTermRepoTokens(address,uint256).selector
     && f.selector != sig:redeemTermRepoTokens(address,uint256).selector
 } {
-    currentContract.termC
     currentContract.f@withrevert(e,args);
 
     assert !lastReverted => 
