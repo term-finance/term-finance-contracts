@@ -1,4 +1,4 @@
-using TermController as rolloverExposureController;
+using TermControllerHarness as rolloverExposureController;
 using TermRepoLocker as rolloverExposureLocker;
 using TermRepoRolloverManager as rolloverExposureRolloverManager;
 using TermRepoCollateralManagerHarness as rolloverExposureRepaymentCollateralManager;
@@ -46,6 +46,8 @@ rule openExposureOnRolloverNewIntegrity(env e) {
     uint256 dayCountFractionMantissa;
 
     uint256 expScale = 10 ^ 18;
+
+    require(rolloverExposureController.requireTreasuryWallet() == 100);
 
     require(purchaseToken() == rolloverExposureToken); // bounds for test
     require(termRepoLocker() == rolloverExposureLocker); // bounds for test

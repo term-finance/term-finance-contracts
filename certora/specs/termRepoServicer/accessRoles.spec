@@ -1,7 +1,7 @@
 import "../methods/erc20Methods.spec";
 import "../methods/emitMethods.spec";
 
-using TermController as servicerAccessController;
+using TermControllerHarness as servicerAccessController;
 
 
 methods {
@@ -15,7 +15,7 @@ methods {
     function ROLLOVER_MANAGER() external returns (bytes32) envfree;
     function ROLLOVER_TARGET_AUCTIONEER_ROLE() external returns (bytes32) envfree;
 
-    function TermController.verifyMintExposureAccess(address) external returns(bool) envfree;
+    function TermControllerHarness.verifyMintExposureAccess(address) external returns(bool) envfree;
 }
 
 
@@ -32,6 +32,7 @@ rule onlyRoleCanCallRevert(method f, calldataarg args, env e) filtered {
     && f.selector != sig:redeemTermRepoTokens(address,uint256).selector
     && f.selector != sig:redeemTermRepoTokens(address,uint256).selector
 } {
+    currentContract.termC
     currentContract.f@withrevert(e,args);
 
     assert !lastReverted => 
