@@ -1,7 +1,7 @@
 import "../methods/erc20Methods.spec";
 import "../methods/emitMethods.spec";
 
-using TermControllerHarness as servicerAccessController;
+using TermController as servicerAccessController;
 
 
 methods {
@@ -15,7 +15,7 @@ methods {
     function ROLLOVER_MANAGER() external returns (bytes32) envfree;
     function ROLLOVER_TARGET_AUCTIONEER_ROLE() external returns (bytes32) envfree;
 
-    function TermControllerHarness.verifyMintExposureAccess(address) external returns(bool) envfree;
+    function TermController.verifyMintExposureAccess(address) external returns(bool) envfree;
 }
 
 
