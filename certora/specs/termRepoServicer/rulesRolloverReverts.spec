@@ -56,29 +56,5 @@ function divCVL(uint256 x, uint256 y) returns uint256 {
 
 use invariant totalOutstandingRepurchaseExposureIsSumOfRepurchases;
 
-
-// Correctness of the `isTermContractPaired` field.
-use rule pairTermContractsSucceedsWhenNotPaired;
-use rule pairTermContractsRevertsWhenAlreadyPaired;
-rule onlyPairTermContractsChangesIsTermContractPaired(
-    env e,
-    method f,
-    calldataarg args
-) filtered { f ->
-    !f.isView &&
-    f.contract == currentContract &&
-    f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,string).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
-    f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector
-} {
-    onlyPairTermContractsChangesIsTermContractPairedRule(e, f, args);
-}
-
-use rule onlyRoleCanCallRevert;
-use rule onlyRoleCanCallStorage;
-
-use rule openExposureOnRolloverNewIntegrity;
-use rule openExposureOnRolloverNewDoesNotAffectThirdParty;
-use rule closeExposureOnRolloverExistingIntegrity;
-use rule closeExposureOnRolloverExistingDoesNotAffectThirdParty;
+use rule openExposureOnRolloverNewRevertConditions;
+use rule closeExposureOnRolloverExistingRevertConditions;

@@ -46,7 +46,6 @@ contract TermRepoServicer is
     bytes32 public constant COLLATERAL_MANAGER =
         keccak256("COLLATERAL_MANAGER");
     bytes32 public constant DEVOPS_ROLE = keccak256("DEVOPS_ROLE");
-    bytes32 public constant SPECIALIST_ROLE = keccak256("SPECIALIST_ROLE");
     bytes32 public constant ROLLOVER_MANAGER = keccak256("ROLLOVER_MANAGER");
     bytes32 public constant ROLLOVER_TARGET_AUCTIONEER_ROLE =
         keccak256("ROLLOVER_TARGET_AUCTIONEER_ROLE");
