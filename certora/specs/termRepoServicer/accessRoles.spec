@@ -15,8 +15,8 @@ methods {
     function ROLLOVER_MANAGER() external returns (bytes32) envfree;
     function ROLLOVER_TARGET_AUCTIONEER_ROLE() external returns (bytes32) envfree;
 
-    function TermController.verifyMintExposureAccess(address) external returns(bool) envfree;
-}
+    function TermController.verifyMintExposure(address) external returns(bool)  => NONDET
+    }
 
 
 rule onlyRoleCanCallRevert(method f, calldataarg args, env e) filtered {
