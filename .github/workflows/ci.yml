@@ -87,7 +87,8 @@ jobs:
       matrix:
         ruleset:
           - "termRepoServicer-lockFulfillReverts.conf"
-          - "termRepoServicer-repaymentsRedemptionsReverts.conf"
+          - "termRepoServicer-repaymentsReverts.conf"
+          - "termRepoServicer-redemptionsReverts.conf"
           - "termRepoServicer-rolloverReverts.conf"
           - "termRepoServicer.conf"
     steps:

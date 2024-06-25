@@ -1,8 +1,6 @@
 import "../methods/erc20Methods.spec";
 import "../methods/emitMethods.spec";
-import "./liquidationRepayment.spec";
 import "./redemptions.spec";
-import "./repayments.spec";
 import "./stateVariables.spec";
 
 
@@ -57,5 +55,3 @@ function divCVL(uint256 x, uint256 y) returns uint256 {
 use invariant totalOutstandingRepurchaseExposureIsSumOfRepurchases;
 
 use rule redemptionsRevertConditions;
-
-use rule repaymentsRevertingConditions;
