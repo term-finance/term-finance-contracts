@@ -48,7 +48,7 @@ methods {
     function DummyERC20A.decimals() external returns(uint256) envfree;
     function DummyERC20A.totalSupply() external returns(uint256) envfree;
 
-    function verifyMintExposureAccess(address) external returns(bool) => DISPATCHER(true);
+    function _.verifyMintExposureAccess(address) external returns(bool) => DISPATCHER(true);
 
 }
 
