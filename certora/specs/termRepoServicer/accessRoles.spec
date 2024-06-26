@@ -15,7 +15,7 @@ methods {
     function ROLLOVER_MANAGER() external returns (bytes32) envfree;
     function ROLLOVER_TARGET_AUCTIONEER_ROLE() external returns (bytes32) envfree;
 
-    function TermController.verifyMintExposure(address) external returns(bool)  => NONDET;
+    function TermController.verifyMintExposureAccess(address) external returns(bool)  => NONDET;
     }
 
 
