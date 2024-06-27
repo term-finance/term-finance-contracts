@@ -170,6 +170,8 @@ rule repaymentsRevertingConditions(env e){
     }
 
     bool payable = e.msg.value > 0;
+    bool zeroRepayment = repayment == 0;
+    bool maxRepaymentZero = maxRepayment == 0;
     bool lockerTransfersPaused = locker.transfersPaused();
     bool noLockerServicerAccess = !locker.hasRole(locker.SERVICER_ROLE(), currentContract);
     bool allowanceTooLow = token.allowance( borrower, termRepoLocker()) < repayment;
@@ -180,7 +182,7 @@ rule repaymentsRevertingConditions(env e){
     bool repaymentGreaterThanMax = repaymentAmount > maxRepayment;
     bool noServicerRoleOnCollateralManager = !repaymentCollateralManager.hasRole(repaymentCollateralManager.SERVICER_ROLE(), currentContract);
 
-    bool isExpectedToRevert = payable || lockerTransfersPaused || noLockerServicerAccess || borrowTokenBalanceTooLow || allowanceTooLow || afterRepurchaseWindow || borrowerZeroObligation || uintMaxRepayment || repaymentGreaterThanMax || noServicerRoleOnCollateralManager;
+    bool isExpectedToRevert = payable || zeroRepayment || maxRepaymentZero || lockerTransfersPaused || noLockerServicerAccess || borrowTokenBalanceTooLow || allowanceTooLow || afterRepurchaseWindow || borrowerZeroObligation || uintMaxRepayment || repaymentGreaterThanMax || noServicerRoleOnCollateralManager;
 
     submitRepurchasePayment@withrevert(e, repayment);
     

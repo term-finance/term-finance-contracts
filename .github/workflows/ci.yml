@@ -44,15 +44,12 @@ jobs:
           - "termRepoCollateralManager.conf"
           - "termRepoLocker.conf"
           - "termRepoRolloverManager.conf"
-          - "termRepoServicer.conf"
           - "termRepoServicer-lockFulfill.conf"
-          - "termRepoServicer-lockFulfillReverts.conf"
           - "termRepoServicer-mintCollapse.conf"
+          - "termRepoServicer-mintIntegrity.conf"
           - "termRepoServicer-mintCollapseReverts.conf"
           - "termRepoServicer-repaymentsRedemptions.conf"
-          - "termRepoServicer-repaymentsRedemptionsReverts.conf"
           - "termRepoServicer-stateVariables.conf"
-          - "termRepoServicer.conf"
           - "termRepoToken.conf"
     steps:
       - uses: actions/checkout@master
@@ -83,3 +80,44 @@ jobs:
         env:
           CERTORAKEY: ${{ secrets.CERTORAKEY }}
           SOLC_VERSION: 0.8.18
+  formal-verfication-beta:
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      matrix:
+        ruleset:
+          - "termRepoServicer-lockFulfillReverts.conf"
+          - "termRepoServicer-repaymentsReverts.conf"
+          - "termRepoServicer-redemptionsReverts.conf"
+          - "termRepoServicer-rolloverReverts.conf"
+          - "termRepoServicer.conf"
+    steps:
+      - uses: actions/checkout@master
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18.15"
+          cache: yarn
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+      - run: |
+          yarn install --immutable
+          yarn build
+      - run: |
+          pip3 install certora-cli-beta
+      - run: |
+          msg="${2:-"$(hostname) - ${conf_file} - $(date +%s)"}"
+
+          pip3 install solc-select
+          solc-select install ${SOLC_VERSION}
+
+          certoraRun "./certora/confs/${{ matrix.ruleset }}" \
+            --msg "$(hostname) - ${{ matrix.ruleset }} - $(date +%s)" \
+            --wait_for_results all \
+            --rule_sanity basic
+        env:
+          CERTORAKEY: ${{ secrets.CERTORAKEY }}
+          SOLC_VERSION: 0.8.18
+

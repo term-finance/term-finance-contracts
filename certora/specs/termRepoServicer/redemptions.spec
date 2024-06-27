@@ -29,6 +29,7 @@ methods {
     function TermRepoToken.BURNER_ROLE() external returns (bytes32) envfree;
     function TermRepoToken.burningPaused() external returns (bool) envfree;
     function TermRepoToken.mintExposureCap() external returns (uint256) envfree;
+    function TermRepoToken.totalSupply() external returns (uint256) envfree;
     function TermRepoToken.hasRole(bytes32,address) external returns (bool) envfree;
     function tokenRedempt.allowance(address,address) external returns(uint256) envfree;
     function tokenRedempt.balanceOf(address) external returns(uint256) envfree;

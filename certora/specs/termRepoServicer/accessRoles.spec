@@ -1,6 +1,9 @@
 import "../methods/erc20Methods.spec";
 import "../methods/emitMethods.spec";
 
+using TermController as servicerAccessController;
+
+
 methods {
     function hasRole(bytes32, address) external returns (bool) envfree;
     function ADMIN_ROLE() external returns (bytes32) envfree;
@@ -9,10 +12,11 @@ methods {
     function COLLATERAL_MANAGER() external returns (bytes32) envfree;
     function DEVOPS_ROLE() external returns (bytes32) envfree;
     function INITIALIZER_ROLE() external returns (bytes32) envfree;
-    function SPECIALIST_ROLE() external returns (bytes32) envfree;
     function ROLLOVER_MANAGER() external returns (bytes32) envfree;
     function ROLLOVER_TARGET_AUCTIONEER_ROLE() external returns (bytes32) envfree;
-}
+
+    function _.verifyMintExposureAccess(address) external => DISPATCHER(true);
+    }
 
 
 rule onlyRoleCanCallRevert(method f, calldataarg args, env e) filtered {
@@ -36,10 +40,10 @@ rule onlyRoleCanCallRevert(method f, calldataarg args, env e) filtered {
         || hasRole(AUCTIONEER(),e.msg.sender)
         || hasRole(COLLATERAL_MANAGER(),e.msg.sender)
         || hasRole(DEVOPS_ROLE(),e.msg.sender)
-        || hasRole(SPECIALIST_ROLE(),e.msg.sender)
         || hasRole(ROLLOVER_MANAGER(),e.msg.sender)
         || hasRole(ROLLOVER_TARGET_AUCTIONEER_ROLE(),e.msg.sender)
-        || hasRole(INITIALIZER_ROLE(),e.msg.sender);
+        || hasRole(INITIALIZER_ROLE(),e.msg.sender) 
+        || servicerAccessController.verifyMintExposureAccess(e, e.msg.sender);
 }
 
 rule onlyRoleCanCallStorage(method f, calldataarg args, env e) filtered {
@@ -64,8 +68,8 @@ rule onlyRoleCanCallStorage(method f, calldataarg args, env e) filtered {
         || hasRole(AUCTIONEER(),e.msg.sender)
         || hasRole(COLLATERAL_MANAGER(),e.msg.sender)
         || hasRole(DEVOPS_ROLE(),e.msg.sender)
-        || hasRole(SPECIALIST_ROLE(),e.msg.sender)
         || hasRole(ROLLOVER_MANAGER(),e.msg.sender)
         || hasRole(ROLLOVER_TARGET_AUCTIONEER_ROLE(),e.msg.sender)
-        || hasRole(INITIALIZER_ROLE(),e.msg.sender);
+        || hasRole(INITIALIZER_ROLE(),e.msg.sender)
+        || servicerAccessController.verifyMintExposureAccess(e, e.msg.sender);
 }

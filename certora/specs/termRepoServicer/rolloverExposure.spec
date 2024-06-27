@@ -1,3 +1,4 @@
+using TermController as rolloverExposureController;
 using TermRepoLocker as rolloverExposureLocker;
 using TermRepoRolloverManager as rolloverExposureRolloverManager;
 using TermRepoCollateralManagerHarness as rolloverExposureRepaymentCollateralManager;
@@ -34,6 +35,7 @@ methods {
     function DummyERC20A.allowance(address,address) external returns(uint256) envfree;
     function DummyERC20A.balanceOf(address) external returns(uint256) envfree;
     function DummyERC20A.totalSupply() external returns(uint256) envfree;
+
 }
 
 rule openExposureOnRolloverNewIntegrity(env e) {
@@ -50,6 +52,7 @@ rule openExposureOnRolloverNewIntegrity(env e) {
     require(rolloverExposureLocker != previousTermRepoLocker);
     require(rolloverExposureLocker != 100); // Protecting locker from using treasury address;
     require(previousTermRepoLocker != 100); // Protecting previous locker from using treasury address;
+    require(e.msg.sender != 0); // Protecting from zero address
 
     mathint balanceBefore = getBorrowerRepurchaseObligation(borrower);
     mathint tokenBalanceTermRepoLockerBefore = rolloverExposureToken.balanceOf(rolloverExposureLocker);

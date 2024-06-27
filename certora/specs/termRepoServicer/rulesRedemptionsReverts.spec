@@ -1,10 +1,8 @@
 import "../methods/erc20Methods.spec";
 import "../methods/emitMethods.spec";
-import "../common/isTermContractPaired.spec";
-import "../complexity.spec";
-import "./accessRoles.spec";
-import "./rolloverExposure.spec";
+import "./redemptions.spec";
 import "./stateVariables.spec";
+
 
 methods {
     function upgradeToAndCall(address,bytes) external => NONDET DELETE;
@@ -26,8 +24,8 @@ methods {
     // function _.transferTokenToWallet(address,address,uint256) external => DISPATCHER(true);
 
     // TermController
-    function TermController.getTreasuryAddress() external returns (address) => ALWAYS(100);
-    function TermController.getProtocolReserveAddress() external returns (address) => ALWAYS(100);
+    function _.getTreasuryAddress() external => ALWAYS(100);
+    function _.getProtocolReserveAddress() external => ALWAYS(100);
 
 
     // // TermRepoRolloverManager
@@ -56,29 +54,4 @@ function divCVL(uint256 x, uint256 y) returns uint256 {
 
 use invariant totalOutstandingRepurchaseExposureIsSumOfRepurchases;
 
-
-// Correctness of the `isTermContractPaired` field.
-use rule pairTermContractsSucceedsWhenNotPaired;
-use rule pairTermContractsRevertsWhenAlreadyPaired;
-rule onlyPairTermContractsChangesIsTermContractPaired(
-    env e,
-    method f,
-    calldataarg args
-) filtered { f ->
-    !f.isView &&
-    f.contract == currentContract &&
-    f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,string).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
-    f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector
-} {
-    onlyPairTermContractsChangesIsTermContractPairedRule(e, f, args);
-}
-
-use rule onlyRoleCanCallRevert;
-use rule onlyRoleCanCallStorage;
-
-use rule openExposureOnRolloverNewIntegrity;
-use rule openExposureOnRolloverNewDoesNotAffectThirdParty;
-use rule closeExposureOnRolloverExistingIntegrity;
-use rule closeExposureOnRolloverExistingDoesNotAffectThirdParty;
+use rule redemptionsRevertConditions;

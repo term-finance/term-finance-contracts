@@ -6,7 +6,6 @@ using TermRepoToken as mintingRepoToken;
 using DummyERC20A as mintingToken;
 
 methods {
-    function SPECIALIST_ROLE() external returns (bytes32) envfree;
     function collateralBalance(address,uint256) external returns (uint256) envfree;
     function endOfRepurchaseWindow() external returns (uint256) envfree;
     function getBorrowerRepurchaseObligation(address) external returns (uint256) envfree;
@@ -46,6 +45,8 @@ methods {
     function DummyERC20A.allowance(address,address) external returns(uint256) envfree;
     function DummyERC20A.balanceOf(address) external returns(uint256) envfree;
     function DummyERC20A.totalSupply() external returns(uint256) envfree;
+
+    function TermController.verifyMintExposureAccess(address) external returns (bool) envfree;
 }
 
 
@@ -188,7 +189,7 @@ rule mintOpenExposureRevertConditions(env e) {
     require(mintingCollateralManager.encumberedCollateralBalance(mintingToken) + collateralAmounts[0] <= max_uint256 );
     require(mintingCollateralManager.getCollateralBalance(e.msg.sender, mintingToken) + collateralAmounts[0] <= max_uint256);
     bool payable = e.msg.value > 0;
-    bool callerNotSpecialist = !hasRole(SPECIALIST_ROLE(), e.msg.sender);
+    bool callerNotSpecialist = !mintingController.verifyMintExposureAccess(e.msg.sender);
     bool noMinterRole = !mintingRepoToken.hasRole(mintingRepoToken.MINTER_ROLE(), currentContract);
     bool noServicerRoleToCollatManager = !mintingCollateralManager.hasRole(mintingCollateralManager.SERVICER_ROLE(), currentContract);
     bool borrowerNotEnoughCollateralBalance = mintingToken.balanceOf(e.msg.sender) < collateralAmounts[0];

@@ -60,5 +60,4 @@ use rule burnCollapseExposureIntegrity;
 use rule burnCollapseExposureDoesNotAffectThirdParty;
 
 use rule mintOpenExposureMonotonicBehavior;
-use rule mintOpenExposureIntegrity;
 use rule mintOpenExposureDoesNotAffectThirdParty;
