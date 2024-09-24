@@ -311,7 +311,7 @@ rule lockBidsRevertConditions(
 
   // support for 2 collateral tokens
   TermAuctionBidLockerHarness.TermAuctionBid existingBid = harnessGetInternalBids(bidSubmissions[0].id);
-  require(existingBid.amount == 0 => existingBid.collateralTokens[0] == 0 && existingBid.collateralTokens[1] == 0); // nonexistent bid will not have existing collateral due to minimum bid requirement.
+  require(existingBid.amount == 0 => existingBid.collateralAmounts[0] == 0 && existingBid.collateralAmounts[1] == 0); // nonexistent bid will not have existing collateral due to minimum bid requirement.
   require(existingBid.collateralTokens[0] == lockingAuctionCollateralTokenOne);
   require(existingBid.collateralTokens[1] == lockingAuctionCollateralTokenTwo);
   require existingBid.collateralTokens.length == 2;
@@ -543,7 +543,7 @@ rule lockBidsWithReferralRevertConditions(
 
   // support for 2 collateral tokens
   TermAuctionBidLockerHarness.TermAuctionBid existingBid = harnessGetInternalBids(bidSubmissions[0].id);
-  require(existingBid.amount == 0 => existingBid.collateralTokens[0] == 0 && existingBid.collateralTokens[1] == 0); // nonexistent bid will not have existing collateral due to minimum bid requirement.
+  require(existingBid.amount == 0 => existingBid.collateralAmounts[0] == 0 && existingBid.collateralAmounts[1] == 0); // nonexistent bid will not have existing collateral due to minimum bid requirement.
   require(existingBid.collateralTokens[0] == lockingAuctionCollateralTokenOne);
   require(existingBid.collateralTokens[1] == lockingAuctionCollateralTokenTwo);
   require existingBid.collateralTokens.length == 2;
@@ -716,7 +716,7 @@ rule lockRolloverBidRevertConditions(
 ) {
   bool lockingPaused = lockingPaused(); // LockingPaused
   bool auctionNotOpen = e.block.timestamp > revealTime(); // AuctionNotOpen
-  bool nonExistentBid = harnessGetInternalBids(bid.id).amount == 0 && bid.amount == 0; // NonExistentBid
+  bool nonExistentBid = harnessGetInternalBids(bid.id).amount == 0; // NonExistentBid
   bool maxBidCountReached = bid.amount != 0 && bidCount() >= MAX_BID_COUNT(); // MaxBidCountReached
   bool nonRolloverBid = bid.amount != 0 && !bid.isRollover; // NonRolloverBid
   bool bidAmountTooLow = bid.amount != 0 && bid.amount < minimumTenderAmount(); // BidAmountTooLow
@@ -724,7 +724,7 @@ rule lockRolloverBidRevertConditions(
 
   bool isExpectedToRevert = lockingPaused || auctionNotOpen || nonExistentBid || maxBidCountReached || nonRolloverBid || bidAmountTooLow || invalidPurchaseToken;
 
-  lockRolloverBid(e, bid);
+  lockRolloverBid@withrevert(e, bid);
 
   assert lastReverted == isExpectedToRevert,
     "lockRolloverBid should revert when one of the revert conditions is reached";
