@@ -1,0 +1,141 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "TestMockTermController",
+  "sourceName": "contracts/test/TestMockTermController.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "approvedVaults",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "contractAddress",
+          "type": "address"
+        }
+      ],
+      "name": "isFactoryDeployed",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "contractAddress",
+          "type": "address"
+        }
+      ],
+      "name": "isTermApproved",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "contractAddress",
+          "type": "address"
+        }
+      ],
+      "name": "isTermDeployed",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "factory",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "deployed",
+          "type": "bool"
+        }
+      ],
+      "name": "setFactoryDeployed",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "term",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "deployed",
+          "type": "bool"
+        }
+      ],
+      "name": "setTermDeployed",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "vault",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "approved",
+          "type": "bool"
+        }
+      ],
+      "name": "setVaultApproval",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608080604052346100165761026a908161001c8239f35b600080fdfe604060808152600436101561001357600080fd5b600090813560e01c80631b9b0742146101ac578063335f4c761461016f5780637f365d9414610142578063af7a060c14610118578063e7a75458146100e8578063e7e4b8db146100ab5763e81cf1171461006c57600080fd5b346100a75760203660031901126100a75760209160ff9082906001600160a01b036100956101d9565b16815280855220541690519015158152f35b5080fd5b50346100a75760203660031901126100a75760209160ff9082906001600160a01b036100d56101d9565b1681526001855220541690519015158152f35b50346100a757610115906100fb366101f4565b6001600160a01b0390911684526001602052908320610223565b80f35b50346100a75760203660031901126100a75760209160ff9082906001600160a01b036100956101d9565b50346100a75761011590610155366101f4565b6001600160a01b0390911684526002602052908320610223565b50346100a75760203660031901126100a75760209160ff9082906001600160a01b036101996101d9565b1681526002855220541690519015158152f35b50346100a757610115906101bf366101f4565b6001600160a01b0390911684526020849052908320610223565b600435906001600160a01b03821682036101ef57565b600080fd5b60409060031901126101ef576004356001600160a01b03811681036101ef579060243580151581036101ef5790565b9060ff80198354169115151617905556fea264697066735822122075fcfc6697d3735471e42b07603b86f81e2a4c7549f4d75333e2478c3ba36a9264736f6c63430008160033",
+  "deployedBytecode": "0x604060808152600436101561001357600080fd5b600090813560e01c80631b9b0742146101ac578063335f4c761461016f5780637f365d9414610142578063af7a060c14610118578063e7a75458146100e8578063e7e4b8db146100ab5763e81cf1171461006c57600080fd5b346100a75760203660031901126100a75760209160ff9082906001600160a01b036100956101d9565b16815280855220541690519015158152f35b5080fd5b50346100a75760203660031901126100a75760209160ff9082906001600160a01b036100d56101d9565b1681526001855220541690519015158152f35b50346100a757610115906100fb366101f4565b6001600160a01b0390911684526001602052908320610223565b80f35b50346100a75760203660031901126100a75760209160ff9082906001600160a01b036100956101d9565b50346100a75761011590610155366101f4565b6001600160a01b0390911684526002602052908320610223565b50346100a75760203660031901126100a75760209160ff9082906001600160a01b036101996101d9565b1681526002855220541690519015158152f35b50346100a757610115906101bf366101f4565b6001600160a01b0390911684526020849052908320610223565b600435906001600160a01b03821682036101ef57565b600080fd5b60409060031901126101ef576004356001600160a01b03811681036101ef579060243580151581036101ef5790565b9060ff80198354169115151617905556fea264697066735822122075fcfc6697d3735471e42b07603b86f81e2a4c7549f4d75333e2478c3ba36a9264736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

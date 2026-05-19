@@ -1,4 +1,3 @@
-import "../methods/erc20Methods.spec";
 import "../methods/emitMethods.spec";
 
 methods {
@@ -13,7 +12,6 @@ rule onlyRoleCanCallRevert(method f, calldataarg args, env e) filtered {
     f -> !f.isView 
     && f.selector != sig:initialize(string,string,uint256,uint256,uint256,address,address,uint256).selector
     && f.selector != sig:upgradeToAndCall(address,bytes).selector
-    && f.selector != sig:upgradeTo(address).selector
     && f.selector != sig:grantRole(bytes32,address).selector
     && f.selector != sig:renounceRole(bytes32,address).selector
     && f.selector != sig:revokeRole(bytes32,address).selector
@@ -32,7 +30,6 @@ rule onlyRoleCanCallStorage(method f, calldataarg args, env e) filtered {
     f -> !f.isView 
     && f.selector != sig:initialize(string,string,uint256,uint256,uint256,address,address,uint256).selector
     && f.selector != sig:upgradeToAndCall(address,bytes).selector
-    && f.selector != sig:upgradeTo(address).selector
     && f.selector != sig:grantRole(bytes32,address).selector
     && f.selector != sig:renounceRole(bytes32,address).selector
     && f.selector != sig:revokeRole(bytes32,address).selector

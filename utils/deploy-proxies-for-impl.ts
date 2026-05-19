@@ -1,10 +1,16 @@
-import { Contract, ContractFactory, Signer } from "ethers";
+import {
+  BaseContract,
+  Contract,
+  ContractFactory,
+  ContractTransactionResponse,
+  Signer,
+  formatEther,
+  formatUnits,
+} from "ethers";
 import ERC1967Proxy from "./artifacts/ERC1967Proxy.json";
-import { formatEther, formatUnits } from "ethers/lib/utils";
-import { TransactionResponse } from "@ethersproject/abstract-provider";
 
 export const checkDeploymentTxn = async (
-  deploymentTxn: TransactionResponse | null | undefined,
+  deploymentTxn: ContractTransactionResponse | null | undefined,
   contractAddress: string,
   confirmations = 3,
 ) => {
@@ -25,13 +31,15 @@ export const checkDeploymentTxn = async (
   };
 };
 
-export const deployContractUUPSProxyBeacon = async (
+export const deployContractUUPSProxyBeacon = async <
+  T extends BaseContract = Contract,
+>(
   contract: ContractFactory,
   contractName: string,
   proxyImpl: string,
   wallet: Signer,
   initializationArgs: any[],
-): Promise<Contract> => {
+): Promise<T> => {
   const confirmations = 3;
 
   const walletAddr = await wallet.getAddress();
@@ -54,7 +62,7 @@ export const deployContractUUPSProxyBeacon = async (
   const proxyAddress = await proxy.getAddress();
   const { receipt: proxyReceipt, deploymentTxn: proxyDeploymentTxn } =
     await checkDeploymentTxn(
-      proxy.deployTransaction,
+      proxy.deploymentTransaction(),
       proxyAddress,
       confirmations,
     );
@@ -66,10 +74,10 @@ export const deployContractUUPSProxyBeacon = async (
       {
         transaction: proxyDeploymentTxn.hash,
         transactionFeesETH: formatEther(
-          proxyReceipt.gasUsed.mul(proxyReceipt.effectiveGasPrice),
+          proxyReceipt.gasUsed * proxyReceipt.gasPrice,
         ),
         gasUsed: proxyReceipt.gasUsed.toString(),
-        gasPriceGWEI: formatUnits(proxyReceipt.effectiveGasPrice, "gwei"),
+        gasPriceGWEI: formatUnits(proxyReceipt.gasPrice, "gwei"),
       },
     ],
   };
@@ -77,5 +85,5 @@ export const deployContractUUPSProxyBeacon = async (
   console.log("Proxy deployed");
   console.log(JSON.stringify(state));
 
-  return proxy;
+  return proxy as T;
 };

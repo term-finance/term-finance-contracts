@@ -1,0 +1,20 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "devopsWallet_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "adminWallet_",
+        "type": "address"
+      }
+    ],
+    "name": "initDiamond",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

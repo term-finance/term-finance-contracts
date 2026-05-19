@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 /// @notice ITermRepoCollateralManagerEvents is an interface that defines all events emitted by Term Repo Collateral Manager.
 interface ITermRepoRolloverManagerEvents {

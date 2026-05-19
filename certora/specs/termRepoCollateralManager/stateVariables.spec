@@ -88,7 +88,6 @@ rule lockerCollateralTokenBalanceGreaterThanCollateralLedgerBalance(
     !f.isView  && 
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector && 
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:journalBidCollateralToCollateralManager(address,address[],uint256[]).selector && 
     f.selector != sig:auctionLockCollateral(address,address,uint256).selector &&
     f.selector != sig:auctionUnlockCollateral(address,address,uint256).selector &&
@@ -121,8 +120,7 @@ rule onlyAllowedMethodsMayChangeEncumberedCollateralBalances(
 ) filtered { f ->
     !f.isView  && 
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector && 
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector
 } {
     uint256 encumberedCollateralBalanceBefore = encumberedCollateralBalance(token);
     f(e, args);
@@ -152,8 +150,7 @@ rule noMethodsChangeTermRepoId(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector 
 } {
     bytes32 termRepoIdBefore = termRepoId();
     f(e, args);
@@ -170,8 +167,7 @@ rule noMethodsChangeNumOfAcceptedCollateralTokens(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector 
 } {
     uint8 numOfAcceptedCollateralTokensBefore = numOfAcceptedCollateralTokens();
     f(e, args);
@@ -188,9 +184,7 @@ rule noMethodsChangeDeMinimisMarginThreshold(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
-} {
+    f.selector != sig:upgradeToAndCall(address,bytes).selector } {
     uint256 deMinimisMarginThresholdBefore = deMinimisMarginThreshold();
     f(e, args);
     uint256 deMinimisMarginThresholdAfter = deMinimisMarginThreshold();
@@ -206,8 +200,7 @@ rule noMethodsChangeLiquidateDamagesDueToProtocol(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector 
 } {
     uint256 liquidateDamagesDueToProtocolBefore = liquidatedDamagesDueToProtocol();
     f(e, args);
@@ -224,8 +217,7 @@ rule noMethodsChangeNetExposureCapOnLiquidation(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector 
 } {
     uint256 netExposureCapOnLiquidationBefore = netExposureCapOnLiquidation();
     f(e, args);
@@ -242,8 +234,7 @@ rule noMethodsChangePurchaseToken(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector 
 } {
     address purchaseTokenBefore = purchaseToken();
     f(e, args);
@@ -261,7 +252,6 @@ rule onlyAllowedMethodsChangeTermContracts(
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,address).selector
 } {
     address servicerBefore = termRepoServicerAddress();
@@ -296,8 +286,7 @@ rule noMethodsChangeMaintenanceCollateralRatios(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector 
 } {
     uint256 maintenanceCollateralRatioBefore = maintenanceCollateralRatios(token);
     f(e, args);
@@ -315,8 +304,7 @@ rule noMethodsChangeInitialCollateralRatios(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector 
 } {
     uint256 initialCollateralRatioBefore = initialCollateralRatios(token);
     f(e, args);
@@ -334,8 +322,7 @@ rule noMethodsChangeLiquidatedDamages(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector
 } {
     uint256 liquidatedDamagesBefore = liquidatedDamages(token);
     f(e, args);
@@ -354,7 +341,6 @@ rule onlyAllowedMethodsChangeLockedCollateralLedger(
 ) filtered { f ->
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:mintOpenExposureLockCollateral(address,address,uint256).selector &&
     f.selector != sig:acceptRolloverCollateral(address,address,uint256).selector &&
     f.selector != sig:unlockCollateralOnRepurchase(address).selector && 

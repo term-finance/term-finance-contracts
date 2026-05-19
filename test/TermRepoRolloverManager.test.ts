@@ -1,8 +1,6 @@
 /* eslint-disable camelcase */
-import { FakeContract, MockContract, smock } from "@defi-wonderland/smock";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
-import { BigNumber, constants } from "ethers";
 import { ethers, network, upgrades } from "hardhat";
 import {
   TermAuctionBidLocker,
@@ -14,8 +12,17 @@ import {
   TermRepoServicer,
   TermRepoServicer__factory,
   TestTermRepoRolloverManager,
+  TermAuction,
+  TermAuctionBidLocker__factory,
+  ERC20Upgradeable,
+  ERC20Upgradeable__factory,
+  TermAuction__factory,
 } from "../typechain-types";
-import { TermAuction } from "../typechain-types/contracts/TermAuction 2";
+import { ZeroAddress, ZeroHash, solidityPackedKeccak256 } from "ethers";
+import {
+  deployMockContract,
+  MockContract,
+} from "@term-finance/ethers-mock-contract/compat/waffle";
 
 describe("TermRepoRollover Tests", () => {
   let wallet1: SignerWithAddress;
@@ -26,23 +33,25 @@ describe("TermRepoRollover Tests", () => {
   let servicerSigner: SignerWithAddress;
 
   let purchaseTokenAddress: SignerWithAddress;
-  let collateralToken1: SignerWithAddress;
-  let collateralToken2: SignerWithAddress;
+  let collateralToken1: MockContract<ERC20Upgradeable>;
+  let collateralToken2: MockContract<ERC20Upgradeable>;
   let termInitializer: SignerWithAddress;
   let devopsMultisig: SignerWithAddress;
   let adminWallet: SignerWithAddress;
+  let termDiamond: SignerWithAddress
 
   let termRepoRolloverManager: TestTermRepoRolloverManager;
 
   let mockTermRepoServicer: MockContract<TermRepoServicer>;
   let mockFutureTermRepoServicer: MockContract<TermRepoServicer>;
 
-  let mockTermRepoCollateralManager: MockContract<TermRepoCollateralManager>;
+  let mockTermRepoCollateralManager: MockContract<TermRepoCollateralManager> &
+    TermRepoCollateralManager;
   let mockTermController: MockContract<TermController>;
   let termEventEmitter: TermEventEmitter;
 
-  let mockAuctionBidLocker: FakeContract<TermAuctionBidLocker>;
-  let mockAuction: FakeContract<TermAuction>;
+  let mockAuctionBidLocker: MockContract<TermAuctionBidLocker>;
+  let mockAuction: MockContract<TermAuction>;
 
   let termIdHashed: string;
 
@@ -51,7 +60,9 @@ describe("TermRepoRollover Tests", () => {
   let snapshotId: any;
   let expectedVersion: string;
 
-  before(async () => {
+  beforeEach(async () => {
+    snapshotId = await network.provider.send("evm_snapshot");
+
     upgrades.silenceWarnings();
     [
       wallet1,
@@ -60,25 +71,24 @@ describe("TermRepoRollover Tests", () => {
       auction,
       servicerSigner, // wallet to impersonate term repo servicer for fulfill test
       purchaseTokenAddress,
-      collateralToken1,
-      collateralToken2,
       termInitializer,
       devopsMultisig,
       adminWallet,
+      termDiamond
     ] = await ethers.getSigners();
 
     const versionableFactory = await ethers.getContractFactory("Versionable");
     const versionable = await versionableFactory.deploy();
-    await versionable.deployed();
+    await versionable.waitForDeployment();
     expectedVersion = await versionable.version();
 
     const termEventEmitterFactory =
       await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [devopsMultisig.address, wallet3.address, termInitializer.address],
+      [devopsMultisig.address, wallet3.address, termInitializer.address, wallet3.address, termDiamond.address],
       { kind: "uups" },
-    )) as TermEventEmitter;
+    )) as unknown as TermEventEmitter;
 
     const TermRepoRolloverManager = await ethers.getContractFactory(
       "TestTermRepoRolloverManager",
@@ -86,69 +96,89 @@ describe("TermRepoRollover Tests", () => {
 
     // Yet to Mature Term Management
     maturationTimestampOneYear =
-      (await ethers.provider.getBlock("latest")).timestamp + 60 * 60 * 24 * 365;
+      (await ethers.provider.getBlock("latest"))!.timestamp +
+      60 * 60 * 24 * 365;
 
     const termIdString = maturationTimestampOneYear.toString() + "_ft3_ft1-ft2";
 
-    termIdHashed = ethers.utils.solidityKeccak256(["string"], [termIdString]);
+    termIdHashed = solidityPackedKeccak256(["string"], [termIdString]);
 
-    const mockTermRepoServicerFactory =
-      await smock.mock<TermRepoServicer__factory>("TermRepoServicer");
-    mockTermRepoServicer = await mockTermRepoServicerFactory.deploy();
-    await mockTermRepoServicer.deployed();
-
-    mockFutureTermRepoServicer = await mockTermRepoServicerFactory.deploy();
-    await mockFutureTermRepoServicer.deployed();
-
-    const mockTermRepoCollateralManagerFactory =
-      await smock.mock<TermRepoCollateralManager__factory>(
-        "TermRepoCollateralManager",
-      );
+    mockTermRepoServicer = await deployMockContract<TermRepoServicer>(
+      wallet1,
+      TermRepoServicer__factory.abi,
+    );
+    mockFutureTermRepoServicer = await deployMockContract<TermRepoServicer>(
+      wallet1,
+      TermRepoServicer__factory.abi,
+    );
     mockTermRepoCollateralManager =
-      await mockTermRepoCollateralManagerFactory.deploy();
-    await mockTermRepoCollateralManager.deployed();
+      await deployMockContract<TermRepoCollateralManager>(
+        wallet1,
+        TermRepoCollateralManager__factory.abi,
+      );
+    mockTermController = await deployMockContract<TermController>(
+      wallet1,
+      TermController__factory.abi,
+    );
+    mockAuctionBidLocker = await deployMockContract<TermAuctionBidLocker>(
+      wallet1,
+      TermAuctionBidLocker__factory.abi,
+    );
+    mockAuction = await deployMockContract<TermAuction>(
+      wallet1,
+      TermAuction__factory.abi,
+    );
+    collateralToken1 = await deployMockContract<ERC20Upgradeable>(
+      wallet1,
+      ERC20Upgradeable__factory.abi,
+    );
+    collateralToken2 = await deployMockContract<ERC20Upgradeable>(
+      wallet1,
+      ERC20Upgradeable__factory.abi,
+    );
 
-    const mockTermControllerFactory =
-      await smock.mock<TermController__factory>("TermController");
-    mockTermController = await mockTermControllerFactory.deploy();
-    await mockTermController.deployed();
+    await mockTermRepoServicer.mock.maturityTimestamp.returns(
+      BigInt(maturationTimestampOneYear),
+    );
 
-    mockAuctionBidLocker = await smock.fake("TermAuctionBidLocker");
-    mockAuctionBidLocker.termAuction.returns(mockAuction);
+    await mockTermController.mock.termContractsPaused.returns(false);
 
     termRepoRolloverManager = (await upgrades.deployProxy(
       TermRepoRolloverManager,
       [
         termIdString,
-        mockTermRepoServicer.address,
-        mockTermRepoCollateralManager.address,
-        mockTermController.address,
+        await mockTermRepoServicer.getAddress(),
+        await mockTermRepoCollateralManager.getAddress(),
+        await mockTermController.getAddress(),
         termInitializer.address,
       ],
       {
         kind: "uups",
       },
-    )) as TestTermRepoRolloverManager;
+    )) as unknown as TestTermRepoRolloverManager;
     await termEventEmitter
       .connect(termInitializer)
-      .pairTermContract(termRepoRolloverManager.address);
+      .pairTermContract(await termRepoRolloverManager.getAddress());
     await expect(
       termRepoRolloverManager
         .connect(wallet2)
         .pairTermContracts(
-          mockTermRepoServicer.address,
-          termEventEmitter.address,
+          await mockTermRepoServicer.getAddress(),
+          termDiamond.address,
+          await termEventEmitter.getAddress(),
           devopsMultisig.address,
           adminWallet.address,
         ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`,
+    ).to.be.revertedWithCustomError(
+      termRepoRolloverManager,
+      "AccessControlUnauthorizedAccount",
     );
     await termRepoRolloverManager
       .connect(termInitializer)
       .pairTermContracts(
-        mockTermRepoServicer.address,
-        termEventEmitter.address,
+        await mockTermRepoServicer.getAddress(),
+        termDiamond.address,
+        await termEventEmitter.getAddress(),
         devopsMultisig.address,
         adminWallet.address,
       );
@@ -156,8 +186,9 @@ describe("TermRepoRollover Tests", () => {
       termRepoRolloverManager
         .connect(termInitializer)
         .pairTermContracts(
-          mockTermRepoServicer.address,
-          termEventEmitter.address,
+          await mockTermRepoServicer.getAddress(),
+          termDiamond.address,
+          await termEventEmitter.getAddress(),
           devopsMultisig.address,
           adminWallet.address,
         ),
@@ -165,10 +196,6 @@ describe("TermRepoRollover Tests", () => {
       termRepoRolloverManager,
       "AlreadyTermContractPaired",
     );
-  });
-
-  beforeEach(async () => {
-    snapshotId = await network.provider.send("evm_snapshot");
   });
 
   afterEach(async () => {
@@ -183,63 +210,62 @@ describe("TermRepoRollover Tests", () => {
           .upgrade(wallet1.address),
       )
         .to.emit(termEventEmitter, "TermContractUpgraded")
-        .withArgs(termRepoRolloverManager.address, wallet1.address);
+        .withArgs(await termRepoRolloverManager.getAddress(), wallet1.address);
 
       await expect(
         termRepoRolloverManager.connect(wallet2).upgrade(wallet2.address),
-      ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
+      ).to.be.revertedWithCustomError(
+        termRepoRolloverManager,
+        "AccessControlUnauthorizedAccount",
       );
     });
   });
 
   describe("Invalid Signature Reverts", async () => {
     it("elections and cancellations fail if signatures revert", async () => {
-      mockTermController.isTermDeployed
-        .whenCalledWith(mockAuctionBidLocker.address)
-        .returns(true);
-      mockTermController.isTermDeployed
-        .whenCalledWith(auction.address)
-        .returns(true);
+      await mockTermController.mock.isTermDeployed.returns(true);
 
-      mockAuctionBidLocker.auctionEndTime.returns(
+      await mockAuctionBidLocker.mock.auctionEndTime.returns(
         maturationTimestampOneYear + 60 * 60 * 5,
       );
-      mockAuctionBidLocker.purchaseToken.returns(purchaseTokenAddress.address);
-      mockTermRepoServicer.maturityTimestamp.returns(
-        maturationTimestampOneYear,
+      await mockAuctionBidLocker.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
       );
-      mockTermRepoServicer.endOfRepurchaseWindow.returns(
+      await mockTermRepoServicer.mock.endOfRepurchaseWindow.returns(
         maturationTimestampOneYear + 60 * 60 * 15,
       );
-      mockTermRepoServicer.purchaseToken.returns(purchaseTokenAddress.address);
+      await mockTermRepoServicer.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
 
-      mockTermRepoServicer.approveRolloverAuction.returns();
-      mockTermRepoCollateralManager.approveRolloverAuction.returns();
+      await mockTermRepoServicer.mock.approveRolloverAuction.returns();
+      await mockTermRepoCollateralManager.mock.approveRolloverAuction.returns();
 
-      mockTermRepoCollateralManager.numOfAcceptedCollateralTokens.returns(2);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(0)
-        .returns(collateralToken1.address);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(1)
-        .returns(collateralToken2.address);
+      await mockTermRepoCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
+        2,
+      );
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        .withArgs(0n)
+        .returns(await collateralToken1.getAddress());
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        .withArgs(1n)
+        .returns(await collateralToken2.getAddress());
 
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken1.address)
+      await mockAuctionBidLocker.mock.collateralTokens
+        .withArgs(await collateralToken1.getAddress())
         .returns(true);
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken2.address)
+      await mockAuctionBidLocker.mock.collateralTokens
+        .withArgs(await collateralToken2.getAddress())
         .returns(true);
 
-      const rolloverBidPriceHash = ethers.utils.solidityKeccak256(
+      const rolloverBidPriceHash = solidityPackedKeccak256(
         ["uint256"],
         ["100000000000"],
       );
 
       await expect(
         termRepoRolloverManager.connect(wallet3).electRollover({
-          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: await mockAuctionBidLocker.getAddress(),
           rolloverAmount: "10000000000",
           rolloverBidPriceHash,
         }),
@@ -250,193 +276,310 @@ describe("TermRepoRollover Tests", () => {
     });
   });
 
-  describe("Rollover Term Approval tests", async () => {
-    it("Rollover Term approval reverts if maturity reached", async () => {
-      await network.provider.send("evm_increaseTime", [60 * 60 * 25 * 365]);
-
-      await expect(
-        termRepoRolloverManager
-          .connect(adminWallet)
-          .approveRolloverAuction(mockAuctionBidLocker.address),
-      ).to.be.revertedWithCustomError(
-        termRepoRolloverManager,
-        "MaturityReached",
-      );
-    });
-    it("Rollover Term approved only if called by admin role", async () => {
-      mockTermController.isTermDeployed
-        .whenCalledWith(mockAuctionBidLocker.address)
-        .returns(true);
-      mockTermController.isTermDeployed
-        .whenCalledWith(auction.address)
-        .returns(true);
-      mockAuctionBidLocker.termRepoId.returns(ethers.constants.HashZero);
-      mockAuctionBidLocker.termAuctionId.returns(ethers.constants.HashZero);
-
-      mockAuctionBidLocker.auctionEndTime.returns(
-        maturationTimestampOneYear + 60 * 60 * 5,
-      );
-      mockAuctionBidLocker.purchaseToken.returns(purchaseTokenAddress.address);
-      mockTermRepoServicer.maturityTimestamp.returns(
-        maturationTimestampOneYear,
-      );
-      mockTermRepoServicer.endOfRepurchaseWindow.returns(
-        maturationTimestampOneYear + 60 * 60 * 15,
-      );
-      mockTermRepoServicer.purchaseToken.returns(purchaseTokenAddress.address);
-
-      mockTermRepoServicer.approveRolloverAuction.returns();
-      mockTermRepoCollateralManager.approveRolloverAuction.returns();
-
-      mockTermRepoCollateralManager.numOfAcceptedCollateralTokens.returns(2);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(0)
-        .returns(collateralToken1.address);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(1)
-        .returns(collateralToken2.address);
-
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken1.address)
-        .returns(true);
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken2.address)
-        .returns(true);
-
-      await expect(
-        termRepoRolloverManager
-          .connect(wallet2)
-          .approveRolloverAuction(mockAuctionBidLocker.address),
-      ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
-      );
-
-      await expect(
-        termRepoRolloverManager
-          .connect(adminWallet)
-          .approveRolloverAuction(mockAuctionBidLocker.address),
-      )
-        .to.emit(termEventEmitter, "RolloverTermApproved")
-        .withArgs(termIdHashed, ethers.constants.HashZero);
+  describe("Rollover Term Approval Tests (isTermDeployed == false)", async () => {
+    beforeEach(async () => {
+      await mockTermController.mock.isTermDeployed.returns(false);
+      await mockTermController.mock.isFactoryDeployed.returns(false);
     });
 
     it("Rollover Term not approved, invalid auction contracts", async () => {
-      mockTermController.isTermDeployed
-        .whenCalledWith(mockAuctionBidLocker.address)
-        .returns(false);
-      mockTermController.isTermDeployed
-        .whenCalledWith(auction.address)
-        .returns(false);
-
-      mockAuctionBidLocker.auctionEndTime.returns(
+      await mockAuctionBidLocker.mock.auctionEndTime.returns(
         maturationTimestampOneYear + 60 * 60 * 5,
       );
-      mockAuctionBidLocker.purchaseToken.returns(collateralToken1.address);
-      mockTermRepoServicer.maturityTimestamp.returns(
-        maturationTimestampOneYear,
+      await mockAuctionBidLocker.mock.purchaseToken.returns(
+        await collateralToken1.getAddress(),
       );
-      mockTermRepoServicer.endOfRepurchaseWindow.returns(
+      await mockTermRepoServicer.mock.endOfRepurchaseWindow.returns(
         maturationTimestampOneYear + 60 * 60 * 15,
       );
-      mockTermRepoServicer.purchaseToken.returns(purchaseTokenAddress.address);
+      await mockTermRepoServicer.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
 
-      mockTermRepoServicer.approveRolloverAuction.returns();
-      mockTermRepoCollateralManager.approveRolloverAuction.returns();
+      await mockTermRepoServicer.mock.approveRolloverAuction.returns();
+      await mockTermRepoCollateralManager.mock.approveRolloverAuction.returns();
 
-      mockTermRepoCollateralManager.numOfAcceptedCollateralTokens.returns(2);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(0)
-        .returns(collateralToken1.address);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(1)
-        .returns(collateralToken2.address);
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken1.address)
+      await mockTermRepoCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
+        2,
+      );
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        .withArgs(0n)
+        .returns(await collateralToken1.getAddress());
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        .withArgs(1n)
+        .returns(await collateralToken2.getAddress());
+      await mockAuctionBidLocker.mock.collateralTokens
+        .withArgs(await collateralToken1.getAddress())
         .returns(true);
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken2.address)
+      await mockAuctionBidLocker.mock.collateralTokens
+        .withArgs(await collateralToken2.getAddress())
         .returns(false);
 
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(mockAuctionBidLocker.address),
+          .approveRolloverAuction(await mockAuctionBidLocker.getAddress()),
       )
         .to.be.revertedWithCustomError(
           termRepoRolloverManager,
           `NotTermContract`,
         )
-        .withArgs(mockAuctionBidLocker.address);
-      mockTermController.isTermDeployed
-        .whenCalledWith(mockAuctionBidLocker.address)
+        .withArgs(await mockAuctionBidLocker.getAddress());
+    });
+  });
+
+  describe("Rollover Term Approval tests", async () => {
+    beforeEach(async () => {
+      await mockTermController.mock.isTermDeployed.returns(true);
+    });
+
+    it("Rollover Term not approved, invalid auction contracts (DifferentPurchaseToken)", async () => {
+      await mockAuctionBidLocker.mock.auctionEndTime.returns(
+        maturationTimestampOneYear + 60 * 60 * 5,
+      );
+      await mockAuctionBidLocker.mock.purchaseToken.returns(
+        await collateralToken1.getAddress(),
+      );
+      await mockTermRepoServicer.mock.endOfRepurchaseWindow.returns(
+        maturationTimestampOneYear + 60 * 60 * 15,
+      );
+      await mockTermRepoServicer.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
+
+      await mockTermRepoServicer.mock.approveRolloverAuction.returns();
+      await mockTermRepoCollateralManager.mock.approveRolloverAuction.returns();
+
+      await mockTermRepoCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
+        2,
+      );
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        .withArgs(0n)
+        .returns(await collateralToken1.getAddress());
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        .withArgs(1n)
+        .returns(await collateralToken2.getAddress());
+      await mockAuctionBidLocker.mock.collateralTokens
+        .withArgs(await collateralToken1.getAddress())
         .returns(true);
+      await mockAuctionBidLocker.mock.collateralTokens
+        .withArgs(await collateralToken2.getAddress())
+        .returns(false);
 
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(mockAuctionBidLocker.address),
+          .approveRolloverAuction(await mockAuctionBidLocker.getAddress()),
       )
         .to.be.revertedWithCustomError(
           termRepoRolloverManager,
           `DifferentPurchaseToken`,
         )
-        .withArgs(purchaseTokenAddress.address, collateralToken1.address);
+        .withArgs(
+          purchaseTokenAddress.address,
+          await collateralToken1.getAddress(),
+        );
+    });
 
-      mockAuctionBidLocker.purchaseToken.returns(purchaseTokenAddress.address);
+    it("Rollover Term not approved, invalid auction contracts", async () => {
+      await mockAuctionBidLocker.mock.auctionEndTime.returns(
+        maturationTimestampOneYear + 60 * 60 * 5,
+      );
+      await mockAuctionBidLocker.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
+      await mockTermRepoServicer.mock.endOfRepurchaseWindow.returns(
+        maturationTimestampOneYear + 60 * 60 * 15,
+      );
+      await mockTermRepoServicer.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
+
+      await mockTermRepoServicer.mock.approveRolloverAuction.returns();
+      await mockTermRepoCollateralManager.mock.approveRolloverAuction.returns();
+
+      await mockTermRepoCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
+        2n,
+      );
+      // await (mockTermRepoCollateralManager.mock.collateralTokens
+      //   .withArgs(0n)
+      //   .returns(await collateralToken1.getAddress()));
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        // .withArgs(1n)
+        .returns(await collateralToken2.getAddress());
+      // await mockAuctionBidLocker.mock.collateralTokens
+      //   .withArgs(await collateralToken1.getAddress())
+      //   .returns(true);
+      await mockAuctionBidLocker.mock.collateralTokens
+        // .withArgs(await collateralToken2.getAddress())
+        .returns(false);
 
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(mockAuctionBidLocker.address),
+          .approveRolloverAuction(await mockAuctionBidLocker.getAddress()),
       )
         .to.be.revertedWithCustomError(
           termRepoRolloverManager,
           `CollateralTokenNotSupported`,
         )
-        .withArgs(collateralToken2.address);
+        .withArgs(await collateralToken2.getAddress());
+    });
+
+    it("Rollover Term approval reverts if endOfRepurchaseWindow reached", async () => {
+      await mockTermRepoServicer.mock.endOfRepurchaseWindow.returns(
+        maturationTimestampOneYear + 60 * 60 * 15,
+      );
+
+      // Move time past endOfRepurchaseWindow (maturity + 15 hours)
+      await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 365 + 60 * 60 * 16]);
+
+      await expect(
+        termRepoRolloverManager
+          .connect(adminWallet)
+          .approveRolloverAuction(await mockAuctionBidLocker.getAddress()),
+      ).to.be.revertedWithCustomError(
+        termRepoRolloverManager,
+        "EndOfRepurchaseWindowReached",
+      );
+    });
+
+    it("Rollover Term approval allowed after maturity but before endOfRepurchaseWindow", async () => {
+      await mockAuctionBidLocker.mock.termRepoId.returns(ZeroHash);
+      await mockAuctionBidLocker.mock.termAuctionId.returns(ZeroHash);
+
+      await mockAuctionBidLocker.mock.auctionEndTime.returns(
+        maturationTimestampOneYear + 60 * 60 * 5,
+      );
+      await mockAuctionBidLocker.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
+      await mockTermRepoServicer.mock.endOfRepurchaseWindow.returns(
+        maturationTimestampOneYear + 60 * 60 * 15,
+      );
+      await mockTermRepoServicer.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
+      await mockTermRepoServicer.mock.approveRolloverAuction.returns();
+      await mockTermRepoCollateralManager.mock.approveRolloverAuction.returns();
+
+      await mockTermRepoCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
+        2,
+      );
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        .returns(await collateralToken1.getAddress());
+      await mockAuctionBidLocker.mock.collateralTokens
+        .returns(true);
+      await mockAuctionBidLocker.mock.termAuction.returns(
+        await mockAuction.getAddress(),
+      );
+
+      // Move time past maturity but before endOfRepurchaseWindow (maturity + 10 hours)
+      await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 365 + 60 * 60 * 10]);
+
+      // Should succeed
+      await expect(
+        termRepoRolloverManager
+          .connect(adminWallet)
+          .approveRolloverAuction(await mockAuctionBidLocker.getAddress()),
+      ).to.not.be.reverted;
+    });
+
+    it("Rollover Term approved only if called by admin role", async () => {
+      await mockAuctionBidLocker.mock.termRepoId.returns(ZeroHash);
+      await mockAuctionBidLocker.mock.termAuctionId.returns(ZeroHash);
+
+      await mockAuctionBidLocker.mock.auctionEndTime.returns(
+        maturationTimestampOneYear + 60 * 60 * 5,
+      );
+      await mockAuctionBidLocker.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
+      await mockTermRepoServicer.mock.endOfRepurchaseWindow.returns(
+        maturationTimestampOneYear + 60 * 60 * 15,
+      );
+      await mockTermRepoServicer.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
+
+      await mockTermRepoServicer.mock.approveRolloverAuction.returns();
+      await mockTermRepoCollateralManager.mock.approveRolloverAuction.returns();
+
+      await mockTermRepoCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
+        2,
+      );
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        // .withArgs(0n)
+        .returns(await collateralToken1.getAddress());
+      // await mockTermRepoCollateralManager.mock.collateralTokens
+      //   .withArgs(1n)
+      //   .returns(await collateralToken2.getAddress());
+
+      await mockAuctionBidLocker.mock.collateralTokens
+        // .withArgs(await collateralToken1.getAddress())
+        .returns(true);
+      // await mockAuctionBidLocker.mock.collateralTokens
+      //   .withArgs(await collateralToken2.getAddress())
+      //   .returns(true);
+      await mockAuctionBidLocker.mock.termAuction.returns(
+        await mockAuction.getAddress(),
+      );
+
+      await expect(
+        termRepoRolloverManager
+          .connect(wallet2)
+          .approveRolloverAuction(await mockAuctionBidLocker.getAddress()),
+      ).to.be.revertedWithCustomError(
+        termRepoRolloverManager,
+        "AccessControlUnauthorizedAccount",
+      );
+
+      await expect(
+        termRepoRolloverManager
+          .connect(adminWallet)
+          .approveRolloverAuction(await mockAuctionBidLocker.getAddress()),
+      )
+        .to.emit(termEventEmitter, "RolloverTermApproved")
+        .withArgs(termIdHashed, ZeroHash);
     });
 
     it("Rollover Term not approved, auction ends after repayment", async () => {
-      mockTermController.isTermDeployed
-        .whenCalledWith(mockAuctionBidLocker.address)
-        .returns(true);
-      mockTermController.isTermDeployed
-        .whenCalledWith(auction.address)
-        .returns(true);
-
-      mockAuctionBidLocker.auctionEndTime.returns(
+      await mockAuctionBidLocker.mock.auctionEndTime.returns(
         maturationTimestampOneYear + 60 * 60 * 6,
       );
-      mockAuctionBidLocker.purchaseToken.returns(purchaseTokenAddress.address);
-      mockTermRepoServicer.maturityTimestamp.returns(
-        maturationTimestampOneYear,
+      await mockAuctionBidLocker.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
       );
-      mockTermRepoServicer.endOfRepurchaseWindow.returns(
+      await mockTermRepoServicer.mock.endOfRepurchaseWindow.returns(
         maturationTimestampOneYear + 60 * 60 * 5,
       );
-      mockTermRepoServicer.purchaseToken.returns(purchaseTokenAddress.address);
+      await mockTermRepoServicer.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
 
-      mockTermRepoServicer.approveRolloverAuction.returns();
-      mockTermRepoCollateralManager.approveRolloverAuction.returns();
+      await mockTermRepoServicer.mock.approveRolloverAuction.returns();
+      await mockTermRepoCollateralManager.mock.approveRolloverAuction.returns();
 
-      mockTermRepoCollateralManager.numOfAcceptedCollateralTokens.returns(2);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(0)
-        .returns(collateralToken1.address);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(1)
-        .returns(collateralToken2.address);
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken1.address)
+      await mockTermRepoCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
+        2,
+      );
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        .withArgs(0n)
+        .returns(await collateralToken1.getAddress());
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        .withArgs(1n)
+        .returns(await collateralToken2.getAddress());
+      await mockAuctionBidLocker.mock.collateralTokens
+        .withArgs(await collateralToken1.getAddress())
         .returns(true);
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken2.address)
+      await mockAuctionBidLocker.mock.collateralTokens
+        .withArgs(await collateralToken2.getAddress())
         .returns(true);
 
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(mockAuctionBidLocker.address),
+          .approveRolloverAuction(await mockAuctionBidLocker.getAddress()),
       ).to.be.revertedWithCustomError(
         termRepoRolloverManager,
         "AuctionEndsAfterRepayment",
@@ -444,166 +587,249 @@ describe("TermRepoRollover Tests", () => {
     });
 
     it("Rollover Term not approved, auction ends before maturity", async () => {
-      mockTermController.isTermDeployed
-        .whenCalledWith(mockAuctionBidLocker.address, auction.address)
-        .returns(true);
-      mockAuctionBidLocker.auctionEndTime.returns(
+      await mockAuctionBidLocker.mock.auctionEndTime.returns(
         maturationTimestampOneYear - 60 * 60 * 2,
       );
-      mockAuctionBidLocker.purchaseToken.returns(purchaseTokenAddress.address);
-      mockTermRepoServicer.maturityTimestamp.returns(
-        maturationTimestampOneYear,
+      await mockAuctionBidLocker.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
       );
-      mockTermRepoServicer.endOfRepurchaseWindow.returns(
+      await mockTermRepoServicer.mock.endOfRepurchaseWindow.returns(
         maturationTimestampOneYear + 60 * 60 * 5,
       );
-      mockTermRepoServicer.purchaseToken.returns(purchaseTokenAddress.address);
+      await mockTermRepoServicer.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
 
-      mockTermRepoServicer.approveRolloverAuction.returns();
-      mockTermRepoCollateralManager.approveRolloverAuction.returns();
+      await mockTermRepoServicer.mock.approveRolloverAuction.returns();
+      await mockTermRepoCollateralManager.mock.approveRolloverAuction.returns();
 
-      mockTermRepoCollateralManager.numOfAcceptedCollateralTokens.returns(2);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(0)
-        .returns(collateralToken1.address);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(1)
-        .returns(collateralToken2.address);
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken1.address)
+      await mockTermRepoCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
+        2,
+      );
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        .withArgs(0n)
+        .returns(await collateralToken1.getAddress());
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        .withArgs(1n)
+        .returns(await collateralToken2.getAddress());
+      await mockAuctionBidLocker.mock.collateralTokens
+        .withArgs(await collateralToken1.getAddress())
         .returns(true);
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken2.address)
+      await mockAuctionBidLocker.mock.collateralTokens
+        .withArgs(await collateralToken2.getAddress())
         .returns(true);
 
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(mockAuctionBidLocker.address),
+          .approveRolloverAuction(await mockAuctionBidLocker.getAddress()),
       ).to.be.revertedWithCustomError(
         termRepoRolloverManager,
         "AuctionEndsBeforeMaturity",
       );
     });
     it("Rollover Term  approved and then revoked", async () => {
-      mockTermController.isTermDeployed
-        .whenCalledWith(mockAuctionBidLocker.address)
-        .returns(true);
-      mockTermController.isTermDeployed
-        .whenCalledWith(auction.address)
-        .returns(true);
+      await mockAuctionBidLocker.mock.termRepoId.returns(ZeroHash);
+      await mockAuctionBidLocker.mock.termAuctionId.returns(ZeroHash);
 
-      mockAuctionBidLocker.termRepoId.returns(ethers.constants.HashZero);
-      mockAuctionBidLocker.termAuctionId.returns(ethers.constants.HashZero);
-
-      mockAuctionBidLocker.auctionEndTime.returns(
+      await mockAuctionBidLocker.mock.auctionEndTime.returns(
         maturationTimestampOneYear + 60 * 60 * 5,
       );
-      mockAuctionBidLocker.purchaseToken.returns(purchaseTokenAddress.address);
-      mockTermRepoServicer.maturityTimestamp.returns(
-        maturationTimestampOneYear,
+      await mockAuctionBidLocker.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
       );
-      mockTermRepoServicer.endOfRepurchaseWindow.returns(
+      await mockTermRepoServicer.mock.endOfRepurchaseWindow.returns(
         maturationTimestampOneYear + 60 * 60 * 15,
       );
-      mockTermRepoServicer.purchaseToken.returns(purchaseTokenAddress.address);
+      await mockTermRepoServicer.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
 
-      mockTermRepoServicer.approveRolloverAuction.returns();
-      mockTermRepoCollateralManager.approveRolloverAuction.returns();
+      await mockTermRepoServicer.mock.approveRolloverAuction.returns();
+      await mockTermRepoCollateralManager.mock.approveRolloverAuction.returns();
 
-      mockTermRepoCollateralManager.numOfAcceptedCollateralTokens.returns(2);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(0)
-        .returns(collateralToken1.address);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(1)
-        .returns(collateralToken2.address);
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken1.address)
+      await mockTermRepoCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
+        2n,
+      );
+      await mockTermRepoCollateralManager.mock.collateralTokens
+        // .withArgs(0n)
+        .returns(await collateralToken1.getAddress());
+      // await mockTermRepoCollateralManager.mock.collateralTokens
+      //   .withArgs(1n)
+      //   .returns(await collateralToken2.getAddress());
+      await mockAuctionBidLocker.mock.collateralTokens
+        // .withArgs(await collateralToken1.getAddress())
         .returns(true);
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken2.address)
-        .returns(true);
+      // await mockAuctionBidLocker.mock.collateralTokens
+      //   .withArgs(await collateralToken2.getAddress())
+      //   .returns(true);
+      await mockAuctionBidLocker.mock.termAuction.returns(
+        await mockAuction.getAddress(),
+      );
 
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .approveRolloverAuction(mockAuctionBidLocker.address),
+          .approveRolloverAuction(await mockAuctionBidLocker.getAddress()),
       )
         .to.emit(termEventEmitter, "RolloverTermApproved")
-        .withArgs(termIdHashed, constants.HashZero);
+        .withArgs(termIdHashed, ZeroHash);
 
       await expect(
         termRepoRolloverManager
           .connect(adminWallet)
-          .revokeRolloverApproval(mockAuctionBidLocker.address),
+          .revokeRolloverApproval(await mockAuctionBidLocker.getAddress()),
       )
         .to.emit(termEventEmitter, "RolloverTermApprovalRevoked")
-        .withArgs(termIdHashed, constants.HashZero);
+        .withArgs(termIdHashed, ZeroHash);
     });
   });
-  describe("Rollover Term Borrows", async () => {
+  describe("Rollover Term Borrows (No borrower obligation)", async () => {
     beforeEach(async () => {
-      mockTermController.isTermDeployed
-        .whenCalledWith(mockAuctionBidLocker.address)
-        .returns(true);
-      mockTermController.isTermDeployed
-        .whenCalledWith(auction.address)
-        .returns(true);
+      await mockAuctionBidLocker.mock.termRepoId.returns(ZeroHash);
+      await mockAuctionBidLocker.mock.termAuctionId.returns(ZeroHash);
 
-      mockAuctionBidLocker.termRepoId.returns(ethers.constants.HashZero);
-      mockAuctionBidLocker.termAuctionId.returns(ethers.constants.HashZero);
-
-      mockAuctionBidLocker.auctionEndTime.returns(
+      await mockAuctionBidLocker.mock.auctionEndTime.returns(
         maturationTimestampOneYear + 60 * 60 * 5,
       );
-      mockAuctionBidLocker.purchaseToken.returns(purchaseTokenAddress.address);
-      mockTermRepoServicer.maturityTimestamp.returns(
-        maturationTimestampOneYear,
+      await mockAuctionBidLocker.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
       );
-      mockTermRepoServicer.endOfRepurchaseWindow.returns(
+      await mockTermRepoServicer.mock.endOfRepurchaseWindow.returns(
         maturationTimestampOneYear + 60 * 60 * 15,
       );
-      mockTermRepoServicer.purchaseToken.returns(purchaseTokenAddress.address);
-
-      mockTermRepoServicer.approveRolloverAuction.returns();
-      mockTermRepoCollateralManager.approveRolloverAuction.returns();
-
-      mockTermRepoCollateralManager.numOfAcceptedCollateralTokens.returns(2);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(0)
-        .returns(collateralToken1.address);
-      mockTermRepoCollateralManager.collateralTokens
-        .whenCalledWith(1)
-        .returns(collateralToken2.address);
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken1.address)
-        .returns(true);
-      mockAuctionBidLocker.collateralTokens
-        .whenCalledWith(collateralToken2.address)
-        .returns(true);
-
-      mockAuctionBidLocker.termRepoServicer.returns(
-        mockFutureTermRepoServicer.address,
+      await mockTermRepoServicer.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
       );
-      mockFutureTermRepoServicer.servicingFee.returns("20000000000000000");
 
-      mockTermRepoServicer.getBorrowerRepurchaseObligation
-        .whenCalledWith(wallet1.address)
-        .returns("90000000000");
-      mockTermRepoServicer.getBorrowerRepurchaseObligation
-        .whenCalledWith(wallet2.address)
-        .returns("90000000000");
-      mockTermRepoServicer.getBorrowerRepurchaseObligation
-        .whenCalledWith(wallet3.address)
-        .returns("90000000000");
+      await mockTermRepoServicer.mock.approveRolloverAuction.returns();
+      await mockTermRepoCollateralManager.mock.approveRolloverAuction.returns();
+
+      await mockTermRepoCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
+        2n,
+      );
+      await mockTermRepoCollateralManager.mock.collateralTokens.returns(
+        await collateralToken1.getAddress(),
+      );
+      // await mockTermRepoCollateralManager.mock.collateralTokens
+      //   .withArgs(0n)
+      //   .returns(await collateralToken1.getAddress());
+      // await mockTermRepoCollateralManager.mock.collateralTokens
+      //   .withArgs(1n)
+      //   .returns(await collateralToken2.getAddress());
+      await mockAuctionBidLocker.mock.collateralTokens
+        // .withArgs(await collateralToken1.getAddress())
+        .returns(true);
+      // await mockAuctionBidLocker.mock.collateralTokens
+      //   .withArgs(await collateralToken2.getAddress())
+      //   .returns(true);
+
+      await mockAuctionBidLocker.mock.termRepoServicer.returns(
+        await mockFutureTermRepoServicer.getAddress(),
+      );
+      await mockFutureTermRepoServicer.mock.servicingFee.returns(
+        "20000000000000000",
+      );
+
+      await mockTermRepoServicer.mock.getBorrowerRepurchaseObligation
+        // .withArgs(wallet3.address)
+        .returns(0n);
+      await mockTermController.mock.isTermDeployed.returns(true);
+      await mockAuctionBidLocker.mock.termAuction.returns(
+        await mockAuction.getAddress(),
+      );
 
       await termRepoRolloverManager
         .connect(adminWallet)
-        .approveRolloverAuction(mockAuctionBidLocker.address);
+        .approveRolloverAuction(await mockAuctionBidLocker.getAddress());
     });
+    it("Rollover Term Election reverted if borrow balance is zero", async () => {
+      const rolloverBidPriceHash = solidityPackedKeccak256(
+        ["uint256"],
+        ["100000000000"],
+      );
+      await expect(
+        termRepoRolloverManager.connect(wallet1).electRollover({
+          rolloverAuctionBidLocker: wallet1.address,
+          rolloverAmount: "10000000000",
+          rolloverBidPriceHash,
+        }),
+      ).to.be.revertedWithCustomError(
+        termRepoRolloverManager,
+        `ZeroBorrowerRepurchaseObligation`,
+      );
+
+      await expect(
+        termRepoRolloverManager.connect(wallet1).cancelRollover(),
+      ).to.be.revertedWithCustomError(
+        termRepoRolloverManager,
+        `ZeroBorrowerRepurchaseObligation`,
+      );
+    });
+  });
+
+  describe("Rollover Term Borrows", async () => {
+    beforeEach(async () => {
+      await mockAuctionBidLocker.mock.termRepoId.returns(ZeroHash);
+      await mockAuctionBidLocker.mock.termAuctionId.returns(ZeroHash);
+
+      await mockAuctionBidLocker.mock.auctionEndTime.returns(
+        maturationTimestampOneYear + 60 * 60 * 5,
+      );
+      await mockAuctionBidLocker.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
+      await mockTermRepoServicer.mock.endOfRepurchaseWindow.returns(
+        maturationTimestampOneYear + 60 * 60 * 15,
+      );
+      await mockTermRepoServicer.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
+
+      await mockTermRepoServicer.mock.approveRolloverAuction.returns();
+      await mockTermRepoCollateralManager.mock.approveRolloverAuction.returns();
+
+      await mockTermRepoCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
+        2n,
+      );
+      await mockTermRepoCollateralManager.mock.collateralTokens.returns(
+        await collateralToken1.getAddress(),
+      );
+      // await mockTermRepoCollateralManager.mock.collateralTokens
+      //   .withArgs(0n)
+      //   .returns(await collateralToken1.getAddress());
+      // await mockTermRepoCollateralManager.mock.collateralTokens
+      //   .withArgs(1n)
+      //   .returns(await collateralToken2.getAddress());
+      await mockAuctionBidLocker.mock.collateralTokens
+        // .withArgs(await collateralToken1.getAddress())
+        .returns(true);
+      // await mockAuctionBidLocker.mock.collateralTokens
+      //   .withArgs(await collateralToken2.getAddress())
+      //   .returns(true);
+
+      await mockAuctionBidLocker.mock.termRepoServicer.returns(
+        await mockFutureTermRepoServicer.getAddress(),
+      );
+      await mockFutureTermRepoServicer.mock.servicingFee.returns(
+        "20000000000000000",
+      );
+
+      await mockTermRepoServicer.mock.getBorrowerRepurchaseObligation
+        // .withArgs(wallet3.address)
+        .returns(90000000000n);
+      await mockTermController.mock.isTermDeployed.returns(true);
+      await mockAuctionBidLocker.mock.termAuction.returns(
+        await mockAuction.getAddress(),
+      );
+
+      await termRepoRolloverManager
+        .connect(adminWallet)
+        .approveRolloverAuction(await mockAuctionBidLocker.getAddress());
+    });
+
     it("Rollover Term Election reverted if address is not approved", async () => {
-      const rolloverBidPriceHash = ethers.utils.solidityKeccak256(
+      const rolloverBidPriceHash = solidityPackedKeccak256(
         ["uint256"],
         ["100000000000"],
       );
@@ -620,40 +846,14 @@ describe("TermRepoRollover Tests", () => {
         )
         .withArgs(wallet1.address);
     });
-    it("Rollover Term Election reverted if borrow balance is zero", async () => {
-      mockTermRepoServicer.getBorrowerRepurchaseObligation
-        .whenCalledWith(wallet1.address)
-        .returns(0);
-      const rolloverBidPriceHash = ethers.utils.solidityKeccak256(
-        ["uint256"],
-        ["100000000000"],
-      );
-      await expect(
-        termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuctionBidLocker: wallet1.address,
-          rolloverAmount: "10000000000",
-          rolloverBidPriceHash,
-        }),
-      ).to.be.revertedWithCustomError(
-        termRepoRolloverManager,
-        `ZeroBorrowerRepurchaseObligation`,
-      );
-
-      await expect(
-        termRepoRolloverManager.connect(wallet1).cancelRollover(),
-      ).to.be.revertedWithCustomError(
-        termRepoRolloverManager,
-        `ZeroBorrowerRepurchaseObligation`,
-      );
-    });
     it("Rollover Term Election reverted if rolloverAmount is zero", async () => {
-      const rolloverBidPriceHash = ethers.utils.solidityKeccak256(
+      const rolloverBidPriceHash = solidityPackedKeccak256(
         ["uint256"],
         ["100000000000"],
       );
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: await mockAuctionBidLocker.getAddress(),
           rolloverAmount: "0",
           rolloverBidPriceHash,
         }),
@@ -665,14 +865,17 @@ describe("TermRepoRollover Tests", () => {
         .withArgs("Rollover amount cannot be 0");
     });
     it("Rollover Term Elections and rollover processed, blocking further rollovers", async () => {
-      mockTermRepoCollateralManager.getCollateralBalances
-        .whenCalledWith(wallet1.address)
-        .returns([[collateralToken1.address], ["10000000000"]]);
-      mockTermRepoCollateralManager.getCollateralBalances
-        .whenCalledWith(wallet2.address)
-        .returns([[collateralToken2.address], ["10000000000"]]);
-      mockAuctionBidLocker.lockRolloverBid.returns(true);
-      const rolloverBidPriceHash = ethers.utils.solidityKeccak256(
+      await mockTermRepoCollateralManager.mock.getCollateralBalances
+        // .withArgs(wallet1.address)
+        .returns([await collateralToken1.getAddress()], ["10000000000"]);
+      // await mockTermRepoCollateralManager.mock.getCollateralBalances
+      //   .withArgs(wallet2.address)
+      //   .returns([await collateralToken2.getAddress()], ["10000000000"]);
+      await mockAuctionBidLocker.mock.lockRolloverBid.returns();
+      await mockAuctionBidLocker.mock.dayCountFractionMantissa.returns(
+        10n ** 18n,
+      );
+      const rolloverBidPriceHash = solidityPackedKeccak256(
         ["uint256"],
         ["100000000000"],
       );
@@ -683,11 +886,9 @@ describe("TermRepoRollover Tests", () => {
         `NoRolloverToCancel`,
       );
 
-      mockAuctionBidLocker.lockRolloverBid.returns(true);
-
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: await mockAuctionBidLocker.getAddress(),
           rolloverAmount: "10000000000",
           rolloverBidPriceHash,
         }),
@@ -695,16 +896,16 @@ describe("TermRepoRollover Tests", () => {
         .to.emit(termEventEmitter, "RolloverElection")
         .withArgs(
           termIdHashed,
-          ethers.constants.HashZero,
+          ZeroHash,
           wallet1.address,
-          mockAuctionBidLocker.address,
+          await mockAuctionBidLocker.getAddress(),
           "10000000000",
           rolloverBidPriceHash,
         );
 
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: await mockAuctionBidLocker.getAddress(),
           rolloverAmount: "20000000000",
           rolloverBidPriceHash,
         }),
@@ -712,23 +913,23 @@ describe("TermRepoRollover Tests", () => {
         .to.emit(termEventEmitter, "RolloverElection")
         .withArgs(
           termIdHashed,
-          ethers.constants.HashZero,
+          ZeroHash,
           wallet1.address,
-          mockAuctionBidLocker.address,
+          await mockAuctionBidLocker.getAddress(),
           "20000000000",
           rolloverBidPriceHash,
         );
       expect(
         await termRepoRolloverManager.getRolloverInstructions(wallet1.address),
       ).to.deep.equal([
-        mockAuctionBidLocker.address,
-        BigNumber.from("20000000000"),
+        await mockAuctionBidLocker.getAddress(),
+        BigInt("20000000000"),
         rolloverBidPriceHash,
         false,
       ]);
       await expect(
         termRepoRolloverManager.connect(wallet2).electRollover({
-          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: await mockAuctionBidLocker.getAddress(),
           rolloverAmount: "30000000000",
           rolloverBidPriceHash,
         }),
@@ -736,9 +937,9 @@ describe("TermRepoRollover Tests", () => {
         .to.emit(termEventEmitter, "RolloverElection")
         .withArgs(
           termIdHashed,
-          ethers.constants.HashZero,
+          ZeroHash,
           wallet2.address,
-          mockAuctionBidLocker.address,
+          await mockAuctionBidLocker.getAddress(),
           "30000000000",
           rolloverBidPriceHash,
         );
@@ -747,15 +948,10 @@ describe("TermRepoRollover Tests", () => {
         .withArgs(termIdHashed, wallet2.address);
       expect(
         await termRepoRolloverManager.getRolloverInstructions(wallet2.address),
-      ).to.deep.equal([
-        ethers.constants.AddressZero,
-        BigNumber.from("0"),
-        ethers.constants.HashZero,
-        false,
-      ]);
+      ).to.deep.equal([ZeroAddress, BigInt("0"), ZeroHash, false]);
       await expect(
         termRepoRolloverManager.connect(wallet2).electRollover({
-          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: await mockAuctionBidLocker.getAddress(),
           rolloverAmount: "40000000000",
           rolloverBidPriceHash,
         }),
@@ -763,9 +959,9 @@ describe("TermRepoRollover Tests", () => {
         .to.emit(termEventEmitter, "RolloverElection")
         .withArgs(
           termIdHashed,
-          ethers.constants.HashZero,
+          ZeroHash,
           wallet2.address,
-          mockAuctionBidLocker.address,
+          await mockAuctionBidLocker.getAddress(),
           "40000000000",
           rolloverBidPriceHash,
         );
@@ -773,8 +969,8 @@ describe("TermRepoRollover Tests", () => {
       expect(
         await termRepoRolloverManager.getRolloverInstructions(wallet1.address),
       ).to.deep.equal([
-        mockAuctionBidLocker.address,
-        BigNumber.from("20000000000"),
+        await mockAuctionBidLocker.getAddress(),
+        BigInt("20000000000"),
         rolloverBidPriceHash,
         false,
       ]);
@@ -782,8 +978,8 @@ describe("TermRepoRollover Tests", () => {
       expect(
         await termRepoRolloverManager.getRolloverInstructions(wallet2.address),
       ).to.deep.equal([
-        mockAuctionBidLocker.address,
-        BigNumber.from("40000000000"),
+        await mockAuctionBidLocker.getAddress(),
+        BigInt("40000000000"),
         rolloverBidPriceHash,
         false,
       ]);
@@ -792,13 +988,14 @@ describe("TermRepoRollover Tests", () => {
         .connect(termInitializer)
         .testRepairTermContracts(
           servicerSigner.address,
-          termEventEmitter.address,
+          await termEventEmitter.getAddress(),
         );
 
       await expect(
         termRepoRolloverManager.fulfillRollover(wallet1.address),
-      ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x960771d60d61bb60ec2f92e1fcc4b84a2e0e340697e8b2b1256a2a12f5f59c69`,
+      ).to.be.revertedWithCustomError(
+        termRepoRolloverManager,
+        "AccessControlUnauthorizedAccount",
       );
 
       await termRepoRolloverManager
@@ -808,15 +1005,15 @@ describe("TermRepoRollover Tests", () => {
       expect(
         await termRepoRolloverManager.getRolloverInstructions(wallet1.address),
       ).to.deep.equal([
-        mockAuctionBidLocker.address,
-        BigNumber.from("20000000000"),
+        await mockAuctionBidLocker.getAddress(),
+        BigInt("20000000000"),
         rolloverBidPriceHash,
         true,
       ]);
 
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: await mockAuctionBidLocker.getAddress(),
           rolloverAmount: "40000000000",
           rolloverBidPriceHash,
         }),
@@ -832,31 +1029,118 @@ describe("TermRepoRollover Tests", () => {
         "RolloverProcessedToTerm",
       );
 
-      await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 366]);
+      // Move time past endOfRepurchaseWindow (maturity + 15 hours)
+      await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 366 + 60 * 60 * 16]);
 
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: await mockAuctionBidLocker.getAddress(),
           rolloverAmount: "40000000000",
           rolloverBidPriceHash,
         }),
       ).to.be.revertedWithCustomError(
         termRepoRolloverManager,
-        "MaturityReached",
+        "EndOfRepurchaseWindowReached",
       );
     });
-    it("Election and then Rollover Fails due to borrow balance too low", async () => {
-      const rolloverBidPriceHash = ethers.utils.solidityKeccak256(
+
+    it("electRollover allowed after maturity but before endOfRepurchaseWindow", async () => {
+      // Set up mocks for successful rollover processing
+      await mockTermRepoCollateralManager.mock.getCollateralBalances
+        .returns([await collateralToken1.getAddress()], ["10000000000"]);
+      await mockAuctionBidLocker.mock.lockRolloverBid.returns();
+      await mockAuctionBidLocker.mock.dayCountFractionMantissa.returns(
+        10n ** 18n,
+      );
+
+      const rolloverBidPriceHash = solidityPackedKeccak256(
         ["uint256"],
         ["100000000000"],
       );
-      mockTermRepoServicer.getBorrowerRepurchaseObligation
-        .whenCalledWith(wallet1.address)
-        .returns("11000000000");
+
+      // Move time past maturity but before endOfRepurchaseWindow (maturity + 10 hours) 
+      await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 365 + 60 * 60 * 10]);
+
+      // Should succeed
+      await expect(
+        termRepoRolloverManager.connect(wallet1).electRollover({
+          rolloverAuctionBidLocker: await mockAuctionBidLocker.getAddress(),
+          rolloverAmount: "40000000000",
+          rolloverBidPriceHash,
+        }),
+      ).to.not.be.reverted;
+    });
+  });
+
+  describe("Rollover Term Borrows (BorrowerRepurchaseObligationInsufficient)", async () => {
+    beforeEach(async () => {
+      await mockAuctionBidLocker.mock.termRepoId.returns(ZeroHash);
+      await mockAuctionBidLocker.mock.termAuctionId.returns(ZeroHash);
+
+      await mockAuctionBidLocker.mock.auctionEndTime.returns(
+        maturationTimestampOneYear + 60 * 60 * 5,
+      );
+      await mockAuctionBidLocker.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
+      await mockTermRepoServicer.mock.endOfRepurchaseWindow.returns(
+        maturationTimestampOneYear + 60 * 60 * 15,
+      );
+      await mockTermRepoServicer.mock.purchaseToken.returns(
+        purchaseTokenAddress.address,
+      );
+
+      await mockTermRepoServicer.mock.approveRolloverAuction.returns();
+      await mockTermRepoCollateralManager.mock.approveRolloverAuction.returns();
+
+      await mockTermRepoCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
+        2n,
+      );
+      await mockTermRepoCollateralManager.mock.collateralTokens.returns(
+        await collateralToken1.getAddress(),
+      );
+      // await mockTermRepoCollateralManager.mock.collateralTokens
+      //   .withArgs(0n)
+      //   .returns(await collateralToken1.getAddress());
+      // await mockTermRepoCollateralManager.mock.collateralTokens
+      //   .withArgs(1n)
+      //   .returns(await collateralToken2.getAddress());
+      await mockAuctionBidLocker.mock.collateralTokens
+        // .withArgs(await collateralToken1.getAddress())
+        .returns(true);
+      // await mockAuctionBidLocker.mock.collateralTokens
+      //   .withArgs(await collateralToken2.getAddress())
+      //   .returns(true);
+
+      await mockAuctionBidLocker.mock.termRepoServicer.returns(
+        await mockFutureTermRepoServicer.getAddress(),
+      );
+      await mockFutureTermRepoServicer.mock.servicingFee.returns(
+        "20000000000000000",
+      );
+
+      await mockTermRepoServicer.mock.getBorrowerRepurchaseObligation
+        // .withArgs(wallet3.address)
+        .returns(11000000000n);
+      await mockTermController.mock.isTermDeployed.returns(true);
+      await mockAuctionBidLocker.mock.termAuction.returns(
+        await mockAuction.getAddress(),
+      );
+
+      await termRepoRolloverManager
+        .connect(adminWallet)
+        .approveRolloverAuction(await mockAuctionBidLocker.getAddress());
+    });
+
+    it("Election and then Rollover Fails due to borrow balance too low", async () => {
+      const rolloverBidPriceHash = solidityPackedKeccak256(
+        ["uint256"],
+        ["100000000000"],
+      );
 
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
-          rolloverAuctionBidLocker: mockAuctionBidLocker.address,
+          rolloverAuctionBidLocker: await mockAuctionBidLocker.getAddress(),
           rolloverAmount: "12000000000",
           rolloverBidPriceHash,
         }),

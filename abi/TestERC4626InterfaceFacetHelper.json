@@ -1,0 +1,1305 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "AddressEmptyCode",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AssetsMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ECDSAInvalidSignature",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "length",
+        "type": "uint256"
+      }
+    ],
+    "name": "ECDSAInvalidSignatureLength",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ECDSAInvalidSignatureS",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ExpiredSignature",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "IncorrectTargetAsset",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InputOutputTokenCollision",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSignature",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidVaultAsset",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoAssetsReceived",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoSharesReceived",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "bits",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "SafeCastOverflowedUintDowncast",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "SafeERC20FailedOperation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SharesMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnapprovedVault",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnsupportedHookSelector",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnsupportedSelector",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "VaultAlreadyApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "VaultNotApproved",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "taker",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fillAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "SettleLimitBorrowCalled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "taker",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fillAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "SettleLimitLendCalled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "taker",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "fillAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "SwapRepoTokenCalled",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "VAULT_APPROVAL_TYPEHASH",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "WITHDRAW_SELECTOR",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "controller",
+        "type": "address"
+      }
+    ],
+    "name": "addApprovedTermController",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "clearActiveSettlementMaker",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      }
+    ],
+    "name": "depositToVault",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "targetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "additionalCalldata",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ActionHookInput",
+        "name": "input",
+        "type": "tuple"
+      }
+    ],
+    "name": "depositToVaultHook",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "inputToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxInputAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "outputToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minOutputAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes4",
+        "name": "selector",
+        "type": "bytes4"
+      },
+      {
+        "internalType": "address",
+        "name": "targetAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "additionalCalldata",
+        "type": "bytes"
+      }
+    ],
+    "name": "generateActionCalldata",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "expectedInputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "expectedOutputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isDeterministic",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PreviewAction",
+        "name": "",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "selector",
+        "type": "bytes4"
+      },
+      {
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "asset",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "payoutUser",
+        "type": "bool"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "generateCalldata",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "getAssetBalance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "targetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "additionalCalldata",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ActionHookInput",
+        "name": "actionHookInput",
+        "type": "tuple"
+      }
+    ],
+    "name": "previewDeposit",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "expectedInputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "expectedOutputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isDeterministic",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PreviewAction",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "name": "previewMapping",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "targetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "additionalCalldata",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ActionHookInput",
+        "name": "actionHookInput",
+        "type": "tuple"
+      }
+    ],
+    "name": "previewRedeem",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "expectedInputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "expectedOutputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isDeterministic",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PreviewAction",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "shares",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      }
+    ],
+    "name": "redeemFromVault",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "targetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "additionalCalldata",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ActionHookInput",
+        "name": "input",
+        "type": "tuple"
+      }
+    ],
+    "name": "redeemFromVaultHook",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "removeAllTermControllers",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "payoutToUser",
+        "type": "bool"
+      }
+    ],
+    "name": "selfCallWithdrawFromVault",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "maker",
+        "type": "address"
+      }
+    ],
+    "name": "setActiveSettlementMaker",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "separator",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setEip712DomainSeparator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "approved",
+        "type": "bool"
+      }
+    ],
+    "name": "setUserApprovedVault",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "repoServicer",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "purchaseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "collateralAmounts",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "offerRate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "borrowFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "feeRecipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "salt",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes4",
+                "name": "method",
+                "type": "bytes4"
+              },
+              {
+                "internalType": "address",
+                "name": "target",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "additionalCalldata",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct ITermIntent.RetrieveFundsStruct[]",
+            "name": "retrieveFundsList",
+            "type": "tuple[]"
+          }
+        ],
+        "internalType": "struct ITermIntent.LimitBorrowOrder",
+        "name": "",
+        "type": "tuple"
+      },
+      {
+        "internalType": "address",
+        "name": "taker",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fillAmount",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "enum ITermIntent.SignatureType",
+            "name": "sigType",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes",
+            "name": "sigData",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ITermIntent.Signature",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "name": "settleLimitBorrow",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "repoServicer",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "purchaseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "offerRate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "borrowFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "feeRecipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "salt",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes4",
+                "name": "method",
+                "type": "bytes4"
+              },
+              {
+                "internalType": "address",
+                "name": "target",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "additionalCalldata",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct ITermIntent.RetrieveFundsStruct",
+            "name": "retrieveFunds",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct ITermIntent.LimitLendOrder",
+        "name": "",
+        "type": "tuple"
+      },
+      {
+        "internalType": "address",
+        "name": "taker",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fillAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "",
+        "type": "uint256[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "enum ITermIntent.SignatureType",
+            "name": "sigType",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes",
+            "name": "sigData",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ITermIntent.Signature",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "name": "settleLimitLend",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "repoToken",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "makerAssetIsPurchaseToken",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "purchaseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "discountRate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "feeRecipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "salt",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes4",
+                "name": "method",
+                "type": "bytes4"
+              },
+              {
+                "internalType": "address",
+                "name": "target",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "additionalCalldata",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct ITermIntent.RetrieveFundsStruct",
+            "name": "retrieveFunds",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct ITermIntent.RepoTokenSwapOrder",
+        "name": "",
+        "type": "tuple"
+      },
+      {
+        "internalType": "address",
+        "name": "taker",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fillAmount",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "enum ITermIntent.SignatureType",
+            "name": "sigType",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes",
+            "name": "sigData",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ITermIntent.Signature",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "name": "swapRepoToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "deadline",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "sigData",
+        "type": "bytes"
+      }
+    ],
+    "name": "userApproveVault",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      }
+    ],
+    "name": "userRevokeVault",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      },
+      {
+        "internalType": "bool",
+        "name": "payoutToUser",
+        "type": "bool"
+      }
+    ],
+    "name": "withdrawFromVault",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      }
+    ],
+    "name": "withdrawFromVault",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

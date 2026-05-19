@@ -1,0 +1,589 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IPActionMiscV3Events",
+  "sourceName": "@pendle/core-v2/contracts/interfaces/IPAllEventsV3.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "market",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netLpIn",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "netPtFromRemove",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netSyFromRemove",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netPtRedeem",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netSyFromRedeem",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "totalSyOut",
+              "type": "uint256"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct ExitPostExpReturnParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "ExitPostExpToSy",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "market",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netLpIn",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "totalTokenOut",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "netPtFromRemove",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netSyFromRemove",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netPtRedeem",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netSyFromRedeem",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "totalSyOut",
+              "type": "uint256"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct ExitPostExpReturnParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "ExitPostExpToToken",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "market",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netLpIn",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "netPtFromRemove",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netSyFromRemove",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netPyRedeem",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netSyFromRedeem",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netPtSwap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netYtSwap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netSyFromSwap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netSyFee",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "totalSyOut",
+              "type": "uint256"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct ExitPreExpReturnParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "ExitPreExpToSy",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "market",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netLpIn",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "totalTokenOut",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "netPtFromRemove",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netSyFromRemove",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netPyRedeem",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netSyFromRedeem",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netPtSwap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netYtSwap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netSyFromSwap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "netSyFee",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "totalSyOut",
+              "type": "uint256"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct ExitPreExpReturnParams",
+          "name": "params",
+          "type": "tuple"
+        }
+      ],
+      "name": "ExitPreExpToToken",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "YT",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netSyIn",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netPyOut",
+          "type": "uint256"
+        }
+      ],
+      "name": "MintPyFromSy",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "tokenIn",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "YT",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netTokenIn",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netPyOut",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netSyInterm",
+          "type": "uint256"
+        }
+      ],
+      "name": "MintPyFromToken",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "tokenIn",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "SY",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netTokenIn",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netSyOut",
+          "type": "uint256"
+        }
+      ],
+      "name": "MintSyFromToken",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "YT",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netPyIn",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netSyOut",
+          "type": "uint256"
+        }
+      ],
+      "name": "RedeemPyToSy",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "tokenOut",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "YT",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netPyIn",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netTokenOut",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netSyInterm",
+          "type": "uint256"
+        }
+      ],
+      "name": "RedeemPyToToken",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "tokenOut",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "SY",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netSyIn",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "netTokenOut",
+          "type": "uint256"
+        }
+      ],
+      "name": "RedeemSyToToken",
+      "type": "event"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

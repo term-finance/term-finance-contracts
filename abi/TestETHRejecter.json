@@ -1,0 +1,30 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "facet",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "wrappedTokenAddr",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      }
+    ],
+    "name": "callUnwrapETH",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

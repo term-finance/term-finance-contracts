@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "SignedMath",
+  "sourceName": "@openzeppelin/contracts/utils/math/SignedMath.sol",
+  "abi": [],
+  "bytecode": "0x60808060405234601757603a9081601d823930815050f35b600080fdfe600080fdfea26469706673582212209230db4c402c70ca2b5a361c1ba1fab40ad44af904b677f2e8cff25a51a34ba964736f6c63430008160033",
+  "deployedBytecode": "0x600080fdfea26469706673582212209230db4c402c70ca2b5a361c1ba1fab40ad44af904b677f2e8cff25a51a34ba964736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

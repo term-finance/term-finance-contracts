@@ -18,7 +18,6 @@ rule onlyPairTermContractsChangesIsTermContractPaired(
     f.contract == currentContract &&
     f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,string).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:initialize(string,string,uint256,uint256,uint256,address,address,uint256).selector
 } {
     onlyPairTermContractsChangesIsTermContractPairedRule(e, f, args);

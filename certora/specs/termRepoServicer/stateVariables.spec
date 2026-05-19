@@ -82,15 +82,13 @@ invariant totalOutstandingRepurchaseExposureIsSumOfRepurchases()
     to_mathint(totalOutstandingRepurchaseExposure()) == sumOfRepurchases
     filtered { m -> 
         m.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector &&
-        m.selector != sig:upgradeToAndCall(address,bytes).selector &&
-        m.selector != sig:upgradeTo(address).selector
+        m.selector != sig:upgradeToAndCall(address,bytes).selector 
     }
 
 rule onlyAllowedMethodsMayChangeTotalOutstandingRepurchaseExposure(method f, env e) filtered { f ->
     !f.isView  && 
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector && 
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector
 } {
     calldataarg args;
 
@@ -114,8 +112,7 @@ rule totalOutstandingRepurchaseExposureNeverOverflows(env e, method f, calldataa
 rule onlyAllowedMethodsMayChangeTotalRepurchaseCollected(method f, env e) filtered { f ->
     !f.isView  && 
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector && 
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector
 } {
     calldataarg args;
 
@@ -138,8 +135,7 @@ rule totalRepurchaseCollectedNeverOverflows(env e, method f, calldataarg args) f
 rule shortfallHaircutMantissaAlwaysZeroBeforeRedemptionAndLessThanExpScaleAfter(method f, env e) filtered { f ->
     !f.isView  && 
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector && 
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector
 }{
     calldataarg args;
 
@@ -156,7 +152,6 @@ rule totalRepurchaseCollectedLessThanOrEqualToLockerPurchaseTokenBalance(method 
     !f.isView  && 
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector && 
     f.selector != sig:upgradeToAndCall(address,bytes).selector && 
-    f.selector != sig:upgradeTo(address).selector && 
     f.selector != sig:closeExposureOnRolloverExisting(address,uint256).selector &&
     f.selector != sig:openExposureOnRolloverNew(address,uint256,uint256,address,uint256).selector &&
     f.selector != sig:fulfillBid(address,uint256,uint256,address[],uint256[],uint256).selector &&
@@ -185,8 +180,7 @@ rule noMethodsChangeMaturityTimestamp(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector
 } {
     uint256 maturityTimestampBefore = maturityTimestamp();
     f(e, args);
@@ -202,8 +196,7 @@ rule noMethodsChangeEndOfRepurchaseWindow(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector
 } {
     uint256 endOfRepurchaseWindowBefore = endOfRepurchaseWindow();
     f(e, args);
@@ -219,8 +212,7 @@ rule noMethodsChangeRedemptionTimestamp(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector
 } {
     uint256 redemptionTimestampBefore = redemptionTimestamp();
     f(e, args);
@@ -236,8 +228,7 @@ rule noMethodsChangeServicingFee(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector
 } {
     uint256 servicingFeeBefore = servicingFee();
     f(e, args);
@@ -254,7 +245,6 @@ rule onlyAllowedMethodsChangeShortfallHaircutMantissa(
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:redeemTermRepoTokens(address,uint256).selector
 } {
     uint256 shortfallHaircutMantissaBefore = shortfallHaircutMantissa();
@@ -271,8 +261,7 @@ rule noMethodChangesPurchaseToken(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector
 } {
     address purchaseTokenBefore = purchaseToken();
     f(e, args);
@@ -289,7 +278,6 @@ rule onlyAllowedMethodsMayChangeTermContracts(
     !f.isView  && 
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector && 
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,string).selector
 } {
     address termRepoCollateralManagerBefore = termRepoCollateralManager();
@@ -329,7 +317,6 @@ rule onlyAllowedMethodsMayChangeRepurchaseExposureLedger(
     !f.isView  && 
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector && 
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:fulfillBid(address,uint256,uint256,address[],uint256[],uint256).selector &&
     f.selector != sig:openExposureOnRolloverNew(address,uint256,uint256,address,uint256).selector &&
     f.selector != sig:closeExposureOnRolloverExisting(address,uint256).selector &&

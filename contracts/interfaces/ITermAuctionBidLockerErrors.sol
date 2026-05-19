@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermAuctionLockerErrors} from "./ITermAuctionLockerErrors.sol";
 
@@ -13,6 +13,7 @@ interface ITermAuctionBidLockerErrors is ITermAuctionLockerErrors {
     error BidPriceModified(bytes32 id);
     error BidRevealed(bytes32 bidId);
     error CollateralAmountTooLow();
+    error CollateralTokenMismatch(address expected, address actual);
     error GeneratingExistingBid(bytes32 bidId);
     error InvalidPurchaseToken();
     error InvalidTermRepoServicer();

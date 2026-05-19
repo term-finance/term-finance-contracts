@@ -1,0 +1,22 @@
+[
+  {
+    "inputs": [],
+    "name": "FlashloanAlreadyActive",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FlashloanNotActive",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidCaller",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitiator",
+    "type": "error"
+  }
+]

@@ -1,0 +1,142 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "TestMockSwapAggregator",
+  "sourceName": "contracts/test/TestMockSwapAggregator.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "enum SwapType",
+          "name": "swapType",
+          "type": "uint8"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "tokenIn",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amountIn",
+          "type": "uint256"
+        }
+      ],
+      "name": "SwapSingle",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "rateFor",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "tokenIn",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "tokenOut",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rate",
+          "type": "uint256"
+        }
+      ],
+      "name": "setSwap",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "tokenIn",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amountIn",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "enum SwapType",
+              "name": "swapType",
+              "type": "uint8"
+            },
+            {
+              "internalType": "address",
+              "name": "extRouter",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes",
+              "name": "extCalldata",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bool",
+              "name": "needScale",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct SwapData",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "name": "swap",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "tokenOutFor",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608080604052346100165761029b908161001c8239f35b600080fdfe60806040818152600436101561001457600080fd5b600091823560e01c9081632bdb823c14610121575080636251c3f1146100e8578063e20da309146100b15763f02d48cc1461004e57600080fd5b346100ad5760603660031901126100ad5761006761024a565b6001600160a01b0360243581811692908390036100a957168352602083815282842080546001600160a01b031916909217909155600190528120604435905580f35b8480fd5b5080fd5b50346100ad5760203660031901126100ad5760209181906001600160a01b036100d861024a565b1681526001845220549051908152f35b50346100ad5760203660031901126100ad576020916001600160a01b039082908261011161024a565b1681528085522054169051908152f35b9160031991506060368301126102465761013961024a565b916001600160401b03906024359060443590838211610242576080913603011261023e576001600160a01b03938416865260208681528387205460018252848820549195169181810291811591830414171561022a57604486888794670de0b6b3a7640000839563a9059cbb60e01b85523360048601520460248401525af18015610220576101c6578480f35b82913d8411610218575b601f8301601f191685019182118583101761020457528201829003126100ad57518015150361020157388080808480f35b80fd5b634e487b7160e01b86526041600452602486fd5b3d92506101d0565b82513d87823e3d90fd5b634e487b7160e01b87526011600452602487fd5b8580fd5b8780fd5b8380fd5b600435906001600160a01b038216820361026057565b600080fdfea264697066735822122047be779bfdda23bdfe2079b4262bc5553c15231299afd63664c891007c256d9964736f6c63430008160033",
+  "deployedBytecode": "0x60806040818152600436101561001457600080fd5b600091823560e01c9081632bdb823c14610121575080636251c3f1146100e8578063e20da309146100b15763f02d48cc1461004e57600080fd5b346100ad5760603660031901126100ad5761006761024a565b6001600160a01b0360243581811692908390036100a957168352602083815282842080546001600160a01b031916909217909155600190528120604435905580f35b8480fd5b5080fd5b50346100ad5760203660031901126100ad5760209181906001600160a01b036100d861024a565b1681526001845220549051908152f35b50346100ad5760203660031901126100ad576020916001600160a01b039082908261011161024a565b1681528085522054169051908152f35b9160031991506060368301126102465761013961024a565b916001600160401b03906024359060443590838211610242576080913603011261023e576001600160a01b03938416865260208681528387205460018252848820549195169181810291811591830414171561022a57604486888794670de0b6b3a7640000839563a9059cbb60e01b85523360048601520460248401525af18015610220576101c6578480f35b82913d8411610218575b601f8301601f191685019182118583101761020457528201829003126100ad57518015150361020157388080808480f35b80fd5b634e487b7160e01b86526041600452602486fd5b3d92506101d0565b82513d87823e3d90fd5b634e487b7160e01b87526011600452602487fd5b8580fd5b8780fd5b8380fd5b600435906001600160a01b038216820361026057565b600080fdfea264697066735822122047be779bfdda23bdfe2079b4262bc5553c15231299afd63664c891007c256d9964736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

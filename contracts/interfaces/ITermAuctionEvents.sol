@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 /// @title ITermAuctionEvents defines all events emitted by the TermAuctionContract.
 interface ITermAuctionEvents {
@@ -14,6 +14,7 @@ interface ITermAuctionEvents {
         bytes32 termAuctionId,
         address termAuction,
         uint256 auctionEndTime,
+        address deployerWallet,
         string version
     );
 

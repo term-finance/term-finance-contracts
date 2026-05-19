@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {TermRepoRolloverManager} from "../TermRepoRolloverManager.sol";
 import {ITermEventEmitter} from "../interfaces/ITermEventEmitter.sol";

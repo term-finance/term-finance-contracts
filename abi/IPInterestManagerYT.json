@@ -1,0 +1,39 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountInterestFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "CollectInterestFee",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "userInterest",
+    "outputs": [
+      {
+        "internalType": "uint128",
+        "name": "lastPYIndex",
+        "type": "uint128"
+      },
+      {
+        "internalType": "uint128",
+        "name": "accruedInterest",
+        "type": "uint128"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

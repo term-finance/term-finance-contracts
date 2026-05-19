@@ -26,14 +26,12 @@ methods {
 // functionality 
 definition canIncreaseAllowance(method f) returns bool = 
 	f.selector == sig:approve(address,uint256).selector || 
-    f.selector == sig:increaseAllowance(address,uint256).selector ||
     f.selector == sig:permit(address,address,uint256,uint256,uint8,bytes32,bytes32).selector
 ;
     
 
 definition canDecreaseAllowance(method f) returns bool = 
 	f.selector == sig:approve(address,uint256).selector ||
-    f.selector == sig:decreaseAllowance(address,uint256).selector || 
 	f.selector == sig:transferFrom(address,address,uint256).selector ||
     f.selector == sig:permit(address,address,uint256,uint256,uint8,bytes32,bytes32).selector
 ;
@@ -75,16 +73,14 @@ ghost mathint numberOfChangesOfBalances {
 // having an initial state where Alice initial balance is larger than totalSupply, which 
 // overflows Alice's balance when receiving a transfer. This is not possible unless the contract is deployed into an 
 // already used address (or upgraded from corrupted state).
-// We restrict such behavior by making sure no balance is greater than the sum of balances.
-hook Sload uint256 balance _balances[KEY address addr] {
+hook Sload uint256 balance currentContract.ext_openzeppelin_storage_ERC20_ERC20Storage._balances[KEY address addr] {
     require sumOfBalances >= to_mathint(balance);
 }
 
-hook Sstore _balances[KEY address addr] uint256 newValue (uint256 oldValue) {
+hook Sstore currentContract.ext_openzeppelin_storage_ERC20_ERC20Storage._balances[KEY address addr] uint256 newValue (uint256 oldValue) {
     sumOfBalances = sumOfBalances - oldValue + newValue;
     numberOfChangesOfBalances = numberOfChangesOfBalances + 1;
 }
-
 /*
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ Invariant: totalSupply is the sum of all balances                                                                   │

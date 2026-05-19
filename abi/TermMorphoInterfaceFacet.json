@@ -1,0 +1,1371 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "deployedMorphoPool_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "AddressEmptyCode",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "BorrowedAssetsMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "Expired",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "IncorrectTargetAsset",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InputOutputTokenCollision",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidAssetAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidCollateralAsset",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidLoanToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidMarketId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidMorphoPoolAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidUserAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RepaidAssetsMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "bits",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "SafeCastOverflowedUintDowncast",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "SafeERC20FailedOperation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SelfSupplyNotAllowed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SupplyAmountMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnsupportedHookSelector",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnsupportedSelector",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "marketId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "availableBorrow",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "marketId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "availableFunds",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "marketId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "currentBorrow",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "inputToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxInputAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "outputToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minOutputAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes4",
+        "name": "selector",
+        "type": "bytes4"
+      },
+      {
+        "internalType": "address",
+        "name": "targetAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "additionalCalldata",
+        "type": "bytes"
+      }
+    ],
+    "name": "generateActionCalldata",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "expectedInputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "expectedOutputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isDeterministic",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PreviewAction",
+        "name": "",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "selector",
+        "type": "bytes4"
+      },
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "asset",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "payoutUser",
+        "type": "bool"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "generateCalldata",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "loanToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "oracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "irm",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lltv",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct MarketParams",
+        "name": "marketParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      }
+    ],
+    "name": "morphoBorrow",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "loanToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "oracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "irm",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lltv",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct MarketParams",
+        "name": "marketParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "payoutUser",
+        "type": "bool"
+      }
+    ],
+    "name": "morphoBorrow",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "targetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "additionalCalldata",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ActionHookInput",
+        "name": "input",
+        "type": "tuple"
+      }
+    ],
+    "name": "morphoRefinanceInHook",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "targetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "additionalCalldata",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ActionHookInput",
+        "name": "input",
+        "type": "tuple"
+      }
+    ],
+    "name": "morphoRefinanceOutHook",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "loanToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "oracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "irm",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lltv",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct MarketParams",
+        "name": "marketParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      }
+    ],
+    "name": "morphoRepay",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "loanToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "oracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "irm",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lltv",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct MarketParams",
+        "name": "marketParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      }
+    ],
+    "name": "morphoRepay",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "authorizer",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "authorized",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "isAuthorized",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "nonce",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "deadline",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct Authorization",
+        "name": "authorization",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint8",
+            "name": "v",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "r",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "s",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct Signature",
+        "name": "signature",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bool",
+        "name": "skipRevert",
+        "type": "bool"
+      }
+    ],
+    "name": "morphoSetAuthorizationWithSig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "loanToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "oracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "irm",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lltv",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct MarketParams",
+        "name": "marketParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      }
+    ],
+    "name": "morphoSupply",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "loanToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "oracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "irm",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lltv",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct MarketParams",
+        "name": "marketParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      }
+    ],
+    "name": "morphoSupply",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "loanToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "oracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "irm",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lltv",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct MarketParams",
+        "name": "marketParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      }
+    ],
+    "name": "morphoSupplyCollateral",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "loanToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "oracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "irm",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lltv",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct MarketParams",
+        "name": "marketParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      }
+    ],
+    "name": "morphoSupplyCollateral",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "loanToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "oracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "irm",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lltv",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct MarketParams",
+        "name": "marketParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      }
+    ],
+    "name": "morphoWithdrawCollateral",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "morphoPool",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "loanToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "collateralToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "oracle",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "irm",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "lltv",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct MarketParams",
+        "name": "marketParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assets",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "payoutUser",
+        "type": "bool"
+      }
+    ],
+    "name": "morphoWithdrawCollateral",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "name": "previewMapping",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "targetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "additionalCalldata",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ActionHookInput",
+        "name": "actionHookInput",
+        "type": "tuple"
+      }
+    ],
+    "name": "previewMorphoRefinanceIn",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "expectedInputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "expectedOutputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isDeterministic",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PreviewAction",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "targetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "additionalCalldata",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ActionHookInput",
+        "name": "actionHookInput",
+        "type": "tuple"
+      }
+    ],
+    "name": "previewMorphoRefinanceOut",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "expectedInputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "expectedOutputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isDeterministic",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PreviewAction",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "type": "error",
+    "name": "ERC20InsufficientBalance",
+    "inputs": [
+      {
+        "name": "sender",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "balance",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "needed",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC20InvalidSender",
+    "inputs": [
+      {
+        "name": "sender",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC20InvalidReceiver",
+    "inputs": [
+      {
+        "name": "receiver",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC20InsufficientAllowance",
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "allowance",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "needed",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC20InvalidApprover",
+    "inputs": [
+      {
+        "name": "approver",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC20InvalidSpender",
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  }
+]

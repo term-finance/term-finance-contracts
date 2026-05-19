@@ -6,7 +6,7 @@ pragma solidity ^0.6.8;
  */
 contract DummyWeth {
     uint256 t;
-    
+
     mapping(address => uint256) b;
     mapping(address => mapping(address => uint256)) a;
 
@@ -20,11 +20,11 @@ contract DummyWeth {
 
     function add(uint a, uint b) internal pure returns (uint256) {
         uint c = a + b;
-        require (c >= a);
+        require(c >= a);
         return c;
     }
     function sub(uint a, uint b) internal pure returns (uint256) {
-        require (a >= b);
+        require(a >= b);
         return a - b;
     }
 
@@ -36,13 +36,19 @@ contract DummyWeth {
         return b[account];
     }
 
-    function transfer(address recipient, uint256 amount) external returns (bool) {
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) external returns (bool) {
         b[msg.sender] = sub(b[msg.sender], amount);
         b[recipient] = add(b[recipient], amount);
         return true;
     }
 
-    function allowance(address owner, address spender) external view returns (uint256) {
+    function allowance(
+        address owner,
+        address spender
+    ) external view returns (uint256) {
         return a[owner][spender];
     }
 
@@ -61,7 +67,7 @@ contract DummyWeth {
         a[sender][msg.sender] = sub(a[sender][msg.sender], amount);
         return true;
     }
-    
+
     // WETH
     function deposit() external payable {
         // assume succeeds

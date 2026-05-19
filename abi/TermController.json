@@ -5,45 +5,92 @@
     "type": "constructor"
   },
   {
-    "anonymous": false,
+    "inputs": [],
+    "name": "AccessControlBadConfirmation",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
-        "indexed": false,
         "internalType": "address",
-        "name": "previousAdmin",
+        "name": "account",
         "type": "address"
       },
       {
-        "indexed": false,
+        "internalType": "bytes32",
+        "name": "neededRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "AccessControlUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
-        "name": "newAdmin",
+        "name": "target",
         "type": "address"
       }
     ],
-    "name": "AdminChanged",
-    "type": "event"
+    "name": "AddressEmptyCode",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "ERC1967InvalidImplementation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ERC1967NonPayable",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitialization",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotInitializing",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UUPSUnauthorizedCallContext",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "slot",
+        "type": "bytes32"
+      }
+    ],
+    "name": "UUPSUnsupportedProxiableUUID",
+    "type": "error"
   },
   {
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
-        "internalType": "address",
-        "name": "beacon",
-        "type": "address"
-      }
-    ],
-    "name": "BeaconUpgraded",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
         "indexed": false,
-        "internalType": "uint8",
+        "internalType": "uint64",
         "name": "version",
-        "type": "uint8"
+        "type": "uint64"
       }
     ],
     "name": "Initialized",
@@ -242,6 +289,19 @@
   },
   {
     "inputs": [],
+    "name": "FACTORY_DEPLOYER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "INITIALIZER_ROLE",
     "outputs": [
       {
@@ -261,6 +321,19 @@
         "internalType": "bytes32",
         "name": "",
         "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "UPGRADE_INTERFACE_VERSION",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
       }
     ],
     "stateMutability": "view",
@@ -448,6 +521,44 @@
         "type": "address"
       }
     ],
+    "name": "isFactoryDeployed",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "contractAddress",
+        "type": "address"
+      }
+    ],
+    "name": "isTermApproved",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "contractAddress",
+        "type": "address"
+      }
+    ],
     "name": "isTermDeployed",
     "outputs": [
       {
@@ -463,11 +574,37 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "externalContract",
+        "type": "address"
+      }
+    ],
+    "name": "markTermApproved",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "termContract",
         "type": "address"
       }
     ],
     "name": "markTermDeployed",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "factoryDeployedContract",
+        "type": "address"
+      }
+    ],
+    "name": "markTermFactoryDeployed",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -489,11 +626,31 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "factoryDeployer",
+        "type": "address"
+      }
+    ],
+    "name": "pairFactoryDeployer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "initializer",
         "type": "address"
       }
     ],
     "name": "pairInitializer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pauseTermContracts",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -538,12 +695,76 @@
     "inputs": [
       {
         "internalType": "bytes32",
+        "name": "auctionId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "registerAuctionId",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "repoId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "registerRepoId",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "registeredAuctionIds",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "name": "registeredRepoIds",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
         "name": "role",
         "type": "bytes32"
       },
       {
         "internalType": "address",
-        "name": "account",
+        "name": "callerConfirmation",
         "type": "address"
       }
     ],
@@ -603,6 +824,32 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "termContractsPaused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "externalContract",
+        "type": "address"
+      }
+    ],
+    "name": "unmarkTermApproved",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -611,6 +858,26 @@
       }
     ],
     "name": "unmarkTermDeployed",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "factoryDeployedContract",
+        "type": "address"
+      }
+    ],
+    "name": "unmarkTermFactoryDeployed",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unpauseTermContracts",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -655,19 +922,6 @@
       }
     ],
     "name": "updateTreasuryAddress",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newImplementation",
-        "type": "address"
-      }
-    ],
-    "name": "upgradeTo",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermEventEmitter} from "./interfaces/ITermEventEmitter.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -23,6 +23,7 @@ contract TermEventEmitter is
     // = Access Role  ======================================================
     // ========================================================================
 
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant DEVOPS_ROLE = keccak256("DEVOPS_ROLE");
     bytes32 public constant INITIALIZER_ROLE = keccak256("INITIALIZER_ROLE");
     bytes32 public constant TERM_CONTRACT = keccak256("TERM_CONTRACT");
@@ -36,7 +37,9 @@ contract TermEventEmitter is
     function initialize(
         address devopsWallet_,
         address termDelister_,
-        address termInitializer_
+        address termInitializer_,
+        address adminWallet_,
+        address termDiamond_
     ) external initializer {
         UUPSUpgradeable.__UUPSUpgradeable_init();
         AccessControlUpgradeable.__AccessControl_init();
@@ -44,6 +47,14 @@ contract TermEventEmitter is
         _grantRole(DEVOPS_ROLE, devopsWallet_);
         _grantRole(INITIALIZER_ROLE, termInitializer_);
         _grantRole(TERM_DELISTER, termDelister_);
+        _grantRole(ADMIN_ROLE, adminWallet_);
+        _grantRole(TERM_CONTRACT, termDiamond_);
+    }
+
+    function pairTermFactory(
+        address termFactory
+    ) external onlyRole(ADMIN_ROLE) {
+        _grantRole(INITIALIZER_ROLE, termFactory);
     }
 
     function pairTermContract(
@@ -66,6 +77,7 @@ contract TermEventEmitter is
         bytes32 termAuctionId,
         address termAuction,
         uint256 auctionEndTime,
+        address deployerWallet,
         string calldata version
     ) external onlyRole(TERM_CONTRACT) {
         emit TermAuctionInitialized(
@@ -73,6 +85,7 @@ contract TermEventEmitter is
             termAuctionId,
             termAuction,
             auctionEndTime,
+            deployerWallet,
             version
         );
     }
@@ -523,6 +536,7 @@ contract TermEventEmitter is
         uint256 endOfRepurchaseWindow,
         uint256 redemptionTimestamp,
         uint256 servicingFee,
+        address deployerWallet,
         string calldata version
     ) external onlyRole(TERM_CONTRACT) {
         emit TermRepoServicerInitialized(
@@ -533,6 +547,7 @@ contract TermEventEmitter is
             endOfRepurchaseWindow,
             redemptionTimestamp,
             servicingFee,
+            deployerWallet,
             version
         );
     }
@@ -876,6 +891,111 @@ contract TermEventEmitter is
     ) external onlyRole(TERM_CONTRACT) {
         emit TermRepoTokenBurningUnpaused(termRepoId);
     }
+
+    // ========================================================================
+    // = TermIntent Events ====================================================
+    // ========================================================================
+
+    /// @param orderHash The hash of the order that was filled
+    /// @param termRepoId The Term Repo id associated with the intent
+    /// @param purchaseToken The address of the purchase token
+    /// @param maker The address of the maker
+    /// @param taker The address of the taker
+    /// @param makerToken The address of the maker's token
+    /// @param takerToken The address of the taker's token
+    /// @param offerRate The rate of the offer
+    /// @param makerTokenAmountFilled The amount of maker tokens filled
+    /// @param takerTokenAmountFilled The amount of taker tokens filled
+    /// @param proratedBorrowFee The prorated fee for borrow
+    /// @param feeRecipient The address that receives the fees
+    /// @param originalOrderAmount The original purchaseTokenAmount of the maker provided by the Maker
+    /// @param expiry The expiration date of the order
+    /// @param salt The user generated value for order uniqueness and replay protection
+    function emitIntentFilled(
+        bytes32 orderHash,
+        bytes32 termRepoId,
+        address purchaseToken,
+        address maker,
+        address taker,
+        address makerToken,
+        address takerToken,
+        uint256 offerRate,
+        uint256 makerTokenAmountFilled,
+        uint256 takerTokenAmountFilled,
+        uint256 proratedBorrowFee,
+        address feeRecipient,
+        uint256 originalOrderAmount,
+        uint256 expiry,
+        uint256 salt
+    ) external onlyRole(TERM_CONTRACT) {
+        emit IntentFilled(
+            orderHash,
+            termRepoId,
+            purchaseToken,
+            maker,
+            taker,
+            makerToken,
+            takerToken,
+            offerRate,
+            makerTokenAmountFilled,
+            takerTokenAmountFilled,
+            proratedBorrowFee,
+            feeRecipient,
+            originalOrderAmount,
+            expiry,
+            salt
+        );
+    }
+
+    /// @param orderHash The hash of the order that was cancelled
+    function emitIntentCancelled(
+        bytes32 orderHash
+    ) external onlyRole(TERM_CONTRACT) {
+        emit IntentCancelled(orderHash);
+    }
+
+    /// @param orderHash The hash of the order that was filled
+    /// @param swapData The swap data containing all swap details
+    function emitRepoTokenSwapFilled(
+        bytes32 orderHash,
+        RepoTokenSwapData calldata swapData
+    ) external onlyRole(TERM_CONTRACT) {
+        emit RepoTokenSwapFilled(orderHash, swapData);
+    }
+
+    /**
+     * @notice Emits an event for the minimum salt value of a limit order token pair
+     * @dev This function can only be called by contracts with the TERM_CONTRACT role
+     * @param maker The address of the order maker
+     * @param makerToken The address of the token being offered by the maker
+     * @param takerToken The address of the token being requested by the maker
+     * @param minSaltValue The minimum salt value for this token pair
+     */
+    function emitLimitOrderTokenPairMinSaltValue(
+        address maker,
+        address makerToken,
+        address takerToken,
+        uint256 minSaltValue
+    ) external onlyRole(TERM_CONTRACT) {
+        emit LimitOrderTokenPairMinSalt(maker, makerToken, takerToken, minSaltValue);
+    }
+    /**
+     * @notice Emits an event for the minimum salt value of a swap order token pair
+     * @dev This function can only be called by contracts with the TERM_CONTRACT role
+     * @param maker The address of the order maker
+     * @param makerToken The address of the token being offered by the maker
+     * @param takerToken The address of the token being requested by the maker
+     * @param minSaltValue The minimum salt value for this token pair
+     */
+    function emitSwapOrderTokenPairMinSaltValue(
+        address maker,
+        address makerToken,
+        address takerToken,
+        uint256 minSaltValue
+    ) external onlyRole(TERM_CONTRACT) {
+        emit SwapOrderTokenPairMinSalt(maker, makerToken, takerToken, minSaltValue);
+    }
+
 
     // ========================================================================
     // = TermEventEmitter Events ==============================================

@@ -1,0 +1,28 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "DiamondPaused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "DiamondUnpaused",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "pauseDiamond",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unpauseDiamond",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

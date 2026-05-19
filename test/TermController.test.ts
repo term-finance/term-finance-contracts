@@ -1,8 +1,8 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
-import { BigNumber, Contract, constants } from "ethers";
-import { solidityKeccak256 } from "ethers/lib/utils";
+import { ZeroAddress, solidityPackedKeccak256 } from "ethers";
 import { ethers, network, upgrades } from "hardhat";
+import { TermController, TermController__factory } from "../typechain-types";
 
 describe("TermController Tests", () => {
   let ownerAddress: SignerWithAddress;
@@ -19,7 +19,8 @@ describe("TermController Tests", () => {
   let auction: SignerWithAddress;
   let auction2: SignerWithAddress;
 
-  let termController: Contract;
+  let newTermController: TermController;
+  let termController: TermController;
 
   let snapshotId: any;
   let expectedVersion: string;
@@ -45,13 +46,13 @@ describe("TermController Tests", () => {
 
     const versionableFactory = await ethers.getContractFactory("Versionable");
     const versionable = await versionableFactory.deploy();
-    await versionable.deployed();
+    await versionable.waitForDeployment();
     expectedVersion = await versionable.version();
 
     const TermController =
       await ethers.getContractFactory("TestTermController");
 
-    termController = await upgrades.deployProxy(
+    termController = (await upgrades.deployProxy(
       TermController,
       [
         originalTreasuryAddress.address,
@@ -63,7 +64,9 @@ describe("TermController Tests", () => {
       {
         kind: "uups",
       },
-    );
+    )) as unknown as TermController;
+    newTermController =
+      (await TermController.deploy()) as unknown as TermController;
 
     await expect(termController.pairInitializer(potentialTermAddress.address))
       .to.be.reverted;
@@ -83,14 +86,17 @@ describe("TermController Tests", () => {
 
   describe("TermController Upgrades", async () => {
     it("TermController upgrade succeeds with admin and reverted if called by somebody else", async () => {
-      await termController.connect(devopsWallet).upgrade(ownerAddress.address);
+      await termController
+        .connect(devopsWallet)
+        .upgradeToAndCall(await newTermController.getAddress(), "0x");
 
       await expect(
         termController
           .connect(externalAddress)
-          .upgrade(externalAddress.address),
-      ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
+          .upgradeToAndCall(externalAddress.address, "0x"),
+      ).to.be.revertedWithCustomError(
+        termController,
+        "AccessControlUnauthorizedAccount",
       );
     });
   });
@@ -106,7 +112,7 @@ describe("TermController Tests", () => {
           [
             originalTreasuryAddress.address,
             originalProtocolReservesAddress.address,
-            ethers.constants.AddressZero,
+            ZeroAddress,
             devopsWallet.address,
             adminWallet.address,
           ],
@@ -127,7 +133,7 @@ describe("TermController Tests", () => {
             originalTreasuryAddress.address,
             originalProtocolReservesAddress.address,
             controllerAdminWallet.address,
-            ethers.constants.AddressZero,
+            ZeroAddress,
             adminWallet.address,
           ],
           {
@@ -148,7 +154,7 @@ describe("TermController Tests", () => {
             originalProtocolReservesAddress.address,
             controllerAdminWallet.address,
             devopsWallet.address,
-            ethers.constants.AddressZero,
+            ZeroAddress,
           ],
           {
             kind: "uups",
@@ -164,7 +170,7 @@ describe("TermController Tests", () => {
         upgrades.deployProxy(
           TermController,
           [
-            ethers.constants.AddressZero,
+            ZeroAddress,
             originalProtocolReservesAddress.address,
             controllerAdminWallet.address,
             devopsWallet.address,
@@ -185,7 +191,7 @@ describe("TermController Tests", () => {
           TermController,
           [
             originalTreasuryAddress.address,
-            ethers.constants.AddressZero,
+            ZeroAddress,
             controllerAdminWallet.address,
             devopsWallet.address,
             adminWallet.address,
@@ -204,16 +210,18 @@ describe("TermController Tests", () => {
         termController
           .connect(externalAddress)
           .updateTreasuryAddress(externalAddress.address),
-      ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
+      ).to.be.revertedWithCustomError(
+        termController,
+        "AccessControlUnauthorizedAccount",
       );
 
       await expect(
         termController
           .connect(externalAddress)
           .updateProtocolReserveAddress(externalAddress.address),
-      ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
+      ).to.be.revertedWithCustomError(
+        termController,
+        "AccessControlUnauthorizedAccount",
       );
     });
     it("External Addresses cannot add or remove a Term Finance Address", async () => {
@@ -222,16 +230,18 @@ describe("TermController Tests", () => {
         termController
           .connect(externalAddress)
           .markTermDeployed(externalAddress.address),
-      ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x9027349758afcb3649adbc1f090fcd4eb9187cfbbd22483c7d103367d7b50173`,
+      ).to.be.revertedWithCustomError(
+        termController,
+        "AccessControlUnauthorizedAccount",
       );
 
       await expect(
         termController
           .connect(externalAddress)
           .unmarkTermDeployed(externalAddress.address),
-      ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x9027349758afcb3649adbc1f090fcd4eb9187cfbbd22483c7d103367d7b50173`,
+      ).to.be.revertedWithCustomError(
+        termController,
+        "AccessControlUnauthorizedAccount",
       );
     });
     it("Secured update of controller admin", async () => {
@@ -242,8 +252,9 @@ describe("TermController Tests", () => {
             controllerAdminWallet.address,
             externalAddress.address,
           ),
-      ).to.be.revertedWith(
-        `AccessControl: account ${externalAddress.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
+      ).to.be.revertedWithCustomError(
+        termController,
+        "AccessControlUnauthorizedAccount",
       );
     });
   });
@@ -304,7 +315,7 @@ describe("TermController Tests", () => {
         termController
           .connect(devopsWallet)
           .updateControllerAdminWallet(
-            constants.AddressZero,
+            ZeroAddress,
             newProtocolResrvesAddress.address,
           ),
       ).to.be.revertedWith(
@@ -316,7 +327,7 @@ describe("TermController Tests", () => {
           .connect(devopsWallet)
           .updateControllerAdminWallet(
             controllerAdminWallet.address,
-            constants.AddressZero,
+            ZeroAddress,
           ),
       ).to.be.revertedWith(
         "New Controller Admin Wallet cannot be zero address",
@@ -448,11 +459,11 @@ describe("TermController Tests", () => {
 
     await termController.connect(initializer).pairAuction(auction.address);
 
-    const termId = solidityKeccak256(["string"], ["termId"]);
+    const termId = solidityPackedKeccak256(["string"], ["termId"]);
 
-    const auctionId = solidityKeccak256(["string"], ["auctionId"]);
+    const auctionId = solidityPackedKeccak256(["string"], ["auctionId"]);
 
-    const auctionId2 = solidityKeccak256(["string"], ["auctionId2"]);
+    const auctionId2 = solidityPackedKeccak256(["string"], ["auctionId2"]);
 
     await expect(
       termController
@@ -464,8 +475,8 @@ describe("TermController Tests", () => {
       .connect(auction)
       .recordAuctionResult(termId, auctionId, "100");
 
-    const tx = addNewAuctionCompletionTx.wait();
-    const blockNumber = tx.blockNumber;
+    const tx = await addNewAuctionCompletionTx.wait();
+    const blockNumber = tx?.blockNumber!;
     const block = await ethers.provider.getBlock(blockNumber);
 
     await termController.connect(initializer).pairAuction(auction2.address);
@@ -474,39 +485,311 @@ describe("TermController Tests", () => {
       .connect(auction2)
       .recordAuctionResult(termId, auctionId2, "200");
 
-    const tx2 = addNewAuctionCompletionTx2.wait();
+    const tx2 = await addNewAuctionCompletionTx2.wait();
 
     const termAuctionHistory =
       await termController.getTermAuctionResults(termId);
 
-    const termAuctionHistoryJson = JSON.parse(
-      JSON.stringify(termAuctionHistory),
-    );
-
-    const blockNumber2 = tx2.blockNumber;
+    const blockNumber2 = tx2?.blockNumber!;
     const block2 = await ethers.provider.getBlock(blockNumber2);
 
     console.log(block);
     console.log(block2);
 
-    expect(termAuctionHistoryJson).to.deep.eq([
+    expect(termAuctionHistory).to.deep.eq([
       [
-        [
-          auctionId,
-          BigNumber.from("100").toJSON(),
-          BigNumber.from(block.timestamp).toJSON(),
-        ],
-        [
-          auctionId2,
-          BigNumber.from("200").toJSON(),
-          BigNumber.from(block2.timestamp).toJSON(),
-        ],
+        [auctionId, 100n, BigInt(block?.timestamp!)],
+        [auctionId2, 200n, BigInt(block2?.timestamp!)],
       ],
       2,
     ]);
   });
   it("version returns the current contract version", async () => {
     expect(await termController.version()).to.eq(expectedVersion);
+  });
+
+  describe("pairFactoryDeployer", async () => {
+    it("reverts if called by non-admin", async () => {
+      await expect(
+        termController
+          .connect(externalAddress)
+          .pairFactoryDeployer(externalAddress.address),
+      ).to.be.revertedWithCustomError(
+        termController,
+        "AccessControlUnauthorizedAccount",
+      );
+    });
+
+    it("grants FACTORY_DEPLOYER_ROLE allowing markTermFactoryDeployed", async () => {
+      await termController
+        .connect(adminWallet)
+        .pairFactoryDeployer(potentialTermAddress.address);
+
+      await expect(
+        termController
+          .connect(potentialTermAddress)
+          .markTermFactoryDeployed(externalAddress.address),
+      ).to.not.be.reverted;
+    });
+  });
+
+  describe("isFactoryDeployed, markTermFactoryDeployed, unmarkTermFactoryDeployed", async () => {
+    beforeEach(async () => {
+      await termController
+        .connect(adminWallet)
+        .pairFactoryDeployer(potentialTermAddress.address);
+    });
+
+    it("isFactoryDeployed returns false for an unknown address", async () => {
+      expect(
+        await termController.isFactoryDeployed(externalAddress.address),
+      ).to.equal(false);
+    });
+
+    it("markTermFactoryDeployed reverts without FACTORY_DEPLOYER_ROLE", async () => {
+      await expect(
+        termController
+          .connect(externalAddress)
+          .markTermFactoryDeployed(externalAddress.address),
+      ).to.be.revertedWithCustomError(
+        termController,
+        "AccessControlUnauthorizedAccount",
+      );
+    });
+
+    it("markTermFactoryDeployed succeeds and isFactoryDeployed returns true", async () => {
+      await termController
+        .connect(potentialTermAddress)
+        .markTermFactoryDeployed(externalAddress.address);
+
+      expect(
+        await termController.isFactoryDeployed(externalAddress.address),
+      ).to.equal(true);
+    });
+
+    it("markTermFactoryDeployed reverts if address is already marked", async () => {
+      await termController
+        .connect(potentialTermAddress)
+        .markTermFactoryDeployed(externalAddress.address);
+
+      await expect(
+        termController
+          .connect(potentialTermAddress)
+          .markTermFactoryDeployed(externalAddress.address),
+      ).to.be.revertedWith(
+        "Contract is already marked deployed by factory",
+      );
+    });
+
+    it("unmarkTermFactoryDeployed reverts without CONTROLLER_ADMIN_ROLE", async () => {
+      await termController
+        .connect(potentialTermAddress)
+        .markTermFactoryDeployed(externalAddress.address);
+
+      await expect(
+        termController
+          .connect(externalAddress)
+          .unmarkTermFactoryDeployed(externalAddress.address),
+      ).to.be.revertedWithCustomError(
+        termController,
+        "AccessControlUnauthorizedAccount",
+      );
+    });
+
+    it("unmarkTermFactoryDeployed reverts if address is not marked", async () => {
+      await expect(
+        termController
+          .connect(controllerAdminWallet)
+          .unmarkTermFactoryDeployed(externalAddress.address),
+      ).to.be.revertedWith("Contract is not marked deployed by factory");
+    });
+
+    it("unmarkTermFactoryDeployed succeeds and isFactoryDeployed returns false", async () => {
+      await termController
+        .connect(potentialTermAddress)
+        .markTermFactoryDeployed(externalAddress.address);
+
+      await termController
+        .connect(controllerAdminWallet)
+        .unmarkTermFactoryDeployed(externalAddress.address);
+
+      expect(
+        await termController.isFactoryDeployed(externalAddress.address),
+      ).to.equal(false);
+    });
+  });
+
+  describe("isTermApproved, markTermApproved, unmarkTermApproved", async () => {
+    it("isTermApproved returns false for an unknown address", async () => {
+      expect(
+        await termController.isTermApproved(externalAddress.address),
+      ).to.equal(false);
+    });
+
+    it("markTermApproved reverts without ADMIN_ROLE", async () => {
+      await expect(
+        termController
+          .connect(externalAddress)
+          .markTermApproved(externalAddress.address),
+      ).to.be.revertedWithCustomError(
+        termController,
+        "AccessControlUnauthorizedAccount",
+      );
+    });
+
+    it("markTermApproved succeeds and isTermApproved returns true", async () => {
+      await termController
+        .connect(adminWallet)
+        .markTermApproved(externalAddress.address);
+
+      expect(
+        await termController.isTermApproved(externalAddress.address),
+      ).to.equal(true);
+    });
+
+    it("markTermApproved reverts if address is already approved", async () => {
+      await termController
+        .connect(adminWallet)
+        .markTermApproved(externalAddress.address);
+
+      await expect(
+        termController
+          .connect(adminWallet)
+          .markTermApproved(externalAddress.address),
+      ).to.be.revertedWith("Contract is already approved");
+    });
+
+    it("unmarkTermApproved reverts without ADMIN_ROLE", async () => {
+      await termController
+        .connect(adminWallet)
+        .markTermApproved(externalAddress.address);
+
+      await expect(
+        termController
+          .connect(controllerAdminWallet)
+          .unmarkTermApproved(externalAddress.address),
+      ).to.be.revertedWithCustomError(
+        termController,
+        "AccessControlUnauthorizedAccount",
+      );
+    });
+
+    it("unmarkTermApproved reverts if address is not approved", async () => {
+      await expect(
+        termController
+          .connect(adminWallet)
+          .unmarkTermApproved(externalAddress.address),
+      ).to.be.revertedWith("Contract is not approved");
+    });
+
+    it("unmarkTermApproved succeeds and isTermApproved returns false", async () => {
+      await termController
+        .connect(adminWallet)
+        .markTermApproved(externalAddress.address);
+
+      await termController
+        .connect(adminWallet)
+        .unmarkTermApproved(externalAddress.address);
+
+      expect(
+        await termController.isTermApproved(externalAddress.address),
+      ).to.equal(false);
+    });
+  });
+
+  describe("pauseTermContracts and unpauseTermContracts", async () => {
+    it("pauseTermContracts reverts without ADMIN_ROLE", async () => {
+      await expect(
+        termController.connect(externalAddress).pauseTermContracts(),
+      ).to.be.revertedWithCustomError(
+        termController,
+        "AccessControlUnauthorizedAccount",
+      );
+    });
+
+    it("pauseTermContracts sets termContractsPaused to true", async () => {
+      expect(await termController.termContractsPaused()).to.equal(false);
+      await termController.connect(adminWallet).pauseTermContracts();
+      expect(await termController.termContractsPaused()).to.equal(true);
+    });
+
+    it("unpauseTermContracts reverts without ADMIN_ROLE", async () => {
+      await termController.connect(adminWallet).pauseTermContracts();
+      await expect(
+        termController.connect(externalAddress).unpauseTermContracts(),
+      ).to.be.revertedWithCustomError(
+        termController,
+        "AccessControlUnauthorizedAccount",
+      );
+    });
+
+    it("unpauseTermContracts sets termContractsPaused to false", async () => {
+      await termController.connect(adminWallet).pauseTermContracts();
+      expect(await termController.termContractsPaused()).to.equal(true);
+      await termController.connect(adminWallet).unpauseTermContracts();
+      expect(await termController.termContractsPaused()).to.equal(false);
+    });
+  });
+
+  describe("updateControllerAdminWallet missing branch", async () => {
+    it("reverts when oldControllerAdminWallet does not have CONTROLLER_ADMIN_ROLE", async () => {
+      await expect(
+        termController
+          .connect(devopsWallet)
+          .updateControllerAdminWallet(
+            externalAddress.address,
+            newTreasuryAddress.address,
+          ),
+      ).to.be.revertedWith("incorrect old controller admin wallet address");
+    });
+  });
+
+  describe("registerRepoId and registerAuctionId", async () => {
+    beforeEach(async () => {
+      await termController
+        .connect(adminWallet)
+        .pairFactoryDeployer(potentialTermAddress.address);
+    });
+
+    it("registerRepoId reverts when called by unauthorized address", async () => {
+      const repoId = solidityPackedKeccak256(["string"], ["someRepoId"]);
+      await expect(
+        termController.connect(externalAddress).registerRepoId(repoId),
+      ).to.be.revertedWith("Unauthorized");
+    });
+
+    it("registerRepoId succeeds with INITIALIZER_ROLE and sets mapping to true", async () => {
+      const repoId = solidityPackedKeccak256(["string"], ["someRepoId"]);
+      expect(await termController.registeredRepoIds(repoId)).to.equal(false);
+      await termController.connect(initializer).registerRepoId(repoId);
+      expect(await termController.registeredRepoIds(repoId)).to.equal(true);
+    });
+
+    it("registerRepoId succeeds with FACTORY_DEPLOYER_ROLE and sets mapping to true", async () => {
+      const repoId = solidityPackedKeccak256(["string"], ["someRepoId2"]);
+      await termController.connect(potentialTermAddress).registerRepoId(repoId);
+      expect(await termController.registeredRepoIds(repoId)).to.equal(true);
+    });
+
+    it("registerAuctionId reverts when called by unauthorized address", async () => {
+      const auctionId = solidityPackedKeccak256(["string"], ["someAuctionId"]);
+      await expect(
+        termController.connect(externalAddress).registerAuctionId(auctionId),
+      ).to.be.revertedWith("Unauthorized");
+    });
+
+    it("registerAuctionId succeeds with INITIALIZER_ROLE and sets mapping to true", async () => {
+      const auctionId = solidityPackedKeccak256(["string"], ["someAuctionId"]);
+      expect(await termController.registeredAuctionIds(auctionId)).to.equal(false);
+      await termController.connect(initializer).registerAuctionId(auctionId);
+      expect(await termController.registeredAuctionIds(auctionId)).to.equal(true);
+    });
+
+    it("registerAuctionId succeeds with FACTORY_DEPLOYER_ROLE and sets mapping to true", async () => {
+      const auctionId = solidityPackedKeccak256(["string"], ["someAuctionId2"]);
+      await termController.connect(potentialTermAddress).registerAuctionId(auctionId);
+      expect(await termController.registeredAuctionIds(auctionId)).to.equal(true);
+    });
   });
 });
 /* eslint-enable camelcase */

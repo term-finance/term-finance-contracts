@@ -19,6 +19,24 @@
     {
       "inputs": [
         {
+          "internalType": "address",
+          "name": "borrower",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amountToBurn",
+          "type": "uint256"
+        }
+      ],
+      "name": "burnCollapseExposure",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "uint256",
           "name": "amountToBurn",
           "type": "uint256"
@@ -220,6 +238,11 @@
       "inputs": [
         {
           "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
           "name": "offeror",
           "type": "address"
         },
@@ -262,6 +285,73 @@
       ],
       "name": "mintOpenExposure",
       "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "borrower",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "collateralAmounts",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "mintOpenExposure",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "borrower",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "lender",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "purchaseTokenAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "collateralAmounts",
+          "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256",
+          "name": "offerRate",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "isRoutedCollateral",
+          "type": "bool"
+        }
+      ],
+      "name": "mintOpenExposureFromIntent",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
       "stateMutability": "nonpayable",
       "type": "function"
     },
@@ -375,6 +465,37 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "borrower",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "submitRepurchasePayment",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "termController",
+      "outputs": [
+        {
+          "internalType": "contract ITermController",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "termRepoCollateralManager",
       "outputs": [
@@ -382,6 +503,19 @@
           "internalType": "contract ITermRepoCollateralManager",
           "name": "",
           "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "termRepoId",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
         }
       ],
       "stateMutability": "view",
@@ -406,6 +540,19 @@
       "outputs": [
         {
           "internalType": "contract ITermRepoRolloverManager",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "termRepoToken",
+      "outputs": [
+        {
+          "internalType": "contract ITermRepoToken",
           "name": "",
           "type": "address"
         }

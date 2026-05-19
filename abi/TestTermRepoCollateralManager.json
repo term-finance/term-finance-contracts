@@ -1,6 +1,38 @@
 [
   {
     "inputs": [],
+    "name": "AccessControlBadConfirmation",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "neededRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "AccessControlUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "AddressEmptyCode",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "AlreadyTermContractPaired",
     "type": "error"
   },
@@ -57,8 +89,29 @@
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "ERC1967InvalidImplementation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ERC1967NonPayable",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "ExceedsNetExposureCapOnLiquidation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedCall",
     "type": "error"
   },
   {
@@ -75,6 +128,11 @@
   {
     "inputs": [],
     "name": "InsufficientCollateralForRedemption",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitialization",
     "type": "error"
   },
   {
@@ -95,6 +153,11 @@
   },
   {
     "inputs": [],
+    "name": "NotInitializing",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "RepaymentAmountLargerThanAllowed",
     "type": "error"
   },
@@ -110,12 +173,33 @@
   },
   {
     "inputs": [],
+    "name": "TermContractsPaused",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "TermRepurchaseWindowOpen",
     "type": "error"
   },
   {
     "inputs": [],
     "name": "TotalRepaymentGreaterThangetBorrowerRepurchaseObligation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UUPSUnauthorizedCallContext",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "slot",
+        "type": "bytes32"
+      }
+    ],
+    "name": "UUPSUnsupportedProxiableUUID",
     "type": "error"
   },
   {
@@ -148,41 +232,9 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "previousAdmin",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "newAdmin",
-        "type": "address"
-      }
-    ],
-    "name": "AdminChanged",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "beacon",
-        "type": "address"
-      }
-    ],
-    "name": "BeaconUpgraded",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint8",
+        "internalType": "uint64",
         "name": "version",
-        "type": "uint8"
+        "type": "uint64"
       }
     ],
     "name": "Initialized",
@@ -330,6 +382,19 @@
   },
   {
     "inputs": [],
+    "name": "DIAMOND_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "INITIALIZER_ROLE",
     "outputs": [
       {
@@ -381,6 +446,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "UPGRADE_INTERFACE_VERSION",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -420,7 +498,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "bidder",
+        "name": "sender",
         "type": "address"
       },
       {
@@ -443,7 +521,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "bidder",
+        "name": "sender",
         "type": "address"
       },
       {
@@ -476,6 +554,24 @@
       }
     ],
     "name": "batchDefault",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "borrower",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "closureRepoTokenAmounts",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "batchDefaultWithRepoToken",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -580,6 +676,19 @@
     "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "borrower",
+        "type": "address"
+      }
+    ],
+    "name": "encumberExistingCollateral",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "encumberedCollateralRemaining",
     "outputs": [
@@ -590,6 +699,29 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "borrower",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "collateralToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "externalLockCollateral",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -612,6 +744,29 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "address",
+        "name": "collateralToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "externalUnlockCollateral",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "borrower",
+        "type": "address"
+      },
       {
         "internalType": "address",
         "name": "collateralToken",
@@ -979,6 +1134,11 @@
       },
       {
         "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
         "name": "collateralToken",
         "type": "address"
       },
@@ -1058,6 +1218,11 @@
       },
       {
         "internalType": "address",
+        "name": "termDiamond_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
         "name": "devopsMultisig_",
         "type": "address"
       },
@@ -1114,7 +1279,7 @@
       },
       {
         "internalType": "address",
-        "name": "account",
+        "name": "callerConfirmation",
         "type": "address"
       }
     ],
@@ -1216,6 +1381,19 @@
   },
   {
     "inputs": [],
+    "name": "termController",
+    "outputs": [
+      {
+        "internalType": "contract ITermController",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "termRepoId",
     "outputs": [
       {
@@ -1238,6 +1416,34 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "borrower",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "collateralToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "decrementEncumberedCollateral",
+        "type": "bool"
+      }
+    ],
+    "name": "testUnlockCollateral",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -1303,19 +1509,6 @@
       }
     ],
     "name": "upgrade",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newImplementation",
-        "type": "address"
-      }
-    ],
-    "name": "upgradeTo",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

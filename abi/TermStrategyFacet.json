@@ -1,0 +1,513 @@
+[
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "AddressEmptyCode",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AfterMaturity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InputOutputTokenCollision",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidCollateralToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidRepoId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidStrategy",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidTermController",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoProceedsReceived",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotEnoughProceedsReceived",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PurchaseTokenMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RepoRedemptionHaircutNotSupported",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RepoTokensNotFullyConsumed",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "bits",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "SafeCastOverflowedUintDowncast",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "SafeERC20FailedOperation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnsupportedHookSelector",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "inputToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxInputAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "outputToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minOutputAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes4",
+        "name": "selector",
+        "type": "bytes4"
+      },
+      {
+        "internalType": "address",
+        "name": "targetAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "additionalCalldata",
+        "type": "bytes"
+      }
+    ],
+    "name": "generateActionCalldata",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "expectedInputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "expectedOutputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isDeterministic",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PreviewAction",
+        "name": "",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IStrategy",
+        "name": "strategy",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termRepoServicer",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "borrowAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "collateralAmounts",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      }
+    ],
+    "name": "mintAndSellRepoToken",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "proceeds",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "targetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "additionalCalldata",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ActionHookInput",
+        "name": "input",
+        "type": "tuple"
+      }
+    ],
+    "name": "mintAndSellRepoTokenHook",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "proceeds",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "name": "previewMapping",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "targetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "additionalCalldata",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ActionHookInput",
+        "name": "actionHookInput",
+        "type": "tuple"
+      }
+    ],
+    "name": "previewMintAndSellRepoToken",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "expectedInputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "expectedOutputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isDeterministic",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PreviewAction",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract IStrategy",
+        "name": "strategy",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "repoToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "repoTokenAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "sellRepoToken",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "proceeds",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "type": "error",
+    "name": "ERC20InsufficientBalance",
+    "inputs": [
+      {
+        "name": "sender",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "balance",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "needed",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC20InvalidSender",
+    "inputs": [
+      {
+        "name": "sender",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC20InvalidReceiver",
+    "inputs": [
+      {
+        "name": "receiver",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC20InsufficientAllowance",
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "allowance",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "needed",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC20InvalidApprover",
+    "inputs": [
+      {
+        "name": "approver",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ERC20InvalidSpender",
+    "inputs": [
+      {
+        "name": "spender",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  }
+]

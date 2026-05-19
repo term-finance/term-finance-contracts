@@ -2,9 +2,7 @@
 pragma solidity ^0.8.18;
 
 import "../../contracts/TermRepoRolloverManager.sol";
-contract TermRepoRolloverManagerHarness is
-    TermRepoRolloverManager
-{
+contract TermRepoRolloverManagerHarness is TermRepoRolloverManager {
     function isTermContractPaired() external view returns (bool) {
         return termContractPaired;
     }
@@ -21,7 +19,9 @@ contract TermRepoRolloverManagerHarness is
         return address(termRepoCollateralManager);
     }
 
-    function getRolloverBidId(address borrower) external view returns (bytes32) {
+    function getRolloverBidId(
+        address borrower
+    ) external view returns (bytes32) {
         return keccak256(abi.encodePacked(address(this), borrower));
     }
 
@@ -33,9 +33,9 @@ contract TermRepoRolloverManagerHarness is
         return address(emitter);
     }
 
-    function isRolloverAuctionApproved(address bidLocker) external view returns (bool) {
-        return approvedRolloverAuctionBidLockers[
-            bidLocker
-        ];
+    function isRolloverAuctionApproved(
+        address bidLocker
+    ) external view returns (bool) {
+        return approvedRolloverAuctionBidLockers[bidLocker];
     }
 }

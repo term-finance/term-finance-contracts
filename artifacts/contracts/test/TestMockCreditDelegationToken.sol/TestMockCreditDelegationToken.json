@@ -1,0 +1,150 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "TestMockCreditDelegationToken",
+  "sourceName": "contracts/test/TestMockCreditDelegationToken.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "delegator",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "delegatee",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "deadline",
+          "type": "uint256"
+        }
+      ],
+      "name": "DelegationWithSigCalled",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "delegatee",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "approveDelegation",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "delegator",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "delegatee",
+          "type": "address"
+        }
+      ],
+      "name": "borrowAllowance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "delegator",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "delegatee",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "value",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "deadline",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "delegationWithSig",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "delegator",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "delegatee",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "setBorrowAllowance",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x6080806040523461001657610203908161001c8239f35b600080fdfe604060808152600436101561001357600080fd5b600090813560e01c80630219f771146101545780630b52d558146100d15780636bd76d241461008a5763c04a8a101461004b57600080fd5b3461008657806003193601126100865761006361019c565b33835260208381528284206001600160a01b039092168452528120602435905580f35b5080fd5b5034610086578060031936011261008657806020926100a761019c565b6100af6101b7565b6001600160a01b03918216835282865283832091168252845220549051908152f35b50346100865760e0366003190112610086576100eb61019c565b6100f36101b7565b60843560ff8116036101505782516001600160a01b039283168152911660208201526044359181019190915260643560608201527f8db498833ceff76154baa035c64196260f0f763bb1614a1edde7b760ab29a5ff90608090a180f35b8380fd5b50346100865760603660031901126100865761016e61019c565b6101766101b7565b6001600160a01b0391821684526020848152838520929091168452528120604435905580f35b600435906001600160a01b03821682036101b257565b600080fd5b602435906001600160a01b03821682036101b25756fea26469706673582212203c9cb04e90beb676752593e0df12cad970aed2e787e463e93349ccf9b0b186a964736f6c63430008160033",
+  "deployedBytecode": "0x604060808152600436101561001357600080fd5b600090813560e01c80630219f771146101545780630b52d558146100d15780636bd76d241461008a5763c04a8a101461004b57600080fd5b3461008657806003193601126100865761006361019c565b33835260208381528284206001600160a01b039092168452528120602435905580f35b5080fd5b5034610086578060031936011261008657806020926100a761019c565b6100af6101b7565b6001600160a01b03918216835282865283832091168252845220549051908152f35b50346100865760e0366003190112610086576100eb61019c565b6100f36101b7565b60843560ff8116036101505782516001600160a01b039283168152911660208201526044359181019190915260643560608201527f8db498833ceff76154baa035c64196260f0f763bb1614a1edde7b760ab29a5ff90608090a180f35b8380fd5b50346100865760603660031901126100865761016e61019c565b6101766101b7565b6001600160a01b0391821684526020848152838520929091168452528120604435905580f35b600435906001600160a01b03821682036101b257565b600080fd5b602435906001600160a01b03821682036101b25756fea26469706673582212203c9cb04e90beb676752593e0df12cad970aed2e787e463e93349ccf9b0b186a964736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

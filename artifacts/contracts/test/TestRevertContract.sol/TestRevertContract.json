@@ -1,0 +1,56 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "TestRevertContract",
+  "sourceName": "contracts/test/TestRevertContract.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "code",
+          "type": "uint256"
+        }
+      ],
+      "name": "CustomTestError",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "revertWithCustomError",
+      "outputs": [],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "revertWithMessage",
+      "outputs": [],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "revertWithNoData",
+      "outputs": [],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "succeed",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x6080806040523461001657610132908161001c8239f35b600080fdfe60806040526004361015601157600080fd5b6000803560e01c908163185c38a41460525750806346fc4bb114604e578063acf495f314604a5763bd0d745b14604657600080fd5b60e8565b60ce565b60a1565b34609e5780600319360112609e5762461bcd60e51b6080526020608452601d60a4527f546869732069732061207465737420726576657274206d65737361676500000060c45260646080fd5b80fd5b3460c957600036600319011260c9576040516338559f7960e21b8152602a6004820152602490fd5b600080fd5b3460c957600036600319011260c957602060405160018152f35b3460c957600036600319011260c957600080fdfea26469706673582212200c4028126b06297d8a042ebbc126177468c9599279873a8b5133a445c06429ce64736f6c63430008160033",
+  "deployedBytecode": "0x60806040526004361015601157600080fd5b6000803560e01c908163185c38a41460525750806346fc4bb114604e578063acf495f314604a5763bd0d745b14604657600080fd5b60e8565b60ce565b60a1565b34609e5780600319360112609e5762461bcd60e51b6080526020608452601d60a4527f546869732069732061207465737420726576657274206d65737361676500000060c45260646080fd5b80fd5b3460c957600036600319011260c9576040516338559f7960e21b8152602a6004820152602490fd5b600080fd5b3460c957600036600319011260c957602060405160018152f35b3460c957600036600319011260c957600080fdfea26469706673582212200c4028126b06297d8a042ebbc126177468c9599279873a8b5133a445c06429ce64736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

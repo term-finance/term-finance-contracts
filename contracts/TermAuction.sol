@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermAuctionBidLocker} from "./interfaces/ITermAuctionBidLocker.sol";
 import {ITermAuctionErrors} from "./interfaces/ITermAuctionErrors.sol";
@@ -10,15 +10,16 @@ import {ITermRepoCollateralManager} from "./interfaces/ITermRepoCollateralManage
 import {ITermRepoRolloverManager} from "./interfaces/ITermRepoRolloverManager.sol";
 import {ITermRepoServicer} from "./interfaces/ITermRepoServicer.sol";
 import {CompleteAuctionInput} from "./lib/CompleteAuctionInput.sol";
+import {TermContractsPausable} from "./lib/TermContractsPausable.sol";
 import {ExponentialNoError} from "./lib/ExponentialNoError.sol";
 import {TermAuctionBid} from "./lib/TermAuctionBid.sol";
 import {TermAuctionOffer} from "./lib/TermAuctionOffer.sol";
 import {TermAuctionRevealedBid} from "./lib/TermAuctionRevealedBid.sol";
 import {TermAuctionRevealedOffer} from "./lib/TermAuctionRevealedOffer.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {IERC20MetadataUpgradeable} from "@openzeppelin/contracts-upgradeable/interfaces/IERC20MetadataUpgradeable.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import {Versionable} from "./lib/Versionable.sol";
 
 /// @author TermLabs
@@ -31,6 +32,7 @@ contract TermAuction is
     AccessControlUpgradeable,
     ReentrancyGuardUpgradeable,
     ExponentialNoError,
+    TermContractsPausable,
     Versionable
 {
     // ========================================================================
@@ -84,7 +86,7 @@ contract TermAuction is
     ITermRepoServicer public termRepoServicer;
     ITermAuctionBidLocker public termAuctionBidLocker;
     ITermAuctionOfferLocker public termAuctionOfferLocker;
-    IERC20MetadataUpgradeable public purchaseToken;
+    IERC20Metadata public purchaseToken;
     ITermEventEmitter internal emitter;
     ITermController public controller;
 
@@ -142,7 +144,7 @@ contract TermAuction is
         uint256 auctionEndTime_,
         uint256 termStart_,
         uint256 redemptionTimestamp_,
-        IERC20MetadataUpgradeable purchaseToken_,
+        IERC20Metadata purchaseToken_,
         address termAuctionInitializer_,
         uint256 clearingPricePostProcessingOffset_
     ) external initializer {
@@ -174,8 +176,10 @@ contract TermAuction is
         ITermAuctionOfferLocker termAuctionOfferLocker_,
         address devopsMultisigAddress_,
         address adminWallet_,
+        address deployerWallet_,
         string calldata version_
     ) external onlyRole(INITIALIZER_ROLE) notTermContractPaired {
+        require(deployerWallet_ != address(0), "Zero address deployer wallet");
         emitter = emitter_;
         controller = controller_;
 
@@ -191,6 +195,7 @@ contract TermAuction is
             termAuctionId,
             address(this),
             auctionEndTime,
+            deployerWallet_,
             version_
         );
     }
@@ -203,7 +208,7 @@ contract TermAuction is
     /// @param completeAuctionInput A struct containing all revealed and unrevealed bids and offers and expired rollover bids
     function completeAuction(
         CompleteAuctionInput calldata completeAuctionInput
-    ) external onlyWhileAuctionClosed whenCompleteAuctionNotPaused {
+    ) external onlyWhileAuctionClosed whenCompleteAuctionNotPaused whileTermContractsNotPaused(controller) {
         if (auctionCompleted) {
             revert AuctionAlreadyCompleted();
         }
@@ -277,7 +282,11 @@ contract TermAuction is
                 clearingPrice
             );
 
-            controller.recordAuctionResult(termRepoId, termAuctionId, clearingPrice);
+            controller.recordAuctionResult(
+                termRepoId,
+                termAuctionId,
+                clearingPrice
+            );
         } else {
             // Return sorted bid funds.
             for (uint256 i = 0; i < sortedBids.length; ++i) {
@@ -896,6 +905,12 @@ contract TermAuction is
         uint256 repurchasePrice,
         address rolloverPairOffTermRepoServicer
     ) internal {
+        ITermRepoCollateralManager currentTermRepoCollateralManager = termRepoServicer
+                .termRepoCollateralManager();
+
+        if (termRepoServicer.getBorrowerRepurchaseObligation(borrower) == 0) {
+           currentTermRepoCollateralManager.encumberExistingCollateral(borrower);
+        }
         ITermRepoServicer previousTermRepoServicer = ITermRepoServicer(
             rolloverPairOffTermRepoServicer
         );
@@ -923,9 +938,6 @@ contract TermAuction is
                 proportionPreviousLoanPaid,
                 address(termRepoServicer.termRepoLocker())
             );
-
-        ITermRepoCollateralManager currentTermRepoCollateralManager = termRepoServicer
-                .termRepoCollateralManager();
 
         for (uint256 i = 0; i < collateralTypes.length; ++i) {
             if (collateralAmounts[i] > 0) {
@@ -1034,6 +1046,12 @@ contract TermAuction is
                                     10 ** (18 - purchaseTokenDecimals)
                             })
                         ).mantissa / 10 ** (18 - purchaseTokenDecimals);
+
+                        if (assignedAmount == 0) {
+                            revert AssignedZeroAmount(
+                                sortedBids[i - innerIndex].id
+                            );
+                        }
 
                         totalAssignedBids += _partiallyAssignBid(
                             sortedBids[i - innerIndex],

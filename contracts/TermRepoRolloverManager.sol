@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermAuctionBidLocker} from "./interfaces/ITermAuctionBidLocker.sol";
 import {ITermAuctionOfferLocker} from "./interfaces/ITermAuctionOfferLocker.sol";
@@ -16,7 +16,7 @@ import {TermRepoRolloverElectionSubmission} from "./lib/TermRepoRolloverElection
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Versionable} from "./lib/Versionable.sol";
 
 /// @author TermLabs
@@ -41,6 +41,7 @@ contract TermRepoRolloverManager is
     bytes32 public constant INITIALIZER_ROLE = keccak256("INITIALIZER_ROLE");
     bytes32 public constant ROLLOVER_BID_FULFILLER_ROLE =
         keccak256("ROLLOVER_BID_FULFILLER_ROLE");
+    bytes32 public constant DIAMOND_ROLE = keccak256("DIAMOND_ROLE");
 
     // ========================================================================
     // = State Variables ======================================================
@@ -48,7 +49,7 @@ contract TermRepoRolloverManager is
     bytes32 public termRepoId;
     ITermRepoCollateralManager internal termRepoCollateralManager;
     ITermRepoServicer internal termRepoServicer;
-    ITermController internal termController;
+    ITermController public termController;
     ITermEventEmitter internal emitter;
 
     // Mapping that returns true for approved Borrower Rollover Auction Bid Lockers
@@ -64,10 +65,10 @@ contract TermRepoRolloverManager is
     // = Modifiers ============================================================
     // ========================================================================
 
-    modifier whileNotMatured() {
+    modifier notPastRepaymentWindow() {
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp >= termRepoServicer.maturityTimestamp()) {
-            revert MaturityReached();
+        if (block.timestamp >= termRepoServicer.endOfRepurchaseWindow()) {
+            revert EndOfRepurchaseWindowReached();
         }
         _;
     }
@@ -111,6 +112,7 @@ contract TermRepoRolloverManager is
 
     function pairTermContracts(
         address termRepoServicer_,
+        address termDiamond_,
         ITermEventEmitter emitter_,
         address devopsMultisig_,
         address adminWallet_
@@ -119,6 +121,7 @@ contract TermRepoRolloverManager is
         _grantRole(ROLLOVER_BID_FULFILLER_ROLE, termRepoServicer_);
         _grantRole(DEVOPS_ROLE, devopsMultisig_);
         _grantRole(ADMIN_ROLE, adminWallet_);
+        _grantRole(DIAMOND_ROLE, termDiamond_);
 
         emitter.emitTermRepoRolloverManagerInitialized(
             termRepoId,
@@ -135,66 +138,22 @@ contract TermRepoRolloverManager is
     function electRollover(
         TermRepoRolloverElectionSubmission
             calldata termRepoRolloverElectionSubmission
-    ) external whileNotMatured {
-        address borrower = msg.sender;
-        uint256 borrowerRepurchaseObligation = termRepoServicer
-            .getBorrowerRepurchaseObligation(borrower);
-        if (borrowerRepurchaseObligation == 0) {
-            revert ZeroBorrowerRepurchaseObligation();
-        }
-        if (
-            !approvedRolloverAuctionBidLockers[
-                termRepoRolloverElectionSubmission.rolloverAuctionBidLocker
-            ]
-        ) {
-            revert RolloverAddressNotApproved(
-                termRepoRolloverElectionSubmission.rolloverAuctionBidLocker
-            );
-        }
+    ) external notPastRepaymentWindow {
+        _electRolloverInternal(msg.sender, termRepoRolloverElectionSubmission);
+    }
 
-        if (rolloverElections[borrower].processed) {
-            revert RolloverProcessedToTerm();
-        }
-
-        if (termRepoRolloverElectionSubmission.rolloverAmount == 0) {
-            revert InvalidParameters("Rollover amount cannot be 0");
-        }
-
-        if (
-            borrowerRepurchaseObligation <
-            termRepoRolloverElectionSubmission.rolloverAmount
-        ) {
-            revert BorrowerRepurchaseObligationInsufficient();
-        }
-
-        if(rolloverElections[borrower].rolloverAuctionBidLocker != address(0) && rolloverElections[borrower].rolloverAuctionBidLocker != termRepoRolloverElectionSubmission.rolloverAuctionBidLocker){
-            rolloverElections[borrower].rolloverAmount = 0;
-            _processRollover(borrower);
-        }
-
-
-        rolloverElections[borrower] = TermRepoRolloverElection({
-            rolloverAuctionBidLocker: termRepoRolloverElectionSubmission.rolloverAuctionBidLocker,
-            rolloverAmount: termRepoRolloverElectionSubmission.rolloverAmount,
-            rolloverBidPriceHash: termRepoRolloverElectionSubmission
-                .rolloverBidPriceHash,
-            processed: false
-        });
-
-        ITermAuctionBidLocker auctionBidLocker = ITermAuctionBidLocker(
-            termRepoRolloverElectionSubmission.rolloverAuctionBidLocker
-        );
-
-        emitter.emitRolloverElection(
-            termRepoId,
-            auctionBidLocker.termRepoId(),
+    /// @notice Allows DIAMOND_ROLE to elect rollover on behalf of a borrower
+    /// @param borrower The address of the borrower for whom rollover is being elected
+    /// @param termRepoRolloverElectionSubmission A struct containing borrower rollover instructions
+    function electRollover(
+        address borrower,
+        TermRepoRolloverElectionSubmission
+            calldata termRepoRolloverElectionSubmission
+    ) external notPastRepaymentWindow onlyRole(DIAMOND_ROLE)  {
+        _electRolloverInternal(
             borrower,
-            termRepoRolloverElectionSubmission.rolloverAuctionBidLocker,
-            termRepoRolloverElectionSubmission.rolloverAmount,
-            termRepoRolloverElectionSubmission.rolloverBidPriceHash
+            termRepoRolloverElectionSubmission
         );
-
-        _processRollover(borrower);
     }
 
     /// @notice A view function that returns borrower rollover instructions
@@ -209,26 +168,15 @@ contract TermRepoRolloverManager is
     /// @notice An external function to cancel previously submitted rollover instructions
     function cancelRollover() external {
         address borrower = msg.sender;
-        if (termRepoServicer.getBorrowerRepurchaseObligation(borrower) == 0) {
-            revert ZeroBorrowerRepurchaseObligation();
-        }
-
-        if (rolloverElections[borrower].rolloverAmount == 0) {
-            revert NoRolloverToCancel();
-        }
-
-        if (rolloverElections[borrower].processed) {
-            revert RolloverProcessedToTerm();
-        }
-
-        rolloverElections[borrower].rolloverAmount = 0;
-
-        _processRollover(borrower);
-
-        delete rolloverElections[borrower];
-
-        emitter.emitRolloverCancellation(termRepoId, borrower);
+        _cancelRolloverInternal(borrower);
     }
+
+    /// @notice Allows DIAMOND_ROLE to cancel rollover on behalf of a borrower
+    /// @param borrower The address of the borrower for whom rollover is being cancelled
+    function cancelRollover(address borrower) external onlyRole(DIAMOND_ROLE) {
+        _cancelRolloverInternal(borrower);
+    }
+
 
     // ========================================================================
     // = Fulfiller Functions ================================================
@@ -250,17 +198,13 @@ contract TermRepoRolloverManager is
     /// @param auctionBidLocker The ABI for ITermAuctionBidLocker interface
     function approveRolloverAuction(
         ITermAuctionBidLocker auctionBidLocker
-    ) external onlyRole(ADMIN_ROLE) {
-        // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp >= termRepoServicer.maturityTimestamp()) {
-            revert MaturityReached();
-        }
-        if (!termController.isTermDeployed(address(auctionBidLocker))) {
+    ) external notPastRepaymentWindow onlyRole(ADMIN_ROLE) {
+        if (!termController.isTermDeployed(address(auctionBidLocker)) && !termController.isFactoryDeployed(address(auctionBidLocker))) {
             revert NotTermContract(address(auctionBidLocker));
         }
 
         if (
-            auctionBidLocker.auctionEndTime() >
+            auctionBidLocker.auctionEndTime() >=
             termRepoServicer.endOfRepurchaseWindow()
         ) {
             revert AuctionEndsAfterRepayment();
@@ -285,7 +229,7 @@ contract TermRepoRolloverManager is
             .numOfAcceptedCollateralTokens();
 
         for (uint256 i = 0; i < numOfAcceptedCollateralTokens; ++i) {
-            IERC20Upgradeable supportedIERC20Collateral = IERC20Upgradeable(
+            IERC20 supportedIERC20Collateral = IERC20(
                 termRepoCollateralManager.collateralTokens(i)
             );
             if (!auctionBidLocker.collateralTokens(supportedIERC20Collateral)) {
@@ -325,6 +269,97 @@ contract TermRepoRolloverManager is
     // ========================================================================
     // = Internal =============================================================
     // ========================================================================
+
+    function _electRolloverInternal(
+        address borrower,
+        TermRepoRolloverElectionSubmission calldata termRepoRolloverElectionSubmission
+    ) internal {
+        uint256 borrowerRepurchaseObligation = termRepoServicer
+            .getBorrowerRepurchaseObligation(borrower);
+        if (borrowerRepurchaseObligation == 0) {
+            revert ZeroBorrowerRepurchaseObligation();
+        }
+        if (
+            !approvedRolloverAuctionBidLockers[
+                termRepoRolloverElectionSubmission.rolloverAuctionBidLocker
+            ]
+        ) {
+            revert RolloverAddressNotApproved(
+                termRepoRolloverElectionSubmission.rolloverAuctionBidLocker
+            );
+        }
+
+        if (rolloverElections[borrower].processed) {
+            revert RolloverProcessedToTerm();
+        }
+
+        if (termRepoRolloverElectionSubmission.rolloverAmount == 0) {
+            revert InvalidParameters("Rollover amount cannot be 0");
+        }
+
+        if (
+            borrowerRepurchaseObligation <
+            termRepoRolloverElectionSubmission.rolloverAmount
+        ) {
+            revert BorrowerRepurchaseObligationInsufficient();
+        }
+
+        if (
+            rolloverElections[borrower].rolloverAuctionBidLocker !=
+            address(0) &&
+            rolloverElections[borrower].rolloverAuctionBidLocker !=
+            termRepoRolloverElectionSubmission.rolloverAuctionBidLocker
+        ) {
+            rolloverElections[borrower].rolloverAmount = 0;
+            _processRollover(borrower);
+        }
+
+        rolloverElections[borrower] = TermRepoRolloverElection({
+            rolloverAuctionBidLocker: termRepoRolloverElectionSubmission
+                .rolloverAuctionBidLocker,
+            rolloverAmount: termRepoRolloverElectionSubmission.rolloverAmount,
+            rolloverBidPriceHash: termRepoRolloverElectionSubmission
+                .rolloverBidPriceHash,
+            processed: false
+        });
+
+        ITermAuctionBidLocker auctionBidLocker = ITermAuctionBidLocker(
+            termRepoRolloverElectionSubmission.rolloverAuctionBidLocker
+        );
+
+        emitter.emitRolloverElection(
+            termRepoId,
+            auctionBidLocker.termRepoId(),
+            borrower,
+            termRepoRolloverElectionSubmission.rolloverAuctionBidLocker,
+            termRepoRolloverElectionSubmission.rolloverAmount,
+            termRepoRolloverElectionSubmission.rolloverBidPriceHash
+        );
+
+        _processRollover(borrower);
+    }
+
+    function _cancelRolloverInternal(address borrower) internal {
+        if (termRepoServicer.getBorrowerRepurchaseObligation(borrower) == 0) {
+            revert ZeroBorrowerRepurchaseObligation();
+        }
+
+        if (rolloverElections[borrower].rolloverAmount == 0) {
+            revert NoRolloverToCancel();
+        }
+
+        if (rolloverElections[borrower].processed) {
+            revert RolloverProcessedToTerm();
+        }
+
+        rolloverElections[borrower].rolloverAmount = 0;
+
+        _processRollover(borrower);
+
+        delete rolloverElections[borrower];
+
+        emitter.emitRolloverCancellation(termRepoId, borrower);
+    }
 
     function _processRollover(address borrowerToRollover) internal {
         TermRepoRolloverElection memory rolloverElection = rolloverElections[

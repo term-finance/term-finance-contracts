@@ -73,3 +73,13 @@
 ## 0.9.0
 
 #**Full Changelog**: https://github.com/term-finance/term-finance/compare/0.8.0...0.9.0
+
+## 2.1.0
+
+### What's Changed
+* V2 release by @aazhou1 in https://github.com/term-finance/term-finance/pull/1570
+* update package version to 2.1.0 by @aazhou1 in https://github.com/term-finance/term-finance/pull/1659
+* fix publish package by @aazhou1 in https://github.com/term-finance/term-finance/pull/1661
+
+
+**Full Changelog**: https://github.com/term-finance/term-finance/compare/2.0.3...2.1.0

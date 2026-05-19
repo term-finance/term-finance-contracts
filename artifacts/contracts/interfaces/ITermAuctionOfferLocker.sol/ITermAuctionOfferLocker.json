@@ -158,6 +158,62 @@
     {
       "inputs": [
         {
+          "internalType": "address",
+          "name": "offeror",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "id",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "address",
+              "name": "offeror",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "offerPriceHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "purchaseToken",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct TermAuctionOfferSubmission[]",
+          "name": "offerSubmissions",
+          "type": "tuple[]"
+        },
+        {
+          "internalType": "address",
+          "name": "referralAddress",
+          "type": "address"
+        }
+      ],
+      "name": "lockOffersWithReferral",
+      "outputs": [
+        {
+          "internalType": "bytes32[]",
+          "name": "",
+          "type": "bytes32[]"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "components": [
             {
               "internalType": "bytes32",
@@ -286,6 +342,32 @@
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "termAuction",
+      "outputs": [
+        {
+          "internalType": "contract ITermAuction",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "termRepoServicer",
+      "outputs": [
+        {
+          "internalType": "contract ITermRepoServicer",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "bytes32",
@@ -304,6 +386,24 @@
         }
       ],
       "name": "unlockOfferPartial",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "offeror",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32[]",
+          "name": "ids",
+          "type": "bytes32[]"
+        }
+      ],
+      "name": "unlockOffers",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

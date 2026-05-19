@@ -1,10 +1,12 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ExponentialNoError} from "./lib/ExponentialNoError.sol";
 import {TermRepoTokenConfig} from "./lib/TermRepoTokenConfig.sol";
+import {TermContractsPausable} from "./lib/TermContractsPausable.sol";
 import {ITermRepoCollateralManager} from "./interfaces/ITermRepoCollateralManager.sol";
 import {ITermRepoToken} from "./interfaces/ITermRepoToken.sol";
+import {ITermRepoServicer} from "./interfaces/ITermRepoServicer.sol";
 import {ITermRepoTokenErrors} from "./interfaces/ITermRepoTokenErrors.sol";
 import {ITermEventEmitter} from "./interfaces/ITermEventEmitter.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
@@ -29,6 +31,7 @@ contract TermRepoToken is
     ExponentialNoError,
     ITermRepoTokenErrors,
     ITermRepoToken,
+    TermContractsPausable,
     Versionable
 {
     // ========================================================================
@@ -109,7 +112,12 @@ contract TermRepoToken is
         // slither-disable-start reentrancy-no-eth events-maths
         decimalPlaces = decimalPlaces_;
         redemptionValue = redemptionValue_;
-        require(config_.purchaseToken != address(0) && config_.termRepoCollateralManager != address(0) && config_.termRepoServicer != address(0), "zero address in config");
+        require(
+            config_.purchaseToken != address(0) &&
+                config_.termRepoCollateralManager != address(0) &&
+                config_.termRepoServicer != address(0),
+            "zero address in config"
+        );
         config = config_;
         // slither-disable-end reentrancy-no-eth events-maths
 
@@ -171,7 +179,7 @@ contract TermRepoToken is
     function burn(
         address account,
         uint256 amount
-    ) external override onlyRole(BURNER_ROLE) whileBurningNotPaused {
+    ) external override onlyRole(BURNER_ROLE) whileBurningNotPaused whileTermContractsNotPaused(ITermRepoServicer(config.termRepoServicer).termController()) {
         _burn(account, amount);
         mintExposureCap += amount;
     }
@@ -189,6 +197,7 @@ contract TermRepoToken is
         override
         onlyRole(BURNER_ROLE)
         whileBurningNotPaused
+        whileTermContractsNotPaused(ITermRepoServicer(config.termRepoServicer).termController())
         returns (uint256)
     {
         _burn(account, amount);
@@ -215,6 +224,7 @@ contract TermRepoToken is
         external
         override
         whileMintingNotPaused
+        whileTermContractsNotPaused(ITermRepoServicer(config.termRepoServicer).termController())
         onlyRole(MINTER_ROLE)
         returns (uint256)
     {
@@ -239,6 +249,7 @@ contract TermRepoToken is
         external
         override
         whileMintingNotPaused
+        whileTermContractsNotPaused(ITermRepoServicer(config.termRepoServicer).termController())
         onlyRole(MINTER_ROLE)
         returns (uint256)
     {
@@ -271,14 +282,26 @@ contract TermRepoToken is
 
     /// @return collateralTokens An array of collateral token addresses eligible to serve as collateral backing this repoToken
     /// @return maintenanceRatios An array of maintenance ratios applicable to each collateral token backing this repoToken
-    function getCollateralRequirements() external view returns (address[] memory collateralTokens, uint256[] memory maintenanceRatios) {
-        ITermRepoCollateralManager collateralManager = ITermRepoCollateralManager(config.termRepoCollateralManager);
-        uint256 numOfCollateralTokens = uint256(collateralManager.numOfAcceptedCollateralTokens());
+    function getCollateralRequirements()
+        external
+        view
+        returns (
+            address[] memory collateralTokens,
+            uint256[] memory maintenanceRatios
+        )
+    {
+        ITermRepoCollateralManager collateralManager = ITermRepoCollateralManager(
+                config.termRepoCollateralManager
+            );
+        uint256 numOfCollateralTokens = uint256(
+            collateralManager.numOfAcceptedCollateralTokens()
+        );
         collateralTokens = new address[](numOfCollateralTokens);
         maintenanceRatios = new uint256[](numOfCollateralTokens);
-        for (uint256 i = 0; i < numOfCollateralTokens; ++i){
+        for (uint256 i = 0; i < numOfCollateralTokens; ++i) {
             collateralTokens[i] = collateralManager.collateralTokens(i);
-            maintenanceRatios[i] = collateralManager.maintenanceCollateralRatios(collateralTokens[i]);
+            maintenanceRatios[i] = collateralManager
+                .maintenanceCollateralRatios(collateralTokens[i]);
         }
     }
 

@@ -1,0 +1,58 @@
+[
+  {
+    "inputs": [],
+    "name": "config",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "redemptionTimestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "purchaseToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termRepoServicer",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termRepoCollateralManager",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "redemptionTimestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "purchaseToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termRepoServicer",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termRepoCollateralManager",
+        "type": "address"
+      }
+    ],
+    "name": "setConfig",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

@@ -47,7 +47,7 @@
     {
       "inputs": [
         {
-          "internalType": "contract IERC20Upgradeable",
+          "internalType": "contract IERC20",
           "name": "token",
           "type": "address"
         }
@@ -272,6 +272,72 @@
     },
     {
       "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "id",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "address",
+              "name": "bidder",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "bidPriceHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "collateralAmounts",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "address",
+              "name": "purchaseToken",
+              "type": "address"
+            },
+            {
+              "internalType": "address[]",
+              "name": "collateralTokens",
+              "type": "address[]"
+            }
+          ],
+          "internalType": "struct TermAuctionBidSubmission[]",
+          "name": "bidSubmissions",
+          "type": "tuple[]"
+        },
+        {
+          "internalType": "address",
+          "name": "referralAddress",
+          "type": "address"
+        }
+      ],
+      "name": "lockBidsWithReferral",
+      "outputs": [
+        {
+          "internalType": "bytes32[]",
+          "name": "",
+          "type": "bytes32[]"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "bidder",
+          "type": "address"
+        },
         {
           "components": [
             {
@@ -563,6 +629,24 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "bidder",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes32[]",
+          "name": "ids",
+          "type": "bytes32[]"
+        }
+      ],
+      "name": "unlockBids",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {

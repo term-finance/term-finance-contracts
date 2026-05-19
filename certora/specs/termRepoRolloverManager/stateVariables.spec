@@ -15,8 +15,7 @@ rule noMethodsChangeTermRepoId(
 ) filtered { f ->
     !f.isView &&
     f.selector != sig:initialize(string,address,address,address,address).selector &&
-    f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector
+    f.selector != sig:upgradeToAndCall(address,bytes).selector
 } {
     bytes32 termRepoIdBefore = termRepoId();
     f(e, args);
@@ -34,7 +33,6 @@ rule onlyAllowedMethodsChangeTermContracts(
     !f.isView &&
     f.selector != sig:initialize(string,address,address,address,address).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:pairTermContracts(address,address,address,address).selector
 } {
     address collateralManagerBefore = collateralManager();
@@ -66,7 +64,6 @@ rule onlyAllowedMethodsChangeApprovedRolloverAuctionBidLockers(
     !f.isView &&
     f.selector != sig:initialize(string,address,address,address,address).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:electRollover(TermRepoRolloverManagerHarness.TermRepoRolloverElectionSubmission).selector &&
     f.selector != sig:approveRolloverAuction(address).selector &&
     f.selector != sig:revokeRolloverApproval(address).selector
@@ -88,7 +85,6 @@ rule onlyAllowedMethodsChangeRolloverElections(
     !f.isView &&
     f.selector != sig:initialize(string,address,address,address,address).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:electRollover(TermRepoRolloverManagerHarness.TermRepoRolloverElectionSubmission).selector &&
     f.selector != sig:cancelRollover().selector &&
     f.selector != sig:fulfillRollover(address).selector

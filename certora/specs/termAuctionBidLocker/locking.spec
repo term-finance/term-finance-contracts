@@ -85,7 +85,6 @@ invariant lockedBidIdAlwaysMatchesIndex(bytes32 bidId)
   filtered { f ->
     f.contract == currentContract &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,uint256,address,address[],address).selector &&
     f.selector != sig:getAllBids(bytes32[],bytes32[],bytes32[]).selector
   }
@@ -126,7 +125,6 @@ invariant bidCountAlwaysMatchesNumberOfStoredBids()
   filtered { f ->
     f.contract == currentContract &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,uint256,address,address[],address).selector &&
     f.selector != sig:getAllBids(bytes32[],bytes32[],bytes32[]).selector &&
     f.selector != sig:lockRolloverBid(TermAuctionBidLockerHarness.TermAuctionBid).selector
@@ -139,7 +137,6 @@ invariant bidCountAlwaysMatchesNumberOfStoredBidsWithoutRollovers()
   filtered { f ->
     f.contract == currentContract &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,uint256,address,address[],address).selector &&
     f.selector != sig:getAllBids(bytes32[],bytes32[],bytes32[]).selector
   }{ preserved {
@@ -311,7 +308,7 @@ rule lockBidsRevertConditions(
 
   // support for 2 collateral tokens
   TermAuctionBidLockerHarness.TermAuctionBid existingBid = harnessGetInternalBids(bidSubmissions[0].id);
-  require(existingBid.amount == 0 => existingBid.collateralTokens[0] == 0 && existingBid.collateralTokens[1] == 0); // nonexistent bid will not have existing collateral due to minimum bid requirement.
+  require(existingBid.amount == 0 => existingBid.collateralAmounts[0] == 0 && existingBid.collateralAmounts[1] == 0); // nonexistent bid will not have existing collateral due to minimum bid requirement.
   require(existingBid.collateralTokens[0] == lockingAuctionCollateralTokenOne);
   require(existingBid.collateralTokens[1] == lockingAuctionCollateralTokenTwo);
   require existingBid.collateralTokens.length == 2;
@@ -543,7 +540,7 @@ rule lockBidsWithReferralRevertConditions(
 
   // support for 2 collateral tokens
   TermAuctionBidLockerHarness.TermAuctionBid existingBid = harnessGetInternalBids(bidSubmissions[0].id);
-  require(existingBid.amount == 0 => existingBid.collateralTokens[0] == 0 && existingBid.collateralTokens[1] == 0); // nonexistent bid will not have existing collateral due to minimum bid requirement.
+  require(existingBid.amount == 0 => existingBid.collateralAmounts[0] == 0 && existingBid.collateralAmounts[1] == 0); // nonexistent bid will not have existing collateral due to minimum bid requirement.
   require(existingBid.collateralTokens[0] == lockingAuctionCollateralTokenOne);
   require(existingBid.collateralTokens[1] == lockingAuctionCollateralTokenTwo);
   require existingBid.collateralTokens.length == 2;
