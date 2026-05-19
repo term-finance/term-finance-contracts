@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermAuction} from "./interfaces/ITermAuction.sol";
 import {ITermAuctionBidLocker} from "./interfaces/ITermAuctionBidLocker.sol";
@@ -9,13 +9,14 @@ import {ITermPriceOracle} from "./interfaces/ITermPriceOracle.sol";
 import {ITermRepoCollateralManager} from "./interfaces/ITermRepoCollateralManager.sol";
 import {ITermRepoServicer} from "./interfaces/ITermRepoServicer.sol";
 import {ExponentialNoError} from "./lib/ExponentialNoError.sol";
+import {TermContractsPausable} from "./lib/TermContractsPausable.sol";
 import {TermAuctionBid} from "./lib/TermAuctionBid.sol";
 import {TermAuctionBidSubmission} from "./lib/TermAuctionBidSubmission.sol";
 import {TermAuctionRevealedBid} from "./lib/TermAuctionRevealedBid.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Versionable} from "./lib/Versionable.sol";
 
 /// @author TermLabs
@@ -29,6 +30,7 @@ contract TermAuctionBidLocker is
     AccessControlUpgradeable,
     ExponentialNoError,
     ReentrancyGuardUpgradeable,
+    TermContractsPausable,
     Versionable
 {
     // ========================================================================
@@ -41,6 +43,8 @@ contract TermAuctionBidLocker is
 
     uint256 public constant THREESIXTY_DAYCOUNT_SECONDS = 360 days;
 
+    uint256 public constant MINIMUM_ROLLOVER_TENDER_DIVISOR= 10;
+
     // ========================================================================
     // = Access Roles  ========================================================
     // ========================================================================
@@ -49,6 +53,7 @@ contract TermAuctionBidLocker is
     bytes32 public constant DEVOPS_ROLE = keccak256("DEVOPS_ROLE");
     bytes32 public constant INITIALIZER_ROLE = keccak256("INITIALIZER_ROLE");
     bytes32 public constant ROLLOVER_MANAGER = keccak256("ROLLOVER_MANAGER");
+    bytes32 public constant DIAMOND_ROLE = keccak256("DIAMOND_ROLE");
 
     // ========================================================================
     // = State Variables  =====================================================
@@ -63,7 +68,7 @@ contract TermAuctionBidLocker is
     uint256 public minimumTenderAmount;
     uint256 public dayCountFractionMantissa;
     address public purchaseToken;
-    mapping(IERC20Upgradeable => bool) public collateralTokens;
+    mapping(IERC20 => bool) public collateralTokens;
     ITermRepoCollateralManager public termRepoCollateralManager;
     ITermRepoServicer public termRepoServicer;
     ITermPriceOracle internal termPriceOracle;
@@ -146,7 +151,7 @@ contract TermAuctionBidLocker is
         uint256 redemptionTimestamp_,
         uint256 minimumTenderAmount_,
         address purchaseToken_,
-        IERC20Upgradeable[] memory collateralTokens_,
+        IERC20[] memory collateralTokens_,
         address termInitializer_
     ) external initializer {
         UUPSUpgradeable.__UUPSUpgradeable_init();
@@ -170,7 +175,7 @@ contract TermAuctionBidLocker is
             ((redemptionTimestamp_ - auctionEndTime_) * expScale) /
             THREESIXTY_DAYCOUNT_SECONDS;
         purchaseToken = purchaseToken_;
-        for (uint8 i = 0; i < collateralTokens_.length; ++i) {
+        for (uint256 i = 0; i < collateralTokens_.length; ++i) {
             collateralTokens[collateralTokens_[i]] = true;
         }
 
@@ -185,7 +190,8 @@ contract TermAuctionBidLocker is
         ITermRepoCollateralManager termRepoCollateralManager_,
         ITermPriceOracle termPriceOracle_,
         address devopsMultisig_,
-        address adminWallet_
+        address adminWallet_,
+        address termDiamond_
     ) external onlyRole(INITIALIZER_ROLE) notTermContractPaired {
         if (address(termRepoServicer_) == address(0)) {
             revert InvalidTermRepoServicer();
@@ -195,6 +201,7 @@ contract TermAuctionBidLocker is
         _grantRole(AUCTIONEER_ROLE, termAuction_);
         _grantRole(DEVOPS_ROLE, devopsMultisig_);
         _grantRole(ADMIN_ROLE, adminWallet_);
+        _grantRole(DIAMOND_ROLE, termDiamond_);
 
         emitter = emitter_;
 
@@ -226,6 +233,7 @@ contract TermAuctionBidLocker is
 
     /// @param bidSubmissions An array of Term Auction bid submissions to borrow an amount of money at rate up to but not exceeding the bid rate
     /// @param referralAddress A user address that referred the submitter of this bid
+    /// @notice When modifying an existing bid, the collateral tokens in the submission must match the original bid's collateral tokens in the same order
     /// @return A bytes32 array of unique on chain bid ids.
     function lockBidsWithReferral(
         TermAuctionBidSubmission[] calldata bidSubmissions,
@@ -234,6 +242,7 @@ contract TermAuctionBidLocker is
         external
         onlyWhileAuctionOpen
         whenLockingNotPaused
+        whileTermContractsNotPaused(termRepoServicer.termController())
         nonReentrant
         returns (bytes32[] memory)
     {
@@ -244,7 +253,38 @@ contract TermAuctionBidLocker is
         bytes32[] memory bidIds = new bytes32[](bidSubmissions.length);
 
         for (uint256 i = 0; i < bidSubmissions.length; ++i) {
-            TermAuctionBid storage bid = _lock(bidSubmissions[i], msg.sender);
+            TermAuctionBid storage bid = _lock(bidSubmissions[i], msg.sender, msg.sender);
+            bidIds[i] = bid.id;
+            emitter.emitBidLocked(termAuctionId, bid, referralAddress);
+        }
+        return bidIds;
+    }
+
+    /// @param bidSubmissions An array of Term Auction bid submissions to borrow an amount of money at rate up to but not exceeding the bid rate
+    /// @param referralAddress A user address that referred the submitter of this bid
+    /// @notice When modifying an existing bid, the collateral tokens in the submission must match the original bid's collateral tokens in the same order
+    /// @return A bytes32 array of unique on chain bid ids.
+    function lockBidsWithReferral(
+        address bidder,
+        TermAuctionBidSubmission[] calldata bidSubmissions,
+        address referralAddress
+    )
+        external
+        onlyWhileAuctionOpen
+        whenLockingNotPaused
+        whileTermContractsNotPaused(termRepoServicer.termController())
+        nonReentrant
+        onlyRole(DIAMOND_ROLE)
+        returns (bytes32[] memory)
+    {
+        if (bidder == referralAddress) {
+            revert InvalidSelfReferral();
+        }
+
+        bytes32[] memory bidIds = new bytes32[](bidSubmissions.length);
+
+        for (uint256 i = 0; i < bidSubmissions.length; ++i) {
+            TermAuctionBid storage bid = _lock(bidSubmissions[i], bidder, msg.sender);
             bidIds[i] = bid.id;
             emitter.emitBidLocked(termAuctionId, bid, referralAddress);
         }
@@ -254,7 +294,7 @@ contract TermAuctionBidLocker is
     /// @param bid A struct containing details of the bid
     function lockRolloverBid(
         TermAuctionBid calldata bid
-    ) external whenLockingNotPaused onlyRole(ROLLOVER_MANAGER) nonReentrant {
+    ) external whenLockingNotPaused whileTermContractsNotPaused(termRepoServicer.termController()) onlyRole(ROLLOVER_MANAGER) nonReentrant {
         if (
             // solhint-disable-next-line not-rely-on-time
             block.timestamp > revealTime
@@ -276,6 +316,7 @@ contract TermAuctionBidLocker is
     }
 
     /// @param bidSubmissions An array of bid submissions
+    /// @notice When modifying an existing bid, the collateral tokens in the submission must match the original bid's collateral tokens in the same order
     /// @return A bytes32 array of unique on chain bid ids.
     function lockBids(
         TermAuctionBidSubmission[] calldata bidSubmissions
@@ -283,12 +324,13 @@ contract TermAuctionBidLocker is
         external
         onlyWhileAuctionOpen
         whenLockingNotPaused
+        whileTermContractsNotPaused(termRepoServicer.termController())
         nonReentrant
         returns (bytes32[] memory)
     {
         bytes32[] memory bidIds = new bytes32[](bidSubmissions.length);
         for (uint256 i = 0; i < bidSubmissions.length; ++i) {
-            TermAuctionBid storage bid = _lock(bidSubmissions[i], msg.sender);
+            TermAuctionBid storage bid = _lock(bidSubmissions[i], msg.sender, msg.sender);
             bidIds[i] = bid.id;
             emitter.emitBidLocked(termAuctionId, bid, address(0));
         }
@@ -320,7 +362,7 @@ contract TermAuctionBidLocker is
     /// @param ids An array of ids to unlock
     function unlockBids(
         bytes32[] calldata ids
-    ) external whenUnlockingNotPaused nonReentrant {
+    ) external whenUnlockingNotPaused whileTermContractsNotPaused(termRepoServicer.termController()) nonReentrant {
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp < auctionStartTime) {
             revert AuctionNotOpen();
@@ -337,6 +379,34 @@ contract TermAuctionBidLocker is
             _unlock(
                 ids[i],
                 msg.sender,
+                bids[ids[i]].collateralTokens,
+                bids[ids[i]].collateralAmounts
+            );
+        }
+    }
+
+    /// @notice unlockBids unlocks multiple bids and returns funds to the bidder
+    /// @param ids An array of ids to unlock
+    function unlockBids(
+        address bidder,
+        bytes32[] calldata ids
+    ) external onlyRole(DIAMOND_ROLE) whenUnlockingNotPaused whileTermContractsNotPaused(termRepoServicer.termController()) nonReentrant {
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp < auctionStartTime) {
+            revert AuctionNotOpen();
+        }
+        // solhint-disable-next-line not-rely-on-time
+        if (
+            block.timestamp > revealTime &&
+            !termAuction.auctionCancelledForWithdrawal()
+        ) {
+            revert AuctionNotOpen();
+        }
+
+        for (uint256 i = 0; i < ids.length; ++i) {
+            _unlock(
+                ids[i],
+                bidder,
                 bids[ids[i]].collateralTokens,
                 bids[ids[i]].collateralAmounts
             );
@@ -396,7 +466,8 @@ contract TermAuctionBidLocker is
 
     function _lock(
         TermAuctionBidSubmission memory bidSubmission,
-        address authedUser
+        address authedUser,
+        address sender
     )
         internal
         onlyBidder(bidSubmission.bidder, authedUser)
@@ -421,12 +492,20 @@ contract TermAuctionBidLocker is
         for (uint256 i = 0; i < bidSubmission.collateralTokens.length; ++i) {
             if (
                 !collateralTokens[
-                    IERC20Upgradeable(bidSubmission.collateralTokens[i])
+                    IERC20(bidSubmission.collateralTokens[i])
                 ]
             ) {
                 revert CollateralTokenNotApproved(
                     bidSubmission.collateralTokens[i]
                 );
+            }
+            if (bidExists) {
+                if (bids[bidId].collateralTokens[i] != bidSubmission.collateralTokens[i]) {
+                    revert CollateralTokenMismatch(
+                        bids[bidId].collateralTokens[i],
+                        bidSubmission.collateralTokens[i]
+                    );
+                }
             }
         }
         if (bidSubmission.amount < minimumTenderAmount) {
@@ -451,7 +530,7 @@ contract TermAuctionBidLocker is
                 oldCollateralAmount = bids[bidId].collateralAmounts[i];
                 if (oldCollateralAmount < bidSubmission.collateralAmounts[i]) {
                     termRepoCollateralManager.auctionLockCollateral(
-                        bidSubmission.bidder,
+                        sender,
                         address(bidSubmission.collateralTokens[i]),
                         bidSubmission.collateralAmounts[i] - oldCollateralAmount
                     );
@@ -466,7 +545,7 @@ contract TermAuctionBidLocker is
                 }
             } else {
                 termRepoCollateralManager.auctionLockCollateral(
-                    bidSubmission.bidder,
+                    sender,
                     address(bidSubmission.collateralTokens[i]),
                     bidSubmission.collateralAmounts[i]
                 );
@@ -506,7 +585,7 @@ contract TermAuctionBidLocker is
             revert NonRolloverBid(bid.id);
         }
 
-        if (bid.amount < minimumTenderAmount) {
+        if (bid.amount < minimumTenderAmount / MINIMUM_ROLLOVER_TENDER_DIVISOR) {
             revert BidAmountTooLow(bid.amount);
         }
 
@@ -714,6 +793,9 @@ contract TermAuctionBidLocker is
             } else {
                 previousBidPrice = revealedBid.bidPriceRevealed;
             }
+            if (!revealedBid.isRevealed) {
+                revert BidNotRevealed(revealedBid.id);
+            }
             if (revealedBid.isRollover) {
                 ITermRepoServicer pairOffServicer = ITermRepoServicer(
                     revealedBid.rolloverPairOffTermRepoServicer
@@ -735,10 +817,6 @@ contract TermAuctionBidLocker is
                     --auctionBidCount;
                     _processBidForAuction(revealedBid.id);
                     continue;
-                }
-            } else {
-                if (!revealedBid.isRevealed) {
-                    revert BidNotRevealed(revealedBid.id);
                 }
             }
 

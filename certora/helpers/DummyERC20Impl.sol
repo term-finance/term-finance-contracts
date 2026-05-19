@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 // with mint
 contract DummyERC20Impl {
     uint256 t;
-    mapping (address => uint256) b;
-    mapping (address => mapping (address => uint256)) a;
+    mapping(address => uint256) b;
+    mapping(address => mapping(address => uint256)) a;
 
     string public name;
     string public symbol;
@@ -16,13 +16,13 @@ contract DummyERC20Impl {
     }
 
     function add(uint a, uint b) internal pure returns (uint256) {
-        uint c = a +b;
-        require (c >= a);
+        uint c = a + b;
+        require(c >= a);
         return c;
     }
     function sub(uint a, uint b) internal pure returns (uint256) {
-        require (a>=b);
-        return a-b;
+        require(a >= b);
+        return a - b;
     }
 
     function totalSupply() external view returns (uint256) {
@@ -31,12 +31,18 @@ contract DummyERC20Impl {
     function balanceOf(address account) external view returns (uint256) {
         return b[account];
     }
-    function transfer(address recipient, uint256 amount) external returns (bool) {
+    function transfer(
+        address recipient,
+        uint256 amount
+    ) external returns (bool) {
         b[msg.sender] = sub(b[msg.sender], amount);
         b[recipient] = add(b[recipient], amount);
         return true;
     }
-    function allowance(address owner, address spender) external view returns (uint256) {
+    function allowance(
+        address owner,
+        address spender
+    ) external view returns (uint256) {
         return a[owner][spender];
     }
     function approve(address spender, uint256 amount) external returns (bool) {

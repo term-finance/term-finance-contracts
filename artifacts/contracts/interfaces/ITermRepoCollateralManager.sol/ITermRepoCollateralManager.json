@@ -43,7 +43,7 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "bidder",
+          "name": "sender",
           "type": "address"
         },
         {
@@ -66,7 +66,7 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "bidder",
+          "name": "sender",
           "type": "address"
         },
         {
@@ -190,6 +190,19 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "borrower",
+          "type": "address"
+        }
+      ],
+      "name": "encumberExistingCollateral",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "encumberedCollateralRemaining",
       "outputs": [
@@ -200,6 +213,29 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "borrower",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "collateralToken",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "externalLockCollateral",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -222,6 +258,29 @@
     },
     {
       "inputs": [
+        {
+          "internalType": "address",
+          "name": "collateralToken",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "externalUnlockCollateral",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "borrower",
+          "type": "address"
+        },
         {
           "internalType": "address",
           "name": "collateralToken",
@@ -375,6 +434,11 @@
         },
         {
           "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
           "name": "collateralToken",
           "type": "address"
         },
@@ -397,6 +461,19 @@
           "internalType": "uint8",
           "name": "",
           "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "termController",
+      "outputs": [
+        {
+          "internalType": "contract ITermController",
+          "name": "",
+          "type": "address"
         }
       ],
       "stateMutability": "view",

@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "MarketApproxPtOutLibV2",
+  "sourceName": "@pendle/core-v2/contracts/router/math/MarketApproxLibV2.sol",
+  "abi": [],
+  "bytecode": "0x60808060405234601757603a9081601d823930815050f35b600080fdfe600080fdfea26469706673582212209cbefbfc8b56dd503457b73e16fcc0ef440a55851377afa8f937284f9c89b3a764736f6c63430008160033",
+  "deployedBytecode": "0x600080fdfea26469706673582212209cbefbfc8b56dd503457b73e16fcc0ef440a55851377afa8f937284f9c89b3a764736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

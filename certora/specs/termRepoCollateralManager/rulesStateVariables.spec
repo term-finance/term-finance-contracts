@@ -17,7 +17,7 @@ methods {
     function _.termAuctionId() external => DISPATCHER(true);
     function _.termRepoServicer() external => DISPATCHER(true);
     function _.dayCountFractionMantissa() external => DISPATCHER(true);
-    function _.lockRolloverBid(uint256) external => DISPATCHER(true);
+    function _.lockRolloverBid(TermAuctionBidLocker.TermAuctionBid) external => DISPATCHER(true);
     function _.auctionEndTime() external => DISPATCHER(true);
     function _.purchaseToken() external => DISPATCHER(true);
     function _.collateralTokens(address) external => DISPATCHER(true);
@@ -43,7 +43,6 @@ rule onlyPairTermContractsChangesIsTermContractPaired(
     f.contract == currentContract &&
     f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,address).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector
 } {
     onlyPairTermContractsChangesIsTermContractPairedRule(e, f, args);

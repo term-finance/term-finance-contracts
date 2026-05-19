@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
-import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-interface ITermRepoToken is IERC20Upgradeable {
+interface ITermRepoToken is IERC20 {
     // ========================================================================
     // = State Variables ======================================================
     // ========================================================================

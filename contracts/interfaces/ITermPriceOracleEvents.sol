@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 /// @notice ITermPriceOracleEvents is an interface that defines all events emitted by the Term Price Oracle.
 interface ITermPriceOracleEvents {
@@ -15,7 +15,10 @@ interface ITermPriceOracleEvents {
     /// @notice Event emitted when a new fallback price feed is added or updated to price oracle.
     /// @param token The address of the token fee subscribe
     /// @param tokenPriceAggregator The proxy price aggregator address subscribed
-    event SubscribeFallbackPriceFeed(address token, address tokenPriceAggregator);
+    event SubscribeFallbackPriceFeed(
+        address token,
+        address tokenPriceAggregator
+    );
 
     /// @notice Event emitted when a fallback price feed is removed from price oracle.
     /// @param token The address of the token

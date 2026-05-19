@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 /// @notice TermRepoLocker contracts lock collateral and purchase tokens
 /// @notice Methods should only be callable from paired TermManager.

@@ -78,6 +78,44 @@
           "type": "address"
         }
       ],
+      "name": "isFactoryDeployed",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "contractAddress",
+          "type": "address"
+        }
+      ],
+      "name": "isTermApproved",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "contractAddress",
+          "type": "address"
+        }
+      ],
       "name": "isTermDeployed",
       "outputs": [
         {
@@ -97,7 +135,33 @@
           "type": "address"
         }
       ],
+      "name": "markTermApproved",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "termContract",
+          "type": "address"
+        }
+      ],
       "name": "markTermDeployed",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "factoryDeployedContract",
+          "type": "address"
+        }
+      ],
+      "name": "markTermFactoryDeployed",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -111,6 +175,13 @@
         }
       ],
       "name": "pairAuction",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pauseTermContracts",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -141,12 +212,122 @@
     {
       "inputs": [
         {
+          "internalType": "bytes32",
+          "name": "auctionId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "registerAuctionId",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "repoId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "registerRepoId",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "auctionId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "registeredAuctionIds",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "repoId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "registeredRepoIds",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "termContractsPaused",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "termContract",
+          "type": "address"
+        }
+      ],
+      "name": "unmarkTermApproved",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "address",
           "name": "termContract",
           "type": "address"
         }
       ],
       "name": "unmarkTermDeployed",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "factoryDeployedContract",
+          "type": "address"
+        }
+      ],
+      "name": "unmarkTermFactoryDeployed",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "unpauseTermContracts",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

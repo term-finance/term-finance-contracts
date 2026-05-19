@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermController} from "./interfaces/ITermController.sol";
 import {ITermControllerEvents} from "./interfaces/ITermControllerEvents.sol";
@@ -10,7 +10,6 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Versionable} from "./lib/Versionable.sol";
-
 
 /// @author TermLabs
 /// @title Term Controller
@@ -34,11 +33,15 @@ contract TermController is
         keccak256("CONTROLLER_ADMIN_ROLE");
     bytes32 public constant DEVOPS_ROLE = keccak256("DEVOPS_ROLE");
     bytes32 public constant INITIALIZER_ROLE = keccak256("INITIALIZER_ROLE");
+    bytes32 public constant FACTORY_DEPLOYER_ROLE = keccak256("FACTORY_DEPLOYER_ROLE");
     bytes32 public constant SPECIALIST_ROLE = keccak256("SPECIALIST_ROLE");
 
     // ========================================================================
     // = State Variables ======================================================
     // ========================================================================
+
+    // Pause state for all Term Finance contracts
+    bool public termContractsPaused;
 
     // Term Finance Treasury Wallet Address
     address internal treasuryWallet;
@@ -49,8 +52,31 @@ contract TermController is
     // Mapping which returns true for contract addresses deployed by Term Finance Protocol
     mapping(address => bool) internal termAddresses;
 
+    // Mapping which returns true for term repo contract addresses deployed by factory
+    mapping (address => bool) internal factoryDeployedAddresses;
+
+    // Mapping which returns true for external contract addresses approved for integration
+    mapping(address => bool) internal approvedExternalAddresses;
+
+    // Mapping which returns true for term repo ids registered in Controller
+    mapping(bytes32 => bool) public registeredRepoIds;
+
+    // Mapping which returns true for term auction ids registered in Controller
+    mapping(bytes32 => bool) public registeredAuctionIds;
+
     // Mapping which returns a TermAuctionResults object for each termId.
     mapping(bytes32 => TermAuctionResults) internal termAuctionResults;
+
+    // ========================================================================
+    // = Modifiers  ===========================================================
+    // ========================================================================
+
+    modifier onlyInitializerOrFactoryDeployer() {
+        require(hasRole(INITIALIZER_ROLE, msg.sender) || hasRole(FACTORY_DEPLOYER_ROLE, msg.sender), "Unauthorized");
+        _;
+    }
+
+     /// @custom:oz-upgrades-unsafe-allow constructor
 
     // ========================================================================
     // = Deploy  ==============================================================
@@ -76,15 +102,9 @@ contract TermController is
             "controller admin is zero address"
         );
 
-        require(
-            devopsWallet_ != address(0),
-            "devops wallet is zero address"
-        );
+        require(devopsWallet_ != address(0), "devops wallet is zero address");
 
-        require(
-            adminWallet_ != address(0),
-            "admin wallet is zero address"
-        );
+        require(adminWallet_ != address(0), "admin wallet is zero address");
 
         _grantRole(CONTROLLER_ADMIN_ROLE, controllerAdminWallet_);
         _grantRole(DEVOPS_ROLE, devopsWallet_);
@@ -100,14 +120,19 @@ contract TermController is
         protocolReserveWallet = protocolReserveWallet_;
     }
 
-    function pairInitializer(address initializer) external onlyRole(ADMIN_ROLE) {
+    function pairInitializer(
+        address initializer
+    ) external onlyRole(ADMIN_ROLE) {
         _grantRole(INITIALIZER_ROLE, initializer);
     }
 
-    function pairAuction (address auction) external onlyRole(INITIALIZER_ROLE) {
-        _grantRole(AUCTION_ROLE, auction);
+    function pairFactoryDeployer(address factoryDeployer) external onlyRole(ADMIN_ROLE) {
+        _grantRole(FACTORY_DEPLOYER_ROLE, factoryDeployer);
     }
 
+    function pairAuction(address auction) external onlyInitializerOrFactoryDeployer {
+        _grantRole(AUCTION_ROLE, auction);
+    }
 
     // ========================================================================
     // = Interface/API ========================================================
@@ -124,8 +149,14 @@ contract TermController is
         return protocolReserveWallet;
     }
 
-    function getTermAuctionResults(bytes32 termRepoId) external view returns (AuctionMetadata[] memory auctionMetadata, uint8 numOfAuctions){
-        auctionMetadata =  termAuctionResults[termRepoId].auctionMetadata;
+    function getTermAuctionResults(
+        bytes32 termRepoId
+    )
+        external
+        view
+        returns (AuctionMetadata[] memory auctionMetadata, uint8 numOfAuctions)
+    {
+        auctionMetadata = termAuctionResults[termRepoId].auctionMetadata;
         numOfAuctions = termAuctionResults[termRepoId].numOfAuctions;
     }
 
@@ -138,7 +169,25 @@ contract TermController is
         return _isTermDeployed(contractAddress);
     }
 
-     /// @param authedUser The address of user to check access for mint exposure
+    /// @notice External view function which returns whether contract address is deployed by a Term Finance factory
+    /// @param contractAddress The input contract address to query
+    /// @return Whether the given address is deployed by a Term Finance factory
+    function isFactoryDeployed(
+        address contractAddress
+    ) external view returns (bool) {
+        return _isFactoryDeployed(contractAddress);
+    }
+
+    /// @notice External view function which returns whether contract address is approved for integration
+    /// @param contractAddress The input contract address to query
+    /// @return Whether the given address is approved for integration
+    function isTermApproved(
+        address contractAddress
+    ) external view returns (bool) {
+        return _isTermApproved(contractAddress);
+    }
+
+    /// @param authedUser The address of user to check access for mint exposure
     function verifyMintExposureAccess(
         address authedUser
     ) external view returns (bool) {
@@ -231,6 +280,57 @@ contract TermController is
         delete termAddresses[termContract];
     }
 
+    /// @notice Admin function to add a new factory-deployed contract to Controller
+    /// @param factoryDeployedContract The factory-deployed contract address
+    function markTermFactoryDeployed(
+        address factoryDeployedContract
+    ) external onlyRole(FACTORY_DEPLOYER_ROLE) {
+        require(!_isFactoryDeployed(factoryDeployedContract), "Contract is already marked deployed by factory");
+
+        factoryDeployedAddresses[factoryDeployedContract] = true;
+    }
+
+    /// @notice Admin function to remove a factory-deployed contract from Controller
+    /// @param factoryDeployedContract The factory-deployed contract address
+    function unmarkTermFactoryDeployed(
+        address factoryDeployedContract
+    ) external onlyRole(CONTROLLER_ADMIN_ROLE) {
+        require(_isFactoryDeployed(factoryDeployedContract), "Contract is not marked deployed by factory");
+
+        delete factoryDeployedAddresses[factoryDeployedContract];
+    }
+
+    /// @notice Admin function to add a new term repo id to Controller
+    /// @param repoId The new term repo id
+    function registerRepoId(bytes32 repoId) external onlyInitializerOrFactoryDeployer  {
+        registeredRepoIds[repoId] = true;
+    }
+
+    /// @notice Admin function to add a new term auction id to Controller
+    /// @param auctionId The new term auction id
+    function registerAuctionId(bytes32 auctionId) external onlyInitializerOrFactoryDeployer  {
+        registeredAuctionIds[auctionId] = true;
+    }
+
+    /// @notice Admin function to add a new external contract to Controller
+    /// @param externalContract The new external contract address
+    function markTermApproved(
+        address externalContract
+    ) external onlyRole(ADMIN_ROLE) {
+        require(!approvedExternalAddresses[externalContract], "Contract is already approved");
+        approvedExternalAddresses[externalContract] = true;
+    }
+
+    /// @notice Admin function to remove an external contract from Controller
+    /// @param externalContract The new external contract address
+    function unmarkTermApproved(
+        address externalContract
+    ) external onlyRole(ADMIN_ROLE) {
+        require(approvedExternalAddresses[externalContract], "Contract is not approved");
+        delete approvedExternalAddresses[externalContract];
+    }
+
+
     /// @param authedUser The address of user granted access to create mint exposure
     function grantMintExposureAccess(
         address authedUser
@@ -245,8 +345,29 @@ contract TermController is
         _revokeRole(SPECIALIST_ROLE, revokedUser);
     }
 
-    function recordAuctionResult(bytes32 termRepoId, bytes32 termAuctionId, uint256 auctionClearingRate) external onlyRole(AUCTION_ROLE) {
-    
+    /// @notice Pauses all Term Finance contracts
+    /// @dev Sets the global pause state to true, halting contract operations
+    function pauseTermContracts()
+        external
+        onlyRole(ADMIN_ROLE)
+    {
+        termContractsPaused = true;
+    }
+
+    /// @notice Unpauses all Term Finance contracts
+    /// @dev Sets the global pause state to false, resuming contract operations
+    function unpauseTermContracts()
+        external
+        onlyRole(ADMIN_ROLE)
+    {
+        termContractsPaused = false;
+    }
+
+    function recordAuctionResult(
+        bytes32 termRepoId,
+        bytes32 termAuctionId,
+        uint256 auctionClearingRate
+    ) external onlyRole(AUCTION_ROLE) {
         TermAuctionResults storage term = termAuctionResults[termRepoId];
         AuctionMetadata memory auctionMetadata = AuctionMetadata({
             termAuctionId: termAuctionId,
@@ -254,13 +375,25 @@ contract TermController is
             auctionClearingBlockTimestamp: block.timestamp
         });
         term.auctionMetadata.push(auctionMetadata);
-        term.numOfAuctions++;   
+        term.numOfAuctions++;
     }
 
     function _isTermDeployed(
         address contractAddress
     ) private view returns (bool) {
         return termAddresses[contractAddress];
+    }
+
+    function _isFactoryDeployed(
+        address contractAddress
+    ) private view returns (bool) {
+        return factoryDeployedAddresses[contractAddress];
+    }
+
+    function _isTermApproved(
+        address contractAddress
+    ) private view returns (bool) {
+        return approvedExternalAddresses[contractAddress];
     }
 
     // ========================================================================

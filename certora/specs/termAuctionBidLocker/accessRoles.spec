@@ -19,7 +19,6 @@ rule onlyRoleCanCallRevert(
     f -> !f.isView 
     && f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,uint256,address,address[],address).selector
     && f.selector != sig:upgradeToAndCall(address,bytes).selector
-    && f.selector != sig:upgradeTo(address).selector
     && f.selector != sig:grantRole(bytes32,address).selector
     && f.selector != sig:renounceRole(bytes32,address).selector
     && f.selector != sig:revokeRole(bytes32,address).selector
@@ -49,7 +48,6 @@ rule onlyRoleCanCallStorage(
     f -> !f.isView 
     && f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,uint256,address,address[],address).selector
     && f.selector != sig:upgradeToAndCall(address,bytes).selector
-    && f.selector != sig:upgradeTo(address).selector
     && f.selector != sig:grantRole(bytes32,address).selector
     && f.selector != sig:renounceRole(bytes32,address).selector
     && f.selector != sig:revokeRole(bytes32,address).selector

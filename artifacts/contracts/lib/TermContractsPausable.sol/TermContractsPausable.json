@@ -1,0 +1,16 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "TermContractsPausable",
+  "sourceName": "contracts/lib/TermContractsPausable.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "TermContractsPaused",
+      "type": "error"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

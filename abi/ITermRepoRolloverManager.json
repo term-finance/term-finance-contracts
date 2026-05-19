@@ -1,7 +1,55 @@
 [
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "borrower",
+        "type": "address"
+      }
+    ],
+    "name": "cancelRollover",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [],
     "name": "cancelRollover",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "borrower",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "rolloverAuctionBidLocker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rolloverAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "rolloverBidPriceHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct TermRepoRolloverElectionSubmission",
+        "name": "termRepoRolloverElectionSubmission",
+        "type": "tuple"
+      }
+    ],
+    "name": "electRollover",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -85,6 +133,19 @@
         "internalType": "struct TermRepoRolloverElection",
         "name": "",
         "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "termController",
+    "outputs": [
+      {
+        "internalType": "contract ITermController",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",

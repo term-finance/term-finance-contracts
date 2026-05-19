@@ -1,0 +1,59 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "asset",
+        "type": "address"
+      }
+    ],
+    "name": "getReserveTokensAddresses",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "aTokenAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "stableDebtTokenAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "variableDebtTokenAddress",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "asset",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "aToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "stableDebt",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "varDebt",
+        "type": "address"
+      }
+    ],
+    "name": "setReserveTokensAddresses",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

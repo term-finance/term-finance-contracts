@@ -1,24 +1,19 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { parse } from "csv-parse";
 import {
   FixedNumber,
-  BigNumber,
   Signer,
   BigNumberish,
-  utils,
-  Contract,
-} from "ethers";
-import { ethers } from "hardhat";
-import IERC20MetadataUpgradeableABI from "../abi/IERC20MetadataUpgradeable.json";
-import TermAuctionBidLockerABI from "../abi/TermAuctionBidLocker.json";
-import TermAuctionOfferLockerABI from "../abi/TermAuctionOfferLocker.json";
-import {
+  BaseContract,
+  solidityPackedKeccak256,
+  ZeroAddress,
   keccak256,
   toUtf8Bytes,
-  solidityKeccak256,
   formatUnits,
-  commify,
-} from "ethers/lib/utils";
+} from "ethers";
+import { ethers } from "hardhat";
+import IERC20MetadataABI from "../abi/IERC20Metadata.json";
+import TermAuctionBidLockerABI from "../abi/TermAuctionBidLocker.json";
+import TermAuctionOfferLockerABI from "../abi/TermAuctionOfferLocker.json";
 import {
   TermAuctionBidLocker,
   TermAuctionBidStruct,
@@ -29,9 +24,11 @@ import {
   TermAuctionOfferStruct,
   TermAuctionOfferSubmissionStruct,
 } from "../typechain-types/contracts/TermAuctionOfferLocker";
-import { IERC20MetadataUpgradeable } from "../typechain-types";
+import { IERC20Metadata } from "../typechain-types";
 import { CompleteAuctionInputStruct } from "../typechain-types/contracts/TermAuction";
 import { randomInt } from "crypto";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { commify } from "./commify";
 
 export const testDecimals = 17;
 
@@ -58,7 +55,7 @@ export async function lockRandomizedTenders(
     const bidAmount =
       randomInt(minTenderAmount, 20000000).toString() + "0".repeat(18);
     const bidPriceRevealed = randomInt(1, 100).toString() + "0".repeat(16);
-    const bidPriceHash = solidityKeccak256(
+    const bidPriceHash = solidityPackedKeccak256(
       ["uint256", "uint256"],
       [bidPriceRevealed, "12345"],
     );
@@ -87,7 +84,7 @@ export async function lockRandomizedTenders(
     const offerAmount =
       randomInt(minTenderAmount, 20000000).toString() + "0".repeat(18);
     const offerPriceRevealed = randomInt(1, 100).toString() + "0".repeat(16);
-    const offerPriceHash = solidityKeccak256(
+    const offerPriceHash = solidityPackedKeccak256(
       ["uint256", "uint256"],
       [offerPriceRevealed, "12345"],
     );
@@ -115,9 +112,9 @@ export async function lockRandomizedTenders(
 }
 
 export function parsePrice(price: string): string {
-  const retVal = FixedNumber.from(price, `fixed128x${testDecimals}`)
+  const retVal = FixedNumber.fromString(price, `fixed128x${testDecimals}`)
     .mulUnsafe(
-      FixedNumber.from(
+      FixedNumber.fromString(
         "1" + "0".repeat(testDecimals),
         `fixed128x${testDecimals}`,
       ),
@@ -133,12 +130,16 @@ export function getBytesHash(input: string): string {
 
 export async function getGeneratedTenderId(
   input: string,
-  contract: Contract,
+  contract: BaseContract,
   wallet: Signer,
 ) {
-  return utils.solidityKeccak256(
+  return solidityPackedKeccak256(
     ["bytes32", "address", "address"],
-    [input, await wallet.getAddress(), contract.address.toLowerCase()],
+    [
+      input,
+      await wallet.getAddress(),
+      (await contract.getAddress()).toLowerCase(),
+    ],
   );
 }
 
@@ -183,20 +184,18 @@ export function parseBidsOffers(
             bidder: !wallets?.length
               ? row[3]
               : wallets[parseInt(row[3]) - 1].address,
-            bidPriceHash: solidityKeccak256(
+            bidPriceHash: solidityPackedKeccak256(
               ["uint256", "uint256"],
               [parsePrice(row[5]), "12345"],
             ),
             bidPriceRevealed: parsePrice(row[5]),
             amount: row[4],
-            collateralAmounts: [
-              BigNumber.from(row[4]).mul(3).div(2).toString(),
-            ],
+            collateralAmounts: [((BigInt(row[4]) * 3n) / 2n).toString()],
             purchaseToken,
             collateralTokens: [collateralToken],
             isRevealed: true,
             isRollover: false,
-            rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
+            rolloverPairOffTermRepoServicer: ZeroAddress,
           };
           bids.push(bid);
         }
@@ -209,7 +208,7 @@ export function parseBidsOffers(
             offeror: !wallets?.length
               ? row[0]
               : wallets[parseInt(row[0]) - 1 + bids.length].address,
-            offerPriceHash: solidityKeccak256(
+            offerPriceHash: solidityPackedKeccak256(
               ["uint256", "uint256"],
               [parsePrice(row[2]), "678910"],
             ),
@@ -223,22 +222,19 @@ export function parseBidsOffers(
       }
 
       bids.sort((a, b) => {
-        const diff = BigNumber.from(a.bidPriceRevealed).sub(
-          BigNumber.from(b.bidPriceRevealed),
-        );
-        if (diff.eq(0)) {
+        const diff = BigInt(a.bidPriceRevealed) - BigInt(b.bidPriceRevealed);
+        if (diff === 0n) {
           return 0;
         }
-        return diff.lt(0) ? -1 : 1;
+        return diff < 0n ? -1 : 1;
       });
       offers.sort((a, b) => {
-        const diff = BigNumber.from(a.offerPriceRevealed).sub(
-          BigNumber.from(b.offerPriceRevealed),
-        );
-        if (diff.eq(0)) {
+        const diff =
+          BigInt(a.offerPriceRevealed) - BigInt(b.offerPriceRevealed);
+        if (diff === 0n) {
           return 0;
         }
-        return diff.lt(0) ? -1 : 1;
+        return diff < 0n ? -1 : 1;
       });
 
       resolve({ bids, offers });
@@ -283,16 +279,16 @@ export async function approveTokens(
   for (const signer of signers) {
     for (const tokenAddress of tokenAddresses) {
       const token = (await ethers.getContractAt(
-        IERC20MetadataUpgradeableABI,
+        IERC20MetadataABI,
         tokenAddress,
         signer,
-      )) as IERC20MetadataUpgradeable;
+      )) as unknown as IERC20Metadata;
 
       const signerAddress = await signer.getAddress();
 
-      const approveAmountBn = BigNumber.from(approveAmount);
+      const approveAmountBn = BigInt(approveAmount);
       const allowance = await token.allowance(signerAddress, spenderAddress);
-      if (allowance.lt(approveAmountBn)) {
+      if (allowance < approveAmountBn) {
         const tokenSymbol = await token.symbol();
         const tokenDecimals = await token.decimals();
 
@@ -318,7 +314,7 @@ export async function filterAlreadyLockedBids(
   const bidLocker = (await ethers.getContractAt(
     TermAuctionBidLockerABI,
     bidLockerAddress,
-  )) as TermAuctionBidLocker;
+  )) as unknown as TermAuctionBidLocker;
 
   const filteredBids: TermAuctionBidStruct[] = [];
   for (const bid of bids) {
@@ -339,7 +335,7 @@ export async function filterAlreadyLockedOffers(
   const offerLocker = (await ethers.getContractAt(
     TermAuctionOfferLockerABI,
     offerLockerAddress,
-  )) as TermAuctionOfferLocker;
+  )) as unknown as TermAuctionOfferLocker;
 
   const filteredOffers: TermAuctionOfferStruct[] = [];
   for (const offer of offers) {
@@ -363,7 +359,7 @@ export async function lockBids(
         TermAuctionBidLockerABI,
         bidLockerAddress,
         signer,
-      )) as TermAuctionBidLocker)
+      )) as unknown as TermAuctionBidLocker)
     : undefined;
 
   const bidGroups: { [bidder: string]: TermAuctionBidSubmissionStruct[] } = {};
@@ -386,7 +382,7 @@ export async function lockBids(
         TermAuctionBidLockerABI,
         bidLockerAddress,
         signers[bidder],
-      )) as TermAuctionBidLocker);
+      )) as unknown as TermAuctionBidLocker);
 
     await termAuctionBidLocker.connect(signers[bidder]).lockBids(bids);
     console.log(`Locked bids: ${bids.map((bid) => bid.id)}`);
@@ -404,7 +400,7 @@ export async function lockOffers(
         TermAuctionOfferLockerABI,
         offerLockerAddress,
         signer,
-      )) as TermAuctionOfferLocker)
+      )) as unknown as TermAuctionOfferLocker)
     : undefined;
 
   const offerGroups: { [offeror: string]: TermAuctionOfferSubmissionStruct[] } =
@@ -429,7 +425,7 @@ export async function lockOffers(
         TermAuctionOfferLockerABI,
         offerLockerAddress,
         signers[offeror],
-      )) as TermAuctionOfferLocker);
+      )) as unknown as TermAuctionOfferLocker);
 
     console.log(`Locking offers: ${JSON.stringify(offers, null, 2)}`);
     await termAuctionOfferLocker.connect(signers[offeror]).lockOffers(offers);
@@ -445,7 +441,7 @@ export async function revealBids(
   const termAuctionBidLocker = (await ethers.getContractAt(
     TermAuctionBidLockerABI,
     bidLockerAddress,
-  )) as TermAuctionBidLocker;
+  )) as unknown as TermAuctionBidLocker;
 
   const ids = await Promise.all(
     bids.map((bid) =>
@@ -475,7 +471,7 @@ export async function revealOffers(
   const termAuctionOfferLocker = (await ethers.getContractAt(
     TermAuctionOfferLockerABI,
     offerLockerAddress,
-  )) as TermAuctionOfferLocker;
+  )) as unknown as TermAuctionOfferLocker;
 
   const ids = await Promise.all(
     offers.map((offer) =>

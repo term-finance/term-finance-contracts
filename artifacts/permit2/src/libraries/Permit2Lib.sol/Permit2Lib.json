@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "Permit2Lib",
+  "sourceName": "permit2/src/libraries/Permit2Lib.sol",
+  "abi": [],
+  "bytecode": "0x60808060405234601757603a9081601d823930815050f35b600080fdfe600080fdfea264697066735822122056aa3068efb5e65453be55801fbbb2b7e52957e9363380aec99092b4ff2ab92e64736f6c63430008160033",
+  "deployedBytecode": "0x600080fdfea264697066735822122056aa3068efb5e65453be55801fbbb2b7e52957e9363380aec99092b4ff2ab92e64736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

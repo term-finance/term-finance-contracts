@@ -1,0 +1,63 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "TestMockAavePoolAddressesProvider",
+  "sourceName": "contracts/test/TestMockAavePoolAddressesProvider.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "getPoolDataProvider",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getPriceOracle",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "dataProvider",
+          "type": "address"
+        }
+      ],
+      "name": "setPoolDataProvider",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "oracle",
+          "type": "address"
+        }
+      ],
+      "name": "setPriceOracle",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608080604052346100165761014d908161001c8239f35b600080fdfe608080604052600436101561001357600080fd5b600090813560e01c908163530e784f146100d9578163e44e9ed1146100a0578163e860accb14610078575063fca513a81461004d57600080fd5b346100755780600319360112610075576001546040516001600160a01b039091168152602090f35b80fd5b90503461009c578160031936011261009c5790546001600160a01b03168152602090f35b5080fd5b8234610075576020366003190112610075576004356001600160a01b0381169081900361009c5781546001600160a01b03191617815580f35b8234610075576020366003190112610075576004356001600160a01b0381169081900361009c57600180546001600160a01b03191691909117905580f3fea2646970667358221220d3aeac042a437bcf8183310571db9b5f9b8348b5cd8a5f828c0360609ac1e79a64736f6c63430008160033",
+  "deployedBytecode": "0x608080604052600436101561001357600080fd5b600090813560e01c908163530e784f146100d9578163e44e9ed1146100a0578163e860accb14610078575063fca513a81461004d57600080fd5b346100755780600319360112610075576001546040516001600160a01b039091168152602090f35b80fd5b90503461009c578160031936011261009c5790546001600160a01b03168152602090f35b5080fd5b8234610075576020366003190112610075576004356001600160a01b0381169081900361009c5781546001600160a01b03191617815580f35b8234610075576020366003190112610075576004356001600160a01b0381169081900361009c57600180546001600160a01b03191691909117905580f3fea2646970667358221220d3aeac042a437bcf8183310571db9b5f9b8348b5cd8a5f828c0360609ac1e79a64736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

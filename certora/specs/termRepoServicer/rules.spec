@@ -26,8 +26,8 @@ methods {
     // function _.transferTokenToWallet(address,address,uint256) external => DISPATCHER(true);
 
     // TermController
-    function TermController.getTreasuryAddress() external returns (address) => ALWAYS(100);
-    function TermController.getProtocolReserveAddress() external returns (address) => ALWAYS(100);
+    function _.getTreasuryAddress() external => ALWAYS(100);
+    function _.getProtocolReserveAddress() external => ALWAYS(100);
 
 
     // // TermRepoRolloverManager
@@ -69,7 +69,6 @@ rule onlyPairTermContractsChangesIsTermContractPaired(
     f.contract == currentContract &&
     f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,string).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector
 } {
     onlyPairTermContractsChangesIsTermContractPairedRule(e, f, args);
@@ -80,5 +79,7 @@ use rule onlyRoleCanCallStorage;
 
 use rule openExposureOnRolloverNewIntegrity;
 use rule openExposureOnRolloverNewDoesNotAffectThirdParty;
+use rule openExposureOnRolloverNewRevertConditions;
 use rule closeExposureOnRolloverExistingIntegrity;
 use rule closeExposureOnRolloverExistingDoesNotAffectThirdParty;
+use rule closeExposureOnRolloverExistingRevertConditions;

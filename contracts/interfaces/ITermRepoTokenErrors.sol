@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 /// @notice ITermRepoTokenErrors defines all errors emitted by Term Repo Token.
 interface ITermRepoTokenErrors {

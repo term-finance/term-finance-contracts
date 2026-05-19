@@ -1,8 +1,9 @@
 /* eslint-disable camelcase */
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
 import { TestTermEventEmitter } from "../typechain-types";
+import { MaxUint256, ZeroAddress, ZeroHash } from "ethers";
 
 describe("TermEventEmitter", () => {
   let wallets: SignerWithAddress[];
@@ -15,7 +16,7 @@ describe("TermEventEmitter", () => {
 
     const versionableFactory = await ethers.getContractFactory("Versionable");
     const versionable = await versionableFactory.deploy();
-    await versionable.deployed();
+    await versionable.deploymentTransaction()?.wait();
     expectedVersion = await versionable.version();
 
     const termEventEmitterFactory = await ethers.getContractFactory(
@@ -23,9 +24,9 @@ describe("TermEventEmitter", () => {
     );
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [wallets[3].address, wallets[4].address, wallets[5].address],
+      [wallets[3].address, wallets[4].address, wallets[5].address, wallets[4].address, wallets[5].address],
       { kind: "uups" },
-    )) as TestTermEventEmitter;
+    )) as unknown as TestTermEventEmitter;
   });
 
   beforeEach(async () => {
@@ -39,8 +40,9 @@ describe("TermEventEmitter", () => {
   it("pair term contract reverted if called by somebody else other than admin", async () => {
     await expect(
       termEventEmitter.connect(wallets[1]).pairTermContract(wallets[0].address),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`,
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
   });
 
@@ -49,8 +51,9 @@ describe("TermEventEmitter", () => {
 
     await expect(
       termEventEmitter.connect(wallets[1]).upgrade(wallets[0].address),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
   });
   it("auction event emissions are access controlled", async () => {
@@ -58,54 +61,52 @@ describe("TermEventEmitter", () => {
       termEventEmitter
         .connect(wallets[1])
         .emitTermAuctionInitialized(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
+          ZeroHash,
+          ZeroHash,
           wallets[1].address,
           0,
+          wallets[1].address,
           "0.1.0",
         ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitBidAssigned(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitBidAssigned(ZeroHash, ZeroHash, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitOfferAssigned(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitOfferAssigned(ZeroHash, ZeroHash, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitAuctionCompleted(ethers.constants.HashZero, 0, 0, 0, 0, 0),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitAuctionCompleted(ZeroHash, 0, 0, 0, 0, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitAuctionCancelled(ethers.constants.HashZero, true, false),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitAuctionCancelled(ZeroHash, true, false),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
   });
   it("auction bidlocker event emissions are access controlled", async () => {
@@ -113,92 +114,84 @@ describe("TermEventEmitter", () => {
       termEventEmitter
         .connect(wallets[1])
         .emitTermAuctionBidLockerInitialized(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
+          ZeroHash,
+          ZeroHash,
           wallets[1].address,
           0,
           0,
-          ethers.constants.MaxUint256,
-          ethers.constants.Two,
-          ethers.constants.One,
+          MaxUint256,
+          2n,
+          1n,
         ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter.connect(wallets[1]).emitBidLocked(
-        ethers.constants.HashZero,
+        ZeroHash,
         {
-          id: ethers.constants.HashZero,
-          bidPriceHash: ethers.constants.HashZero,
+          id: ZeroHash,
+          bidPriceHash: ZeroHash,
           bidPriceRevealed: "10",
-          bidder: ethers.constants.AddressZero,
+          bidder: ZeroAddress,
           amount: 9000,
           collateralTokens: [],
           collateralAmounts: [],
           isRevealed: true,
           isRollover: false,
-          rolloverPairOffTermRepoServicer: ethers.constants.AddressZero,
-          purchaseToken: ethers.constants.AddressZero,
+          rolloverPairOffTermRepoServicer: ZeroAddress,
+          purchaseToken: ZeroAddress,
         },
-        ethers.constants.AddressZero,
+        ZeroAddress,
       ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitBidRevealed(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitBidRevealed(ZeroHash, ZeroHash, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
+    );
+
+    await expect(
+      termEventEmitter.connect(wallets[1]).emitBidUnlocked(ZeroHash, ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitBidUnlocked(ethers.constants.HashZero, ethers.constants.HashZero),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitBidInShortfall(ZeroHash, ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitBidInShortfall(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitBidLockingPaused(ZeroHash, ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitBidLockingPaused(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
-    );
-
-    await expect(
-      termEventEmitter
-        .connect(wallets[1])
-        .emitBidLockingUnpaused(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitBidLockingUnpaused(ZeroHash, ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
   });
   it("auction termAuctionOfferLocker event emissions are access controlled", async () => {
@@ -206,77 +199,70 @@ describe("TermEventEmitter", () => {
       termEventEmitter
         .connect(wallets[1])
         .emitTermAuctionOfferLockerInitialized(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
+          ZeroHash,
+          ZeroHash,
           wallets[1].address,
           0,
           0,
-          ethers.constants.MaxUint256,
-          ethers.constants.Two,
+          MaxUint256,
+          2n,
         ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
         .emitOfferLocked(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          ethers.constants.HashZero,
+          ZeroHash,
+          ZeroHash,
+          ZeroAddress,
+          ZeroHash,
           0,
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
+          ZeroAddress,
+          ZeroAddress,
         ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitOfferRevealed(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitOfferRevealed(ZeroHash, ZeroHash, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitOfferUnlocked(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitOfferUnlocked(ZeroHash, ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitOfferLockingPaused(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitOfferLockingPaused(ZeroHash, ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitOfferLockingUnpaused(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitOfferLockingUnpaused(ZeroHash, ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
   });
   it("collateral manager event emissions are access controlled", async () => {
@@ -284,86 +270,75 @@ describe("TermEventEmitter", () => {
       termEventEmitter
         .connect(wallets[1])
         .emitTermRepoCollateralManagerInitialized(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
+          ZeroHash,
+          ZeroAddress,
           [],
           [],
           [],
           [],
         ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitPairReopeningBidLocker(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitPairReopeningBidLocker(ZeroHash, ZeroAddress, ZeroAddress),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitCollateralLocked(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitCollateralLocked(ZeroHash, ZeroAddress, ZeroAddress, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitCollateralUnlocked(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitCollateralUnlocked(ZeroHash, ZeroAddress, ZeroAddress, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
         .emitLiquidation(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
+          ZeroHash,
+          ZeroAddress,
+          ZeroAddress,
           0,
-          ethers.constants.AddressZero,
+          ZeroAddress,
           0,
           0,
           false,
         ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
-      termEventEmitter
-        .connect(wallets[1])
-        .emitLiquidationPaused(ethers.constants.HashZero),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+      termEventEmitter.connect(wallets[1]).emitLiquidationPaused(ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
-      termEventEmitter
-        .connect(wallets[1])
-        .emitLiquidationUnpaused(ethers.constants.HashZero),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+      termEventEmitter.connect(wallets[1]).emitLiquidationUnpaused(ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
   });
   it("servicer event emissions are access controlled", async () => {
@@ -371,376 +346,649 @@ describe("TermEventEmitter", () => {
       termEventEmitter
         .connect(wallets[1])
         .emitTermRepoServicerInitialized(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
+          ZeroHash,
+          ZeroAddress,
+          ZeroAddress,
           0,
           0,
           0,
           0,
+          wallets[1].address,
           "0.1.0",
         ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
         .emitReopeningOfferLockerPaired(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
+          ZeroHash,
+          ZeroAddress,
+          ZeroAddress,
+          ZeroAddress,
         ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitOfferLockedByServicer(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitOfferLockedByServicer(ZeroHash, ZeroAddress, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitOfferUnlockedByServicer(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitOfferUnlockedByServicer(ZeroHash, ZeroAddress, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitOfferFulfilled(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          0,
-          0,
-          ethers.constants.HashZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitOfferFulfilled(ZeroHash, ZeroAddress, 0, 0, ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitTermRepoTokensRedeemed(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          0,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitTermRepoTokensRedeemed(ZeroHash, ZeroAddress, 0, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitBidFulfilled(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          0,
-          0,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitBidFulfilled(ZeroHash, ZeroAddress, 0, 0, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitExposureOpenedOnRolloverNew(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          0,
-          0,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitExposureOpenedOnRolloverNew(ZeroHash, ZeroAddress, 0, 0, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitExposureClosedOnRolloverExisting(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitExposureClosedOnRolloverExisting(ZeroHash, ZeroAddress, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitRepurchasePaymentSubmitted(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitRepurchasePaymentSubmitted(ZeroHash, ZeroAddress, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitMintExposure(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          0,
-          0,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitMintExposure(ZeroHash, ZeroAddress, 0, 0, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitBurnCollapseExposure(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitBurnCollapseExposure(ZeroHash, ZeroAddress, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
   });
   it("rollover manager event emissions are access controlled", async () => {
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitTermRepoRolloverManagerInitialized(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitTermRepoRolloverManagerInitialized(ZeroHash, ZeroAddress),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitRolloverTermApproved(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitRolloverTermApproved(ZeroHash, ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
         .emitRolloverElection(
-          ethers.constants.HashZero,
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          ethers.constants.AddressZero,
+          ZeroHash,
+          ZeroHash,
+          ZeroAddress,
+          ZeroAddress,
           0,
-          ethers.constants.HashZero,
+          ZeroHash,
         ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitRolloverCancellation(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitRolloverCancellation(ZeroHash, ZeroAddress),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitRolloverProcessed(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitRolloverProcessed(ZeroHash, ZeroAddress),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
   });
   it("term repo locker event emissions are access controlled", async () => {
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitTermRepoLockerInitialized(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitTermRepoLockerInitialized(ZeroHash, ZeroAddress),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitTermRepoLockerTransfersPaused(ethers.constants.HashZero),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitTermRepoLockerTransfersPaused(ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitTermRepoLockerTransfersUnpaused(ethers.constants.HashZero),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitTermRepoLockerTransfersUnpaused(ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitRolloverCancellation(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitRolloverCancellation(ZeroHash, ZeroAddress),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitRolloverProcessed(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitRolloverProcessed(ZeroHash, ZeroAddress),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
   });
   it("term repo locker event emissions are access controlled", async () => {
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitTermRepoLockerInitialized(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitTermRepoLockerInitialized(ZeroHash, ZeroAddress),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitTermRepoLockerTransfersPaused(ethers.constants.HashZero),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitTermRepoLockerTransfersPaused(ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitTermRepoLockerTransfersUnpaused(ethers.constants.HashZero),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitTermRepoLockerTransfersUnpaused(ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
   });
   it("term repo token event emissions are access controlled", async () => {
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitTermRepoTokenInitialized(
-          ethers.constants.HashZero,
-          ethers.constants.AddressZero,
-          0,
-        ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitTermRepoTokenInitialized(ZeroHash, ZeroAddress, 0),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitTermRepoTokenMintingPaused(ethers.constants.HashZero),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitTermRepoTokenMintingPaused(ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitTermRepoTokenMintingUnpaused(ethers.constants.HashZero),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitTermRepoTokenMintingUnpaused(ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitTermRepoTokenBurningPaused(ethers.constants.HashZero),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitTermRepoTokenBurningPaused(ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
       termEventEmitter
         .connect(wallets[1])
-        .emitTermRepoTokenBurningUnpaused(ethers.constants.HashZero),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0xd826f92d418c5d20475612da193d2053b8323c543561622a20bce855d857e321`,
+        .emitTermRepoTokenBurningUnpaused(ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
   });
   it("term event emitter events can be emitted", async () => {
     await expect(
-      termEventEmitter
-        .connect(wallets[4])
-        .emitDelistTermRepo(ethers.constants.HashZero),
+      termEventEmitter.connect(wallets[4]).emitDelistTermRepo(ZeroHash),
     ).to.emit(termEventEmitter, "DelistTermRepo");
 
     await expect(
-      termEventEmitter
-        .connect(wallets[4])
-        .emitDelistTermAuction(ethers.constants.HashZero),
+      termEventEmitter.connect(wallets[4]).emitDelistTermAuction(ZeroHash),
     ).to.emit(termEventEmitter, "DelistTermAuction");
   });
   it("term event emitter event emissions are access controlled", async () => {
     await expect(
-      termEventEmitter
-        .connect(wallets[1])
-        .emitDelistTermRepo(ethers.constants.HashZero),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0x992b7de0144989096133dd485c7c23b149cc4ea0152d8a6481d467e12f7fc71f`,
+      termEventEmitter.connect(wallets[1]).emitDelistTermRepo(ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
 
     await expect(
-      termEventEmitter
-        .connect(wallets[1])
-        .emitDelistTermAuction(ethers.constants.HashZero),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallets[1].address.toLowerCase()} is missing role 0x992b7de0144989096133dd485c7c23b149cc4ea0152d8a6481d467e12f7fc71f`,
+      termEventEmitter.connect(wallets[1]).emitDelistTermAuction(ZeroHash),
+    ).to.be.revertedWithCustomError(
+      termEventEmitter,
+      "AccessControlUnauthorizedAccount",
     );
   });
   it("version returns the current contract version", async () => {
     expect(await termEventEmitter.version()).to.eq(expectedVersion);
+  });
+
+  describe("emit function success paths", () => {
+    // wallets[4] has ADMIN_ROLE, wallets[5] has INITIALIZER_ROLE
+    // Grant wallets[6] TERM_CONTRACT role before each test
+    beforeEach(async () => {
+      await termEventEmitter
+        .connect(wallets[5])
+        .pairTermContract(wallets[6].address);
+    });
+
+    it("pairTermFactory grants INITIALIZER_ROLE", async () => {
+      await expect(
+        termEventEmitter
+          .connect(wallets[4])
+          .pairTermFactory(wallets[7].address),
+      ).to.not.be.reverted;
+      // wallets[7] now has INITIALIZER_ROLE and can pair a contract
+      await expect(
+        termEventEmitter
+          .connect(wallets[7])
+          .pairTermContract(wallets[8].address),
+      ).to.not.be.reverted;
+    });
+
+    it("pairTermContract success", async () => {
+      await expect(
+        termEventEmitter
+          .connect(wallets[5])
+          .pairTermContract(wallets[7].address),
+      ).to.not.be.reverted;
+    });
+
+    it("auction events emit successfully", async () => {
+      const tc = termEventEmitter.connect(wallets[6]);
+
+      await expect(
+        tc.emitTermAuctionInitialized(
+          ZeroHash, ZeroHash, wallets[0].address, 0, wallets[0].address, "0.1.0",
+        ),
+      ).to.emit(termEventEmitter, "TermAuctionInitialized");
+
+      await expect(tc.emitBidAssigned(ZeroHash, ZeroHash, 0))
+        .to.emit(termEventEmitter, "BidAssigned");
+
+      await expect(tc.emitOfferAssigned(ZeroHash, ZeroHash, 0))
+        .to.emit(termEventEmitter, "OfferAssigned");
+
+      await expect(tc.emitAuctionCompleted(ZeroHash, 0, 0, 0, 0, 0))
+        .to.emit(termEventEmitter, "AuctionCompleted");
+
+      await expect(tc.emitAuctionCancelled(ZeroHash, true, false))
+        .to.emit(termEventEmitter, "AuctionCancelled");
+
+      await expect(tc.emitCompleteAuctionPaused(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "CompleteAuctionPaused");
+
+      await expect(tc.emitCompleteAuctionUnpaused(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "CompleteAuctionUnpaused");
+    });
+
+    it("bid locker events emit successfully", async () => {
+      const tc = termEventEmitter.connect(wallets[6]);
+
+      await expect(
+        tc.emitTermAuctionBidLockerInitialized(
+          ZeroHash, ZeroHash, wallets[0].address, 0, 0, MaxUint256, 2n, 1n,
+        ),
+      ).to.emit(termEventEmitter, "TermAuctionBidLockerInitialized");
+
+      await expect(
+        tc.emitBidLocked(
+          ZeroHash,
+          {
+            id: ZeroHash,
+            bidPriceHash: ZeroHash,
+            bidPriceRevealed: 0,
+            bidder: ZeroAddress,
+            amount: 0,
+            collateralTokens: [],
+            collateralAmounts: [],
+            isRevealed: false,
+            isRollover: false,
+            rolloverPairOffTermRepoServicer: ZeroAddress,
+            purchaseToken: ZeroAddress,
+          },
+          ZeroAddress,
+        ),
+      ).to.emit(termEventEmitter, "BidLocked");
+
+      await expect(tc.emitBidRevealed(ZeroHash, ZeroHash, 0))
+        .to.emit(termEventEmitter, "BidRevealed");
+
+      await expect(tc.emitBidUnlocked(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "BidUnlocked");
+
+      await expect(tc.emitBidInShortfall(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "BidInShortfall");
+
+      await expect(tc.emitBidLockingPaused(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "BidLockingPaused");
+
+      await expect(tc.emitBidLockingUnpaused(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "BidLockingUnpaused");
+
+      await expect(tc.emitBidUnlockingPaused(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "BidUnlockingPaused");
+
+      await expect(tc.emitBidUnlockingUnpaused(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "BidUnlockingUnpaused");
+    });
+
+    it("offer locker events emit successfully", async () => {
+      const tc = termEventEmitter.connect(wallets[6]);
+
+      await expect(
+        tc.emitTermAuctionOfferLockerInitialized(
+          ZeroHash, ZeroHash, wallets[0].address, 0, 0, MaxUint256, 2n,
+        ),
+      ).to.emit(termEventEmitter, "TermAuctionOfferLockerInitialized");
+
+      await expect(
+        tc.emitOfferLocked(ZeroHash, ZeroHash, ZeroAddress, ZeroHash, 0, ZeroAddress, ZeroAddress),
+      ).to.emit(termEventEmitter, "OfferLocked");
+
+      await expect(tc.emitOfferRevealed(ZeroHash, ZeroHash, 0))
+        .to.emit(termEventEmitter, "OfferRevealed");
+
+      await expect(tc.emitOfferUnlocked(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "OfferUnlocked");
+
+      await expect(tc.emitOfferLockingPaused(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "OfferLockingPaused");
+
+      await expect(tc.emitOfferLockingUnpaused(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "OfferLockingUnpaused");
+
+      await expect(tc.emitOfferUnlockingPaused(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "OfferUnlockingPaused");
+
+      await expect(tc.emitOfferUnlockingUnpaused(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "OfferUnlockingUnpaused");
+    });
+
+    it("collateral manager events emit successfully", async () => {
+      const tc = termEventEmitter.connect(wallets[6]);
+
+      await expect(
+        tc.emitTermRepoCollateralManagerInitialized(
+          ZeroHash, ZeroAddress, [], [], [], [],
+        ),
+      ).to.emit(termEventEmitter, "TermRepoCollateralManagerInitialized");
+
+      await expect(
+        tc.emitPairReopeningBidLocker(ZeroHash, ZeroAddress, ZeroAddress),
+      ).to.emit(termEventEmitter, "PairReopeningBidLocker");
+
+      await expect(
+        tc.emitCollateralLocked(ZeroHash, ZeroAddress, ZeroAddress, 0),
+      ).to.emit(termEventEmitter, "CollateralLocked");
+
+      await expect(
+        tc.emitCollateralUnlocked(ZeroHash, ZeroAddress, ZeroAddress, 0),
+      ).to.emit(termEventEmitter, "CollateralUnlocked");
+
+      await expect(
+        tc.emitLiquidation(ZeroHash, ZeroAddress, ZeroAddress, 0, ZeroAddress, 0, 0, false),
+      ).to.emit(termEventEmitter, "Liquidation");
+
+      await expect(tc.emitLiquidationPaused(ZeroHash))
+        .to.emit(termEventEmitter, "LiquidationsPaused");
+
+      await expect(tc.emitLiquidationUnpaused(ZeroHash))
+        .to.emit(termEventEmitter, "LiquidationsUnpaused");
+    });
+
+    it("servicer events emit successfully", async () => {
+      const tc = termEventEmitter.connect(wallets[6]);
+
+      await expect(
+        tc.emitTermRepoServicerInitialized(
+          ZeroHash, ZeroAddress, ZeroAddress, 0, 0, 0, 0, ZeroAddress, "0.1.0",
+        ),
+      ).to.emit(termEventEmitter, "TermRepoServicerInitialized");
+
+      await expect(
+        tc.emitReopeningOfferLockerPaired(ZeroHash, ZeroAddress, ZeroAddress, ZeroAddress),
+      ).to.emit(termEventEmitter, "ReopeningOfferLockerPaired");
+
+      await expect(
+        tc.emitOfferLockedByServicer(ZeroHash, ZeroAddress, 0),
+      ).to.emit(termEventEmitter, "OfferLockedByServicer");
+
+      await expect(
+        tc.emitOfferUnlockedByServicer(ZeroHash, ZeroAddress, 0),
+      ).to.emit(termEventEmitter, "OfferUnlockedByServicer");
+
+      await expect(tc.emitOfferFulfilled(ZeroHash, ZeroAddress, 0, 0, 0))
+        .to.emit(termEventEmitter, "OfferFulfilled");
+
+      await expect(tc.emitTermRepoTokensRedeemed(ZeroHash, ZeroAddress, 0, 0))
+        .to.emit(termEventEmitter, "TermRepoTokensRedeemed");
+
+      await expect(tc.emitBidFulfilled(ZeroHash, ZeroAddress, 0, 0, 0))
+        .to.emit(termEventEmitter, "BidFulfilled");
+
+      await expect(
+        tc.emitExposureOpenedOnRolloverNew(ZeroHash, ZeroAddress, 0, 0, 0),
+      ).to.emit(termEventEmitter, "ExposureOpenedOnRolloverNew");
+
+      await expect(
+        tc.emitExposureClosedOnRolloverExisting(ZeroHash, ZeroAddress, 0),
+      ).to.emit(termEventEmitter, "ExposureClosedOnRolloverExisting");
+
+      await expect(
+        tc.emitRepurchasePaymentSubmitted(ZeroHash, ZeroAddress, 0),
+      ).to.emit(termEventEmitter, "RepurchasePaymentSubmitted");
+
+      await expect(
+        tc.emitMintExposureAccessGranted(ZeroHash, ZeroAddress),
+      ).to.emit(termEventEmitter, "MintExposureAccessGranted");
+
+      await expect(tc.emitMintExposure(ZeroHash, ZeroAddress, 0, 0, 0))
+        .to.emit(termEventEmitter, "TermRepoTokenMint");
+
+      await expect(tc.emitBurnCollapseExposure(ZeroHash, ZeroAddress, 0))
+        .to.emit(termEventEmitter, "BurnCollapseExposure");
+    });
+
+    it("rollover manager events emit successfully", async () => {
+      const tc = termEventEmitter.connect(wallets[6]);
+
+      await expect(
+        tc.emitTermRepoRolloverManagerInitialized(ZeroHash, ZeroAddress),
+      ).to.emit(termEventEmitter, "TermRepoRolloverManagerInitialized");
+
+      await expect(tc.emitRolloverTermApproved(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "RolloverTermApproved");
+
+      await expect(tc.emitRolloverTermApprovalRevoked(ZeroHash, ZeroHash))
+        .to.emit(termEventEmitter, "RolloverTermApprovalRevoked");
+
+      await expect(
+        tc.emitRolloverElection(ZeroHash, ZeroHash, ZeroAddress, ZeroAddress, 0, ZeroHash),
+      ).to.emit(termEventEmitter, "RolloverElection");
+
+      await expect(tc.emitRolloverCancellation(ZeroHash, ZeroAddress))
+        .to.emit(termEventEmitter, "RolloverCancellation");
+
+      await expect(tc.emitRolloverProcessed(ZeroHash, ZeroAddress))
+        .to.emit(termEventEmitter, "RolloverProcessed");
+    });
+
+    it("locker and token events emit successfully", async () => {
+      const tc = termEventEmitter.connect(wallets[6]);
+
+      await expect(tc.emitTermRepoLockerInitialized(ZeroHash, ZeroAddress))
+        .to.emit(termEventEmitter, "TermRepoLockerInitialized");
+
+      await expect(tc.emitTermRepoLockerTransfersPaused(ZeroHash))
+        .to.emit(termEventEmitter, "TermRepoLockerTransfersPaused");
+
+      await expect(tc.emitTermRepoLockerTransfersUnpaused(ZeroHash))
+        .to.emit(termEventEmitter, "TermRepoLockerTransfersUnpaused");
+
+      await expect(tc.emitTermRepoTokenInitialized(ZeroHash, ZeroAddress, 0))
+        .to.emit(termEventEmitter, "TermRepoTokenInitialized");
+
+      await expect(tc.emitTermRepoTokenMintingPaused(ZeroHash))
+        .to.emit(termEventEmitter, "TermRepoTokenMintingPaused");
+
+      await expect(tc.emitTermRepoTokenMintingUnpaused(ZeroHash))
+        .to.emit(termEventEmitter, "TermRepoTokenMintingUnpaused");
+
+      await expect(tc.emitTermRepoTokenBurningPaused(ZeroHash))
+        .to.emit(termEventEmitter, "TermRepoTokenBurningPaused");
+
+      await expect(tc.emitTermRepoTokenBurningUnpaused(ZeroHash))
+        .to.emit(termEventEmitter, "TermRepoTokenBurningUnpaused");
+
+      await expect(tc.emitTermContractUpgraded(ZeroAddress, ZeroAddress))
+        .to.emit(termEventEmitter, "TermContractUpgraded");
+    });
+
+    it("intent and swap events emit successfully", async () => {
+      const tc = termEventEmitter.connect(wallets[6]);
+
+      await expect(
+        tc.emitIntentFilled(
+          ZeroHash, ZeroHash, ZeroAddress, ZeroAddress, ZeroAddress,
+          ZeroAddress, ZeroAddress, 0, 0, 0, 0, ZeroAddress, 0, 0, 0,
+        ),
+      ).to.emit(termEventEmitter, "IntentFilled");
+
+      await expect(tc.emitIntentCancelled(ZeroHash))
+        .to.emit(termEventEmitter, "IntentCancelled");
+
+      await expect(
+        tc.emitRepoTokenSwapFilled(ZeroHash, {
+          repoToken: ZeroAddress,
+          purchaseToken: ZeroAddress,
+          maker: ZeroAddress,
+          taker: ZeroAddress,
+          makerToken: ZeroAddress,
+          takerToken: ZeroAddress,
+          discountRate: 0,
+          makerTokenAmountFilled: 0,
+          takerTokenAmountFilled: 0,
+          makerFee: 0,
+          takerFee: 0,
+          feeRecipient: ZeroAddress,
+          originalOrderAmount: 0,
+          expiry: 0,
+          salt: 0,
+        }),
+      ).to.emit(termEventEmitter, "RepoTokenSwapFilled");
+
+      await expect(
+        tc.emitLimitOrderTokenPairMinSaltValue(ZeroAddress, ZeroAddress, ZeroAddress, 0),
+      ).to.emit(termEventEmitter, "LimitOrderTokenPairMinSalt");
+
+      await expect(
+        tc.emitSwapOrderTokenPairMinSaltValue(ZeroAddress, ZeroAddress, ZeroAddress, 0),
+      ).to.emit(termEventEmitter, "SwapOrderTokenPairMinSalt");
+    });
   });
 });
 /* eslint-enable camelcase */

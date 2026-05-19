@@ -1,12 +1,12 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermAuction} from "./ITermAuction.sol";
 import {ITermRepoServicer} from "./ITermRepoServicer.sol";
 import {TermAuctionBid} from "../lib/TermAuctionBid.sol";
 import {TermAuctionBidSubmission} from "../lib/TermAuctionBidSubmission.sol";
 import {TermAuctionRevealedBid} from "../lib/TermAuctionRevealedBid.sol";
-import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface ITermAuctionBidLocker {
     function termRepoId() external view returns (bytes32);
@@ -20,7 +20,7 @@ interface ITermAuctionBidLocker {
     function purchaseToken() external view returns (address);
 
     function collateralTokens(
-        IERC20Upgradeable token
+        IERC20 token
     ) external view returns (bool);
 
     function termAuction() external view returns (ITermAuction);
@@ -48,6 +48,16 @@ interface ITermAuctionBidLocker {
         address referralAddress
     ) external returns (bytes32[] memory);
 
+    /// @param bidder The address of the bidder
+    /// @param bidSubmissions An array of Term Auction bid submissions to borrow an amount of money at rate up to but not exceeding the bid rate
+    /// @param referralAddress A user address that referred the submitter of this bid
+    /// @return A bytes32 array of unique on chain bid ids.
+    function lockBidsWithReferral(
+        address bidder,
+        TermAuctionBidSubmission[] calldata bidSubmissions,
+        address referralAddress
+    ) external returns (bytes32[] memory);
+
     /// @param id A bid Id
     /// @return A struct containing details of the locked bid
     function lockedBid(
@@ -66,6 +76,11 @@ interface ITermAuctionBidLocker {
     /// @notice unlockBids unlocks multiple bids and returns funds to the borrower
     /// @param ids An array of ids to unlock
     function unlockBids(bytes32[] calldata ids) external;
+
+    /// @notice unlockBids unlocks multiple bids and returns funds to the borrower
+    /// @param bidder The address of the bidder
+    /// @param ids An array of ids to unlock
+    function unlockBids(address bidder, bytes32[] calldata ids) external;
 
     // ========================================================================
     // = Internal Interface/API ===============================================

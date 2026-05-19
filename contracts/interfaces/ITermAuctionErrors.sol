@@ -1,10 +1,13 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 /// @title ITermAuctionErrors defines all errors emitted by the Term Auction
 interface ITermAuctionErrors {
     /// Term contracts have already been paired.
     error AlreadyTermContractPaired();
+
+    /// Error emitted when the assigned amount for a bid is 0 due to rounding 
+    error AssignedZeroAmount(bytes32 bidId);
 
     /// Error emmitted when completing an auction that has already been completed
     error AuctionAlreadyCompleted();

@@ -1,11 +1,17 @@
 /* eslint-disable camelcase */
-import { BigNumber, Contract, ContractFactory, Signer } from "ethers";
-import { TransactionReceipt } from "@ethersproject/abstract-provider";
-import { commify, formatUnits } from "ethers/lib/utils";
+import {
+  BaseContract,
+  Contract,
+  ContractFactory,
+  ContractTransactionReceipt,
+  NonceManager,
+  Signer,
+  formatUnits,
+} from "ethers";
 import hre, { ethers, upgrades } from "hardhat";
 import { FactoryOptions, Libraries } from "hardhat/types";
 import {
-  IERC20MetadataUpgradeable,
+  IERC20Metadata,
   MultiSend,
   TermAuction,
   TermAuctionBidLocker,
@@ -20,19 +26,20 @@ import {
   TermEventEmitter,
   TermInitializer,
   TermInitializer__factory,
+  TermDiamond,
+  TermDiamondFactory,
 } from "../typechain-types";
-import { NonceManager } from "@ethersproject/experimental";
-import { GelatoOpsSDK } from "@gelatonetwork/ops-sdk";
 import { v4 } from "uuid";
 import TermControllerABI from "../abi/TermController.json";
 import TermEventEmitterABI from "../abi/TermEventEmitter.json";
-import IERC20MetadataUpgradeableABI from "../abi/IERC20MetadataUpgradeable.json";
+import IERC20MetadataABI from "../abi/IERC20Metadata.json";
 import TermPriceConsumerV3ABI from "../abi/TermPriceConsumerV3.json";
 import TermInitializerABI from "../abi/TermInitializer.json";
 import { CollateralStruct } from "../typechain-types/contracts/TermRepoCollateralManager";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import dayjs from "dayjs";
 import { deployContractUUPSProxyBeacon } from "./deploy-proxies-for-impl";
+import { commify } from "./commify";
 
 export type MaturityPeriodInfo = {
   termRepoId: string;
@@ -40,7 +47,7 @@ export type MaturityPeriodInfo = {
   controller: TermController;
   eventEmitter: TermEventEmitter;
   oracle: TermPriceConsumerV3;
-
+  termDiamond: TermDiamond;
   termRepoServicer: TermRepoServicer;
   termRepoCollateralManager: TermRepoCollateralManager;
   termRepoToken: TermRepoToken;
@@ -64,10 +71,10 @@ export type AdditionalAuctionInfo = {
   auction: TermAuction;
 };
 
-function logGasCost(receipt: TransactionReceipt) {
-  const gasUsed = BigNumber.from(receipt.gasUsed);
-  const gasPrice = BigNumber.from(receipt.effectiveGasPrice);
-  const gasCost = gasUsed.mul(gasPrice);
+function logGasCost(receipt: ContractTransactionReceipt) {
+  const gasUsed = receipt.gasUsed;
+  const gasPrice = receipt.gasPrice;
+  const gasCost = gasUsed * gasPrice;
   console.log(`Gas used: ${gasUsed.toString()}`);
   console.log(`Gas price: ${commify(formatUnits(gasPrice, 9))} GWEI`);
   console.log(`Gas cost: ${commify(formatUnits(gasCost))} ETH`);
@@ -84,6 +91,7 @@ async function retry<T>(
     if (retriesLeft === 1) {
       throw error;
     }
+    console.warn("Error:", error);
     console.warn(`Retrying in ${interval / 1000} seconds...`);
     return await new Promise<T>((resolve) => {
       setTimeout(
@@ -115,16 +123,17 @@ export async function deployLibrary(
 ) {
   const contractFactory = await ethers.getContractFactory(name, signer);
   const deployedLibrary = await contractFactory.deploy();
-  await deployedLibrary.deployed();
-  console.log(`${name} deployed to: ${deployedLibrary.address}`);
+  await deployedLibrary.waitForDeployment();
+  console.log(`${name} deployed to: ${await deployedLibrary.getAddress()}`);
   return deployedLibrary;
 }
 
-export async function deployContract<T extends Contract = Contract>(
+export async function deployContract<T extends BaseContract = Contract>(
   name: string,
-  args: Parameters<T["initialize"]> = [] as unknown as Parameters<
-    T["initialize"]
-  >,
+  // args: Parameters<T["initialize"]> = [] as unknown as Parameters<
+  //   T["initialize"]
+  // >,
+  args: any[] = [],
   kind: "uups" | "transparent" | "raw" = "uups",
   signer: Signer | undefined = undefined,
   libraries: Libraries | undefined = undefined,
@@ -136,10 +145,12 @@ export async function deployContract<T extends Contract = Contract>(
 
   if (kind === "raw") {
     const deployedContract = await contractFactory.deploy(args);
-    await deployedContract.deployed();
+    await deployedContract.waitForDeployment();
     if (!skipInitialize) {
-      await deployedContract.initialize(...args);
-      console.log(`${name} deployed to: ${deployedContract.address}`);
+      await (deployedContract as any).initialize(...args);
+      console.log(
+        `${name} deployed to: ${await deployedContract.getAddress()}`,
+      );
     }
     return deployedContract as T;
   }
@@ -156,11 +167,11 @@ export async function deployContract<T extends Contract = Contract>(
           timeout: 0,
         });
   console.log(
-    `${name} deployment txn: ${deployedContract.deployTransaction.hash}`,
+    `${name} deployment txn: ${deployedContract.deploymentTransaction()?.hash}`,
   );
-  await deployedContract.deployed();
-  console.log(`${name} deployed to: ${deployedContract.address}`);
-  return deployedContract as T;
+  await deployedContract.waitForDeployment();
+  console.log(`${name} deployed to: ${await deployedContract.getAddress()}`);
+  return deployedContract as unknown as T;
 }
 
 export async function upgradeContract<T extends Contract = Contract>(
@@ -181,56 +192,8 @@ export async function upgradeContract<T extends Contract = Contract>(
           kind,
           unsafeAllowLinkedLibraries: true,
         });
-  console.log(`${name} deployed to: ${upgradedContract.address}`);
+  console.log(`${name} deployed to: ${await upgradedContract.getAddress()}`);
   return upgradedContract as T;
-}
-
-export async function scheduleCompleteAuctionTask(
-  gelatoOps: GelatoOpsSDK,
-  auction: Contract,
-  cid: string,
-) {
-  // Create task using ops-sdk
-  console.log("Creating automate task...");
-  const { taskId, tx } = await gelatoOps.createTask({
-    name: `TermFinance - Complete Auction ${auction.address}`,
-    execAddress: auction.address,
-    execSelector: auction.getSighash("completeAuction"),
-    dedicatedMsgSender: false,
-    web3FunctionHash: cid,
-    web3FunctionArgs: {
-      auction: auction.address,
-    },
-  });
-  await tx.wait();
-  console.log(`Task created, taskId: ${taskId} (tx hash: ${tx.hash})`);
-  console.log(
-    `> https://beta.app.gelato.network/task/${taskId}?chainId=${tx.chainId}`,
-  );
-}
-
-export async function scheduleBatchProcessRolloversTask(
-  gelatoOps: GelatoOpsSDK,
-  rolloverManager: Contract,
-  cid: string,
-) {
-  // Create task using ops-sdk
-  console.log("Creating automate task...");
-  const { taskId, tx } = await gelatoOps.createTask({
-    name: `TermFinance - Batch Process Rollovers ${rolloverManager.address}`,
-    execAddress: rolloverManager.address,
-    execSelector: rolloverManager.getSighash("batchProcessRollovers"),
-    dedicatedMsgSender: false,
-    web3FunctionHash: cid,
-    web3FunctionArgs: {
-      rolloverManagerAddress: rolloverManager.address,
-    },
-  });
-  await tx.wait();
-  console.log(`Task created, taskId: ${taskId} (tx hash: ${tx.hash})`);
-  console.log(
-    `> https://beta.app.gelato.network/task/${taskId}?chainId=${tx.chainId}`,
-  );
 }
 
 export async function deployController(
@@ -244,7 +207,13 @@ export async function deployController(
 ): Promise<TermController> {
   const termControllerContract = await deployContract<TermController>(
     "TermController",
-    [treasuryAddress, protocolReserveAddress, adminWallet, devopsWallet],
+    [
+      treasuryAddress,
+      protocolReserveAddress,
+      evergreenManagementWallet,
+      devopsWallet,
+      adminWallet,
+    ],
     kind,
     signer,
   );
@@ -255,12 +224,14 @@ export async function deployEventEmitter(
   devopsWallet: string,
   termDelister: string,
   termInitializer: string,
+  factoryDeployer: string,
+  diamond: string,
   kind: "uups" | "transparent" | "raw" = "uups",
   signer: Signer | undefined = undefined,
 ): Promise<TermEventEmitter> {
   const termEventEmitterContract = await deployContract<TermEventEmitter>(
     "TermEventEmitter",
-    [devopsWallet, termDelister, termInitializer],
+    [devopsWallet, termDelister, termInitializer, factoryDeployer, diamond],
     kind,
     signer,
   );
@@ -305,8 +276,8 @@ export async function deployMultiSend(
 ): Promise<MultiSend> {
   const multisendFactory = await ethers.getContractFactory("MultiSend", signer);
   const multiSend = await multisendFactory.deploy();
-  logGasCost(await multiSend.deployTransaction.wait());
-  return await multiSend.deployed();
+  logGasCost((await multiSend.deploymentTransaction()?.wait())!);
+  return await multiSend.waitForDeployment();
 }
 
 export async function whitelistContract(
@@ -323,14 +294,14 @@ export async function whitelistContractForEventEmitter(
   await eventEmitter.pairTermContract(termAddress);
 }
 
-export async function deployTermContract<T extends Contract>(
+export async function deployTermContract<T extends BaseContract>(
   name: string,
-  args: Parameters<T["initialize"]> = [] as unknown as Parameters<
-    T["initialize"]
-  >,
+  // args: Parameters<T["initialize"]> = [] as unknown as Parameters<
+  //   T["initialize"]
+  // >,
+  args: any[] = [],
   kind: "uups" | "transparent" | "raw" = "uups",
   termController: TermController,
-  termEventEmitter: TermEventEmitter,
   signer: Signer | undefined = undefined,
   libraries: Libraries | undefined = undefined,
 ) {
@@ -343,9 +314,9 @@ export async function deployTermContract<T extends Contract>(
   );
 
   // TODO: Security issue if left whitelisted and deploy fails?
-  await whitelistContract(termController, termContract.address);
+  await whitelistContract(termController, await termContract.getAddress());
 
-  return termContract as T;
+  return termContract as unknown as T;
 }
 
 export async function deployMaturityPeriod(
@@ -372,6 +343,7 @@ export async function deployMaturityPeriod(
     maintenanceCollateralRatios,
     liquidatedDamages,
     mintExposureCap,
+    termDiamondAddress,
     termRepoServicerAddress,
     collateralManagerAddress,
     termRepoTokenAddress,
@@ -379,6 +351,7 @@ export async function deployMaturityPeriod(
     bidLockerAddress,
     offerLockerAddress,
     auctionAddress,
+    termDiamondFactoryAddress,
     rolloverManagerAddress,
     termRepoServicerImplAddress,
     collateralManagerImplAddress,
@@ -398,7 +371,6 @@ export async function deployMaturityPeriod(
     auctionVersion,
 
     clearingPricePostProcessingOffset = "1",
-
     termRepoServicerContractName = "TermRepoServicer",
     termRepoCollateralManagerContractName = "TermRepoCollateralManager",
     termRepoTokenContractName = "TermRepoToken",
@@ -433,6 +405,7 @@ export async function deployMaturityPeriod(
     maintenanceCollateralRatios: string[];
     liquidatedDamages: string[];
     mintExposureCap: string;
+    termDiamondAddress?: string;
     termRepoServicerAddress?: string;
     collateralManagerAddress?: string;
     termRepoTokenAddress?: string;
@@ -440,6 +413,7 @@ export async function deployMaturityPeriod(
     bidLockerAddress?: string;
     offerLockerAddress?: string;
     auctionAddress?: string;
+    termDiamondFactoryAddress?: string;
     rolloverManagerAddress?: string;
     termRepoServicerImplAddress?: string;
     collateralManagerImplAddress?: string;
@@ -459,7 +433,6 @@ export async function deployMaturityPeriod(
     auctionVersion: string;
 
     clearingPricePostProcessingOffset: string;
-
     termRepoServicerContractName?: string;
     termRepoCollateralManagerContractName?: string;
     termRepoTokenContractName?: string;
@@ -476,7 +449,6 @@ export async function deployMaturityPeriod(
 ): Promise<MaturityPeriodInfo> {
   const [defaultSigner] = await ethers.getSigners();
   const managedSigner = new NonceManager(defaultSigner as any);
-  let gelatoOps: GelatoOpsSDK | undefined;
 
   const termRepoId = termId || v4();
   const termAuctionId = auctionId || v4();
@@ -485,25 +457,25 @@ export async function deployMaturityPeriod(
     TermControllerABI,
     termControllerAddress,
     controllerAdmin,
-  )) as TermController;
+  )) as unknown as TermController;
 
   const eventEmitter = (await ethers.getContractAt(
     TermEventEmitterABI,
     termEventEmitterAddress,
     managedSigner,
-  )) as TermEventEmitter;
+  )) as unknown as TermEventEmitter;
   const oracle: TermPriceConsumerV3 = (await ethers.getContractAt(
     TermPriceConsumerV3ABI,
     termOracleAddress,
     managedSigner,
-  )) as TermPriceConsumerV3;
+  )) as unknown as TermPriceConsumerV3;
   const initializer: TermInitializer | undefined =
     termInitializerAddress && !pairTermContractsThruGnosis
       ? ((await ethers.getContractAt(
           TermInitializerABI,
           termInitializerAddress,
           managedSigner,
-        )) as TermInitializer)
+        )) as unknown as TermInitializer)
       : undefined;
   const initializerForApproval: TermInitializer | undefined =
     termInitializerAddress && !pairTermContractsThruGnosis
@@ -511,13 +483,13 @@ export async function deployMaturityPeriod(
           TermInitializerABI,
           termInitializerAddress,
           termApprovalMultisig,
-        )) as TermInitializer)
+        )) as unknown as TermInitializer)
       : undefined;
   const purchaseToken = (await ethers.getContractAt(
-    IERC20MetadataUpgradeableABI,
+    IERC20MetadataABI,
     purchaseTokenAddress,
     managedSigner,
-  )) as IERC20MetadataUpgradeable;
+  )) as unknown as IERC20Metadata;
 
   const purchaseTokenDecimals = await purchaseToken.decimals();
 
@@ -531,10 +503,10 @@ export async function deployMaturityPeriod(
     });
   }
 
-  if (!termController.address) {
+  if (!(await termController.getAddress())) {
     throw new Error("Term Controller contract not found");
   }
-  console.log(`TermController address: ${termController.address}`);
+  console.log(`TermController address: ${await termController.getAddress()}`);
   console.log("maturity timestamp " + maturityTimestamp);
   const maturityDayJs = dayjs.unix(Number(servicerMaturityTimestamp));
   const redemptionTimestamp = maturityDayJs
@@ -546,13 +518,62 @@ export async function deployMaturityPeriod(
   console.log("redemption timestamp " + redemptionTimestamp);
 
   const initializerAddressDefined = termInitializerAddress || "";
+  const termDiamondFactoryAddressDefined = termDiamondFactoryAddress || "";
+  let termDiamondFactory: TermDiamondFactory;
+  if (termDiamondFactoryAddress) {
+    termDiamondFactory = await ethers.getContractAt(
+      "TermDiamondFactory",
+      termDiamondFactoryAddress,
+      managedSigner,
+    );
+  } else {
+    const TermDiamondFactoryFactory = await ethers.getContractFactory(
+      "TermDiamondFactory",
+      managedSigner
+    );
+    termDiamondFactory = (await TermDiamondFactoryFactory.deploy(
+      adminWallet,
+      devopsMultisig
+    )) as unknown as TermDiamondFactory;
+    await termDiamondFactory.waitForDeployment();
+  }
+  
+
+  // Deploy TermDiamond 
+  let termDiamond: TermDiamond;
+  if (termDiamondAddress) {
+    termDiamond = (await ethers.getContractAt(
+      "TermDiamond",
+      termDiamondAddress,
+      managedSigner
+    )) as unknown as TermDiamond;
+  } else {
+    
+    const termDiamondTx = (await termDiamondFactory.deployDiamond());
+    const receipt = await termDiamondTx.wait();
+
+    // Read diamond address from DiamondDeployed event log
+    const diamondDeployedEvent = receipt?.logs.find(
+      log => log.topics[0] === termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash
+    );
+
+    if (!diamondDeployedEvent) {
+      throw new Error("DiamondDeployed event not found");
+    }
+
+    const decodedEvent = termDiamondFactory.interface.parseLog(diamondDeployedEvent);
+    const diamondAddress = decodedEvent?.args.diamond;
+    const diamondCutFacetAddr = decodedEvent?.args.diamondCutFacet;
+
+    termDiamond = await ethers.getContractAt("TermDiamond", diamondAddress) as TermDiamond;
+  }
 
   const termRepoServicer = termRepoServicerAddress
     ? ((await ethers.getContractAt(
         termRepoServicerContractName,
         termRepoServicerAddress,
         managedSigner,
-      )) as TermRepoServicer)
+      )) as unknown as TermRepoServicer)
     : termRepoServicerImplAddress
       ? ((await deployContractUUPSProxyBeacon(
           await getContractFactory(termRepoServicerContractName, managedSigner),
@@ -566,11 +587,11 @@ export async function deployMaturityPeriod(
             redemptionBuffer,
             servicingFee,
             purchaseTokenAddress,
-            termController.address,
+            await termController.getAddress(),
             termEventEmitterAddress,
             initializerAddressDefined,
           ],
-        )) as TermRepoServicer)
+        )) as unknown as TermRepoServicer)
       : await deployTermContract<TermRepoServicer>(
           termRepoServicerContractName,
           [
@@ -580,13 +601,12 @@ export async function deployMaturityPeriod(
             redemptionBuffer,
             servicingFee,
             purchaseTokenAddress,
-            termController.address,
+            await termController.getAddress(),
             termEventEmitterAddress,
             initializerAddressDefined,
           ],
           kind,
           termController,
-          eventEmitter,
           managedSigner,
         );
   const termRepoCollateralManager = collateralManagerAddress
@@ -594,7 +614,7 @@ export async function deployMaturityPeriod(
         termRepoCollateralManagerContractName,
         collateralManagerAddress,
         managedSigner,
-      )) as TermRepoCollateralManager)
+      )) as unknown as TermRepoCollateralManager)
     : collateralManagerImplAddress
       ? ((await deployContractUUPSProxyBeacon(
           await getContractFactory(
@@ -614,7 +634,7 @@ export async function deployMaturityPeriod(
             termEventEmitterAddress,
             initializerAddressDefined,
           ],
-        )) as TermRepoCollateralManager)
+        )) as unknown as TermRepoCollateralManager)
       : await deployTermContract<TermRepoCollateralManager>(
           termRepoCollateralManagerContractName,
           [
@@ -629,7 +649,6 @@ export async function deployMaturityPeriod(
           ],
           kind,
           termController,
-          eventEmitter,
           managedSigner,
         );
   const termRepoToken = termRepoTokenAddress
@@ -637,7 +656,7 @@ export async function deployMaturityPeriod(
         termRepoTokenContractName,
         termRepoTokenAddress,
         managedSigner,
-      )) as TermRepoToken)
+      )) as unknown as TermRepoToken)
     : termRepoTokenImplAddress
       ? ((await deployContractUUPSProxyBeacon(
           await getContractFactory(termRepoTokenContractName, managedSigner),
@@ -654,13 +673,14 @@ export async function deployMaturityPeriod(
             initializerAddressDefined,
             {
               redemptionTimestamp:
-                maturityTimestamp + repurchaseWindow + redemptionBuffer,
-              termRepoServicer: termRepoServicer.address,
-              termRepoCollateralManager: termRepoCollateralManager.address,
+                Number(maturityTimestamp) + Number(repurchaseWindow) + Number(redemptionBuffer),
+              termRepoServicer: await termRepoServicer.getAddress(),
+              termRepoCollateralManager:
+                await termRepoCollateralManager.getAddress(),
               purchaseToken: purchaseTokenAddress,
             },
           ],
-        )) as TermRepoToken)
+        )) as unknown as TermRepoToken)
       : await deployTermContract<TermRepoToken>(
           termRepoTokenContractName,
           [
@@ -673,15 +693,15 @@ export async function deployMaturityPeriod(
             initializerAddressDefined,
             {
               redemptionTimestamp:
-                maturityTimestamp + repurchaseWindow + redemptionBuffer,
-              termRepoServicer: termRepoServicer.address,
-              termRepoCollateralManager: termRepoCollateralManager.address,
+                Number(maturityTimestamp) + Number(repurchaseWindow) + Number(redemptionBuffer),
+              termRepoServicer: await termRepoServicer.getAddress(),
+              termRepoCollateralManager:
+                await termRepoCollateralManager.getAddress(),
               purchaseToken: purchaseTokenAddress,
             },
           ],
           kind,
           termController,
-          eventEmitter,
           managedSigner,
         );
   const termRepoLocker = repoLockerAddress
@@ -689,7 +709,7 @@ export async function deployMaturityPeriod(
         termRepoLockerContractName,
         repoLockerAddress,
         managedSigner,
-      )) as TermRepoLocker)
+      )) as unknown as TermRepoLocker)
     : repoLockerImplAddress
       ? ((await deployContractUUPSProxyBeacon(
           await getContractFactory(termRepoLockerContractName, managedSigner),
@@ -697,13 +717,12 @@ export async function deployMaturityPeriod(
           repoLockerImplAddress || "",
           managedSigner,
           [termRepoId, initializerAddressDefined],
-        )) as TermRepoLocker)
+        )) as unknown as TermRepoLocker)
       : await deployTermContract<TermRepoLocker>(
           termRepoLockerContractName,
           [termRepoId, initializerAddressDefined],
           kind,
           termController,
-          eventEmitter,
           managedSigner,
         );
   const termAuctionBidLocker = bidLockerAddress
@@ -711,7 +730,7 @@ export async function deployMaturityPeriod(
         termAuctionBidLockerContractName,
         bidLockerAddress,
         managedSigner,
-      )) as TermAuctionBidLocker)
+      )) as unknown as TermAuctionBidLocker)
     : bidLockerImplAddress
       ? ((await deployContractUUPSProxyBeacon(
           await getContractFactory(
@@ -732,7 +751,7 @@ export async function deployMaturityPeriod(
             purchaseTokenAddress,
             collateralTokenAddresses,
           ],
-        )) as TermAuctionBidLocker)
+        )) as unknown as TermAuctionBidLocker)
       : await deployTermContract<TermAuctionBidLocker>(
           termAuctionBidLockerContractName,
           [
@@ -749,7 +768,6 @@ export async function deployMaturityPeriod(
           ],
           kind,
           termController,
-          eventEmitter,
           managedSigner,
         );
   const termAuctionOfferLocker = offerLockerAddress
@@ -757,7 +775,7 @@ export async function deployMaturityPeriod(
         termAuctionOfferLockerContractName,
         offerLockerAddress,
         managedSigner,
-      )) as TermAuctionOfferLocker)
+      )) as unknown as TermAuctionOfferLocker)
     : offerLockerImplAddress
       ? ((await deployContractUUPSProxyBeacon(
           await getContractFactory(
@@ -777,7 +795,7 @@ export async function deployMaturityPeriod(
             purchaseTokenAddress,
             collateralTokenAddresses,
           ],
-        )) as TermAuctionOfferLocker)
+        )) as unknown as TermAuctionOfferLocker)
       : await deployTermContract<TermAuctionOfferLocker>(
           termAuctionOfferLockerContractName,
           [
@@ -793,7 +811,6 @@ export async function deployMaturityPeriod(
           ],
           kind,
           termController,
-          eventEmitter,
           managedSigner,
         );
   const auction = auctionAddress
@@ -801,7 +818,7 @@ export async function deployMaturityPeriod(
         auctionContractName,
         auctionAddress,
         managedSigner,
-      )) as TermAuction)
+      )) as unknown as TermAuction)
     : auctionImplAddress
       ? ((await deployContractUUPSProxyBeacon(
           await getContractFactory(auctionContractName, managedSigner),
@@ -817,7 +834,7 @@ export async function deployMaturityPeriod(
             purchaseTokenAddress,
             clearingPricePostProcessingOffset,
           ],
-        )) as TermAuction)
+        )) as unknown as TermAuction)
       : await deployTermContract<TermAuction>(
           auctionContractName,
           [
@@ -832,7 +849,6 @@ export async function deployMaturityPeriod(
           ],
           kind,
           termController,
-          eventEmitter,
           managedSigner,
         );
   const rolloverManager = rolloverManagerAddress
@@ -840,7 +856,7 @@ export async function deployMaturityPeriod(
         rolloverManagerContractName,
         rolloverManagerAddress,
         managedSigner,
-      )) as TermRepoRolloverManager)
+      )) as unknown as TermRepoRolloverManager)
     : rolloverManagerImplAddress
       ? ((await deployContractUUPSProxyBeacon(
           await getContractFactory(rolloverManagerContractName, managedSigner),
@@ -849,24 +865,23 @@ export async function deployMaturityPeriod(
           managedSigner,
           [
             termRepoId,
-            termRepoServicer.address,
-            termRepoCollateralManager.address,
-            termController.address,
+            await termRepoServicer.getAddress(),
+            await termRepoCollateralManager.getAddress(),
+            await termController.getAddress(),
             initializerAddressDefined,
           ],
-        )) as TermRepoRolloverManager)
+        )) as unknown as TermRepoRolloverManager)
       : await deployTermContract<TermRepoRolloverManager>(
           rolloverManagerContractName,
           [
             termRepoId,
-            termRepoServicer.address,
-            termRepoCollateralManager.address,
-            termController.address,
+            await termRepoServicer.getAddress(),
+            await termRepoCollateralManager.getAddress(),
+            await termController.getAddress(),
             initializerAddressDefined,
           ],
           kind,
           termController,
-          eventEmitter,
           managedSigner,
         );
 
@@ -876,50 +891,38 @@ export async function deployMaturityPeriod(
       //       pairTermContract calls into a single transaction that either succeeds
       //       or fails.
       console.log("Resetting TermInitializer global contracts...");
-      await retry(() =>
+      await retry(async () =>
         initializer.pairTermContracts(
-          termController.address,
-          eventEmitter.address,
-          oracle.address,
+          await termController.getAddress(),
+          await eventEmitter.getAddress(),
+          await oracle.getAddress(),
+          await termDiamond.getAddress()
         ),
       );
       console.log("Pairing term contracts using TermInitializer...");
-      const receipt = await retry(() =>
+      const receipt = await retry(async () =>
         initializerForApproval.setupTerm(
           {
-            termRepoLocker: termRepoLocker.address,
-            termRepoServicer: termRepoServicer.address,
-            termRepoCollateralManager: termRepoCollateralManager.address,
-            rolloverManager: rolloverManager.address,
-            termRepoToken: termRepoToken.address,
-            termAuctionOfferLocker: termAuctionOfferLocker.address,
-            termAuctionBidLocker: termAuctionBidLocker.address,
-            auction: auction.address,
+            termRepoLocker: await termRepoLocker.getAddress(),
+            termRepoServicer: await termRepoServicer.getAddress(),
+            termRepoCollateralManager:
+              await termRepoCollateralManager.getAddress(),
+            rolloverManager: await rolloverManager.getAddress(),
+            termRepoToken: await termRepoToken.getAddress(),
+            termAuctionOfferLocker: await termAuctionOfferLocker.getAddress(),
+            termAuctionBidLocker: await termAuctionBidLocker.getAddress(),
+            auction: await auction.getAddress(),
           },
           devopsMultisig,
           adminWallet,
+          defaultSigner.address,
           termVersion,
           auctionVersion,
         ),
       );
       console.log("TermInitializer setupTerm tx hash:", receipt.hash);
-      logGasCost(await receipt.wait(3));
+      logGasCost((await receipt.wait(3))!);
     }
-  }
-
-  if (gelatoOps) {
-    console.log("Scheduling gelato task for auction completion...");
-    await scheduleCompleteAuctionTask(
-      gelatoOps,
-      auction,
-      getEnv(completeAuctionKeeperCID),
-    );
-    console.log("Scheduling gelato task for batch process rollovers...");
-    await scheduleBatchProcessRolloversTask(
-      gelatoOps,
-      rolloverManager,
-      getEnv(batchProcessRolloversKeeperCID),
-    );
   }
 
   return {
@@ -928,7 +931,7 @@ export async function deployMaturityPeriod(
     controller: termController,
     oracle,
     eventEmitter,
-
+    termDiamond,
     termRepoServicer,
     termRepoCollateralManager,
     termRepoToken,
@@ -962,12 +965,10 @@ export async function deployAdditionalAuction(
     devopsMultisig,
     adminWallet,
     controllerAdmin,
+    termDiamond,
     auctionVersion,
     termRepoIdUnhashed,
     clearingPricePostProcessingOffset = "1",
-    clearingPriceDelta = "5000000",
-
-    scheduleGelatoOps,
   }: {
     termControllerAddress: string;
     termOracleAddress: string;
@@ -985,55 +986,43 @@ export async function deployAdditionalAuction(
     bidLockerAddress?: string;
     offerLockerAddress?: string;
     auctionAddress?: string;
-    clearingPriceDelta?: string;
     termApprovalMultisig: Signer;
     devopsMultisig: string;
     adminWallet: string;
     controllerAdmin: Signer;
+    termDiamond: string;
     auctionVersion: string;
     clearingPricePostProcessingOffset: string;
     termRepoIdUnhashed: string;
-
-    scheduleGelatoOps?: boolean;
   },
   kind: "uups" | "transparent" | "raw" = "uups",
 ): Promise<AdditionalAuctionInfo> {
   const [defaultSigner] = await ethers.getSigners();
   const managedSigner = new NonceManager(defaultSigner as any);
-  let gelatoOps: GelatoOpsSDK | undefined;
-  if (scheduleGelatoOps) {
-    if (!hre.network.config.chainId) {
-      throw new Error("Chain ID not set in network config");
-    }
-    gelatoOps = new GelatoOpsSDK(
-      hre.network.config.chainId,
-      managedSigner as any,
-    );
-  }
   const termAuctionId = v4();
 
   const termController = (await ethers.getContractAt(
     TermControllerABI,
     termControllerAddress,
     controllerAdmin,
-  )) as TermController;
+  )) as unknown as TermController;
 
   const eventEmitter = (await ethers.getContractAt(
     TermEventEmitterABI,
     termEventEmitterAddress,
     managedSigner,
-  )) as TermEventEmitter;
+  )) as unknown as TermEventEmitter;
   const oracle: TermPriceConsumerV3 = (await ethers.getContractAt(
     "TermPriceConsumerV3",
     termOracleAddress,
     managedSigner,
-  )) as TermPriceConsumerV3;
+  )) as unknown as TermPriceConsumerV3;
   const initializer: TermInitializer | undefined = termInitializerAddress
     ? ((await ethers.getContractAt(
         TermInitializerABI,
         termInitializerAddress,
         managedSigner,
-      )) as TermInitializer)
+      )) as unknown as TermInitializer)
     : undefined;
   const initializerForApproval: TermInitializer | undefined =
     termInitializerAddress
@@ -1041,7 +1030,7 @@ export async function deployAdditionalAuction(
           TermInitializerABI,
           termInitializerAddress,
           termApprovalMultisig,
-        )) as TermInitializer)
+        )) as unknown as TermInitializer)
       : undefined;
 
   const initializerAddressDefined = termInitializerAddress || "";
@@ -1050,7 +1039,7 @@ export async function deployAdditionalAuction(
     "TermRepoServicer",
     termRepoServicerAddress,
     managedSigner,
-  )) as TermRepoServicer;
+  )) as unknown as TermRepoServicer;
 
   const termRepoId =
     termRepoIdUnhashed ?? (await termRepoServicer.termRepoId());
@@ -1060,12 +1049,12 @@ export async function deployAdditionalAuction(
       "TermRepoCollateralManager",
       collateralManagerAddress,
       managedSigner,
-    )) as TermRepoCollateralManager;
+    )) as unknown as TermRepoCollateralManager;
 
-  if (!termController.address) {
+  if (!(await termController.getAddress())) {
     throw new Error("Term Controller contract not found");
   }
-  console.log(`TermController address: ${termController.address}`);
+  console.log(`TermController address: ${await termController.getAddress()}`);
 
   const termAuctionBidLocker: TermAuctionBidLocker = bidLockerAddress
     ? await ethers.getContractAt(
@@ -1089,7 +1078,6 @@ export async function deployAdditionalAuction(
         ],
         kind,
         termController,
-        eventEmitter,
         managedSigner,
       );
   const termAuctionOfferLocker: TermAuctionOfferLocker = offerLockerAddress
@@ -1113,7 +1101,6 @@ export async function deployAdditionalAuction(
         ],
         kind,
         termController,
-        eventEmitter,
         managedSigner,
       );
   const auction: TermAuction = auctionAddress
@@ -1132,7 +1119,6 @@ export async function deployAdditionalAuction(
         ],
         kind,
         termController,
-        eventEmitter,
         managedSigner,
       );
 
@@ -1142,37 +1128,30 @@ export async function deployAdditionalAuction(
     //       pairTermContract calls into a single transaction that either succeeds
     //       or fails.
     console.log("Resetting TermInitializer global contracts...");
-    await retry(() =>
+    await retry(async () =>
       initializer.pairTermContracts(
-        termController.address,
-        eventEmitter.address,
-        oracle.address,
+        await termController.getAddress(),
+        await eventEmitter.getAddress(),
+        await oracle.getAddress(),
+        termDiamond
       ),
     );
     console.log("Pairing term contracts using TermInitializer...");
-    const receipt = await retry(() =>
+    const receipt = await retry(async () =>
       initializerForApproval.setupAuction(
-        termRepoServicer.address,
-        termRepoCollateralManager.address,
-        termAuctionOfferLocker.address,
-        termAuctionBidLocker.address,
-        auction.address,
+        await termRepoServicer.getAddress(),
+        await termRepoCollateralManager.getAddress(),
+        await termAuctionOfferLocker.getAddress(),
+        await termAuctionBidLocker.getAddress(),
+        await auction.getAddress(),
         devopsMultisig,
         adminWallet,
+        defaultSigner.address,
         auctionVersion,
       ),
     );
     console.log("TermInitializer setupAuction tx hash:", receipt.hash);
-    logGasCost(await receipt.wait(3));
-  }
-
-  if (gelatoOps) {
-    console.log("Scheduling gelato task for auction completion...");
-    await scheduleCompleteAuctionTask(
-      gelatoOps,
-      auction,
-      getEnv(completeAuctionKeeperCID),
-    );
+    logGasCost((await receipt.wait(3))!);
   }
 
   return {
@@ -1205,32 +1184,33 @@ export const saveContractAddress = (
   writeFileSync(configFile, JSON.stringify(mergedAddresses, null, 2));
 };
 
-export function infoToDotenv(info: MaturityPeriodInfo): string {
-  return `${termControllerEnvVar}=${info.controller?.address}
+export async function infoToDotenv(info: MaturityPeriodInfo): Promise<string> {
+  return `${termControllerEnvVar}=${await info.controller?.getAddress()}
 
-${termRepoServicerEnvVar}=${info.termRepoServicer.address}
-${collateralManagerEnvVar}=${info.termRepoCollateralManager.address}
-${poolEnvVar}=${info.termRepoLocker.address}
-${termRepoTokenEnvVar}=${info.termRepoToken.address}
-${auctionEnvVar}=${info.auction.address}
-${bidLockerEnvVar}=${info.termAuctionBidLocker.address}
-${offerLockerEnvVar}=${info.termAuctionOfferLocker.address}
-${oracleEnvVar}=${info.oracle.address}`;
+${termRepoServicerEnvVar}=${await info.termRepoServicer.getAddress()}
+${collateralManagerEnvVar}=${await info.termRepoCollateralManager.getAddress()}
+${poolEnvVar}=${await info.termRepoLocker.getAddress()}
+${termRepoTokenEnvVar}=${await info.termRepoToken.getAddress()}
+${auctionEnvVar}=${await info.auction.getAddress()}
+${bidLockerEnvVar}=${await info.termAuctionBidLocker.getAddress()}
+${offerLockerEnvVar}=${await info.termAuctionOfferLocker.getAddress()}
+${oracleEnvVar}=${await info.oracle.getAddress()}`;
 }
 
-export function infoToJSON(info: MaturityPeriodInfo) {
+export async function infoToJSON(info: MaturityPeriodInfo) {
   return {
-    [termControllerEnvVar]: info.controller?.address,
-    [termEventEmitterEnvVar]: info.eventEmitter?.address,
+    [termControllerEnvVar]: await info.controller?.getAddress(),
+    [termEventEmitterEnvVar]: await info.eventEmitter?.getAddress(),
 
-    [termRepoServicerEnvVar]: info.termRepoServicer.address,
-    [collateralManagerEnvVar]: info.termRepoCollateralManager.address,
-    [poolEnvVar]: info.termRepoLocker.address,
-    [termRepoTokenEnvVar]: info.termRepoToken.address,
-    [auctionEnvVar]: info.auction.address,
-    [bidLockerEnvVar]: info.termAuctionBidLocker.address,
-    [offerLockerEnvVar]: info.termAuctionOfferLocker.address,
-    [oracleEnvVar]: info.oracle.address,
+    [termRepoServicerEnvVar]: await info.termRepoServicer.getAddress(),
+    [collateralManagerEnvVar]:
+      await info.termRepoCollateralManager.getAddress(),
+    [poolEnvVar]: await info.termRepoLocker.getAddress(),
+    [termRepoTokenEnvVar]: await info.termRepoToken.getAddress(),
+    [auctionEnvVar]: await info.auction.getAddress(),
+    [bidLockerEnvVar]: await info.termAuctionBidLocker.getAddress(),
+    [offerLockerEnvVar]: await info.termAuctionOfferLocker.getAddress(),
+    [oracleEnvVar]: await info.oracle.getAddress(),
   } as Record<string, string>;
 }
 

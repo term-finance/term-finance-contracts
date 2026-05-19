@@ -1,4 +1,3 @@
-import { NonceManager } from "@ethersproject/experimental";
 import hre, { ethers } from "hardhat";
 
 import TermAuctionBidLockerABI from "../abi/TermAuctionBidLocker.json";
@@ -9,7 +8,7 @@ import {
   TermRepoRolloverManager,
 } from "../typechain-types";
 import { getEnv } from "./deploy-utils";
-import { Signer } from "ethers";
+import { NonceManager, Signer } from "ethers";
 
 export interface PreviousTerm {
   readonly rolloverManagerAddress: string;
@@ -33,13 +32,13 @@ export async function approveRollover(
     TermRepoRolloverManagerABI,
     previousTerm.rolloverManagerAddress,
     managedSigner,
-  )) as TermRepoRolloverManager;
+  )) as unknown as TermRepoRolloverManager;
 
   const auctionBidLocker = (await ethers.getContractAt(
     TermAuctionBidLockerABI,
     nextTerm.termAuctionBidLockerAddress,
     managedSigner,
-  )) as TermAuctionBidLocker;
+  )) as unknown as TermAuctionBidLocker;
 
   console.log(
     `Pairing term rollover manager %s and associated manager contracts to term auction address %s and term bid locker %s`,

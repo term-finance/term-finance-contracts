@@ -1,0 +1,16 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "SafeCast160",
+  "sourceName": "permit2/src/libraries/SafeCast160.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "UnsafeCast",
+      "type": "error"
+    }
+  ],
+  "bytecode": "0x60808060405234601757603a9081601d823930815050f35b600080fdfe600080fdfea26469706673582212203c2468685c988b04d1e125349d72defec9009e24c5dd718bebc0f7286a41126c64736f6c63430008160033",
+  "deployedBytecode": "0x600080fdfea26469706673582212203c2468685c988b04d1e125349d72defec9009e24c5dd718bebc0f7286a41126c64736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

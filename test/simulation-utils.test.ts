@@ -1,27 +1,32 @@
 /* eslint-disable camelcase */
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
 import {
   TermAuction,
   TermController,
+  TermController__factory,
+  TermDiamond,
+  TermDiamondFactory,
   TermEventEmitter,
   TermInitializer,
   TermPriceConsumerV3,
   TestPriceFeed,
   TestToken,
 } from "../typechain-types";
-import { BigNumber, BigNumberish, Signer, Wallet } from "ethers";
+import {
+  BigNumberish,
+  NonceManager,
+  Signer,
+  Wallet,
+  solidityPackedKeccak256,
+} from "ethers";
 import dayjs from "dayjs";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import {
   deployMaturityPeriod,
   MaturityPeriodInfo,
 } from "../utils/deploy-utils";
-import { FakeContract, smock } from "@defi-wonderland/smock";
-import { NonceManager } from "@ethersproject/experimental";
-import TermAuctionABI from "../abi/TermAuction.json";
-import TestTokenABI from "../abi/TestToken.json";
 import {
   parseBidsOffers,
   getBytesHash,
@@ -31,6 +36,7 @@ import {
   revealOffers,
   getGeneratedTenderId,
 } from "../utils/simulation-utils";
+import { MockContract, deployMock } from "@term-finance/ethers-mock-contract";
 
 const clearingPriceTestCSV_random1 = `1	235610440000	4.9	1	269816180000	3.3
 2	323003960000	6	2	380489230000	7.4
@@ -39,17 +45,17 @@ const clearingPriceTestCSV_random1 = `1	235610440000	4.9	1	269816180000	3.3
 `;
 
 function expectBigNumberEq(
-  actual: BigNumber,
+  actual: bigint,
   expected: BigNumberish,
   message: string = `Expected ${expected.toString()} but was ${actual.toString()}`,
 ): void {
   // eslint-disable-next-line no-unused-expressions
-  expect(actual.eq(expected), message).to.be.true;
+  expect(actual === BigInt(expected), message).to.be.true;
 }
 
 describe("simulation-utils", () => {
   let wallets: SignerWithAddress[];
-  let termController: FakeContract<TermController>;
+  let termController: MockContract<TermController>;
   let testCollateralToken: TestToken;
   let testPurchaseToken: TestToken;
   let mockCollateralFeed: TestPriceFeed;
@@ -60,6 +66,7 @@ describe("simulation-utils", () => {
   let termEventEmitter: TermEventEmitter;
   let termInitializer: TermInitializer;
   let termOracle: TermPriceConsumerV3;
+  let termDiamond: TermDiamond;
 
   beforeEach(async () => {
     snapshotId = await network.provider.send("evm_snapshot", []);
@@ -70,7 +77,7 @@ describe("simulation-utils", () => {
     const collateralTokenDecimals = 8;
     const testTokenFactory = await ethers.getContractFactory("TestToken");
     testCollateralToken = await testTokenFactory.deploy();
-    await testCollateralToken.deployed();
+    await testCollateralToken.waitForDeployment();
     await testCollateralToken.initialize(
       "Collateral Token",
       "CT",
@@ -79,7 +86,7 @@ describe("simulation-utils", () => {
       [],
     );
     testPurchaseToken = await testTokenFactory.deploy();
-    await testPurchaseToken.deployed();
+    await testPurchaseToken.waitForDeployment();
     await testPurchaseToken.initialize(
       "Purchase Token",
       "PT",
@@ -97,10 +104,57 @@ describe("simulation-utils", () => {
       {
         kind: "uups",
       },
-    )) as TermPriceConsumerV3;
+    )) as unknown as TermPriceConsumerV3;
 
-    termController = await smock.fake<TermController>("TermController");
-    termController.isTermDeployed.returns(true);
+    termController = await deployMock<TermController>(
+      TermController__factory.abi,
+      wallets[0],
+    );
+    const termControllerInterface = TermController__factory.createInterface();
+    await termController.setup(
+      {
+        abi: termControllerInterface.getFunction("markTermDeployed"),
+        outputs: [],
+        kind: "read",
+      },
+      {
+        abi: termControllerInterface.getFunction("isTermDeployed"),
+        outputs: [true],
+        kind: "read",
+      },
+      {
+        abi: termControllerInterface.getFunction("termContractsPaused"),
+        outputs: [false],
+        kind: "read",
+      },
+      {
+        abi: termControllerInterface.getFunction("registeredRepoIds"),
+        outputs: [false],
+        kind: "read",
+      },
+      {
+        abi: termControllerInterface.getFunction("pairAuction"),
+        kind: "write",
+      },
+      {
+        abi: termControllerInterface.getFunction("recordAuctionResult"),
+        kind: "write",
+      },
+      {
+        abi: termControllerInterface.getFunction("registerRepoId"),
+        kind: "write",
+      },
+      {
+        abi: termControllerInterface.getFunction("registeredAuctionIds"),
+        outputs: [false],
+        kind: "read",
+      },
+      {
+        abi: termControllerInterface.getFunction("registerAuctionId"),
+        kind: "write",
+      }
+
+    );
 
     const termInitializerFactory =
       await ethers.getContractFactory("TermInitializer");
@@ -108,15 +162,46 @@ describe("simulation-utils", () => {
       wallets[7].address,
       wallets[3].address,
     );
-    await termInitializer.deployed();
+    termInitializer = await termInitializer.waitForDeployment();
+
+    // Deploy TermDiamond via factory
+    const termDiamondFactoryFactory =
+      await ethers.getContractFactory("TermDiamondFactory");
+    const termDiamondFactory = (await termDiamondFactoryFactory.deploy(
+      wallets[6].address,
+      wallets[4].address,
+    )) as unknown as TermDiamondFactory;
+    await termDiamondFactory.waitForDeployment();
+
+    const termDiamondTx = await termDiamondFactory.deployDiamond();
+    const termDiamondReceipt = await termDiamondTx.wait();
+    const diamondDeployedEvent = termDiamondReceipt?.logs.find(
+      (log) =>
+        log.topics[0] ===
+        termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash,
+    );
+    if (!diamondDeployedEvent)
+      throw new Error("DiamondDeployed event not found");
+    const decodedEvent =
+      termDiamondFactory.interface.parseLog(diamondDeployedEvent);
+    termDiamond = (await ethers.getContractAt(
+      "TermDiamond",
+      decodedEvent!.args.diamond,
+    )) as unknown as TermDiamond;
 
     const termEventEmitterFactory =
       await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [wallets[4].address, wallets[5].address, termInitializer.address],
+      [
+        wallets[4].address,
+        wallets[5].address,
+        await termInitializer.getAddress(),
+        wallets[5].address,
+        await termDiamond.getAddress(),
+      ],
       { kind: "uups" },
-    )) as TermEventEmitter;
+    )) as unknown as TermEventEmitter;
 
     const mockPriceFeedFactory =
       await ethers.getContractFactory("TestPriceFeed");
@@ -141,24 +226,31 @@ describe("simulation-utils", () => {
       1,
     );
 
+    console.log("======= Adding price feeds =======");
+
     await termOracle
       .connect(wallets[4])
       .addNewTokenPriceFeed(
-        testCollateralToken.address,
-        mockCollateralFeed.address,
+        testCollateralToken.getAddress(),
+        mockCollateralFeed.getAddress(),
         0,
       );
     await termOracle
       .connect(wallets[4])
       .addNewTokenPriceFeed(
-        testPurchaseToken.address,
-        mockPurchaseFeed.address,
+        testPurchaseToken.getAddress(),
+        mockPurchaseFeed.getAddress(),
         0,
       );
 
+    console.log("======= Price feeds added =======");
+
     const blockNumBefore = await ethers.provider.getBlockNumber();
     const blockBefore = await ethers.provider.getBlock(blockNumBefore);
-    const timestampBefore = blockBefore.timestamp;
+    const timestampBefore = blockBefore?.timestamp;
+    if (!timestampBefore) {
+      throw new Error("No timestamp found");
+    }
     const currentTimestamp = dayjs.unix(timestampBefore);
     const auctionStart = currentTimestamp.subtract(1, "minute");
 
@@ -183,10 +275,11 @@ describe("simulation-utils", () => {
 
     maturityPeriod = await deployMaturityPeriod(
       {
-        termControllerAddress: termController.address,
-        termEventEmitterAddress: termEventEmitter.address,
-        termInitializerAddress: termInitializer.address,
-        termOracleAddress: termOracle.address,
+        termControllerAddress: await termController.getAddress(),
+        termEventEmitterAddress: await termEventEmitter.getAddress(),
+        termInitializerAddress: await termInitializer.getAddress(),
+        termOracleAddress: await termOracle.getAddress(),
+        termDiamondAddress: await termDiamond.getAddress(),
         auctionStartDate: auctionStart.unix().toString(),
         auctionRevealDate: auctionReveal.unix().toString(),
         auctionEndDate: auctionEnd.unix().toString(),
@@ -202,8 +295,8 @@ describe("simulation-utils", () => {
         maintenanceCollateralRatios: [maintenanceRatio],
         initialCollateralRatios: [initialCollateralRatio],
         liquidatedDamages: [liquidatedDamage],
-        purchaseTokenAddress: testPurchaseToken.address,
-        collateralTokenAddresses: [testCollateralToken.address],
+        purchaseTokenAddress: await testPurchaseToken.getAddress(),
+        collateralTokenAddresses: [await testCollateralToken.getAddress()],
         termApprovalMultisig: wallets[7],
         devopsMultisig: wallets[4].address,
         adminWallet: wallets[6].address,
@@ -211,10 +304,11 @@ describe("simulation-utils", () => {
         termVersion: "0.1.0",
         auctionVersion: "0.1.0",
         mintExposureCap: "1000000000000000000",
+        clearingPricePostProcessingOffset: "0",
       },
       "uups",
     );
-    auctionIdHash = ethers.utils.solidityKeccak256(
+    auctionIdHash = solidityPackedKeccak256(
       ["string"],
       [maturityPeriod.termAuctionId],
     );
@@ -226,12 +320,19 @@ describe("simulation-utils", () => {
 
   it("completeAuction completes an auction - random1", async () => {
     const treasury = Wallet.createRandom();
-    termController.getTreasuryAddress.returns(treasury.address);
+
+    const termControllerInterface = TermController__factory.createInterface();
+    await termController.setup({
+      abi: termControllerInterface.getFunction("getTreasuryAddress"),
+      inputs: [],
+      outputs: [treasury.address],
+      kind: "read",
+    });
 
     const { bids, offers } = await parseBidsOffers(
       clearingPriceTestCSV_random1,
-      testPurchaseToken.address,
-      testCollateralToken.address,
+      await testPurchaseToken.getAddress(),
+      await testCollateralToken.getAddress(),
       wallets,
     );
 
@@ -240,38 +341,38 @@ describe("simulation-utils", () => {
       const managedWallet = new NonceManager(wallet as any);
       walletsByAddress[wallet.address] = managedWallet;
       const collateralToken = (await ethers.getContractAt(
-        TestTokenABI,
-        testCollateralToken.address,
+        "TestToken",
+        await testCollateralToken.getAddress(),
         managedWallet,
-      )) as TestToken;
+      )) as unknown as TestToken;
       const purchaseToken = (await ethers.getContractAt(
-        TestTokenABI,
-        testPurchaseToken.address,
+        "TestToken",
+        await testPurchaseToken.getAddress(),
         managedWallet,
-      )) as TestToken;
+      )) as unknown as TestToken;
       let tx = await collateralToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await collateralToken.approve(
-        maturityPeriod.termRepoLocker.address,
+        maturityPeriod.termRepoLocker.getAddress(),
         "1" + "0".repeat(25),
       );
       await tx.wait();
       tx = await purchaseToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await purchaseToken.approve(
-        maturityPeriod.termRepoLocker.address,
+        maturityPeriod.termRepoLocker.getAddress(),
         "1" + "0".repeat(25),
       );
       await tx.wait();
     }
 
     await lockBids(
-      maturityPeriod.termAuctionBidLocker.address,
+      await maturityPeriod.termAuctionBidLocker.getAddress(),
       bids,
       walletsByAddress,
     );
     await lockOffers(
-      maturityPeriod.termAuctionOfferLocker.address,
+      await maturityPeriod.termAuctionOfferLocker.getAddress(),
       offers,
       walletsByAddress,
     );
@@ -281,12 +382,12 @@ describe("simulation-utils", () => {
     ]);
 
     const revealedBids = await revealBids(
-      maturityPeriod.termAuctionBidLocker.address,
+      await maturityPeriod.termAuctionBidLocker.getAddress(),
       bids,
       walletsByAddress,
     );
     const revealedOffers = await revealOffers(
-      maturityPeriod.termAuctionOfferLocker.address,
+      await maturityPeriod.termAuctionOfferLocker.getAddress(),
       offers,
       walletsByAddress,
     );
@@ -297,10 +398,10 @@ describe("simulation-utils", () => {
 
     const wallet = new NonceManager(wallets[0] as any);
     const auction = (await ethers.getContractAt(
-      TermAuctionABI,
-      maturityPeriod.auction.address,
+      "TermAuction",
+      await maturityPeriod.auction.getAddress(),
       wallet,
-    )) as TermAuction;
+    )) as unknown as TermAuction;
     await expect(
       auction.completeAuction({
         revealedBidSubmissions: revealedBids,
@@ -347,11 +448,11 @@ describe("simulation-utils", () => {
         anyValue,
         anyValue,
         anyValue,
-        "545000000000000000",
+        "525000000000000000",
       );
 
     const clearingPrice = await auction.clearingPrice();
-    expectBigNumberEq(clearingPrice, "545000000000000000");
+    expectBigNumberEq(clearingPrice, "525000000000000000");
   });
 });
 /* eslint-enable camelcase */

@@ -1,0 +1,85 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "TestMockDiscountRateAdapter",
+  "sourceName": "contracts/test/TestMockDiscountRateAdapter.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "repoToken",
+          "type": "address"
+        }
+      ],
+      "name": "getDiscountRate",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "repoToken",
+          "type": "address"
+        }
+      ],
+      "name": "repoRedemptionHaircut",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "repoToken",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rate",
+          "type": "uint256"
+        }
+      ],
+      "name": "setDiscountRate",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "repoToken",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "haircut",
+          "type": "uint256"
+        }
+      ],
+      "name": "setHaircut",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x6080806040523461001657610171908161001c8239f35b600080fdfe604060808152600436101561001357600080fd5b600090813560e01c8063360e6cd7146100ed5780633674fd5b146100bb57806337e935ee1461008457636b01d8261461004b57600080fd5b346100805760203660031901126100805760209181906001600160a01b03610071610120565b16815280845220549051908152f35b5080fd5b50346100805760203660031901126100805760209181906001600160a01b036100ab610120565b1681526001845220549051908152f35b50346100805780600319360112610080576001600160a01b036100dc610120565b168252816020526024359082205580f35b50346100805780600319360112610080576001600160a01b0361010e610120565b16825260016020526024359082205580f35b600435906001600160a01b038216820361013657565b600080fdfea2646970667358221220670c79e52d0fbfa032299e44c0707e9459d7b20c27e1e8651f4e1af6c2ce4e7964736f6c63430008160033",
+  "deployedBytecode": "0x604060808152600436101561001357600080fd5b600090813560e01c8063360e6cd7146100ed5780633674fd5b146100bb57806337e935ee1461008457636b01d8261461004b57600080fd5b346100805760203660031901126100805760209181906001600160a01b03610071610120565b16815280845220549051908152f35b5080fd5b50346100805760203660031901126100805760209181906001600160a01b036100ab610120565b1681526001845220549051908152f35b50346100805780600319360112610080576001600160a01b036100dc610120565b168252816020526024359082205580f35b50346100805780600319360112610080576001600160a01b0361010e610120565b16825260016020526024359082205580f35b600435906001600160a01b038216820361013657565b600080fdfea2646970667358221220670c79e52d0fbfa032299e44c0707e9459d7b20c27e1e8651f4e1af6c2ce4e7964736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

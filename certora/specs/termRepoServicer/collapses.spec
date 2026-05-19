@@ -47,9 +47,6 @@ methods {
     function DummyERC20A.balanceOf(address) external returns(uint256) envfree;
     function DummyERC20A.decimals() external returns(uint256) envfree;
     function DummyERC20A.totalSupply() external returns(uint256) envfree;
-
-    function _.verifyMintExposureAccess(address) external => DISPATCHER(true);
-
 }
 
 rule burnCollapseExposureMonotonicBehavior(env e) {

@@ -1,14 +1,16 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermRepoLocker} from "./interfaces/ITermRepoLocker.sol";
 import {ITermRepoLockerErrors} from "./interfaces/ITermRepoLockerErrors.sol";
+import {ITermRepoServicer} from "./interfaces/ITermRepoServicer.sol";
 import {ITermEventEmitter} from "./interfaces/ITermEventEmitter.sol";
+import {TermContractsPausable} from "./lib/TermContractsPausable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import {SafeERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Versionable} from "./lib/Versionable.sol";
 
 /// @author TermLabs
@@ -21,9 +23,10 @@ contract TermRepoLocker is
     Initializable,
     UUPSUpgradeable,
     AccessControlUpgradeable,
+    TermContractsPausable,
     Versionable
 {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+    using SafeERC20 for IERC20;
 
     // ========================================================================
     // = Access Roles =========================================================
@@ -41,6 +44,7 @@ contract TermRepoLocker is
     // Boolean indicating if term contracts paired
     bool internal termContractPaired;
     ITermEventEmitter internal emitter;
+    ITermRepoServicer internal termRepoServicer;
 
     // ========================================================================
     // = Modifiers  ===========================================================
@@ -88,6 +92,7 @@ contract TermRepoLocker is
         address adminWallet_
     ) external onlyRole(INITIALIZER_ROLE) notTermContractPaired {
         emitter = emitter_;
+        termRepoServicer = ITermRepoServicer(termRepoServicer_);
 
         _grantRole(SERVICER_ROLE, termRepoCollateralManager_);
         _grantRole(SERVICER_ROLE, termRepoServicer_);
@@ -106,8 +111,8 @@ contract TermRepoLocker is
         address originWallet,
         address token,
         uint256 amount
-    ) external override whileTransfersNotPaused onlyRole(SERVICER_ROLE) {
-        IERC20Upgradeable tokenInstance = IERC20Upgradeable(token);
+    ) external override whileTransfersNotPaused whileTermContractsNotPaused(termRepoServicer.termController()) onlyRole(SERVICER_ROLE) {
+        IERC20 tokenInstance = IERC20(token);
 
         // slither-disable-start arbitrary-send-erc20
         /// @dev This function is permissioned to be only callable by other term contracts. The entry points of calls that end up utilizing this function all use Authenticator to
@@ -126,8 +131,8 @@ contract TermRepoLocker is
         address destinationWallet,
         address token,
         uint256 amount
-    ) external override whileTransfersNotPaused onlyRole(SERVICER_ROLE) {
-        IERC20Upgradeable tokenInstance = IERC20Upgradeable(token);
+    ) external override whileTransfersNotPaused whileTermContractsNotPaused(termRepoServicer.termController()) onlyRole(SERVICER_ROLE) {
+        IERC20 tokenInstance = IERC20(token);
 
         tokenInstance.safeTransfer(destinationWallet, amount);
     }

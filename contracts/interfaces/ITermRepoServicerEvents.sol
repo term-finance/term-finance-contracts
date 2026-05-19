@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 /// @notice ITermRepoServicerEvents is an interface that defines all events emitted by the Term Repo Servicer.
 interface ITermRepoServicerEvents {
@@ -19,6 +19,7 @@ interface ITermRepoServicerEvents {
         uint256 endOfRepurchaseWindow,
         uint256 redemptionTimestamp,
         uint256 servicingFee,
+        address deployerWallet,
         string version
     );
 

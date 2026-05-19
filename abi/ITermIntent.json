@@ -1,0 +1,187 @@
+[
+  {
+    "inputs": [],
+    "name": "AfterMaturity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AlreadyInitialized",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "signer",
+        "type": "address"
+      }
+    ],
+    "name": "AlreadyPreSigned",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FeeRecipientAlreadyApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientFundsRetrieved",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "capacityRemaining",
+        "type": "uint256"
+      }
+    ],
+    "name": "InsufficientRemainingCapacity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidCollateralAmountsInput",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidDiscountRate",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidFee",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidFeeRecipient",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidFillAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidMinSalt",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidOfferRate",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidOrderStatus",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "message",
+        "type": "string"
+      }
+    ],
+    "name": "InvalidParameters",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidPurchaseTokenAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidRepoId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidRetrieveFundsFunction",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidRetrieveFundsListLength",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "expected",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "actual",
+        "type": "address"
+      }
+    ],
+    "name": "InvalidSender",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSignature",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "expected",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "actual",
+        "type": "address"
+      }
+    ],
+    "name": "InvalidTaker",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidTermController",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MakerCannotBeTaker",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OrderCancelled",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OrderExpired",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RetrieveFundsNotSpecified",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TermControllerAlreadyApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnsupportedSelector",
+    "type": "error"
+  }
+]

@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermPriceOracle} from "./interfaces/ITermPriceOracle.sol";
 import {ITermPriceOracleErrors} from "./interfaces/ITermPriceOracleErrors.sol";
@@ -12,7 +12,7 @@ import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interf
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {IERC20MetadataUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {Versionable} from "./lib/Versionable.sol";
 
 /// @author TermLabs
@@ -37,7 +37,6 @@ contract TermPriceConsumerV3WithSequencer is
 
     uint256 private constant GRACE_PERIOD_TIME = 3600;
 
-
     mapping(address => TermPriceFeedConfig) internal priceFeeds;
     mapping(address => TermPriceFeedConfig) internal fallbackPriceFeeds;
 
@@ -56,9 +55,7 @@ contract TermPriceConsumerV3WithSequencer is
             ,
 
         ) = sequencerUptimeFeed.latestRoundData();
-        if (
-            answer == 1
-        ) {
+        if (answer == 1) {
             revert SequencerDownError();
         }
         uint256 timeSinceUp = block.timestamp - startedAt;
@@ -100,8 +97,16 @@ contract TermPriceConsumerV3WithSequencer is
         address fallbackPriceAggregator,
         uint256 fallbackPriceAggregatorRefreshRateThreshold
     ) external onlyRole(DEVOPS_ROLE) {
-        _addNewTokenPriceFeed(token, tokenPriceAggregator, tokenPriceAggregatorRefreshRateThreshold);
-        _addNewTokenFallbackPriceFeed(token, fallbackPriceAggregator, fallbackPriceAggregatorRefreshRateThreshold);
+        _addNewTokenPriceFeed(
+            token,
+            tokenPriceAggregator,
+            tokenPriceAggregatorRefreshRateThreshold
+        );
+        _addNewTokenFallbackPriceFeed(
+            token,
+            fallbackPriceAggregator,
+            fallbackPriceAggregatorRefreshRateThreshold
+        );
     }
 
     /// @param token The address of the token to add a price feed for
@@ -113,7 +118,11 @@ contract TermPriceConsumerV3WithSequencer is
         address tokenPriceAggregator,
         uint256 refreshRateThreshold
     ) external onlyRole(DEVOPS_ROLE) {
-        _addNewTokenPriceFeed(token, tokenPriceAggregator, refreshRateThreshold);
+        _addNewTokenPriceFeed(
+            token,
+            tokenPriceAggregator,
+            refreshRateThreshold
+        );
     }
 
     /// @param token The address of the token to add a price feed for
@@ -124,7 +133,11 @@ contract TermPriceConsumerV3WithSequencer is
         address tokenPriceAggregator,
         uint256 refreshRateThreshold
     ) external onlyRole(DEVOPS_ROLE) {
-        _addNewTokenFallbackPriceFeed(token, tokenPriceAggregator, refreshRateThreshold);
+        _addNewTokenFallbackPriceFeed(
+            token,
+            tokenPriceAggregator,
+            refreshRateThreshold
+        );
     }
 
     /// @param token The address of the token whose price feed needs to be removed
@@ -159,7 +172,7 @@ contract TermPriceConsumerV3WithSequencer is
         (latestPriceInt, priceDecimals) = _getLatestPrice(token);
         uint256 latestPrice = uint256(latestPriceInt);
 
-        IERC20MetadataUpgradeable tokenInstance = IERC20MetadataUpgradeable(
+        IERC20Metadata tokenInstance = IERC20Metadata(
             token
         );
         uint8 tokenDecimals = tokenInstance.decimals();
@@ -180,10 +193,15 @@ contract TermPriceConsumerV3WithSequencer is
         address tokenPriceAggregator,
         uint256 refreshRateThreshold
     ) internal {
-        require(tokenPriceAggregator != address(0), "Primary Price feed cannot be zero address");
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(tokenPriceAggregator);
+        require(
+            tokenPriceAggregator != address(0),
+            "Primary Price feed cannot be zero address"
+        );
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            tokenPriceAggregator
+        );
 
-         (
+        (
             ,
             // uint80 roundID
             int256 price, // uint startedAt // //uint timeStamp// //uint80 answeredInRound//
@@ -192,7 +210,7 @@ contract TermPriceConsumerV3WithSequencer is
 
         ) = priceFeed.latestRoundData();
 
-         if (price <= 0) {
+        if (price <= 0) {
             revert InvalidPrice();
         }
         TermPriceFeedConfig memory priceFeedConfig = TermPriceFeedConfig({
@@ -211,10 +229,15 @@ contract TermPriceConsumerV3WithSequencer is
         address tokenPriceAggregator,
         uint256 refreshRateThreshold
     ) internal {
-        require(tokenPriceAggregator != address(0), "Fallback Price feed cannot be zero address");
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(tokenPriceAggregator);
+        require(
+            tokenPriceAggregator != address(0),
+            "Fallback Price feed cannot be zero address"
+        );
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            tokenPriceAggregator
+        );
 
-         (
+        (
             ,
             // uint80 roundID
             int256 price, // uint startedAt // //uint timeStamp// //uint80 answeredInRound//
@@ -226,7 +249,7 @@ contract TermPriceConsumerV3WithSequencer is
         if (price <= 0) {
             revert InvalidPrice();
         }
-        
+
         TermPriceFeedConfig memory priceFeedConfig = TermPriceFeedConfig({
             priceFeed: AggregatorV3Interface(tokenPriceAggregator),
             refreshRateThreshold: refreshRateThreshold
@@ -234,11 +257,11 @@ contract TermPriceConsumerV3WithSequencer is
         fallbackPriceFeeds[token] = priceFeedConfig;
         emit SubscribeFallbackPriceFeed(token, tokenPriceAggregator);
     }
-    
 
-   /// @return The latest price from price aggregator and the decimals in the price
-    function _getLatestPrice(address token) internal view returns (int256, uint8) {
-
+    /// @return The latest price from price aggregator and the decimals in the price
+    function _getLatestPrice(
+        address token
+    ) internal view returns (int256, uint8) {
         (
             ,
             // uint80 roundID
@@ -248,37 +271,48 @@ contract TermPriceConsumerV3WithSequencer is
 
         ) = priceFeeds[token].priceFeed.latestRoundData();
 
-        AggregatorV3Interface fallbackPriceFeed = fallbackPriceFeeds[token].priceFeed;
+        AggregatorV3Interface fallbackPriceFeed = fallbackPriceFeeds[token]
+            .priceFeed;
 
-        
         if (address(fallbackPriceFeed) == address(0)) {
             if (price <= 0) {
                 revert InvalidPrice();
-            } else if (priceFeeds[token].refreshRateThreshold == 0 || ( block.timestamp - lastUpdatedTimestamp) <=  priceFeeds[token].refreshRateThreshold) {
+            } else if (
+                priceFeeds[token].refreshRateThreshold == 0 ||
+                (block.timestamp - lastUpdatedTimestamp) <=
+                priceFeeds[token].refreshRateThreshold
+            ) {
                 return (price, priceFeeds[token].priceFeed.decimals()); // Use primary price feed if there is no fallback price feed and update within refresh rate.
-            }  else {
+            } else {
                 revert PricesStale(); // Price is stale if outside of refresh rate.
             }
         }
         if (address(fallbackPriceFeed) != address(0)) {
-            if (price > 0 && ( block.timestamp - lastUpdatedTimestamp) <=   priceFeeds[token].refreshRateThreshold) {
+            if (
+                price > 0 &&
+                (block.timestamp - lastUpdatedTimestamp) <=
+                priceFeeds[token].refreshRateThreshold
+            ) {
                 return (price, priceFeeds[token].priceFeed.decimals()); // Return primary price feed if it is not stale
             }
 
             (
-            ,
-            int256 fallbackPrice,
-            ,
-            uint256 fallbackLastUpdatedTimestamp,
+                ,
+                int256 fallbackPrice,
+                ,
+                uint256 fallbackLastUpdatedTimestamp,
 
             ) = fallbackPriceFeed.latestRoundData();
-            
+
             if (fallbackPrice <= 0) {
                 revert InvalidPrice();
-            } else if (fallbackPriceFeeds[token].refreshRateThreshold == 0 || ( block.timestamp - fallbackLastUpdatedTimestamp) <=   fallbackPriceFeeds[token].refreshRateThreshold) {
+            } else if (
+                fallbackPriceFeeds[token].refreshRateThreshold == 0 ||
+                (block.timestamp - fallbackLastUpdatedTimestamp) <=
+                fallbackPriceFeeds[token].refreshRateThreshold
+            ) {
                 return (fallbackPrice, fallbackPriceFeed.decimals()); // Use fallback price feed if primary price feed unavailable
-            } 
-            else {
+            } else {
                 revert PricesStale();
             }
         }

@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 /// @notice ITermRepoCollateralManagerErrors defines all errors emitted by Term Repo Collateral Manager.
 interface ITermRepoCollateralManagerErrors {

@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 /// @notice ITermAuctionOfferLockerEvents is an interface that defines all events emitted by the Term Auction Offer Locker.
 interface ITermAuctionOfferLockerEvents {

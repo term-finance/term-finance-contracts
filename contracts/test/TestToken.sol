@@ -1,10 +1,11 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 contract TestToken is ERC20Upgradeable {
     uint8 internal decimals_;
+    mapping(address => bool) public transferFailureList;
 
     function initialize(
         string memory _name,
@@ -30,5 +31,18 @@ contract TestToken is ERC20Upgradeable {
 
     function burn(address from, uint256 amount) public {
         _burn(from, amount);
+    }
+
+    function setTransferFailure(address account, bool shouldFail) public {
+        transferFailureList[account] = shouldFail;
+    }
+
+    function transfer(address to, uint256 value) public override returns (bool) {
+        address owner = _msgSender();
+        if (transferFailureList[to]) {
+            revert("Transfer blocked for testing");
+        }
+        _transfer(owner, to, value);
+        return true;
     }
 }

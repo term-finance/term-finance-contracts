@@ -1,15 +1,19 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import dayjs from "dayjs";
 import { ethers, network, upgrades } from "hardhat";
 import {
+  TermController,
+  TermController__factory,
   TermEventEmitter,
   TermRepoCollateralManager,
   TermRepoCollateralManager__factory,
+  TermRepoServicer,
+  TermRepoServicer__factory,
   TestTermRepoToken,
 } from "../typechain-types";
-import { FakeContract, smock } from "@defi-wonderland/smock";
-import { BigNumber } from "ethers";
+import { MockContract, deployMock } from "@term-finance/ethers-mock-contract";
+import { solidityPackedKeccak256 } from "ethers";
 
 describe("TermRepoToken Tests", () => {
   let wallet1: SignerWithAddress;
@@ -19,8 +23,11 @@ describe("TermRepoToken Tests", () => {
   let adminWallet: SignerWithAddress;
   let contractAddress: SignerWithAddress;
   let collateralToken: SignerWithAddress;
+  let termDiamond: SignerWithAddress;
   let termEventEmitter: TermEventEmitter;
-  let mockTermRepoCollateralManager: FakeContract<TermRepoCollateralManager>;
+  let mockTermController: MockContract<TermController>;
+  let mockTermRepoServicer: MockContract<TermRepoServicer>;
+  let mockTermRepoCollateralManager: MockContract<TermRepoCollateralManager>;
 
   let termRepoToken: TestTermRepoToken;
   let termIdHashed: string;
@@ -37,11 +44,12 @@ describe("TermRepoToken Tests", () => {
       devopsMultisig,
       adminWallet,
       collateralToken,
+      termDiamond
     ] = await ethers.getSigners();
 
     const versionableFactory = await ethers.getContractFactory("Versionable");
     const versionable = await versionableFactory.deploy();
-    await versionable.deployed();
+    await versionable.waitForDeployment();
     expectedVersion = await versionable.version();
     const TermRepoToken = await ethers.getContractFactory("TestTermRepoToken");
 
@@ -49,24 +57,70 @@ describe("TermRepoToken Tests", () => {
       await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [devopsMultisig.address, wallet2.address, termInitializer.address],
+      [devopsMultisig.address, wallet2.address, termInitializer.address, adminWallet.address, termDiamond.address],
       { kind: "uups" },
-    )) as TermEventEmitter;
+    )) as unknown as TermEventEmitter;
 
-    const mockTermRepoCollateralManagerFactory =
-      await smock.mock<TermRepoCollateralManager__factory>(
-        "TermRepoCollateralManager",
-      );
-    const mockTermRepoCollateralManager =
-      await mockTermRepoCollateralManagerFactory.deploy();
-    await mockTermRepoCollateralManager.deployed();
-    mockTermRepoCollateralManager.numOfAcceptedCollateralTokens.returns(1);
-    mockTermRepoCollateralManager.collateralTokens
-      .whenCalledWith(0)
-      .returns(collateralToken.address);
-    mockTermRepoCollateralManager.maintenanceCollateralRatios
-      .whenCalledWith(collateralToken.address)
-      .returns("150000000000000000000");
+    mockTermController = await deployMock(TermController__factory.abi, wallet1);
+    const mockTermControllerInterface = TermController__factory.createInterface();
+    await mockTermController.setup(
+      {
+        abi: mockTermControllerInterface.getFunction("termContractsPaused"),
+        inputs: [],
+        outputs: [false],
+        kind: "read",
+      },
+    );
+
+    const mockTermRepoCollateralManager = await deployMock(
+      TermRepoCollateralManager__factory.abi,
+      wallet1,
+    );
+
+    mockTermRepoServicer = await deployMock(
+      TermRepoServicer__factory.abi,
+      wallet1,
+    );
+    const mockTermRepoCollateralManagerInterface =
+      TermRepoCollateralManager__factory.createInterface();
+    const mockTermRepoServicerInterface = TermRepoServicer__factory.createInterface();
+    await mockTermRepoCollateralManager.setup(
+      {
+        abi: mockTermRepoCollateralManagerInterface.getFunction(
+          "numOfAcceptedCollateralTokens",
+        ),
+        inputs: [],
+        outputs: [1n],
+        kind: "read",
+      },
+      {
+        abi: mockTermRepoCollateralManagerInterface.getFunction(
+          "collateralTokens",
+        ),
+        inputs: [0],
+        outputs: [collateralToken.address],
+        kind: "read",
+      },
+      {
+        abi: mockTermRepoCollateralManagerInterface.getFunction(
+          "maintenanceCollateralRatios",
+        ),
+        inputs: [collateralToken.address],
+        outputs: [150000000000000000000n],
+        kind: "read",
+      },
+    );
+
+    await mockTermRepoServicer.setup(
+      {
+        abi: mockTermRepoServicerInterface.getFunction("termController"),
+        inputs: [],
+        outputs: [
+          await mockTermController.getAddress(),
+        ],
+        kind: "read",
+      },
+    );
 
     const termIdString = "term-id-1";
 
@@ -83,37 +137,39 @@ describe("TermRepoToken Tests", () => {
         {
           redemptionTimestamp: dayjs().unix(),
           purchaseToken: "0x0000000000000000000000000000000000000002",
-          termRepoServicer: "0x0000000000000000000000000000000000000001",
-          termRepoCollateralManager: mockTermRepoCollateralManager.address,
+          termRepoServicer: await mockTermRepoServicer.getAddress(),
+          termRepoCollateralManager:
+            await mockTermRepoCollateralManager.getAddress(),
         },
       ],
       {
         kind: "uups",
       },
-    )) as TestTermRepoToken;
+    )) as unknown as TestTermRepoToken;
 
-    await termRepoToken.deployed();
+    await termRepoToken.waitForDeployment();
     await termEventEmitter
       .connect(termInitializer)
-      .pairTermContract(termRepoToken.address);
+      .pairTermContract(await termRepoToken.getAddress());
     await expect(
       termRepoToken
         .connect(wallet2)
         .pairTermContracts(
           contractAddress.address,
-          termEventEmitter.address,
+          await termEventEmitter.getAddress(),
           devopsMultisig.address,
           adminWallet.address,
         ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`,
+    ).to.be.revertedWithCustomError(
+      termRepoToken,
+      "AccessControlUnauthorizedAccount",
     );
 
     await termRepoToken
       .connect(termInitializer)
       .pairTermContracts(
         contractAddress.address,
-        termEventEmitter.address,
+        await termEventEmitter.getAddress(),
         devopsMultisig.address,
         adminWallet.address,
       );
@@ -122,15 +178,19 @@ describe("TermRepoToken Tests", () => {
         .connect(termInitializer)
         .pairTermContracts(
           contractAddress.address,
-          termEventEmitter.address,
+          await termEventEmitter.getAddress(),
           devopsMultisig.address,
           adminWallet.address,
         ),
     ).to.be.revertedWithCustomError(termRepoToken, "AlreadyTermContractPaired");
-    termIdHashed = ethers.utils.solidityKeccak256(["string"], [termIdString]);
+    termIdHashed = solidityPackedKeccak256(["string"], [termIdString]);
 
     const termRepoTokenInitializedFilter =
-      termEventEmitter.filters.TermRepoTokenInitialized(null, null, null);
+      termEventEmitter.filters.TermRepoTokenInitialized(
+        undefined,
+        undefined,
+        undefined,
+      );
 
     const termRepoTokenIntializedEvents = await termEventEmitter.queryFilter(
       termRepoTokenInitializedFilter,
@@ -153,13 +213,14 @@ describe("TermRepoToken Tests", () => {
         termRepoToken.connect(devopsMultisig).upgrade(wallet1.address),
       )
         .to.emit(termEventEmitter, "TermContractUpgraded")
-        .withArgs(termRepoToken.address, wallet1.address);
+        .withArgs(await termRepoToken.getAddress(), wallet1.address);
 
       await expect(
         termRepoToken.connect(wallet2).upgrade(wallet1.address),
-      ).to.be.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
-      );
+      ).to.be.revertedWithCustomError(
+      termRepoToken,
+      "AccessControlUnauthorizedAccount",
+    );
     });
   });
 
@@ -170,12 +231,10 @@ describe("TermRepoToken Tests", () => {
     it("Collateral Data function", async () => {
       const repoTokenCollateralData =
         await termRepoToken.getCollateralRequirements();
-      expect(JSON.parse(JSON.stringify(repoTokenCollateralData))).to.deep.equal(
-        [
-          [collateralToken.address],
-          [BigNumber.from("150000000000000000000").toJSON()],
-        ],
-      );
+      expect(repoTokenCollateralData).to.deep.equal([
+        [collateralToken.address],
+        [BigInt("150000000000000000000")],
+      ]);
     });
   });
 
@@ -186,15 +245,17 @@ describe("TermRepoToken Tests", () => {
         termRepoToken
           .connect(wallet1)
           .mintRedemptionValue(wallet1.address, 10000000),
-      ).to.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6`,
+      ).to.be.revertedWithCustomError(
+        termRepoToken,
+      "AccessControlUnauthorizedAccount",
       );
 
       await expect(
         termRepoToken.connect(wallet1).mintTokens(wallet1.address, 10000000),
-      ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6`,
-      );
+      ).to.be.revertedWithCustomError(
+      termRepoToken,
+      "AccessControlUnauthorizedAccount",
+    );
     });
     it("Mint Calls by Minter Role succeeds", async () => {
       await termRepoToken
@@ -214,9 +275,10 @@ describe("TermRepoToken Tests", () => {
       // pausing reverts when not called by the admin
       await expect(
         termRepoToken.connect(contractAddress).pauseMinting(),
-      ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
-      );
+      ).to.be.revertedWithCustomError(
+      termRepoToken,
+      "AccessControlUnauthorizedAccount",
+    );
 
       await expect(termRepoToken.connect(adminWallet).pauseMinting())
         .to.emit(termEventEmitter, "TermRepoTokenMintingPaused")
@@ -243,9 +305,10 @@ describe("TermRepoToken Tests", () => {
       // unpausing reverts when not called by the admin
       await expect(
         termRepoToken.connect(contractAddress).unpauseMinting(),
-      ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
-      );
+      ).to.be.revertedWithCustomError(
+      termRepoToken,
+      "AccessControlUnauthorizedAccount",
+    );
 
       await expect(termRepoToken.connect(adminWallet).unpauseMinting())
         .to.emit(termEventEmitter, "TermRepoTokenMintingUnpaused")
@@ -272,8 +335,9 @@ describe("TermRepoToken Tests", () => {
         termRepoToken
           .connect(wallet2)
           .resetMintExposureCap("2000000000000000000"),
-      ).to.revertedWith(
-        `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
+      ).to.be.revertedWithCustomError(
+        termRepoToken,
+      "AccessControlUnauthorizedAccount",
       );
 
       await termRepoToken
@@ -304,15 +368,17 @@ describe("TermRepoToken Tests", () => {
         termRepoToken
           .connect(wallet1)
           .mintRedemptionValue(wallet1.address, 10000000),
-      ).to.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6`,
+      ).to.be.revertedWithCustomError(
+        termRepoToken,
+      "AccessControlUnauthorizedAccount",
       );
 
       await expect(
         termRepoToken.connect(wallet1).mintTokens(wallet1.address, 10000000),
-      ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6`,
-      );
+      ).to.be.revertedWithCustomError(
+      termRepoToken,
+      "AccessControlUnauthorizedAccount",
+    );
     });
     it("Mint Calls by Minter Role succeeds", async () => {
       await termRepoToken
@@ -332,9 +398,10 @@ describe("TermRepoToken Tests", () => {
       // pausing reverts when not called by the admin
       await expect(
         termRepoToken.connect(contractAddress).pauseMinting(),
-      ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
-      );
+      ).to.be.revertedWithCustomError(
+      termRepoToken,
+      "AccessControlUnauthorizedAccount",
+    );
 
       await expect(termRepoToken.connect(adminWallet).pauseMinting())
         .to.emit(termEventEmitter, "TermRepoTokenMintingPaused")
@@ -361,9 +428,10 @@ describe("TermRepoToken Tests", () => {
       // unpausing reverts when not called by the admin
       await expect(
         termRepoToken.connect(contractAddress).unpauseMinting(),
-      ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
-      );
+      ).to.be.revertedWithCustomError(
+      termRepoToken,
+      "AccessControlUnauthorizedAccount",
+    );
 
       await expect(termRepoToken.connect(adminWallet).unpauseMinting())
         .to.emit(termEventEmitter, "TermRepoTokenMintingUnpaused")
@@ -388,9 +456,10 @@ describe("TermRepoToken Tests", () => {
       // Revert transaction if user is not granted role equal to keccak256("BURNER_ROLE")
       await expect(
         termRepoToken.connect(wallet1).burn(wallet1.address, 10),
-      ).to.be.revertedWith(
-        `AccessControl: account ${wallet1.address.toLowerCase()} is missing role 0x3c11d16cbaffd01df69ce1c404f6340ee057498f5f00246190ea54220576a848`,
-      );
+      ).to.be.revertedWithCustomError(
+      termRepoToken,
+      "AccessControlUnauthorizedAccount",
+    );
     });
     it("Burn Call by Burner Role succeeds", async () => {
       await termRepoToken
@@ -413,9 +482,10 @@ describe("TermRepoToken Tests", () => {
       // pausing reverts when not called by the admin
       await expect(
         termRepoToken.connect(contractAddress).pauseBurning(),
-      ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
-      );
+      ).to.be.revertedWithCustomError(
+      termRepoToken,
+      "AccessControlUnauthorizedAccount",
+    );
 
       await expect(termRepoToken.connect(adminWallet).pauseBurning())
         .to.emit(termEventEmitter, "TermRepoTokenBurningPaused")
@@ -440,9 +510,10 @@ describe("TermRepoToken Tests", () => {
       // unpausing reverts when not called by the admin
       await expect(
         termRepoToken.connect(contractAddress).unpauseBurning(),
-      ).to.be.revertedWith(
-        `AccessControl: account ${contractAddress.address.toLowerCase()} is missing role 0xa49807205ce4d355092ef5a8a18f56e8913cf4a201fbe287825b095693c21775`,
-      );
+      ).to.be.revertedWithCustomError(
+      termRepoToken,
+      "AccessControlUnauthorizedAccount",
+    );
 
       await expect(termRepoToken.connect(adminWallet).unpauseBurning())
         .to.emit(termEventEmitter, "TermRepoTokenBurningUnpaused")
