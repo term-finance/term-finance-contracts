@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 /// @dev TermRepoRolloverElectionSubmission represents a user submission for a rollover election to a future term
 struct TermRepoRolloverElectionSubmission {

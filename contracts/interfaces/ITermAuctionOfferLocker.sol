@@ -1,12 +1,16 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
+import {ITermAuction} from "./ITermAuction.sol";
+import {ITermRepoServicer} from "./ITermRepoServicer.sol";
 import {TermAuctionOffer} from "../lib/TermAuctionOffer.sol";
 import {TermAuctionOfferSubmission} from "../lib/TermAuctionOfferSubmission.sol";
 import {TermAuctionRevealedOffer} from "../lib/TermAuctionRevealedOffer.sol";
 
 interface ITermAuctionOfferLocker {
     function auctionEndTime() external view returns (uint256);
+    function termAuction() external view returns (ITermAuction);
+    function termRepoServicer() external view returns (ITermRepoServicer);
 
     // ========================================================================
     // = Interface/API ========================================================
@@ -22,6 +26,16 @@ interface ITermAuctionOfferLocker {
     /// @param referralAddress A user address that referred the submitter of this offer
     /// @return A bytes32 array of unique on chain offer ids.
     function lockOffersWithReferral(
+        TermAuctionOfferSubmission[] calldata offerSubmissions,
+        address referralAddress
+    ) external returns (bytes32[] memory);
+
+    /// @param offeror The address of the offeror
+    /// @param offerSubmissions An array of Term Auction offer submissions to lend an amount of money at rate no lower than the offer rate
+    /// @param referralAddress A user address that referred the submitter of this offer
+    /// @return A bytes32 array of unique on chain offer ids.
+    function lockOffersWithReferral(
+        address offeror,
         TermAuctionOfferSubmission[] calldata offerSubmissions,
         address referralAddress
     ) external returns (bytes32[] memory);
@@ -44,6 +58,11 @@ interface ITermAuctionOfferLocker {
     /// @notice unlockOffers unlocks multiple offers and returns funds to the offeror
     /// @param ids An array of offer ids
     function unlockOffers(bytes32[] calldata ids) external;
+
+    /// @notice unlockOffers unlocks multiple offers and returns funds to the offeror
+    /// @param offeror The address of the offeror
+    /// @param ids An array of offer ids
+    function unlockOffers(address offeror, bytes32[] calldata ids) external;
 
     // ========================================================================
     // = Internal Interface/API ===============================================

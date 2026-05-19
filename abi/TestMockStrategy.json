@@ -1,0 +1,153 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_asset",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_controller",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "asset",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "controller",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "exchangeRate",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "repoToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "sellRepoToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_rate",
+        "type": "uint256"
+      }
+    ],
+    "name": "setExchangeRate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "strategyState",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "assetVault",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "eventEmitter",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "governorAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "prevTermController",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "currTermController",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "discountRateAdapter",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timeToMaturityThreshold",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "requiredReserveRatio",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "discountRateMarkup",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "repoTokenConcentrationLimit",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct TestMockStrategy.StrategyState",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "LibTermStorage",
+  "sourceName": "contracts/libraries/LibTermStorage.sol",
+  "abi": [],
+  "bytecode": "0x60808060405234601757603a9081601d823930815050f35b600080fdfe600080fdfea26469706673582212205c5ba09bb2317fa83babfc5754f6c7dc7a7fc77b4b8f43ceda5d01f9585d786564736f6c63430008160033",
+  "deployedBytecode": "0x600080fdfea26469706673582212205c5ba09bb2317fa83babfc5754f6c7dc7a7fc77b4b8f43ceda5d01f9585d786564736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

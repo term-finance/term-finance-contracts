@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 /// @author TermLabs
 /// @title Versionable contract
@@ -7,7 +7,7 @@ pragma solidity ^0.8.18;
 /// @dev The version returned is replaced during the build process.
 contract Versionable {
     /// @dev This function returns the version of the contract.
-    function version() external view returns (string memory) {
-        return "development";
+    function version() public view returns (string memory) {
+        return "development"; // This string is replaced during the build process.
     }
 }

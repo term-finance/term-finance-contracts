@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {TermAuction} from "../TermAuction.sol";
 import {TermAuctionBidLocker} from "../TermAuctionBidLocker.sol";

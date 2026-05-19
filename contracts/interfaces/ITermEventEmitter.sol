@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermAuctionEvents} from "./ITermAuctionEvents.sol";
 import {ITermAuctionBidLockerEvents} from "./ITermAuctionBidLockerEvents.sol";
@@ -9,6 +9,7 @@ import {ITermRepoServicerEvents} from "./ITermRepoServicerEvents.sol";
 import {ITermRepoRolloverManagerEvents} from "./ITermRepoRolloverManagerEvents.sol";
 import {ITermRepoLockerEvents} from "./ITermRepoLockerEvents.sol";
 import {ITermRepoTokenEvents} from "./ITermRepoTokenEvents.sol";
+import {ITermIntentEvents} from "./ITermIntentEvents.sol";
 import {ITermEventEmitterEvents} from "./ITermEventEmitterEvents.sol";
 import {TermAuctionBid} from "../lib/TermAuctionBid.sol";
 
@@ -21,6 +22,7 @@ interface ITermEventEmitter is
     ITermRepoRolloverManagerEvents,
     ITermRepoLockerEvents,
     ITermRepoTokenEvents,
+    ITermIntentEvents,
     ITermEventEmitterEvents
 {
     //@param termContract New term contract to pair to event emitter.
@@ -40,6 +42,7 @@ interface ITermEventEmitter is
         bytes32 termAuctionId,
         address termAuction,
         uint256 auctionEndTime,
+        address deployerWallet,
         string calldata version
     ) external;
 
@@ -345,6 +348,7 @@ interface ITermEventEmitter is
         uint256 endOfRepurchaseWindow,
         uint256 redemptionTimestamp,
         uint256 servicingFee,
+        address deployerWallet,
         string calldata version
     ) external;
 
@@ -573,6 +577,84 @@ interface ITermEventEmitter is
 
     /// @param termRepoId The Term Repo id associated with the TermRepoToken where burning is unpaused
     function emitTermRepoTokenBurningUnpaused(bytes32 termRepoId) external;
+
+    // ========================================================================
+    // = TermIntent Events ====================================================
+    // ========================================================================
+
+    /// @param orderHash The hash of the order that was filled
+    /// @param termRepoId The Term Repo id associated with the intent
+    /// @param purchaseToken The address of the purchase token
+    /// @param maker The address of the maker
+    /// @param taker The address of the taker
+    /// @param makerToken The address of the maker's token
+    /// @param takerToken The address of the taker's token
+    /// @param offerRate The rate of the offer
+    /// @param makerTokenAmountFilled The amount of maker tokens filled
+    /// @param takerTokenAmountFilled The amount of taker tokens filled
+    /// @param proratedBorrowFee The prorated fee for borrow
+    /// @param feeRecipient The address that receives the fees
+    /// @param originalOrderAmount The original purchaseTokenAmount of the maker provided by the Maker
+    /// @param expiry The expiration date of the order
+    /// @param salt The user generated value for order uniqueness and replay protection
+    function emitIntentFilled(
+        bytes32 orderHash,
+        bytes32 termRepoId,
+        address purchaseToken,
+        address maker,
+        address taker,
+        address makerToken,
+        address takerToken,
+        uint256 offerRate,
+        uint256 makerTokenAmountFilled,
+        uint256 takerTokenAmountFilled,
+        uint256 proratedBorrowFee,
+        address feeRecipient,
+        uint256 originalOrderAmount,
+        uint256 expiry,
+        uint256 salt
+    ) external;
+
+    /// @param orderHash The hash of the order that was cancelled
+    function emitIntentCancelled(bytes32 orderHash) external;
+
+    /// @param orderHash The hash of the order that was filled
+    /// @param swapData The swap data containing all swap details
+    function emitRepoTokenSwapFilled(
+        bytes32 orderHash,
+        RepoTokenSwapData calldata swapData
+    ) external;
+
+
+    /**
+     * @notice Emits an event for the minimum salt value required for limit order token pairs
+     * @dev This function is used to emit events when a minimum salt value is set for a specific token pair by a maker
+     * @param maker The address of the order maker who set the minimum salt value
+     * @param makerToken The address of the token being offered by the maker
+     * @param takerToken The address of the token being requested by the maker
+     * @param minSaltValue The minimum salt value required for orders with this token pair
+     */
+    function emitLimitOrderTokenPairMinSaltValue(
+        address maker,
+        address makerToken,
+        address takerToken,
+        uint256 minSaltValue
+    ) external;
+
+    /**
+     * @notice Emits an event for the minimum salt value required for swap order token pairs
+     * @dev This function is used to emit events when a minimum salt value is set for a specific token pair by a maker
+     * @param maker The address of the order maker who set the minimum salt value
+     * @param makerToken The address of the token being offered by the maker
+     * @param takerToken The address of the token being requested by the maker
+     * @param minSaltValue The minimum salt value required for orders with this token pair
+     */
+    function emitSwapOrderTokenPairMinSaltValue(
+        address maker,
+        address makerToken,
+        address takerToken,
+        uint256 minSaltValue
+    ) external;
 
     // ========================================================================
     // = TermEventEmitter Events ==============================================

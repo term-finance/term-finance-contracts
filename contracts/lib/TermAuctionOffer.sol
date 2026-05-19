@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 /// @dev TermAuctionOffer represents an offer to offeror an amount of money for a specific interest rate
 struct TermAuctionOffer {

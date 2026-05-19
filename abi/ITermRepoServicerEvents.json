@@ -332,6 +332,12 @@
       },
       {
         "indexed": false,
+        "internalType": "address",
+        "name": "deployerWallet",
+        "type": "address"
+      },
+      {
+        "indexed": false,
         "internalType": "string",
         "name": "version",
         "type": "string"

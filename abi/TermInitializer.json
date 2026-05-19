@@ -17,7 +17,38 @@
   },
   {
     "inputs": [],
+    "name": "AccessControlBadConfirmation",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "neededRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "AccessControlUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "DeployingPaused",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitialization",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotInitializing",
     "type": "error"
   },
   {
@@ -25,9 +56,9 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "uint8",
+        "internalType": "uint64",
         "name": "version",
-        "type": "uint8"
+        "type": "uint64"
       }
     ],
     "name": "Initialized",
@@ -237,6 +268,11 @@
         "internalType": "contract TermPriceConsumerV3",
         "name": "priceOracle_",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termDiamond_",
+        "type": "address"
       }
     ],
     "name": "pairTermContracts",
@@ -260,7 +296,7 @@
       },
       {
         "internalType": "address",
-        "name": "account",
+        "name": "callerConfirmation",
         "type": "address"
       }
     ],
@@ -322,6 +358,11 @@
       {
         "internalType": "address",
         "name": "adminWallet",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "deployerWallet",
         "type": "address"
       },
       {
@@ -392,6 +433,11 @@
       {
         "internalType": "address",
         "name": "adminWallet",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "deployerWallet",
         "type": "address"
       },
       {

@@ -6,6 +6,38 @@
   },
   {
     "inputs": [],
+    "name": "AccessControlBadConfirmation",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "neededRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "AccessControlUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "AddressEmptyCode",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "AlreadyTermContractPaired",
     "type": "error"
   },
@@ -130,11 +162,48 @@
     "inputs": [
       {
         "internalType": "address",
+        "name": "expected",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "actual",
+        "type": "address"
+      }
+    ],
+    "name": "CollateralTokenMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "token",
         "type": "address"
       }
     ],
     "name": "CollateralTokenNotApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "implementation",
+        "type": "address"
+      }
+    ],
+    "name": "ERC1967InvalidImplementation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ERC1967NonPayable",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedCall",
     "type": "error"
   },
   {
@@ -146,6 +215,11 @@
       }
     ],
     "name": "GeneratingExistingBid",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitialization",
     "type": "error"
   },
   {
@@ -212,6 +286,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "NotInitializing",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -220,6 +299,11 @@
       }
     ],
     "name": "PurchaseTokenNotApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
     "type": "error"
   },
   {
@@ -266,6 +350,27 @@
   },
   {
     "inputs": [],
+    "name": "TermContractsPaused",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UUPSUnauthorizedCallContext",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "slot",
+        "type": "bytes32"
+      }
+    ],
+    "name": "UUPSUnsupportedProxiableUUID",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "UnlockingPaused",
     "type": "error"
   },
@@ -274,41 +379,9 @@
     "inputs": [
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "previousAdmin",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "newAdmin",
-        "type": "address"
-      }
-    ],
-    "name": "AdminChanged",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "beacon",
-        "type": "address"
-      }
-    ],
-    "name": "BeaconUpgraded",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint8",
+        "internalType": "uint64",
         "name": "version",
-        "type": "uint8"
+        "type": "uint64"
       }
     ],
     "name": "Initialized",
@@ -456,6 +529,19 @@
   },
   {
     "inputs": [],
+    "name": "DIAMOND_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "INITIALIZER_ROLE",
     "outputs": [
       {
@@ -495,6 +581,19 @@
   },
   {
     "inputs": [],
+    "name": "MINIMUM_ROLLOVER_TENDER_DIVISOR",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "ROLLOVER_MANAGER",
     "outputs": [
       {
@@ -514,6 +613,19 @@
         "internalType": "uint256",
         "name": "",
         "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "UPGRADE_INTERFACE_VERSION",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
       }
     ],
     "stateMutability": "view",
@@ -589,7 +701,7 @@
   {
     "inputs": [
       {
-        "internalType": "contract IERC20Upgradeable",
+        "internalType": "contract IERC20",
         "name": "",
         "type": "address"
       }
@@ -860,7 +972,7 @@
         "type": "address"
       },
       {
-        "internalType": "contract IERC20Upgradeable[]",
+        "internalType": "contract IERC20[]",
         "name": "collateralTokens_",
         "type": "address[]"
       },
@@ -933,6 +1045,72 @@
   },
   {
     "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "bytes32",
+            "name": "id",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "address",
+            "name": "bidder",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "bidPriceHash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "collateralAmounts",
+            "type": "uint256[]"
+          },
+          {
+            "internalType": "address",
+            "name": "purchaseToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address[]",
+            "name": "collateralTokens",
+            "type": "address[]"
+          }
+        ],
+        "internalType": "struct TermAuctionBidSubmission[]",
+        "name": "bidSubmissions",
+        "type": "tuple[]"
+      },
+      {
+        "internalType": "address",
+        "name": "referralAddress",
+        "type": "address"
+      }
+    ],
+    "name": "lockBidsWithReferral",
+    "outputs": [
+      {
+        "internalType": "bytes32[]",
+        "name": "",
+        "type": "bytes32[]"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "bidder",
+        "type": "address"
+      },
       {
         "components": [
           {
@@ -1213,6 +1391,11 @@
         "internalType": "address",
         "name": "adminWallet_",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termDiamond_",
+        "type": "address"
       }
     ],
     "name": "pairTermContracts",
@@ -1269,7 +1452,7 @@
       },
       {
         "internalType": "address",
-        "name": "account",
+        "name": "callerConfirmation",
         "type": "address"
       }
     ],
@@ -1419,6 +1602,24 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "bidder",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32[]",
+        "name": "ids",
+        "type": "bytes32[]"
+      }
+    ],
+    "name": "unlockBids",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "bytes32[]",
         "name": "ids",
         "type": "bytes32[]"
@@ -1452,19 +1653,6 @@
   {
     "inputs": [],
     "name": "unpauseUnlocking",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "newImplementation",
-        "type": "address"
-      }
-    ],
-    "name": "upgradeTo",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

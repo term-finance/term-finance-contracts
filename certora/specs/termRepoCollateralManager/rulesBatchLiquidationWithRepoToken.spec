@@ -23,7 +23,7 @@ methods {
     function _.termAuctionId() external => DISPATCHER(true);
     function _.termRepoServicer() external => DISPATCHER(true);
     function _.dayCountFractionMantissa() external => DISPATCHER(true);
-    function _.lockRolloverBid(uint256) external => DISPATCHER(true);
+    function _.lockRolloverBid(TermAuctionBidLocker.TermAuctionBid) external => DISPATCHER(true);
     function _.auctionEndTime() external => DISPATCHER(true);
     function _.purchaseToken() external => DISPATCHER(true);
     function _.collateralTokens(address) external => DISPATCHER(true);

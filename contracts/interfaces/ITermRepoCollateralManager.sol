@@ -1,8 +1,9 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ExponentialNoError} from "../lib/ExponentialNoError.sol";
 import {ITermRepoLocker} from "./ITermRepoLocker.sol";
+import {ITermController} from "./ITermController.sol";
 
 /// @notice ITermManager represents a contract that manages all
 interface ITermRepoCollateralManager {
@@ -24,26 +25,34 @@ interface ITermRepoCollateralManager {
 
     function encumberedCollateralRemaining() external view returns (bool);
 
+    function termController() external view returns (ITermController);
+
     // ========================================================================
     // = Auction Functions  ===================================================
     // ========================================================================
 
-    /// @param bidder The bidder's address
+    /// @param sender The sender's address
     /// @param collateralToken The address of the token to be used as collateral
     /// @param amount The amount of the token to lock
     function auctionLockCollateral(
-        address bidder,
+        address sender,
         address collateralToken,
         uint256 amount
     ) external;
 
-    /// @param bidder The bidder's address
+    /// @param sender The sender's address
     /// @param collateralToken The address of the token used as collateral
     /// @param amount The amount of collateral tokens to unlock
     function auctionUnlockCollateral(
-        address bidder,
+        address sender,
         address collateralToken,
         uint256 amount
+    ) external;
+
+    /// @notice Marks a borrower's currently locked collateral as encumbered across all accepted collateral tokens
+    /// @param borrower The address of the borrower whose locked collateral is being encumbered
+    function encumberExistingCollateral(
+        address borrower
     ) external;
 
     // ========================================================================
@@ -84,9 +93,29 @@ interface ITermRepoCollateralManager {
         uint256 amount
     ) external;
 
+    /// @notice Lock collateral on behalf of a borrower (DIAMOND_ROLE)
+    /// @param borrower The address of the borrower for whom collateral is being locked
+    /// @param collateralToken The address of the collateral token to lock
+    /// @param amount The amount of collateral token to lock
+    function externalLockCollateral(
+        address borrower,
+        address collateralToken,
+        uint256 amount
+    ) external;
+
     /// @param collateralToken The address of the collateral token to unlock
     /// @param amount The amount of collateral token to unlock
     function externalUnlockCollateral(
+        address collateralToken,
+        uint256 amount
+    ) external;
+
+    /// @notice Unlock collateral on behalf of a borrower (DIAMOND_ROLE)
+    /// @param borrower The address of the borrower for whom collateral is being unlocked
+    /// @param collateralToken The address of the collateral token to unlock
+    /// @param amount The amount of collateral token to unlock
+    function externalUnlockCollateral(
+        address borrower,
         address collateralToken,
         uint256 amount
     ) external;
@@ -114,10 +143,12 @@ interface ITermRepoCollateralManager {
     ) external;
 
     /// @param borrower The address of the borrower
+    /// @param sender The address of the entity (borrower or settler) initiating the collateral lock
     /// @param collateralToken Collateral token addresse
     /// @param amount Collateral token amount
     function mintOpenExposureLockCollateral(
         address borrower,
+        address sender,
         address collateralToken,
         uint256 amount
     ) external;

@@ -1,0 +1,31 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "TermFlashBase",
+  "sourceName": "contracts/facets/base/TermFlashBase.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "FlashloanAlreadyActive",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "FlashloanNotActive",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidCaller",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidInitiator",
+      "type": "error"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

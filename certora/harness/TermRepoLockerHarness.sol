@@ -2,9 +2,7 @@
 pragma solidity ^0.8.18;
 
 import "../../contracts/TermRepoLocker.sol";
-contract TermRepoLockerHarness is
-    TermRepoLocker
-{
+contract TermRepoLockerHarness is TermRepoLocker {
     function isTermContractPaired() external view returns (bool) {
         return termContractPaired;
     }

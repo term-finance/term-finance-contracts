@@ -104,7 +104,6 @@ rule lockerPurchaseTokenBalanceGreaterThanOfferLedgerBalance(
     !f.isView &&
   f.contract == currentContract &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:upgradeTo(address).selector &&
     f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,address,address[],address).selector &&
     f.selector != sig:getAllOffers(bytes32[],bytes32[]).selector &&
     f.selector != sig:unlockOfferPartial(bytes32,address,uint256).selector && 

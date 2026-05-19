@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "LogExpMath",
+  "sourceName": "@pendle/core-v2/contracts/core/libraries/math/LogExpMath.sol",
+  "abi": [],
+  "bytecode": "0x60808060405234601757603a9081601d823930815050f35b600080fdfe600080fdfea2646970667358221220957d28ab17abb39286f20dfda1f31ff5920e7e949e668e17ab80d9b1a4f6f0d064736f6c63430008160033",
+  "deployedBytecode": "0x600080fdfea2646970667358221220957d28ab17abb39286f20dfda1f31ff5920e7e949e668e17ab80d9b1a4f6f0d064736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

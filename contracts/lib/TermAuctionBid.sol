@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 /// @dev TermAuctionBid represents a bid to borrow a specific amount of tokens at a specific interest rate (or better)
 struct TermAuctionBid {

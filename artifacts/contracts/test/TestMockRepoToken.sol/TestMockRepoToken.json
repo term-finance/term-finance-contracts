@@ -1,0 +1,67 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "TestMockRepoToken",
+  "sourceName": "contracts/test/TestMockRepoToken.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "config",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "redemptionTimestamp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "purchaseToken",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "termRepoServicer",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "termRepoCollateralManager",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "redemptionTimestamp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "purchaseToken",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "termRepoServicer",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "termRepoCollateralManager",
+          "type": "address"
+        }
+      ],
+      "name": "setConfig",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x6080806040523461001657610120908161001c8239f35b600080fdfe6080806040526004361015601257600080fd5b600090813560e01c90816379502c551460a6575063bf8a0d1d14603457600080fd5b3460a357608036600319011260a3576001600160a01b0360243581811690819003609f57604435828116809103609b57606435928316809303609b57600435845560018060a01b031991826001541617600155816002541617600255600354161760035580f35b8380fd5b8280fd5b80fd5b90503460e6578160031936011260e65790546001546002546003549284526001600160a01b03918216602085015281166040840152166060820152608090f35b5080fdfea26469706673582212207a5bd32da13915d39b0422228a067b59b61ac88a553d0019a4b94433160a2a7064736f6c63430008160033",
+  "deployedBytecode": "0x6080806040526004361015601257600080fd5b600090813560e01c90816379502c551460a6575063bf8a0d1d14603457600080fd5b3460a357608036600319011260a3576001600160a01b0360243581811690819003609f57604435828116809103609b57606435928316809303609b57600435845560018060a01b031991826001541617600155816002541617600255600354161760035580f35b8380fd5b8280fd5b80fd5b90503460e6578160031936011260e65790546001546002546003549284526001600160a01b03918216602085015281166040840152166060820152608090f35b5080fdfea26469706673582212207a5bd32da13915d39b0422228a067b59b61ac88a553d0019a4b94433160a2a7064736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

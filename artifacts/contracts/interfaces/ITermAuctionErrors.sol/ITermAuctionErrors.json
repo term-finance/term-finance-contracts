@@ -9,6 +9,17 @@
       "type": "error"
     },
     {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "bidId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "AssignedZeroAmount",
+      "type": "error"
+    },
+    {
       "inputs": [],
       "name": "AuctionAlreadyCompleted",
       "type": "error"

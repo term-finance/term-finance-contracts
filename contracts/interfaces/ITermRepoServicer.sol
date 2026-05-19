@@ -1,9 +1,11 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermRepoCollateralManager} from "./ITermRepoCollateralManager.sol";
 import {ITermRepoRolloverManager} from "./ITermRepoRolloverManager.sol";
 import {ITermRepoLocker} from "./ITermRepoLocker.sol";
+import {ITermRepoToken} from "./ITermRepoToken.sol";
+import {ITermController} from "./ITermController.sol";
 
 /// @notice ITermRepoServicer represents a contract that manages all
 interface ITermRepoServicer {
@@ -11,6 +13,8 @@ interface ITermRepoServicer {
     // = State Variables  =====================================================
     // ========================================================================
 
+    function termRepoId() external view returns (bytes32);
+   
     function endOfRepurchaseWindow() external view returns (uint256);
 
     function maturityTimestamp() external view returns (uint256);
@@ -33,13 +37,18 @@ interface ITermRepoServicer {
 
     function termRepoLocker() external view returns (ITermRepoLocker);
 
+    function termRepoToken() external view returns (ITermRepoToken);
+
+    function termController() external view returns (ITermController);
+
     // ========================================================================
     // = Auction Functions  ===================================================
     // ========================================================================
 
+    /// @param sender The sender's address
     /// @param offeror The address of the offeror
     /// @param amount The amount of purchase tokens to lock
-    function lockOfferAmount(address offeror, uint256 amount) external;
+    function lockOfferAmount(address sender, address offeror, uint256 amount) external;
 
     /// @param offeror The address of the offeror
     /// @param amount The amount of purchase tokens to unlocked
@@ -70,6 +79,36 @@ interface ITermRepoServicer {
         uint256 amount,
         uint256[] calldata collateralAmounts
     ) external;
+
+    /// @notice Mint open exposure on behalf of a borrower (DIAMOND_ROLE)
+    /// @param borrower The address of the borrower for whom exposure is being minted
+    /// @param amount The amount to mint
+    /// @param collateralAmounts Array of collateral amounts
+    function mintOpenExposure(
+        address borrower,
+        uint256 amount,
+        uint256[] calldata collateralAmounts
+    ) external;
+
+    /// @notice Mint open exposure for intent-based order settlement (DIAMOND_ROLE)
+    /// @dev This method allows DIAMOND_ROLE to open repurchase price exposure against a TermRepoToken mint for intent-based orders.
+    ///      Used by settlement facets to create new repo tokens when matching lend/borrow intents outside of auctions.
+    ///      Validates collateral amounts array length matches accepted collateral tokens and checks maturity timestamp.
+    /// @param borrower The address of the borrower for whom exposure is being minted
+    /// @param lender The address of the lender providing the purchase tokens
+    /// @param purchaseTokenAmount The amount of purchase tokens being lent
+    /// @param collateralAmounts An array containing collateral token amounts for each token in the collateral basket
+    /// @param offerRate The interest rate for the position (percentage in 1e18 format)
+    /// @param isRoutedCollateral Whether the collateral tokens are already routed to the contract
+    /// @return Amount of Term Repo Tokens minted
+    function mintOpenExposureFromIntent(
+        address borrower,
+        address lender,
+        uint256 purchaseTokenAmount,
+        uint256[] calldata collateralAmounts,
+        uint256 offerRate,
+        bool isRoutedCollateral
+    ) external returns (uint256);
 
     /// @param bidder The address of the bidder
     /// @param purchasePrice The bid amount to fulfill
@@ -123,8 +162,18 @@ interface ITermRepoServicer {
     /// @param amount The amount of purchase token to submit for repurchase
     function submitRepurchasePayment(uint256 amount) external;
 
+    /// @notice Submit repurchase payment on behalf of a borrower (DIAMOND_ROLE)
+    /// @param borrower The address of the borrower making the repurchase payment
+    /// @param amount The amount of purchase token to submit for repurchase
+    function submitRepurchasePayment(address borrower, uint256 amount) external;
+
     /// @param amountToBurn The amount of TermRepoTokens to burn
     function burnCollapseExposure(uint256 amountToBurn) external;
+
+    /// @notice Burn and collapse exposure on behalf of a borrower (DIAMOND_ROLE)
+    /// @param borrower The address of the borrower whose exposure is being collapsed
+    /// @param amountToBurn The amount of TermRepoTokens to burn
+    function burnCollapseExposure(address borrower, uint256 amountToBurn) external;
 
     /// @param borrower The address of the borrower to query
     /// @return The total repurchase price due at maturity for a given borrower

@@ -1,0 +1,142 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "TermFlashHookFacet",
+  "sourceName": "contracts/facets/base/TermFlashHookFacet.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "target",
+          "type": "address"
+        }
+      ],
+      "name": "AddressEmptyCode",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "FailedCall",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InputOutputTokenCollision",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "UnsupportedHookSelector",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "inputToken",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "maxInputAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "outputToken",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minOutputAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes4",
+          "name": "selector",
+          "type": "bytes4"
+        },
+        {
+          "internalType": "address",
+          "name": "targetAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes",
+          "name": "additionalCalldata",
+          "type": "bytes"
+        }
+      ],
+      "name": "generateActionCalldata",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "expectedInputToken",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "expectedInputAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "expectedOutputToken",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "expectedOutputAmount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "isDeterministic",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct PreviewAction",
+          "name": "",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "name": "previewMapping",
+      "outputs": [
+        {
+          "internalType": "bytes4",
+          "name": "",
+          "type": "bytes4"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

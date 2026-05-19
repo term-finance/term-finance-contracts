@@ -2,60 +2,75 @@
 pragma solidity ^0.8.18;
 
 import "../../contracts/TermRepoCollateralManager.sol";
-contract TermRepoCollateralManagerHarness is
-    TermRepoCollateralManager
-{
+contract TermRepoCollateralManagerHarness is TermRepoCollateralManager {
     function isTermContractPaired() external view returns (bool) {
         return termContractPaired;
     }
 
-    function repoServicer() external view returns (address){
+    function repoServicer() external view returns (address) {
         return address(termRepoServicer);
     }
 
-    function encumberedCollateralBalance(address token) external view returns (uint256) {
+    function encumberedCollateralBalance(
+        address token
+    ) external view returns (uint256) {
         return encumberedCollateralBalances[token];
     }
 
     function isTokenCollateral(address token) external view returns (bool) {
         return _isAcceptedCollateralToken(token);
     }
-    
+
     function collateralTokensLength() external view returns (uint256) {
         return collateralTokens.length;
     }
 
-    function isInCollateralTokenArray(address token) external view returns (bool) {
-        for (uint8 i = 0; i < 2; ++i){
+    function isInCollateralTokenArray(
+        address token
+    ) external view returns (bool) {
+        for (uint8 i = 0; i < 2; ++i) {
             if (collateralTokens[i] == token) {
                 return true;
             }
         }
         return false;
     }
-    function allowFullLiquidation(address borrower, uint256[] calldata closureAmounts) external returns (bool) {
-        return _validateBatchLiquidationForFullLiquidation(
-            borrower,
-            msg.sender,
-            closureAmounts
-        );
+    function allowFullLiquidation(
+        address borrower,
+        uint256[] calldata closureAmounts
+    ) external returns (bool) {
+        return
+            _validateBatchLiquidationForFullLiquidation(
+                borrower,
+                msg.sender,
+                closureAmounts
+            );
     }
 
-    function willBorrowerBeInShortfall(address borrower, uint256 balanceAdjust, address collateralTokenAdjusted, uint256 collateralBalanceAdjust) external view returns(bool) {
+    function willBorrowerBeInShortfall(
+        address borrower,
+        uint256 balanceAdjust,
+        address collateralTokenAdjusted,
+        uint256 collateralBalanceAdjust
+    ) external view returns (bool) {
         Exp memory repurchasePriceUSDValue = termPriceOracle.usdValueOfTokens(
             purchaseToken,
-            termRepoServicer.getBorrowerRepurchaseObligation(borrower) - balanceAdjust
+            termRepoServicer.getBorrowerRepurchaseObligation(borrower) -
+                balanceAdjust
         );
         Exp memory haircutUSDTotalCollateralValue = Exp({mantissa: 0});
         address collateralToken;
         uint256 collatBalance;
         for (uint256 i = 0; i < collateralTokens.length; ++i) {
             collateralToken = collateralTokens[i];
-            if ( collateralToken == collateralTokenAdjusted) {
-                collatBalance = lockedCollateralLedger[borrower][collateralToken] - collateralBalanceAdjust;
-                
+            if (collateralToken == collateralTokenAdjusted) {
+                collatBalance =
+                    lockedCollateralLedger[borrower][collateralToken] -
+                    collateralBalanceAdjust;
             } else {
-                collatBalance = lockedCollateralLedger[borrower][collateralToken];
+                collatBalance = lockedCollateralLedger[borrower][
+                    collateralToken
+                ];
             }
             Exp memory additionalHairCutUSDCollateralValue = div_(
                 termPriceOracle.usdValueOfTokens(
@@ -63,13 +78,11 @@ contract TermRepoCollateralManagerHarness is
                     collatBalance
                 ),
                 Exp({mantissa: maintenanceCollateralRatios[collateralToken]})
-
-                );
+            );
             haircutUSDTotalCollateralValue = add_(
-                    additionalHairCutUSDCollateralValue,
-                    haircutUSDTotalCollateralValue
-                );
-            
+                additionalHairCutUSDCollateralValue,
+                haircutUSDTotalCollateralValue
+            );
         }
         if (
             lessThanExp(haircutUSDTotalCollateralValue, repurchasePriceUSDValue)
@@ -79,7 +92,12 @@ contract TermRepoCollateralManagerHarness is
         return false;
     }
 
-    function willBeWithinNetExposureCapOnLiquidation(address borrower, uint256 balanceAdjust, address collateralTokenAdjusted, uint256 collateralBalanceAdjust) external returns (bool) {
+    function willBeWithinNetExposureCapOnLiquidation(
+        address borrower,
+        uint256 balanceAdjust,
+        address collateralTokenAdjusted,
+        uint256 collateralBalanceAdjust
+    ) external returns (bool) {
         uint256 borrowerRepurchaseObligation = termRepoServicer
             .getBorrowerRepurchaseObligation(borrower) - balanceAdjust;
 
@@ -95,21 +113,22 @@ contract TermRepoCollateralManagerHarness is
         for (uint256 i = 0; i < collateralTokens.length; ++i) {
             collateralToken = collateralTokens[i];
             if (collateralToken == collateralTokenAdjusted) {
-                collatBalance = lockedCollateralLedger[borrower][collateralToken] - collateralBalanceAdjust;
-
-            }
-            else {
-                collatBalance = lockedCollateralLedger[borrower][collateralToken];
-
+                collatBalance =
+                    lockedCollateralLedger[borrower][collateralToken] -
+                    collateralBalanceAdjust;
+            } else {
+                collatBalance = lockedCollateralLedger[borrower][
+                    collateralToken
+                ];
             }
 
             additionalHairCutUSDCollateralValue = div_(
-                    termPriceOracle.usdValueOfTokens(
-                        collateralToken,
-                        collatBalance
-                    ),
+                termPriceOracle.usdValueOfTokens(
+                    collateralToken,
+                    collatBalance
+                ),
                 Exp({mantissa: initialCollateralRatios[collateralToken]})
-                );
+            );
 
             haircutUSDTotalCollateralValue = add_(
                 additionalHairCutUSDCollateralValue,
@@ -138,11 +157,16 @@ contract TermRepoCollateralManagerHarness is
             );
     }
 
-    function harnessCollateralSeizureAmounts(uint256 amountToCover_, address collateralToken) external returns (uint256, uint256) {
+    function harnessCollateralSeizureAmounts(
+        uint256 amountToCover_,
+        address collateralToken
+    ) external returns (uint256, uint256) {
         return _collateralSeizureAmounts(amountToCover_, collateralToken);
     }
 
-    function harnessWithinNetExposureCapOnLiquidation(address borrower) external returns (bool) {
+    function harnessWithinNetExposureCapOnLiquidation(
+        address borrower
+    ) external returns (bool) {
         return _withinNetExposureCapOnLiquidation(borrower);
     }
 
@@ -153,7 +177,7 @@ contract TermRepoCollateralManagerHarness is
     function termRepoServicerAddress() external view returns (address) {
         return address(termRepoServicer);
     }
-    
+
     function termControllerAddress() external view returns (address) {
         return address(termController);
     }
@@ -162,7 +186,10 @@ contract TermRepoCollateralManagerHarness is
         return address(emitter);
     }
 
-    function harnessLockedCollateralLedger(address borrower, address collateralToken) external view returns (uint256) {
+    function harnessLockedCollateralLedger(
+        address borrower,
+        address collateralToken
+    ) external view returns (uint256) {
         return lockedCollateralLedger[borrower][collateralToken];
     }
 

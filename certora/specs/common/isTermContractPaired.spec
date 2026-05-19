@@ -14,7 +14,6 @@
 // the correctness of the `isTermContractPaired` field on that contract.
 
 import "../methods/emitMethods.spec";
-import "../methods/erc20Methods.spec";
 
 
 methods {

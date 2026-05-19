@@ -1,0 +1,1260 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "admin_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "devops_",
+        "type": "address"
+      },
+      {
+        "internalType": "contract ITermController",
+        "name": "controller_",
+        "type": "address"
+      },
+      {
+        "internalType": "contract ITermEventEmitter",
+        "name": "emitter_",
+        "type": "address"
+      },
+      {
+        "internalType": "contract TermPriceConsumerV3",
+        "name": "priceOracle_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termDiamond_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "AccessControlBadConfirmation",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "neededRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "AccessControlUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DeployingAuctionsPaused",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DeployingPaused",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DeployingTermReposPaused",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "auctionId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "DuplicateAuctionId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "DuplicateCollateralToken",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "repoId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "DuplicateRepoId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EmptyTermAuctionId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EmptyTermRepoId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InitialRatioBelowMaintenance",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidAuctionEndTime",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidAuctionStartTime",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidClearingPricePostProcessingOffset",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitialCollateralRatio",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidLiquidatedDamage",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidLiquidatedDamageDueToProtocol",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidMaintenanceRatio",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidNetExposureCapOnLiquidation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidRevealTime",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidTermStartTime",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidTokenDecimals",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MaturityTimestampInPast",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoAuctionVersion",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoCollateralTokens",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoTermVersion",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotFactoryDeployed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotTermRepoCollateral",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RepoIdMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TermPastMaturity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TokenNotSupportedByOracle",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TokenZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroMinimumTenderAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroMintExposureCap",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ZeroRepurchaseWindow",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termAuctionImpl",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termAuctionBidLockerImpl",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termAuctionOfferLockerImpl",
+        "type": "address"
+      }
+    ],
+    "name": "AuctionImplementationsUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termRepoServicerImpl",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termRepoCollateralManagerImpl",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termRepoLockerImpl",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termRepoTokenImpl",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termRepoRolloverManagerImpl",
+        "type": "address"
+      }
+    ],
+    "name": "RepoImplementationsUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "previousAdminRole",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "newAdminRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "RoleAdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleGranted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleRevoked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "termRepoId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "termAuctionId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termAuction",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termAuctionBidLocker",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termAuctionOfferLocker",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "deployCaller",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isPermissionlessDeployment",
+        "type": "bool"
+      }
+    ],
+    "name": "TermAuctionDeployed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "termRepoId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termRepoServicer",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termRepoCollateralManager",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termRepoLocker",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "termRepoToken",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "rolloverManager",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "deployCaller",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "isPermissionlessDeployment",
+        "type": "bool"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "termRepoIdInputString",
+        "type": "string"
+      }
+    ],
+    "name": "TermRepoDeployed",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "ADMIN_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEFAULT_ADMIN_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEMINIMIS_MARGIN_THRESHOLD",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEVOPS_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "REPO_TOKEN_REDEMPTION_VALUE",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "admin",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "auctionVersion",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "controller",
+    "outputs": [
+      {
+        "internalType": "contract ITermController",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "termRepoId",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "termAuctionId",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "auctionStartTime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "revealTime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "auctionEndTime",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "termStart",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minimumTenderAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "clearingPricePostProcessingOffset",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct TermRepoDeployerFactory.TermAuctionDeployParams",
+        "name": "auctionDeployParams",
+        "type": "tuple"
+      },
+      {
+        "internalType": "address",
+        "name": "termRepoServicer",
+        "type": "address"
+      }
+    ],
+    "name": "deployAuctionAndReopenTerm",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "termAuction",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "termAuctionBidLocker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "termAuctionOfferLocker",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct TermRepoDeployerFactory.DeployedTermAuction",
+        "name": "deployed",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "termRepoId",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maturityTimestamp",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "repurchaseWindow",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "redemptionBuffer",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "purchaseToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "servicingFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "netExposureCapOnLiquidation",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "liquidatedDamagesDueToProtocol",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "tokenAddress",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "initialCollateralRatio",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "maintenanceRatio",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "liquidatedDamage",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct Collateral[]",
+            "name": "collateralTokens",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "string",
+            "name": "tokenName",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "tokenSymbol",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "mintExposureCap",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct TermRepoDeployerFactory.TermRepoDeployParams",
+        "name": "deployParams",
+        "type": "tuple"
+      }
+    ],
+    "name": "deployTermRepo",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "termRepoServicer",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "termRepoCollateralManager",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "termRepoLocker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "termRepoToken",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "rolloverManager",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct TermRepoDeployerFactory.DeployedTermRepo",
+        "name": "deployed",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "deployingAuctionsPaused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "deployingPaused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "deployingTermReposPaused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "devops",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "emitter",
+    "outputs": [
+      {
+        "internalType": "contract ITermEventEmitter",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      }
+    ],
+    "name": "getRoleAdmin",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "hasRole",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pauseAuctionDeploys",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pauseDeploying",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pauseTermRepoDeploys",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "priceOracle",
+    "outputs": [
+      {
+        "internalType": "contract TermPriceConsumerV3",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "callerConfirmation",
+        "type": "address"
+      }
+    ],
+    "name": "renounceRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "contract ITermController",
+        "name": "controller_",
+        "type": "address"
+      },
+      {
+        "internalType": "contract ITermEventEmitter",
+        "name": "emitter_",
+        "type": "address"
+      },
+      {
+        "internalType": "contract TermPriceConsumerV3",
+        "name": "priceOracle_",
+        "type": "address"
+      }
+    ],
+    "name": "setProtocolContracts",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "termAuctionImpl_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termAuctionBidLockerImpl_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termAuctionOfferLockerImpl_",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "auctionVersion_",
+        "type": "string"
+      }
+    ],
+    "name": "setTermAuctionImplementations",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "termRepoServicerImpl_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termRepoCollateralManagerImpl_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termRepoLockerImpl_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termRepoTokenImpl_",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "termRepoRolloverManagerImpl_",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "termVersion_",
+        "type": "string"
+      }
+    ],
+    "name": "setTermRepoImplementations",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "interfaceId",
+        "type": "bytes4"
+      }
+    ],
+    "name": "supportsInterface",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "termAuctionBidLockerImpl",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "termAuctionImpl",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "termAuctionOfferLockerImpl",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "termDiamond",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "termRepoCollateralManagerImpl",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "termRepoLockerImpl",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "termRepoRolloverManagerImpl",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "termRepoServicerImpl",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "termRepoTokenImpl",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "termVersion",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unpauseAuctionDeploys",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unpauseDeploying",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unpauseTermRepoDeploys",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

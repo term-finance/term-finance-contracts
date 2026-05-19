@@ -156,7 +156,6 @@ rule notAllowedMethodsCannotChangeBidCount(
     !f.isView &&
     f.contract == currentContract &&
     f.selector != sig:TermAuctionBidLockerHarness.upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:TermAuctionBidLockerHarness.upgradeTo(address).selector &&
     f.selector != sig:TermAuctionBidLockerHarness.initialize(string,string,uint256,uint256,uint256,uint256,uint256,address,address[],address).selector &&
     f.selector != sig:TermAuctionBidLockerHarness.lockBidsWithReferral(TermAuctionBidLockerHarness.TermAuctionBidSubmission[],address).selector &&
     f.selector != sig:TermAuctionBidLockerHarness.lockRolloverBid(TermAuctionBidLockerHarness.TermAuctionBid).selector &&
@@ -184,7 +183,6 @@ rule onlyAllowedMethodsCanChangeBidCount(
   !f.isView &&
   f.contract == currentContract &&
   f.selector != sig:TermAuctionBidLockerHarness.upgradeToAndCall(address,bytes).selector &&
-  f.selector != sig:TermAuctionBidLockerHarness.upgradeTo(address).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.initialize(string,string,uint256,uint256,uint256,uint256,uint256,address,address[],address).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.lockBidsWithReferral(TermAuctionBidLockerHarness.TermAuctionBidSubmission[],address).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.lockRolloverBid(TermAuctionBidLockerHarness.TermAuctionBid).selector &&
@@ -210,7 +208,6 @@ rule lockerCollateralTokenBalanceGreaterThanCollateralLedgerBalance(
     !f.isView &&
   f.contract == currentContract &&
   f.selector != sig:TermAuctionBidLockerHarness.upgradeToAndCall(address,bytes).selector &&
-  f.selector != sig:TermAuctionBidLockerHarness.upgradeTo(address).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.initialize(string,string,uint256,uint256,uint256,uint256,uint256,address,address[],address).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.lockRolloverBid(TermAuctionBidLockerHarness.TermAuctionBid).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.getAllBids(bytes32[],bytes32[],bytes32[]).selector &&

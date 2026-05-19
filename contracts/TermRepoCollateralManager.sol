@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermController} from "./interfaces/ITermController.sol";
 import {ITermEventEmitter} from "./interfaces/ITermEventEmitter.sol";
@@ -10,6 +10,7 @@ import {ITermRepoServicer} from "./interfaces/ITermRepoServicer.sol";
 import {ITermPriceOracle} from "./interfaces/ITermPriceOracle.sol";
 import {Collateral} from "./lib/Collateral.sol";
 import {ExponentialNoError} from "./lib/ExponentialNoError.sol";
+import {TermContractsPausable} from "./lib/TermContractsPausable.sol";
 import {TermAuctionGroup} from "./lib/TermAuctionGroup.sol";
 import {TermPriceConsumerV3} from "./TermPriceConsumerV3.sol";
 import {TermRepoLocker} from "./TermRepoLocker.sol";
@@ -17,7 +18,7 @@ import {TermRepoServicer} from "./TermRepoServicer.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {IERC20MetadataUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {Versionable} from "./lib/Versionable.sol";
 
 /// @author TermLabs
@@ -31,6 +32,7 @@ contract TermRepoCollateralManager is
     UUPSUpgradeable,
     AccessControlUpgradeable,
     ExponentialNoError,
+    TermContractsPausable,
     Versionable
 {
     // ========================================================================
@@ -42,6 +44,7 @@ contract TermRepoCollateralManager is
     bytes32 public constant DEVOPS_ROLE = keccak256("DEVOPS_ROLE");
     bytes32 public constant INITIALIZER_ROLE = keccak256("INITIALIZER_ROLE");
     bytes32 public constant SERVICER_ROLE = keccak256("SERVICER_ROLE");
+    bytes32 public constant DIAMOND_ROLE = keccak256("DIAMOND_ROLE");
     bytes32 public constant ROLLOVER_MANAGER = keccak256("ROLLOVER_MANAGER");
     bytes32 public constant ROLLOVER_TARGET_AUCTIONEER_ROLE =
         keccak256("ROLLOVER_TARGET_AUCTIONEER_ROLE");
@@ -84,7 +87,7 @@ contract TermRepoCollateralManager is
     ITermRepoLocker public termRepoLocker;
 
     // Term Controller contract
-    ITermController internal termController;
+    ITermController public termController;
 
     // Term Event Emitter contract
     ITermEventEmitter internal emitter;
@@ -207,6 +210,7 @@ contract TermRepoCollateralManager is
         address termController_,
         address termPriceOracle_,
         address termRepoRolloverManager_,
+        address termDiamond_,
         address devopsMultisig_,
         address adminWallet_
     ) external onlyRole(INITIALIZER_ROLE) notTermContractPaired {
@@ -220,6 +224,7 @@ contract TermRepoCollateralManager is
         _grantRole(AUCTION_LOCKER, termRepoServicer_);
         _grantRole(SERVICER_ROLE, termRepoServicer_);
         _grantRole(ROLLOVER_MANAGER, termRepoRolloverManager_);
+        _grantRole(DIAMOND_ROLE, termDiamond_);
         _grantRole(DEVOPS_ROLE, devopsMultisig_);
         _grantRole(ADMIN_ROLE, adminWallet_);
 
@@ -264,18 +269,18 @@ contract TermRepoCollateralManager is
         address collateralToken,
         uint256 amount
     ) external isCollateralTokenAccepted(collateralToken) {
-        address borrower = msg.sender;
+        _externalLockCollateralInternal(msg.sender, msg.sender, collateralToken, amount);
+    }
 
-        // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp > termRepoServicer.endOfRepurchaseWindow()) {
-            revert CollateralDepositClosed();
-        }
-
-        if (termRepoServicer.getBorrowerRepurchaseObligation(borrower) == 0) {
-            revert ZeroBorrowerRepurchaseObligation();
-        }
-
-        _lockCollateral(borrower, collateralToken, amount);
+    /// @param borrower The address of the borrower for whom collateral is being locked
+    /// @param collateralToken The address of the collateral token to lock
+    /// @param amount The amount of collateral token to lock
+    function externalLockCollateral(
+        address borrower,
+        address collateralToken,
+        uint256 amount
+    ) external isCollateralTokenAccepted(collateralToken) onlyRole(DIAMOND_ROLE) {
+        _externalLockCollateralInternal(borrower, msg.sender, collateralToken, amount);
     }
 
     /// @param collateralToken The address of the collateral token to unlock
@@ -284,38 +289,18 @@ contract TermRepoCollateralManager is
         address collateralToken,
         uint256 amount
     ) external isCollateralTokenAccepted(collateralToken) {
-        address borrower = msg.sender;
+        _externalUnlockCollateralInternal(msg.sender, collateralToken, amount);
+    }
 
-        if (amount == 0) {
-            revert InvalidParameters("Zero amount");
-        }
-
-        if (lockedCollateralLedger[borrower][collateralToken] == 0) {
-            revert ZeroCollateralBalance();
-        }
-        if (
-            // solhint-disable-next-line not-rely-on-time
-            block.timestamp >= termRepoServicer.endOfRepurchaseWindow() &&
-            // solhint-disable-next-line not-rely-on-time
-            block.timestamp < termRepoServicer.redemptionTimestamp()
-        ) {
-            revert CollateralWithdrawalClosed();
-        }
-        bool decrementEncumberedCollateral;
-
-        // if borrow balance is zero, collateral has already been unencumbered through liquidation
-        if (termRepoServicer.getBorrowerRepurchaseObligation(borrower) != 0) {
-            decrementEncumberedCollateral = true;
-        }
-        _unlockCollateral(
-            borrower,
-            collateralToken,
-            amount,
-            decrementEncumberedCollateral
-        );
-        if (isBorrowerInShortfall(borrower)) {
-            revert CollateralBelowMaintenanceRatios(borrower, collateralToken);
-        }
+    /// @param borrower The address of the borrower for whom collateral is being unlocked
+    /// @param collateralToken The address of the collateral token to unlock
+    /// @param amount The amount of collateral token to unlock
+    function externalUnlockCollateral(
+        address borrower,
+        address collateralToken,
+        uint256 amount
+    ) external isCollateralTokenAccepted(collateralToken) onlyRole(DIAMOND_ROLE) {
+        _externalUnlockCollateralInternal(borrower, collateralToken, amount);
     }
 
     /// @param borrower The address of the borrower
@@ -323,7 +308,7 @@ contract TermRepoCollateralManager is
     function batchLiquidation(
         address borrower,
         uint256[] calldata closureAmounts
-    ) external whileLiquidationsNotPaused {
+    ) external whileLiquidationsNotPaused whileTermContractsNotPaused(termController) {
         bool allowFullLiquidation = _validateBatchLiquidationForFullLiquidation(
             borrower,
             msg.sender,
@@ -382,7 +367,18 @@ contract TermRepoCollateralManager is
 
         // unencumber all collateral tokens owned by borrower if balance paid off
         if (termRepoServicer.getBorrowerRepurchaseObligation(borrower) == 0) {
-            _unencumberRemainingBorrowerCollateralOnZeroObligation(borrower);
+            for (uint256 i = 0; i < collateralTokens.length; ++i) {
+                    uint256 collateralBalance = lockedCollateralLedger[borrower][collateralTokens[i]];
+                    if (collateralBalance > 0) {
+                        encumberedCollateralBalances[collateralTokens[i]] -= collateralBalance;
+                        _unlockCollateral(
+                            borrower,
+                            collateralTokens[i],
+                            collateralBalance,
+                            false
+                        );
+                }
+            }
         }
     }
 
@@ -391,7 +387,7 @@ contract TermRepoCollateralManager is
     function batchLiquidationWithRepoToken(
         address borrower,
         uint256[] calldata closureRepoTokenAmounts
-    ) external whileLiquidationsNotPaused {
+    ) external whileLiquidationsNotPaused whileTermContractsNotPaused(termController) {
         bool allowFullLiquidation = _validateBatchLiquidationForFullLiquidation(
             borrower,
             msg.sender,
@@ -432,7 +428,7 @@ contract TermRepoCollateralManager is
                 borrower,
                 msg.sender,
                 collateralTokens[i],
-                closureRepoTokenAmounts[i],
+                closureValue,
                 collateralSeizureAmount,
                 collateralSeizureProtocolShare,
                 false
@@ -452,7 +448,18 @@ contract TermRepoCollateralManager is
 
         // unencumber all collateral tokens owned by borrower if balance paid off
         if (termRepoServicer.getBorrowerRepurchaseObligation(borrower) == 0) {
-            _unencumberRemainingBorrowerCollateralOnZeroObligation(borrower);
+            for (uint256 i = 0; i < collateralTokens.length; ++i) {
+                    uint256 collateralBalance = lockedCollateralLedger[borrower][collateralTokens[i]];
+                    if (collateralBalance > 0) {
+                        encumberedCollateralBalances[collateralTokens[i]] -= collateralBalance;
+                        _unlockCollateral(
+                            borrower,
+                            collateralTokens[i],
+                            collateralBalance,
+                            false
+                        );
+                }
+            }
         }
     }
 
@@ -461,7 +468,7 @@ contract TermRepoCollateralManager is
     function batchDefault(
         address borrower,
         uint256[] calldata closureAmounts
-    ) external whileLiquidationsNotPaused {
+    ) external whileLiquidationsNotPaused whileTermContractsNotPaused(termController) {
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp <= termRepoServicer.endOfRepurchaseWindow()) {
             revert DefaultsClosed();
@@ -535,6 +542,81 @@ contract TermRepoCollateralManager is
         }
     }
 
+    /// @param borrower The address of the borrower
+    /// @param closureRepoTokenAmounts An array specifying the amounts of Term Repo Tokens the liquidator proposes to cover borrower repo exposure in default liquidation; an amount is required to be specified for each collateral token
+    function batchDefaultWithRepoToken(
+        address borrower,
+        uint256[] calldata closureRepoTokenAmounts
+    ) external whileLiquidationsNotPaused whileTermContractsNotPaused(termController) {
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp <= termRepoServicer.endOfRepurchaseWindow()) {
+            revert DefaultsClosed();
+        }
+        if (msg.sender == borrower) {
+            revert SelfLiquidationNotPermitted();
+        }
+        if (collateralTokens.length != closureRepoTokenAmounts.length) {
+            revert InvalidParameters(
+                "Closure repo token amounts array not same length as collateral tokens list"
+            );
+        }
+
+        uint256 totalClosureRepoTokenAmounts = 0;
+        uint256 borrowerRepurchaseObligation = termRepoServicer
+            .getBorrowerRepurchaseObligation(borrower);
+
+        if (borrowerRepurchaseObligation == 0) {
+            revert ZeroBorrowerRepurchaseObligation();
+        }
+
+        uint256 closureValue;
+        uint256 collateralSeizureAmount;
+        uint256 collateralSeizureProtocolShare;
+
+        for (uint256 i = 0; i < closureRepoTokenAmounts.length; ++i) {
+            if (closureRepoTokenAmounts[i] == 0) {
+                continue;
+            }
+            if (closureRepoTokenAmounts[i] == type(uint256).max) {
+                revert InvalidParameters(
+                    "closureRepoTokenAmounts cannot be uint max"
+                );
+            }
+            totalClosureRepoTokenAmounts += closureRepoTokenAmounts[i];
+
+            closureValue = termRepoServicer
+                .liquidatorCoverExposureWithRepoToken(
+                    borrower,
+                    msg.sender,
+                    closureRepoTokenAmounts[i]
+                );
+
+            (
+                collateralSeizureAmount,
+                collateralSeizureProtocolShare
+            ) = _collateralSeizureAmounts(closureValue, collateralTokens[i]);
+
+            _transferLiquidationCollateral(
+                borrower,
+                msg.sender,
+                collateralTokens[i],
+                closureValue,
+                collateralSeizureAmount,
+                collateralSeizureProtocolShare,
+                true
+            );
+        }
+
+        if (totalClosureRepoTokenAmounts == 0) {
+            revert ZeroLiquidationNotPermitted();
+        }
+
+        // unencumber all collateral tokens owned by borrower if balance paid off
+        if (termRepoServicer.getBorrowerRepurchaseObligation(borrower) == 0) {
+            _unencumberRemainingBorrowerCollateralOnZeroObligation(borrower);
+        }
+    }
+
     /// @param collateralToken The collateral token address of tokens locked
     /// @param amountToLock The amount of collateral tokens to lock
     function calculateMintableExposure(
@@ -548,7 +630,7 @@ contract TermRepoCollateralManager is
                         collateralToken,
                         amountToLock
                     ),
-                    Exp({mantissa: initialCollateralRatios[collateralToken]})
+                    Exp({mantissa: maintenanceCollateralRatios[collateralToken]})
                 ),
                 termPriceOracle.usdValueOfTokens(purchaseToken, 1)
             );
@@ -604,32 +686,40 @@ contract TermRepoCollateralManager is
     // = Auction Functions  ===================================================
     // ========================================================================
 
-    /// @param bidder The bidder's address
+    /// @param sender The address of the sender locking collateral
     /// @param collateralToken The address of the token to be used as collateral
     /// @param amount The amount of the token to lock
     function auctionLockCollateral(
-        address bidder,
+        address sender,
         address collateralToken,
         uint256 amount
     ) external onlyRole(AUCTION_LOCKER) {
-        termRepoLocker.transferTokenFromWallet(bidder, collateralToken, amount);
+        termRepoLocker.transferTokenFromWallet(sender, collateralToken, amount);
     }
 
-    /// @param bidder The bidder's address
+    /// @param sender The address of the sender unlocking collateral
     /// @param collateralToken The address of the token used as collateral
     /// @param amount The amount of collateral tokens to unlock
     function auctionUnlockCollateral(
-        address bidder,
+        address sender,
         address collateralToken,
         uint256 amount
     ) external onlyRole(AUCTION_LOCKER) {
-        termRepoLocker.transferTokenToWallet(bidder, collateralToken, amount);
+        termRepoLocker.transferTokenToWallet(sender, collateralToken, amount);
     }
 
     // ========================================================================
     // = Rollover Functions  ==================================================
     // ========================================================================
 
+    /// @notice Marks a borrower's currently locked collateral as encumbered across all accepted collateral tokens
+    /// @param borrower The address of the borrower whose locked collateral is being encumbered
+    function encumberExistingCollateral(
+        address borrower
+    ) external onlyRole(AUCTION_LOCKER) {
+        _encumberExistingCollateralInternal(borrower);
+    }
+    
     /// @param borrower The address of the borrower
     /// @param collateralToken The address of a collateral token
     /// @param amount The amount of collateral tokens to lock
@@ -695,11 +785,12 @@ contract TermRepoCollateralManager is
             ];
 
             if (collateralAmount > 0) {
+                encumberedCollateralBalances[collateralToken] -= collateralAmount;
                 _unlockCollateral(
                     borrower,
                     collateralToken,
                     collateralAmount,
-                    true
+                    false
                 );
             }
         }
@@ -713,10 +804,17 @@ contract TermRepoCollateralManager is
         address[] calldata collateralTokenAddresses,
         uint256[] calldata collateralTokenAmounts
     ) external onlyRole(SERVICER_ROLE) {
+        // Double loop required in case collateralTokenAddresses 
+        // does not traverse all eligible collateral tokens
+        if (termRepoServicer.getBorrowerRepurchaseObligation(borrower) == 0) {
+            _encumberExistingCollateralInternal(borrower);
+        }
         for (uint256 i = 0; i < collateralTokenAddresses.length; ++i) {
+
             lockedCollateralLedger[borrower][
                 collateralTokenAddresses[i]
             ] += collateralTokenAmounts[i];
+           
             encumberedCollateralBalances[
                 collateralTokenAddresses[i]
             ] += collateralTokenAmounts[i];
@@ -731,14 +829,16 @@ contract TermRepoCollateralManager is
     }
 
     /// @param borrower The address of the borrower
+    /// @param sender The address of the sender locking collateral
     /// @param collateralToken Collateral token addresse
     /// @param amount Collateral token amount
     function mintOpenExposureLockCollateral(
         address borrower,
+        address sender,
         address collateralToken,
         uint256 amount
     ) external onlyRole(SERVICER_ROLE) {
-        _lockCollateral(borrower, collateralToken, amount);
+        _lockCollateral(borrower, sender, collateralToken, amount);
     }
 
     // ========================================================================
@@ -820,15 +920,66 @@ contract TermRepoCollateralManager is
     // ========================================================================
     // = Internal Functions  ==================================================
     // ========================================================================
+    function _externalLockCollateralInternal(address borrower, address sender, address collateralToken, uint256 amount) internal {
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp > termRepoServicer.endOfRepurchaseWindow()) {
+            revert CollateralDepositClosed();
+        }
+
+        if (termRepoServicer.getBorrowerRepurchaseObligation(borrower) == 0) {
+            revert ZeroBorrowerRepurchaseObligation();
+        }
+
+        _lockCollateral(borrower, sender, collateralToken, amount);
+    }
+
+    function _externalUnlockCollateralInternal(address borrower, address collateralToken, uint256 amount) internal {
+        if (amount == 0) {
+            revert InvalidParameters("Zero amount");
+        }
+
+        if (lockedCollateralLedger[borrower][collateralToken] == 0) {
+            revert ZeroCollateralBalance();
+        }
+        if (
+            // solhint-disable-next-line not-rely-on-time
+            block.timestamp >= termRepoServicer.endOfRepurchaseWindow() &&
+            // solhint-disable-next-line not-rely-on-time
+            block.timestamp < termRepoServicer.redemptionTimestamp()
+        ) {
+            revert CollateralWithdrawalClosed();
+        }
+        bool decrementEncumberedCollateral;
+
+        // if borrow balance is zero, collateral has already been unencumbered through liquidation
+        if (termRepoServicer.getBorrowerRepurchaseObligation(borrower) != 0) {
+            decrementEncumberedCollateral = true;
+        }
+        _unlockCollateral(
+            borrower,
+            collateralToken,
+            amount,
+            decrementEncumberedCollateral
+        );
+        if (isBorrowerInShortfall(borrower)) {
+            revert CollateralBelowMaintenanceRatios(borrower, collateralToken);
+        }
+    }
+
     function _lockCollateral(
         address borrower,
+        address sender,
         address collateralToken,
         uint256 amount
     ) internal {
+        uint256 currentBalance = lockedCollateralLedger[borrower][collateralToken];
+        if (termRepoServicer.getBorrowerRepurchaseObligation(borrower) == 0 && currentBalance > 0) {
+            encumberedCollateralBalances[collateralToken] += currentBalance;
+        }
         lockedCollateralLedger[borrower][collateralToken] += amount;
         encumberedCollateralBalances[collateralToken] += amount;
         termRepoLocker.transferTokenFromWallet(
-            borrower,
+            sender,
             collateralToken,
             amount
         );
@@ -850,18 +1001,22 @@ contract TermRepoCollateralManager is
         if (amount > lockedCollateralLedger[borrower][collateralToken]) {
             revert UnlockAmountGreaterThanCollateralBalance();
         }
-        lockedCollateralLedger[borrower][collateralToken] -= amount;
-        if (decrementEncumberedCollateral) {
-            encumberedCollateralBalances[collateralToken] -= amount;
-        }
-        termRepoLocker.transferTokenToWallet(borrower, collateralToken, amount);
 
-        emitter.emitCollateralUnlocked(
-            termRepoId,
-            borrower,
-            collateralToken,
-            amount
-        );
+        try termRepoLocker.transferTokenToWallet(borrower, collateralToken, amount) {
+            // Transfer successful
+            lockedCollateralLedger[borrower][collateralToken] -= amount;
+            if (decrementEncumberedCollateral) {
+                encumberedCollateralBalances[collateralToken] -= amount;
+            }
+            emitter.emitCollateralUnlocked(
+                termRepoId,
+                borrower,
+                collateralToken,
+                amount
+            );
+        } catch {         
+            // Transfer failed 
+        }
     }
 
     function _partialUnlockCollateral(
@@ -932,6 +1087,19 @@ contract TermRepoCollateralManager is
             }
         }
         return unlockedCollateral;
+    }
+
+    /// @dev Adds a borrower's existing locked collateral balances to encumberedCollateralBalances
+    /// @param borrower The address of the borrower whose collateral to encumber
+    function _encumberExistingCollateralInternal(address borrower) internal {
+        for (uint256 i = 0; i < collateralTokens.length; ++i) {
+            address collateralToken = collateralTokens[i];
+            uint256 collateralAmount = lockedCollateralLedger[borrower][collateralToken];
+
+            if (collateralAmount > 0) {
+                encumberedCollateralBalances[collateralToken] += collateralAmount;
+            }
+        }
     }
 
     /// @dev A helper function to validate various conditions required to liquidate
@@ -1035,7 +1203,7 @@ contract TermRepoCollateralManager is
         uint256 amountToCover_,
         address collateralToken
     ) internal view returns (uint256, uint256) {
-        IERC20MetadataUpgradeable tokenInstance = IERC20MetadataUpgradeable(
+        IERC20Metadata tokenInstance = IERC20Metadata(
             collateralToken
         );
         Exp memory usdValueOfCoverAmount = termPriceOracle.usdValueOfTokens(

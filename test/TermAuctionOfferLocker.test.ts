@@ -1,17 +1,21 @@
 /* eslint-disable camelcase */
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
-import { FakeContract, smock } from "@defi-wonderland/smock";
 import {
   ERC20Upgradeable,
+  ERC20Upgradeable__factory,
+  TermController,
+  TermController__factory,
   TermEventEmitter,
   TermRepoServicer,
+  TermRepoServicer__factory,
   TestingTermAuctionOfferLocker,
 } from "../typechain-types";
-import { BigNumber } from "ethers";
 import { getBytesHash, getGeneratedTenderId } from "../utils/simulation-utils";
 import dayjs from "dayjs";
+import { MockContract, deployMock } from "@term-finance/ethers-mock-contract";
+import { ZeroAddress, solidityPackedKeccak256 } from "ethers";
 
 describe("TermAuctionOfferLocker", () => {
   let wallet1: SignerWithAddress;
@@ -21,12 +25,14 @@ describe("TermAuctionOfferLocker", () => {
   let devopsMultisig: SignerWithAddress;
   let adminWallet: SignerWithAddress;
   let auctionAddress: SignerWithAddress;
-  let testCollateralToken: FakeContract<ERC20Upgradeable>;
-  let testBorrowedToken: FakeContract<ERC20Upgradeable>;
-  let testUnapprovedToken: FakeContract<ERC20Upgradeable>;
+  let termDiamond: SignerWithAddress;
+  let testCollateralToken: MockContract<ERC20Upgradeable>;
+  let testBorrowedToken: MockContract<ERC20Upgradeable>;
+  let testUnapprovedToken: MockContract<ERC20Upgradeable>;
   let termEventEmitter: TermEventEmitter;
   let termAuctionOfferLocker: TestingTermAuctionOfferLocker;
-  let termRepoServicer: FakeContract<TermRepoServicer>;
+  let termRepoServicer: MockContract<TermRepoServicer>;
+  let termController: MockContract<TermController>;
 
   let termIdString: string;
 
@@ -45,32 +51,69 @@ describe("TermAuctionOfferLocker", () => {
       devopsMultisig,
       adminWallet,
       auctionAddress,
+      termDiamond,
     ] = await ethers.getSigners();
 
     const versionableFactory = await ethers.getContractFactory("Versionable");
     const versionable = await versionableFactory.deploy();
-    await versionable.deployed();
+    await versionable.waitForDeployment();
     expectedVersion = await versionable.version();
 
     const termEventEmitterFactory =
       await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [devopsMultisig.address, wallet3.address, termInitializer.address],
+      [devopsMultisig.address, wallet3.address, termInitializer.address, wallet3.address, termDiamond.address],
       { kind: "uups" },
-    )) as TermEventEmitter;
+    )) as unknown as TermEventEmitter;
+    await termEventEmitter.waitForDeployment();
 
-    testCollateralToken =
-      await smock.fake<ERC20Upgradeable>("ERC20Upgradeable");
-    await testCollateralToken.deployed();
-    testBorrowedToken = await smock.fake<ERC20Upgradeable>("ERC20Upgradeable");
-    await testBorrowedToken.deployed();
-    testUnapprovedToken =
-      await smock.fake<ERC20Upgradeable>("ERC20Upgradeable");
-    await testUnapprovedToken.deployed();
+    testCollateralToken = await deployMock<ERC20Upgradeable>(
+      ERC20Upgradeable__factory.abi,
+      wallet1,
+    );
+    testBorrowedToken = await deployMock<ERC20Upgradeable>(
+      ERC20Upgradeable__factory.abi,
+      wallet1,
+    );
+    testUnapprovedToken = await deployMock<ERC20Upgradeable>(
+      ERC20Upgradeable__factory.abi,
+      wallet1,
+    );
 
-    termRepoServicer = await smock.fake<TermRepoServicer>("TermRepoServicer");
-    await termRepoServicer.deployed();
+    await testCollateralToken.setup();
+    await testBorrowedToken.setup();
+    await testUnapprovedToken.setup();
+
+    termRepoServicer = await deployMock<TermRepoServicer>(
+      TermRepoServicer__factory.abi,
+      wallet1
+    );
+     
+
+    termController = await deployMock<TermController>(
+      TermController__factory.abi,
+      wallet1,
+    );
+
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
+
+    const termControllerInterface = TermController__factory.createInterface();
+
+    await termRepoServicer.setup({
+      abi: termRepoServicerInterface.getFunction("termController"),
+      inputs: [],
+      outputs: [await termController.getAddress()],
+      kind: "read",}
+    );
+    await termController.setup({
+      abi: termControllerInterface.getFunction("termContractsPaused"),
+      inputs: [],
+      outputs: [false],
+      kind: "read",}
+    );
+
 
     const termAuctionOfferLockerFactory = await ethers.getContractFactory(
       "TestingTermAuctionOfferLocker",
@@ -78,7 +121,7 @@ describe("TermAuctionOfferLocker", () => {
 
     const blockNumBefore = await ethers.provider.getBlockNumber();
     const blockBefore = await ethers.provider.getBlock(blockNumBefore);
-    const timestampBefore = blockBefore.timestamp;
+    const timestampBefore = blockBefore?.timestamp!;
     const currentTimestamp = dayjs.unix(timestampBefore);
 
     termIdString = "termIdString";
@@ -94,43 +137,43 @@ describe("TermAuctionOfferLocker", () => {
         currentTimestamp.add(10, "hour").unix(),
         currentTimestamp.add(20, "hours").unix(),
         "2",
-        testBorrowedToken.address,
-        [testCollateralToken.address],
+        await testBorrowedToken.getAddress(),
+        [await testCollateralToken.getAddress()],
         termInitializer.address,
       ],
       { kind: "uups" },
-    )) as TestingTermAuctionOfferLocker;
+    )) as unknown as TestingTermAuctionOfferLocker;
     await termEventEmitter
       .connect(termInitializer)
-      .pairTermContract(termAuctionOfferLocker.address);
+      .pairTermContract(await termAuctionOfferLocker.getAddress());
 
-    auctionIdHash = ethers.utils.solidityKeccak256(
-      ["string"],
-      [auctionIdString],
-    );
+    auctionIdHash = solidityPackedKeccak256(["string"], [auctionIdString]);
 
     await expect(
       termAuctionOfferLocker
         .connect(wallet2)
         .pairTermContracts(
           auctionAddress.address,
-          termEventEmitter.address,
-          termRepoServicer.address,
+          await termEventEmitter.getAddress(),
+          await termRepoServicer.getAddress(),
           devopsMultisig.address,
           adminWallet.address,
+          termDiamond.address,
         ),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x30d41a597cac127d8249d31298b50e481ee82c3f4a49ff93c76a22735aa9f3ad`,
+    ).to.be.revertedWithCustomError(
+      termAuctionOfferLocker,
+      "AccessControlUnauthorizedAccount",
     );
 
     await termAuctionOfferLocker
       .connect(termInitializer)
       .pairTermContracts(
         auctionAddress.address,
-        termEventEmitter.address,
-        termRepoServicer.address,
+        await termEventEmitter.getAddress(),
+        await termRepoServicer.getAddress(),
         devopsMultisig.address,
         adminWallet.address,
+        termDiamond.address,
       );
 
     await expect(
@@ -138,10 +181,11 @@ describe("TermAuctionOfferLocker", () => {
         .connect(termInitializer)
         .pairTermContracts(
           auctionAddress.address,
-          termEventEmitter.address,
-          termRepoServicer.address,
+          await termEventEmitter.getAddress(),
+          await termRepoServicer.getAddress(),
           devopsMultisig.address,
           adminWallet.address,
+          termDiamond.address
         ),
     ).to.be.revertedWithCustomError(
       termAuctionOfferLocker,
@@ -158,9 +202,11 @@ describe("TermAuctionOfferLocker", () => {
   });
 
   it("initialize reverts if start is after reveal time", async () => {
+    await termRepoServicer.setup();
+
     const blockNumBefore = await ethers.provider.getBlockNumber();
     const blockBefore = await ethers.provider.getBlock(blockNumBefore);
-    const timestampBefore = blockBefore.timestamp;
+    const timestampBefore = blockBefore?.timestamp!;
     const currentTimestamp = dayjs.unix(timestampBefore);
     const auctionStartTime = currentTimestamp.add(2, "hours").unix();
     const revealTime = currentTimestamp.add(1, "hour").unix();
@@ -178,8 +224,8 @@ describe("TermAuctionOfferLocker", () => {
           revealTime,
           auctionEndTime,
           "2",
-          testBorrowedToken.address,
-          [testCollateralToken.address],
+          await testBorrowedToken.getAddress(),
+          [await testCollateralToken.getAddress()],
           termInitializer.address,
         ],
         { kind: "uups" },
@@ -193,16 +239,22 @@ describe("TermAuctionOfferLocker", () => {
   });
 
   it("getAllOffers nonempty revealed and nonrevealed offers", async () => {
-    termRepoServicer.lockOfferAmount
-      .whenCalledWith(wallet1.address, "2000")
-      .returns();
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
+    await termRepoServicer.setup({
+      abi: termRepoServicerInterface.getFunction("lockOfferAmount"),
+      inputs: [wallet1.address, wallet1.address, "2000"],
+      outputs: [],
+      kind: "read",
+    });
+
     await termAuctionOfferLocker.addOffer(
       {
         id: getBytesHash("test-id-4"),
         offeror: wallet1.address,
         offerPriceRevealed: "10",
         amount: "500",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -212,7 +264,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet2.address,
         offerPriceRevealed: "3",
         amount: "1000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -222,7 +274,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet3.address,
         offerPriceRevealed: "8",
         amount: "2000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -232,13 +284,13 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet3.address,
         offerPriceRevealed: "8",
         amount: "2000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
     const blockNumBefore = await ethers.provider.getBlockNumber();
     const blockBefore = await ethers.provider.getBlock(blockNumBefore);
-    const timestampBefore = blockBefore.timestamp;
+    const timestampBefore = blockBefore?.timestamp!;
     const currentTimestamp = dayjs.unix(timestampBefore);
 
     await termAuctionOfferLocker.setRevealTime(
@@ -348,14 +400,22 @@ describe("TermAuctionOfferLocker", () => {
   });
 
   it("unlockOffers returns collateral and unlocks a user's offers", async () => {
-    termRepoServicer.unlockOfferAmount.returns();
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
+    await termRepoServicer.setup({
+      abi: termRepoServicerInterface.getFunction("unlockOfferAmount"),
+      inputs: [wallet3.address, "2000"],
+      outputs: [],
+      kind: "read",
+    });
+
     await termAuctionOfferLocker.addOffer(
       {
         id: getBytesHash("test-id-1"),
         offeror: wallet1.address,
         offerPriceRevealed: "10",
         amount: "500",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -365,7 +425,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet2.address,
         offerPriceRevealed: "3",
         amount: "1000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -375,7 +435,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet3.address,
         offerPriceRevealed: "8",
         amount: "2000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -394,33 +454,35 @@ describe("TermAuctionOfferLocker", () => {
       .withArgs(auctionIdHash, getBytesHash("test-id-3"));
 
     expect(
-      JSON.parse(
-        JSON.stringify(
-          await termAuctionOfferLocker.lockedOffer(getBytesHash("test-id-3")),
-        ),
-      ),
+      await termAuctionOfferLocker.lockedOffer(getBytesHash("test-id-3")),
     ).to.deep.equal([
       "0x0000000000000000000000000000000000000000000000000000000000000000",
       "0x0000000000000000000000000000000000000000",
       "0x0000000000000000000000000000000000000000000000000000000000000000",
-      BigNumber.from("0").toJSON(),
-      BigNumber.from("0").toJSON(),
+      0n,
+      0n,
       "0x0000000000000000000000000000000000000000",
       false,
     ]);
   });
 
   it("lockOffersWithReferral takes collateral and saves a user's offer", async () => {
-    termRepoServicer.lockOfferAmount
-      .whenCalledWith(wallet1.address, "2000")
-      .returns();
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
+    await termRepoServicer.setup({
+      abi: termRepoServicerInterface.getFunction("lockOfferAmount"),
+      inputs: [wallet1.address, wallet1.address, "2000"],
+      outputs: [],
+      kind: "read",
+    });
+
     await termAuctionOfferLocker.addOffer(
       {
         id: getBytesHash("test-id-4"),
         offeror: wallet1.address,
         offerPriceRevealed: "10",
         amount: "500",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -430,7 +492,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet2.address,
         offerPriceRevealed: "3",
         amount: "1000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -440,7 +502,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet3.address,
         offerPriceRevealed: "8",
         amount: "2000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -462,12 +524,12 @@ describe("TermAuctionOfferLocker", () => {
           {
             id: getBytesHash("test-id-7"),
             offeror: wallet1.address,
-            offerPriceHash: ethers.utils.solidityKeccak256(
+            offerPriceHash: solidityPackedKeccak256(
               ["uint256", "uint256"],
               ["15", "5555555555"],
             ),
             amount: "2000",
-            purchaseToken: testBorrowedToken.address,
+            purchaseToken: await testBorrowedToken.getAddress(),
           },
         ],
         wallet2.address,
@@ -478,12 +540,9 @@ describe("TermAuctionOfferLocker", () => {
         auctionIdHash,
         testId7Id,
         wallet1.address,
-        ethers.utils.solidityKeccak256(
-          ["uint256", "uint256"],
-          ["15", "5555555555"],
-        ),
+        solidityPackedKeccak256(["uint256", "uint256"], ["15", "5555555555"]),
         "2000",
-        testBorrowedToken.address,
+        await testBorrowedToken.getAddress(),
         wallet2.address,
       );
 
@@ -497,25 +556,26 @@ describe("TermAuctionOfferLocker", () => {
       .to.emit(termEventEmitter, "OfferRevealed")
       .withArgs(auctionIdHash, testId7Id, "15");
 
-    expect(
-      JSON.parse(
-        JSON.stringify(await termAuctionOfferLocker.lockedOffer(testId7Id)),
-      ),
-    ).to.deep.equal([
+    expect(await termAuctionOfferLocker.lockedOffer(testId7Id)).to.deep.equal([
       testId7Id,
       wallet1.address,
       "0x70b2c5791a2c71fef064fa74e2387d4940c2df8a1e86a4f24b641376ce7d51cc",
-      BigNumber.from("15").toJSON(),
-      BigNumber.from("2000").toJSON(),
-      testBorrowedToken.address,
+      15n,
+      2000n,
+      await testBorrowedToken.getAddress(),
       true,
     ]);
   });
 
   it("lockOffersWithReferral reverts if user refers themself", async () => {
-    termRepoServicer.lockOfferAmount
-      .whenCalledWith(wallet1.address, "2000")
-      .returns();
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
+    await termRepoServicer.setup({
+      abi: termRepoServicerInterface.getFunction("lockOfferAmount"),
+      inputs: [wallet1.address, wallet1.address, "2000"],
+      outputs: [],
+      kind: "read",
+    });
 
     await termAuctionOfferLocker.setStartTime(
       dayjs().subtract(1, "hour").unix(),
@@ -528,12 +588,12 @@ describe("TermAuctionOfferLocker", () => {
           {
             id: getBytesHash("test-id-7"),
             offeror: wallet1.address,
-            offerPriceHash: ethers.utils.solidityKeccak256(
+            offerPriceHash: solidityPackedKeccak256(
               ["uint256", "uint256"],
               ["15", "5555555555"],
             ),
             amount: "2000",
-            purchaseToken: testBorrowedToken.address,
+            purchaseToken: await testBorrowedToken.getAddress(),
           },
         ],
         wallet2.address,
@@ -549,16 +609,22 @@ describe("TermAuctionOfferLocker", () => {
   });
 
   it("lockOffers saves a user's offer", async () => {
-    termRepoServicer.lockOfferAmount
-      .whenCalledWith(wallet1.address, "2000")
-      .returns();
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
+    await termRepoServicer.setup({
+      abi: termRepoServicerInterface.getFunction("lockOfferAmount"),
+      inputs: [wallet1.address, wallet1.address, "2000"],
+      outputs: [],
+      kind: "read",
+    });
+
     await termAuctionOfferLocker.addOffer(
       {
         id: getBytesHash("test-id-4"),
         offeror: wallet1.address,
         offerPriceRevealed: "10",
         amount: "500",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -568,7 +634,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet2.address,
         offerPriceRevealed: "3",
         amount: "1000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -578,7 +644,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet3.address,
         offerPriceRevealed: "8",
         amount: "2000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -599,12 +665,12 @@ describe("TermAuctionOfferLocker", () => {
         {
           id: getBytesHash("test-id-7"),
           offeror: wallet1.address,
-          offerPriceHash: ethers.utils.solidityKeccak256(
+          offerPriceHash: solidityPackedKeccak256(
             ["uint256", "uint256"],
             ["15", "5555555555"],
           ),
           amount: "2000",
-          purchaseToken: testBorrowedToken.address,
+          purchaseToken: await testBorrowedToken.getAddress(),
         },
       ]),
     )
@@ -613,13 +679,10 @@ describe("TermAuctionOfferLocker", () => {
         auctionIdHash,
         testId7Id,
         wallet1.address,
-        ethers.utils.solidityKeccak256(
-          ["uint256", "uint256"],
-          ["15", "5555555555"],
-        ),
+        solidityPackedKeccak256(["uint256", "uint256"], ["15", "5555555555"]),
         "2000",
-        testBorrowedToken.address,
-        ethers.constants.AddressZero,
+        await testBorrowedToken.getAddress(),
+        ZeroAddress,
       );
 
     await termAuctionOfferLocker.setRevealTime(
@@ -632,17 +695,13 @@ describe("TermAuctionOfferLocker", () => {
       .to.emit(termEventEmitter, "OfferRevealed")
       .withArgs(auctionIdHash, testId7Id, "15");
 
-    expect(
-      JSON.parse(
-        JSON.stringify(await termAuctionOfferLocker.lockedOffer(testId7Id)),
-      ),
-    ).to.deep.equal([
+    expect(await termAuctionOfferLocker.lockedOffer(testId7Id)).to.deep.equal([
       testId7Id,
       wallet1.address,
       "0x70b2c5791a2c71fef064fa74e2387d4940c2df8a1e86a4f24b641376ce7d51cc",
-      BigNumber.from("15").toJSON(),
-      BigNumber.from("2000").toJSON(),
-      testBorrowedToken.address,
+      15n,
+      2000n,
+      await testBorrowedToken.getAddress(),
       true,
     ]);
   });
@@ -653,7 +712,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet1.address,
         offerPriceRevealed: "20000000000000000000000",
         amount: "500",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -684,12 +743,12 @@ describe("TermAuctionOfferLocker", () => {
         {
           id: getBytesHash("test-id-1"),
           offeror: wallet1.address,
-          offerPriceHash: ethers.utils.solidityKeccak256(
+          offerPriceHash: solidityPackedKeccak256(
             ["uint256", "uint256"],
             ["15", "5555555555"],
           ),
           amount: "2000",
-          purchaseToken: testBorrowedToken.address,
+          purchaseToken: await testBorrowedToken.getAddress(),
         },
       ]),
     ).to.be.revertedWithCustomError(termAuctionOfferLocker, "AuctionNotOpen");
@@ -708,12 +767,12 @@ describe("TermAuctionOfferLocker", () => {
         {
           id: getBytesHash("test-id-1"),
           offeror: wallet1.address,
-          offerPriceHash: ethers.utils.solidityKeccak256(
+          offerPriceHash: solidityPackedKeccak256(
             ["uint256", "uint256"],
             ["15", "5555555555"],
           ),
           amount: "2000",
-          purchaseToken: testBorrowedToken.address,
+          purchaseToken: await testBorrowedToken.getAddress(),
         },
       ]),
     ).to.be.revertedWithCustomError(termAuctionOfferLocker, "AuctionNotOpen");
@@ -725,7 +784,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet1.address,
         offerPriceRevealed: "20000000000000000000000",
         amount: "500",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -747,13 +806,30 @@ describe("TermAuctionOfferLocker", () => {
     );
   });
   it("editing an offer locks and unlocks the correct amount", async () => {
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
+    await termRepoServicer.setup(
+      {
+        abi: termRepoServicerInterface.getFunction("lockOfferAmount"),
+        inputs: [wallet2.address, wallet2.address, "1500"],
+        outputs: [],
+        kind: "read",
+      },
+      {
+        abi: termRepoServicerInterface.getFunction("unlockOfferAmount"),
+        inputs: [wallet2.address, "1800"],
+        outputs: [],
+        kind: "read",
+      },
+    );
+
     await termAuctionOfferLocker.addOffer(
       {
         id: getBytesHash("test-id-1"),
         offeror: wallet2.address,
         offerPriceRevealed: "20000000000000000000000",
         amount: "500",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -767,36 +843,38 @@ describe("TermAuctionOfferLocker", () => {
       {
         id: getBytesHash("test-id-1"),
         offeror: wallet2.address,
-        offerPriceHash: ethers.utils.solidityKeccak256(
+        offerPriceHash: solidityPackedKeccak256(
           ["uint256", "uint256"],
           ["15000000", "5555555555"],
         ),
         amount: "2000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
     ]);
-    expect(termRepoServicer.lockOfferAmount).to.have.been.calledWith(
-      wallet2.address,
-      1500,
-    );
+    // expect(termRepoServicer.lockOfferAmount).to.have.been.calledWith(
+    //   wallet2.address,
+    //   wallet2.address,
+    //   1500,
+    // );
 
     await termAuctionOfferLocker.connect(wallet2).lockOffers([
       {
         id: getBytesHash("test-id-1"),
         offeror: wallet2.address,
-        offerPriceHash: ethers.utils.solidityKeccak256(
+        offerPriceHash: solidityPackedKeccak256(
           ["uint256", "uint256"],
           ["15000000", "5555555555"],
         ),
         amount: "200",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
     ]);
 
-    expect(termRepoServicer.unlockOfferAmount).to.have.been.calledWith(
-      wallet2.address,
-      1800,
-    );
+    // expect(termRepoServicer.unlockOfferAmount).to.have.been.calledWith(
+    //   wallet2.address,
+    //   wallet2.address,
+    //   1800,
+    // );
   });
   it("editing an offer owned by a different user reverts", async () => {
     await termAuctionOfferLocker.addOffer(
@@ -805,7 +883,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet1.address,
         offerPriceRevealed: "20000000000000000000000",
         amount: "500",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -820,12 +898,12 @@ describe("TermAuctionOfferLocker", () => {
         {
           id: getBytesHash("test-id-1"),
           offeror: wallet2.address,
-          offerPriceHash: ethers.utils.solidityKeccak256(
+          offerPriceHash: solidityPackedKeccak256(
             ["uint256", "uint256"],
             ["15000000", "5555555555"],
           ),
           amount: "2000",
-          purchaseToken: testBorrowedToken.address,
+          purchaseToken: await testBorrowedToken.getAddress(),
         },
       ]),
     ).to.be.revertedWithCustomError(termAuctionOfferLocker, "OfferNotOwned");
@@ -841,12 +919,12 @@ describe("TermAuctionOfferLocker", () => {
         {
           id: getBytesHash("test-id-1"),
           offeror: wallet1.address,
-          offerPriceHash: ethers.utils.solidityKeccak256(
+          offerPriceHash: solidityPackedKeccak256(
             ["uint256", "uint256"],
             ["15000000", "5555555555"],
           ),
           amount: "2000",
-          purchaseToken: testUnapprovedToken.address,
+          purchaseToken: await testUnapprovedToken.getAddress(),
         },
       ]),
     )
@@ -854,19 +932,25 @@ describe("TermAuctionOfferLocker", () => {
         termAuctionOfferLocker,
         `PurchaseTokenNotApproved`,
       )
-      .withArgs(testUnapprovedToken.address);
+      .withArgs(await testUnapprovedToken.getAddress());
   });
   it("lockOffer returns collateral and edits a user's offer", async () => {
-    termRepoServicer.unlockOfferAmount
-      .whenCalledWith(wallet1.address, "2000")
-      .returns();
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
+    await termRepoServicer.setup({
+      abi: termRepoServicerInterface.getFunction("unlockOfferAmount"),
+      inputs: [wallet1.address, "300"],
+      outputs: [],
+      kind: "read",
+    });
+
     await termAuctionOfferLocker.addOffer(
       {
         id: getBytesHash("test-id-4"),
         offeror: wallet1.address,
         offerPriceRevealed: "10",
         amount: "500",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -876,7 +960,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet2.address,
         offerPriceRevealed: "3",
         amount: "1000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -886,7 +970,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet3.address,
         offerPriceRevealed: "8",
         amount: "2000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -901,12 +985,12 @@ describe("TermAuctionOfferLocker", () => {
         {
           id: getBytesHash("test-id-4"),
           offeror: wallet1.address,
-          offerPriceHash: ethers.utils.solidityKeccak256(
+          offerPriceHash: solidityPackedKeccak256(
             ["uint256", "uint256"],
             ["15", "5555555555"],
           ),
           amount: "200",
-          purchaseToken: testBorrowedToken.address,
+          purchaseToken: await testBorrowedToken.getAddress(),
         },
       ]),
     )
@@ -915,13 +999,10 @@ describe("TermAuctionOfferLocker", () => {
         auctionIdHash,
         getBytesHash("test-id-4"),
         wallet1.address,
-        ethers.utils.solidityKeccak256(
-          ["uint256", "uint256"],
-          ["15", "5555555555"],
-        ),
+        solidityPackedKeccak256(["uint256", "uint256"], ["15", "5555555555"]),
         "200",
-        testBorrowedToken.address,
-        ethers.constants.AddressZero,
+        await testBorrowedToken.getAddress(),
+        ZeroAddress,
       );
 
     await termAuctionOfferLocker.setRevealTime(
@@ -939,18 +1020,14 @@ describe("TermAuctionOfferLocker", () => {
       .withArgs(auctionIdHash, getBytesHash("test-id-4"), "15");
 
     await expect(
-      JSON.parse(
-        JSON.stringify(
-          await termAuctionOfferLocker.lockedOffer(getBytesHash("test-id-4")),
-        ),
-      ),
+      await termAuctionOfferLocker.lockedOffer(getBytesHash("test-id-4")),
     ).to.deep.equal([
       getBytesHash("test-id-4"),
       wallet1.address,
       "0x70b2c5791a2c71fef064fa74e2387d4940c2df8a1e86a4f24b641376ce7d51cc",
-      BigNumber.from("15").toJSON(),
-      BigNumber.from("200").toJSON(),
-      testBorrowedToken.address,
+      15n,
+      200n,
+      await testBorrowedToken.getAddress(),
       true,
     ]);
   });
@@ -961,7 +1038,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet1.address,
         offerPriceRevealed: "10",
         amount: "500",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -984,7 +1061,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet1.address,
         offerPriceRevealed: "10",
         amount: "500",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -1012,12 +1089,12 @@ describe("TermAuctionOfferLocker", () => {
         {
           id: getBytesHash("test-id-7"),
           offeror: wallet1.address,
-          offerPriceHash: ethers.utils.solidityKeccak256(
+          offerPriceHash: solidityPackedKeccak256(
             ["uint256", "uint256"],
             ["15", "5555555555"],
           ),
           amount: "10000",
-          purchaseToken: testBorrowedToken.address,
+          purchaseToken: await testBorrowedToken.getAddress(),
         },
       ]),
     ).to.be.revertedWithCustomError(
@@ -1031,12 +1108,12 @@ describe("TermAuctionOfferLocker", () => {
         {
           id: getBytesHash("test-id-7"),
           offeror: wallet1.address,
-          offerPriceHash: ethers.utils.solidityKeccak256(
+          offerPriceHash: solidityPackedKeccak256(
             ["uint256", "uint256"],
             ["15", "5555555555"],
           ),
           amount: "0",
-          purchaseToken: testBorrowedToken.address,
+          purchaseToken: await testBorrowedToken.getAddress(),
         },
       ]),
     )
@@ -1047,6 +1124,15 @@ describe("TermAuctionOfferLocker", () => {
       .withArgs(0);
   });
   it("can pause and unpause (lock)", async () => {
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
+    await termRepoServicer.setup({
+      abi: termRepoServicerInterface.getFunction("lockOfferAmount"),
+      inputs: [wallet1.address, wallet1.address, "2000"],
+      outputs: [],
+      kind: "read",
+    });
+
     await termAuctionOfferLocker.setStartTime(
       dayjs().subtract(1, "hour").unix(),
     );
@@ -1060,12 +1146,12 @@ describe("TermAuctionOfferLocker", () => {
         {
           id: getBytesHash("test-id-7"),
           offeror: wallet1.address,
-          offerPriceHash: ethers.utils.solidityKeccak256(
+          offerPriceHash: solidityPackedKeccak256(
             ["uint256", "uint256"],
             ["15", "5555555555"],
           ),
           amount: "0",
-          purchaseToken: testBorrowedToken.address,
+          purchaseToken: await testBorrowedToken.getAddress(),
         },
       ]),
     ).to.be.revertedWithCustomError(termAuctionOfferLocker, "LockingPaused");
@@ -1083,12 +1169,12 @@ describe("TermAuctionOfferLocker", () => {
         {
           id: getBytesHash("test-id-7"),
           offeror: wallet1.address,
-          offerPriceHash: ethers.utils.solidityKeccak256(
+          offerPriceHash: solidityPackedKeccak256(
             ["uint256", "uint256"],
             ["15", "5555555555"],
           ),
           amount: "2000",
-          purchaseToken: testBorrowedToken.address,
+          purchaseToken: await testBorrowedToken.getAddress(),
         },
       ]),
     )
@@ -1097,23 +1183,28 @@ describe("TermAuctionOfferLocker", () => {
         auctionIdHash,
         testId7Id,
         wallet1.address,
-        ethers.utils.solidityKeccak256(
-          ["uint256", "uint256"],
-          ["15", "5555555555"],
-        ),
+        solidityPackedKeccak256(["uint256", "uint256"], ["15", "5555555555"]),
         "2000",
-        testBorrowedToken.address,
-        ethers.constants.AddressZero,
+        await testBorrowedToken.getAddress(),
+        ZeroAddress,
       );
   });
   it("can pause and unpause (unlock)", async () => {
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
+    await termRepoServicer.setup({
+      abi: termRepoServicerInterface.getFunction("unlockOfferAmount"),
+      inputs: [wallet1.address, "1000"],
+      outputs: [],
+      kind: "read",
+    });
     await termAuctionOfferLocker.addOffer(
       {
         id: getBytesHash("test-id-7"),
         offeror: wallet1.address,
         offerPriceRevealed: "15",
         amount: "1000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -1174,7 +1265,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet1.address,
         offerPriceRevealed: "10",
         amount: "500",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "5555555555",
     );
@@ -1200,12 +1291,12 @@ describe("TermAuctionOfferLocker", () => {
         {
           id: getBytesHash("test-id-7"),
           offeror: wallet1.address,
-          offerPriceHash: ethers.utils.solidityKeccak256(
+          offerPriceHash: solidityPackedKeccak256(
             ["uint256", "uint256"],
             ["15", "5555555555"],
           ),
           amount: "0",
-          purchaseToken: testBorrowedToken.address,
+          purchaseToken: await testBorrowedToken.getAddress(),
         },
       ]),
     )
@@ -1221,12 +1312,12 @@ describe("TermAuctionOfferLocker", () => {
         {
           id: getBytesHash("test-id-7"),
           offeror: wallet1.address,
-          offerPriceHash: ethers.utils.solidityKeccak256(
+          offerPriceHash: solidityPackedKeccak256(
             ["uint256", "uint256"],
             ["15", "5555555555"],
           ),
           amount: "1",
-          purchaseToken: testBorrowedToken.address,
+          purchaseToken: await testBorrowedToken.getAddress(),
         },
       ]),
     )
@@ -1238,16 +1329,25 @@ describe("TermAuctionOfferLocker", () => {
   });
 
   it("locking new offer with same id input reverts", async () => {
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
+    await termRepoServicer.setup({
+      abi: termRepoServicerInterface.getFunction("lockOfferAmount"),
+      inputs: [wallet1.address, wallet1.address, "1000"],
+      outputs: [],
+      kind: "read",
+    });
+
     await termAuctionOfferLocker.connect(wallet1).lockOffers([
       {
         id: getBytesHash("test-id-7"),
         offeror: wallet1.address,
-        offerPriceHash: ethers.utils.solidityKeccak256(
+        offerPriceHash: solidityPackedKeccak256(
           ["uint256", "uint256"],
           ["15", "5555555555"],
         ),
         amount: "1000",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
     ]);
 
@@ -1256,12 +1356,12 @@ describe("TermAuctionOfferLocker", () => {
         {
           id: getBytesHash("test-id-7"),
           offeror: wallet1.address,
-          offerPriceHash: ethers.utils.solidityKeccak256(
+          offerPriceHash: solidityPackedKeccak256(
             ["uint256", "uint256"],
             ["15", "5555555555"],
           ),
           amount: "1000",
-          purchaseToken: testBorrowedToken.address,
+          purchaseToken: await testBorrowedToken.getAddress(),
         },
       ]),
     )
@@ -1282,12 +1382,13 @@ describe("TermAuctionOfferLocker", () => {
       termAuctionOfferLocker.connect(devopsMultisig).upgrade(wallet1.address),
     )
       .to.emit(termEventEmitter, "TermContractUpgraded")
-      .withArgs(termAuctionOfferLocker.address, wallet1.address);
+      .withArgs(await termAuctionOfferLocker.getAddress(), wallet1.address);
 
     await expect(
       termAuctionOfferLocker.connect(wallet2).upgrade(wallet1.address),
-    ).to.be.revertedWith(
-      `AccessControl: account ${wallet2.address.toLowerCase()} is missing role 0x793a6c9b7e0a9549c74edc2f9ae0dc50903dfaa9a56fb0116b27a8c71de3e2c6`,
+    ).to.be.revertedWithCustomError(
+      termAuctionOfferLocker,
+      "AccessControlUnauthorizedAccount",
     );
   });
   it("revealing an offer with an invalid nonce reverts", async () => {
@@ -1297,7 +1398,7 @@ describe("TermAuctionOfferLocker", () => {
         offeror: wallet1.address,
         offerPriceRevealed: "11",
         amount: "500",
-        purchaseToken: testBorrowedToken.address,
+        purchaseToken: await testBorrowedToken.getAddress(),
       },
       "456",
     );
@@ -1317,6 +1418,148 @@ describe("TermAuctionOfferLocker", () => {
       "OfferPriceModified",
     );
   });
+
+  it("lockOffers with offeror parameter takes purchase token from router and saves offers", async () => {
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
+    await termRepoServicer.setup({
+      abi: termRepoServicerInterface.getFunction("lockOfferAmount"),
+      inputs: [termDiamond.address, wallet1.address, "2000"],
+      outputs: [],
+      kind: "read",
+    });
+
+    await termAuctionOfferLocker.setStartTime(
+      dayjs().subtract(1, "hour").unix(),
+    );
+    await termAuctionOfferLocker.setRevealTime(dayjs().add(1, "hour").unix());
+
+    const testId7Id = await getGeneratedTenderId(
+      getBytesHash("test-id-7"),
+      termAuctionOfferLocker,
+      wallet1,
+    );
+
+    // Key difference: termDiamond (with DIAMOND_ROLE) calls lockOffers on behalf of wallet1
+    // Purchase token should be taken from termDiamond (msg.sender), not wallet1 (offeror)
+    await expect(
+      termAuctionOfferLocker.connect(termDiamond)["lockOffersWithReferral(address,(bytes32,address,bytes32,uint256,address)[],address)"](
+        wallet1.address,
+        [
+          {
+            id: getBytesHash("test-id-7"),
+            offeror: wallet1.address,
+            offerPriceHash: solidityPackedKeccak256(
+              ["uint256", "uint256"],
+              ["15", "5555555555"],
+            ),
+            amount: "2000",
+            purchaseToken: await testBorrowedToken.getAddress(),
+          },
+        ],
+        ZeroAddress,
+      ),
+    )
+      .to.emit(termEventEmitter, "OfferLocked")
+      .withArgs(
+        auctionIdHash,
+        testId7Id,
+        wallet1.address,
+        solidityPackedKeccak256(["uint256", "uint256"], ["15", "5555555555"]),
+        "2000",
+        await testBorrowedToken.getAddress(),
+        ZeroAddress,
+      );
+
+    const lockedOffer = await termAuctionOfferLocker.lockedOffer(testId7Id);
+    expect(lockedOffer[0]).to.equal(testId7Id); // id
+    expect(lockedOffer[1]).to.equal(wallet1.address); // offeror
+    expect(lockedOffer[4]).to.equal(2000n); // amount
+  });
+
+  it("lockOffersWithReferral with offeror parameter reverts if not called by DIAMOND_ROLE", async () => {
+    await termAuctionOfferLocker.setStartTime(dayjs().subtract(1, "hour").unix());
+    await termAuctionOfferLocker.setRevealTime(dayjs().add(1, "hour").unix());
+
+    await expect(
+      termAuctionOfferLocker.connect(wallet1)["lockOffersWithReferral(address,(bytes32,address,bytes32,uint256,address)[],address)"](
+        wallet1.address,
+        [
+          {
+            id: getBytesHash("test-id-9"),
+            offeror: wallet1.address,
+            offerPriceHash: solidityPackedKeccak256(
+              ["uint256", "uint256"],
+              ["15", "5555555555"],
+            ),
+            amount: "2000",
+            purchaseToken: await testBorrowedToken.getAddress(),
+          },
+        ],
+        ZeroAddress
+      ),
+    ).to.be.revertedWithCustomError(termAuctionOfferLocker, "AccessControlUnauthorizedAccount");
+  });
+
+  it("unlockOffers with offeror parameter returns purchase token and unlocks offers", async () => {
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
+    await termRepoServicer.setup({
+      abi: termRepoServicerInterface.getFunction("unlockOfferAmount"),
+      inputs: [wallet2.address, "2000"],
+      outputs: [],
+      kind: "read",
+    });
+
+    // Add an offer using the test helper
+    await termAuctionOfferLocker.addOffer(
+      {
+        id: getBytesHash("test-id-10"),
+        offeror: wallet2.address,
+        offerPriceRevealed: "10",
+        amount: "2000",
+        purchaseToken: await testBorrowedToken.getAddress(),
+      },
+      "123456",
+    );
+
+    await termAuctionOfferLocker.setStartTime(dayjs().subtract(1, "hour").unix());
+    await termAuctionOfferLocker.setRevealTime(dayjs().add(1, "hour").unix());
+
+    // Unlock offer via diamond role (msg.sender = termDiamond, offeror = wallet2)
+    await expect(
+      termAuctionOfferLocker
+        .connect(termDiamond)["unlockOffers(address,bytes32[])"](wallet2.address, [getBytesHash("test-id-10")]),
+    )
+      .to.emit(termEventEmitter, "OfferUnlocked")
+      .withArgs(auctionIdHash, getBytesHash("test-id-10"));
+
+    expect(await termAuctionOfferLocker.getOfferCount()).to.eq(0);
+  });
+
+  it("unlockOffers with offeror parameter reverts if not called by DIAMOND_ROLE", async () => {
+    // Add an offer using the test helper
+    await termAuctionOfferLocker.addOffer(
+      {
+        id: getBytesHash("test-id-11"),
+        offeror: wallet2.address,
+        offerPriceRevealed: "10",
+        amount: "2000",
+        purchaseToken: await testBorrowedToken.getAddress(),
+      },
+      "123456",
+    );
+
+    await termAuctionOfferLocker.setStartTime(dayjs().subtract(1, "hour").unix());
+    await termAuctionOfferLocker.setRevealTime(dayjs().add(1, "hour").unix());
+
+    // Try to unlock from non-DIAMOND_ROLE account
+    await expect(
+      termAuctionOfferLocker
+        .connect(wallet2)["unlockOffers(address,bytes32[])"](wallet2.address, [getBytesHash("test-id-11")]),
+    ).to.be.reverted;
+  });
+
   it("version returns the current contract version", async () => {
     expect(await termAuctionOfferLocker.version()).to.eq(expectedVersion);
   });

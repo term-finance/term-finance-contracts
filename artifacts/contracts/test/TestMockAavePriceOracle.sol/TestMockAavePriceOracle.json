@@ -1,0 +1,48 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "TestMockAavePriceOracle",
+  "sourceName": "contracts/test/TestMockAavePriceOracle.sol",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        }
+      ],
+      "name": "getAssetPrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "asset",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "price",
+          "type": "uint256"
+        }
+      ],
+      "name": "setAssetPrice",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608080604052346100155760e6908161001b8239f35b600080fdfe60806040526004361015601157600080fd5b6000803560e01c806351323f721460665763b3596f0714603057600080fd5b3460635760203660031901126063576020906040906001600160a01b0360536096565b1681528083522054604051908152f35b80fd5b503460635760403660031901126063576001600160a01b0360846096565b16815280602052602435604082205580f35b600435906001600160a01b038216820360ab57565b600080fdfea2646970667358221220f3a6d5454cbce0baaf95dc00d42fc2b3c405a45d057cd481a5aa96943758a4e164736f6c63430008160033",
+  "deployedBytecode": "0x60806040526004361015601157600080fd5b6000803560e01c806351323f721460665763b3596f0714603057600080fd5b3460635760203660031901126063576020906040906001600160a01b0360536096565b1681528083522054604051908152f35b80fd5b503460635760403660031901126063576001600160a01b0360846096565b16815280602052602435604082205580f35b600435906001600160a01b038216820360ab57565b600080fdfea2646970667358221220f3a6d5454cbce0baaf95dc00d42fc2b3c405a45d057cd481a5aa96943758a4e164736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

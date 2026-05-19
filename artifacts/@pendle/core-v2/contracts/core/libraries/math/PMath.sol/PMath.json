@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "PMath",
+  "sourceName": "@pendle/core-v2/contracts/core/libraries/math/PMath.sol",
+  "abi": [],
+  "bytecode": "0x60808060405234601757603a9081601d823930815050f35b600080fdfe600080fdfea264697066735822122048f4f4d023a1f741fa95ffc3b86efbf1b4ae1be8b64107acae64a16505e1576b64736f6c63430008160033",
+  "deployedBytecode": "0x600080fdfea264697066735822122048f4f4d023a1f741fa95ffc3b86efbf1b4ae1be8b64107acae64a16505e1576b64736f6c63430008160033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

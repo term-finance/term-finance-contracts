@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
 import {
@@ -7,13 +7,20 @@ import {
   TermAuctionBidLocker,
   TermAuctionOfferLocker,
   TermController,
+  TermDiamond,
+  TermDiamondFactory,
   TermEventEmitter,
   TermInitializer,
   TermPriceConsumerV3,
   TestPriceFeed,
   TestToken,
 } from "../typechain-types";
-import { BigNumber, BigNumberish, Signer, Wallet } from "ethers";
+import {
+  BigNumberish,
+  NonceManager,
+  Signer,
+  solidityPackedKeccak256,
+} from "ethers";
 import dayjs from "dayjs";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import {
@@ -21,12 +28,6 @@ import {
   deployMaturityPeriod,
   MaturityPeriodInfo,
 } from "../utils/deploy-utils";
-import { FakeContract, smock } from "@defi-wonderland/smock";
-import { NonceManager } from "@ethersproject/experimental";
-import TermAuctionABI from "../abi/TermAuction.json";
-import TermAuctionBidLockerABI from "../abi/TermAuctionBidLocker.json";
-import TermAuctionOfferLockerABI from "../abi/TermAuctionOfferLocker.json";
-import TestTokenABI from "../abi/TestToken.json";
 import {
   parseBidsOffers,
   getBytesHash,
@@ -44,13 +45,13 @@ const clearingPriceTestCSV_random1 = `1	235610440000	4.9	1	269816180000	3.3
 const BID_PRICE_NONCE = "12345";
 const OFFER_PRICE_NONCE = "678910";
 
-function expectBigNumberEq(
-  actual: BigNumber,
+function expectbigintEq(
+  actual: bigint,
   expected: BigNumberish,
   message: string = `Expected ${expected.toString()} but was ${actual.toString()}`,
 ): void {
   // eslint-disable-next-line no-unused-expressions
-  expect(actual.eq(expected), message).to.be.true;
+  expect(actual === BigInt(expected), message).to.be.true;
 }
 
 describe("TermAuctionIntegration", () => {
@@ -70,6 +71,7 @@ describe("TermAuctionIntegration", () => {
   let snapshotId: string;
   let termEventEmitter: TermEventEmitter;
   let termOracle: TermPriceConsumerV3;
+  let termDiamond: TermDiamond;
 
   beforeEach(async () => {
     upgrades.silenceWarnings();
@@ -81,7 +83,7 @@ describe("TermAuctionIntegration", () => {
     const collateralTokenDecimals = 8;
     const testTokenFactory = await ethers.getContractFactory("TestToken");
     testCollateralToken = await testTokenFactory.deploy();
-    await testCollateralToken.deployed();
+    await testCollateralToken.waitForDeployment();
     await testCollateralToken.initialize(
       "Collateral Token",
       "CT",
@@ -90,7 +92,7 @@ describe("TermAuctionIntegration", () => {
       [],
     );
     testPurchaseToken = await testTokenFactory.deploy();
-    await testPurchaseToken.deployed();
+    await testPurchaseToken.waitForDeployment();
     await testPurchaseToken.initialize(
       "Purchase Token",
       "PT",
@@ -108,7 +110,7 @@ describe("TermAuctionIntegration", () => {
       {
         kind: "uups",
       },
-    )) as TermPriceConsumerV3;
+    )) as unknown as TermPriceConsumerV3;
 
     const termControllerFactory =
       await ethers.getContractFactory("TermController");
@@ -125,7 +127,7 @@ describe("TermAuctionIntegration", () => {
       {
         kind: "uups",
       },
-    )) as TermController;
+    )) as unknown as TermController;
 
     const termEventEmitterFactory =
       await ethers.getContractFactory("TermEventEmitter");
@@ -136,20 +138,52 @@ describe("TermAuctionIntegration", () => {
       wallets[7].address,
       wallets[3].address,
     );
-    await termInitializer.deployed();
+    await termInitializer.waitForDeployment();
     await termController
       .connect(wallets[6])
-      .pairInitializer(termInitializer.address);
+      .pairInitializer(await termInitializer.getAddress());
+
+    // Deploy TermDiamond via factory
+    const termDiamondFactoryFactory =
+      await ethers.getContractFactory("TermDiamondFactory");
+    const termDiamondFactory = (await termDiamondFactoryFactory.deploy(
+      wallets[6].address,
+      wallets[4].address,
+    )) as unknown as TermDiamondFactory;
+    await termDiamondFactory.waitForDeployment();
+
+    const termDiamondTx = await termDiamondFactory.deployDiamond();
+    const termDiamondReceipt = await termDiamondTx.wait();
+    const diamondDeployedEvent = termDiamondReceipt?.logs.find(
+      (log) =>
+        log.topics[0] ===
+        termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash,
+    );
+    if (!diamondDeployedEvent)
+      throw new Error("DiamondDeployed event not found");
+    const decodedEvent =
+      termDiamondFactory.interface.parseLog(diamondDeployedEvent);
+    termDiamond = (await ethers.getContractAt(
+      "TermDiamond",
+      decodedEvent!.args.diamond,
+    )) as unknown as TermDiamond;
 
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [wallets[4].address, wallets[5].address, termInitializer.address],
+      [
+        wallets[4].address,
+        wallets[5].address,
+        await termInitializer.getAddress(),
+        wallets[5].address,
+        await termDiamond.getAddress(),
+      ],
       { kind: "uups" },
-    )) as TermEventEmitter;
+    )) as unknown as TermEventEmitter;
     await termInitializer.pairTermContracts(
-      termController.address,
-      termEventEmitter.address,
-      termOracle.address,
+      await termController.getAddress(),
+      await termEventEmitter.getAddress(),
+      await termOracle.getAddress(),
+      await termDiamond.getAddress(),
     );
 
     const mockPriceFeedFactory =
@@ -178,15 +212,15 @@ describe("TermAuctionIntegration", () => {
     await termOracle
       .connect(wallets[4])
       .addNewTokenPriceFeed(
-        testCollateralToken.address,
-        mockCollateralFeed.address,
+        await testCollateralToken.getAddress(),
+        await mockCollateralFeed.getAddress(),
         0,
       );
     await termOracle
       .connect(wallets[4])
       .addNewTokenPriceFeed(
-        testPurchaseToken.address,
-        mockPurchaseFeed.address,
+        await testPurchaseToken.getAddress(),
+        await mockPurchaseFeed.getAddress(),
         0,
       );
 
@@ -213,10 +247,11 @@ describe("TermAuctionIntegration", () => {
 
     maturityPeriodOffset1 = await deployMaturityPeriod(
       {
-        termControllerAddress: termController.address,
-        termEventEmitterAddress: termEventEmitter.address,
-        termInitializerAddress: termInitializer.address,
-        termOracleAddress: termOracle.address,
+        termControllerAddress: await termController.getAddress(),
+        termEventEmitterAddress: await termEventEmitter.getAddress(),
+        termInitializerAddress: await termInitializer.getAddress(),
+        termOracleAddress: await termOracle.getAddress(),
+        termDiamondAddress: await termDiamond.getAddress(),
         auctionStartDate: auctionStart.unix().toString(),
         auctionRevealDate: auctionReveal.unix().toString(),
         auctionEndDate: auctionEnd.unix().toString(),
@@ -232,42 +267,8 @@ describe("TermAuctionIntegration", () => {
         maintenanceCollateralRatios: [maintenanceRatio],
         initialCollateralRatios: [initialCollateralRatio],
         liquidatedDamages: [liquidatedDamage],
-        purchaseTokenAddress: testPurchaseToken.address,
-        collateralTokenAddresses: [testCollateralToken.address],
-        termApprovalMultisig: wallets[7],
-        devopsMultisig: wallets[4].address,
-        adminWallet: wallets[6].address,
-        controllerAdmin: wallets[5],
-        termVersion: "0.1.0",
-        auctionVersion: "0.1.0",
-        mintExposureCap: "1000000000000000000",
-      },
-      "uups",
-    );
-
-    maturityPeriodOffset0 = await deployMaturityPeriod(
-      {
-        termControllerAddress: termController.address,
-        termEventEmitterAddress: termEventEmitter.address,
-        termInitializerAddress: termInitializer.address,
-        termOracleAddress: termOracle.address,
-        auctionStartDate: auctionStart.unix().toString(),
-        auctionRevealDate: auctionReveal.unix().toString(),
-        auctionEndDate: auctionEnd.unix().toString(),
-        maturityTimestamp: maturity.unix().toString(),
-        servicerMaturityTimestamp: maturity.unix().toString(),
-        minimumTenderAmount,
-        repurchaseWindow: repurchaseWindow.asSeconds().toString(),
-        redemptionBuffer: redemptionBuffer.asSeconds().toString(),
-        netExposureCapOnLiquidation,
-        deMinimisMarginThreshold,
-        liquidateDamangesDueToProtocol,
-        servicingFee,
-        maintenanceCollateralRatios: [maintenanceRatio],
-        initialCollateralRatios: [initialCollateralRatio],
-        liquidatedDamages: [liquidatedDamage],
-        purchaseTokenAddress: testPurchaseToken.address,
-        collateralTokenAddresses: [testCollateralToken.address],
+        purchaseTokenAddress: await testPurchaseToken.getAddress(),
+        collateralTokenAddresses: [await testCollateralToken.getAddress()],
         termApprovalMultisig: wallets[7],
         devopsMultisig: wallets[4].address,
         adminWallet: wallets[6].address,
@@ -279,19 +280,54 @@ describe("TermAuctionIntegration", () => {
       },
       "uups",
     );
-    auctionIdOffset1Hash = ethers.utils.solidityKeccak256(
+
+    maturityPeriodOffset0 = await deployMaturityPeriod(
+      {
+        termControllerAddress: await termController.getAddress(),
+        termEventEmitterAddress: await termEventEmitter.getAddress(),
+        termInitializerAddress: await termInitializer.getAddress(),
+        termOracleAddress: await termOracle.getAddress(),
+        auctionStartDate: auctionStart.unix().toString(),
+        auctionRevealDate: auctionReveal.unix().toString(),
+        auctionEndDate: auctionEnd.unix().toString(),
+        maturityTimestamp: maturity.unix().toString(),
+        servicerMaturityTimestamp: maturity.unix().toString(),
+        minimumTenderAmount,
+        repurchaseWindow: repurchaseWindow.asSeconds().toString(),
+        redemptionBuffer: redemptionBuffer.asSeconds().toString(),
+        netExposureCapOnLiquidation,
+        deMinimisMarginThreshold,
+        liquidateDamangesDueToProtocol,
+        servicingFee,
+        maintenanceCollateralRatios: [maintenanceRatio],
+        initialCollateralRatios: [initialCollateralRatio],
+        liquidatedDamages: [liquidatedDamage],
+        purchaseTokenAddress: await testPurchaseToken.getAddress(),
+        collateralTokenAddresses: [await testCollateralToken.getAddress()],
+        termApprovalMultisig: wallets[7],
+        devopsMultisig: wallets[4].address,
+        adminWallet: wallets[6].address,
+        controllerAdmin: wallets[5],
+        termVersion: "0.1.0",
+        auctionVersion: "0.1.0",
+        mintExposureCap: "1000000000000000000",
+        clearingPricePostProcessingOffset: "0",
+      },
+      "uups",
+    );
+    auctionIdOffset1Hash = solidityPackedKeccak256(
       ["string"],
       [maturityPeriodOffset1.termAuctionId],
     );
-    auctionIdOffset0Hash = ethers.utils.solidityKeccak256(
+    auctionIdOffset0Hash = solidityPackedKeccak256(
       ["string"],
       [maturityPeriodOffset0.termAuctionId],
     );
-    termRepoIdOffset1Hash = ethers.utils.solidityKeccak256(
+    termRepoIdOffset1Hash = solidityPackedKeccak256(
       ["string"],
       [maturityPeriodOffset1.termRepoId],
     );
-    termRepoIdOffset0Hash = ethers.utils.solidityKeccak256(
+    termRepoIdOffset0Hash = solidityPackedKeccak256(
       ["string"],
       [maturityPeriodOffset0.termRepoId],
     );
@@ -304,8 +340,8 @@ describe("TermAuctionIntegration", () => {
   it("completeAuction completes an auction - random1 - offset 1", async () => {
     const { bids, offers } = await parseBidsOffers(
       clearingPriceTestCSV_random1,
-      testPurchaseToken.address,
-      testCollateralToken.address,
+      await testPurchaseToken.getAddress(),
+      await testCollateralToken.getAddress(),
       wallets,
     );
 
@@ -314,26 +350,26 @@ describe("TermAuctionIntegration", () => {
       const managedWallet = new NonceManager(wallet as any);
       walletsByAddress[wallet.address] = managedWallet;
       const collateralToken = (await ethers.getContractAt(
-        TestTokenABI,
-        testCollateralToken.address,
+        "TestToken",
+        await testCollateralToken.getAddress(),
         managedWallet,
-      )) as TestToken;
+      )) as unknown as TestToken;
       const purchaseToken = (await ethers.getContractAt(
-        TestTokenABI,
-        testPurchaseToken.address,
+        "TestToken",
+        await testPurchaseToken.getAddress(),
         managedWallet,
-      )) as TestToken;
+      )) as unknown as TestToken;
       let tx = await collateralToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await collateralToken.approve(
-        maturityPeriodOffset1.termRepoLocker.address,
+        await maturityPeriodOffset1.termRepoLocker.getAddress(),
         "1" + "0".repeat(25),
       );
       await tx.wait();
       tx = await purchaseToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await purchaseToken.approve(
-        maturityPeriodOffset1.termRepoLocker.address,
+        await maturityPeriodOffset1.termRepoLocker.getAddress(),
         "1" + "0".repeat(25),
       );
       await tx.wait();
@@ -344,10 +380,10 @@ describe("TermAuctionIntegration", () => {
     for (const bid of bids) {
       const wallet = walletsByAddress[bid.bidder.toString()];
       const termAuctionBidLocker = (await ethers.getContractAt(
-        TermAuctionBidLockerABI,
-        maturityPeriodOffset1.termAuctionBidLocker.address,
+        "TermAuctionBidLocker",
+        await maturityPeriodOffset1.termAuctionBidLocker.getAddress(),
         wallet,
-      )) as TermAuctionBidLocker;
+      )) as unknown as TermAuctionBidLocker;
       const submission = bidToSubmission(bid);
       const bidId = await getGeneratedTenderId(
         bid.id.toString() || "",
@@ -368,10 +404,10 @@ describe("TermAuctionIntegration", () => {
     for (const offer of offers) {
       const wallet = walletsByAddress[offer.offeror.toString()];
       const termAuctionOfferLocker = (await ethers.getContractAt(
-        TermAuctionOfferLockerABI,
-        maturityPeriodOffset1.termAuctionOfferLocker.address,
+        "TermAuctionOfferLocker",
+        await maturityPeriodOffset1.termAuctionOfferLocker.getAddress(),
         wallet,
-      )) as TermAuctionOfferLocker;
+      )) as unknown as TermAuctionOfferLocker;
 
       const offerId = await getGeneratedTenderId(
         offer.id.toString() || "",
@@ -395,10 +431,10 @@ describe("TermAuctionIntegration", () => {
     for (const bid of bids) {
       const wallet = walletsByAddress[bid.bidder.toString()];
       const termAuctionBidLocker = (await ethers.getContractAt(
-        TermAuctionBidLockerABI,
-        maturityPeriodOffset1.termAuctionBidLocker.address,
+        "TermAuctionBidLocker",
+        await maturityPeriodOffset1.termAuctionBidLocker.getAddress(),
         wallet,
-      )) as TermAuctionBidLocker;
+      )) as unknown as TermAuctionBidLocker;
       console.log(bid.bidPriceRevealed);
 
       const bidId = bidIdMappings.get(bid.id.toString());
@@ -415,10 +451,10 @@ describe("TermAuctionIntegration", () => {
     for (const offer of offers) {
       const wallet = walletsByAddress[offer.offeror.toString()];
       const termAuctionOfferLocker = (await ethers.getContractAt(
-        TermAuctionOfferLockerABI,
-        maturityPeriodOffset1.termAuctionOfferLocker.address,
+        "TermAuctionOfferLocker",
+        await maturityPeriodOffset1.termAuctionOfferLocker.getAddress(),
         wallet,
-      )) as TermAuctionOfferLocker;
+      )) as unknown as TermAuctionOfferLocker;
 
       const offerId = offerIdMappings.get(offer.id.toString());
       const tx = await termAuctionOfferLocker.revealOffers(
@@ -436,10 +472,10 @@ describe("TermAuctionIntegration", () => {
 
     const wallet = new NonceManager(wallets[0] as any);
     const auction = (await ethers.getContractAt(
-      TermAuctionABI,
-      maturityPeriodOffset1.auction.address,
+      "TermAuction",
+      await maturityPeriodOffset1.auction.getAddress(),
       wallet,
-    )) as TermAuction;
+    )) as unknown as TermAuction;
 
     const completeAuctionTx = await auction.completeAuction({
       revealedBidSubmissions: revealedBids,
@@ -475,40 +511,37 @@ describe("TermAuctionIntegration", () => {
         anyValue,
         anyValue,
         anyValue,
-        "545000000000000000",
+        "525000000000000000",
       );
 
     const tx = await completeAuctionTx.wait();
 
     const clearingPrice = await auction.clearingPrice();
-    expectBigNumberEq(clearingPrice, "545000000000000000");
+    expectbigintEq(clearingPrice, "525000000000000000");
 
     const termAuctionHistory = await termController.getTermAuctionResults(
       termRepoIdOffset1Hash,
     );
 
-    const termAuctionHistoryJson = JSON.parse(
-      JSON.stringify(termAuctionHistory),
-    );
-    const blockNumber = tx.blockNumber;
-    const block = await ethers.provider.getBlock(blockNumber);
+    const blockNumber = tx?.blockNumber;
+    const block = await ethers.provider.getBlock(blockNumber!);
 
-    expect(termAuctionHistoryJson).to.deep.eq([
+    expect(termAuctionHistory).to.deep.eq([
       [
         [
           auctionIdOffset1Hash,
-          BigNumber.from("545000000000000000").toJSON(),
-          BigNumber.from(block.timestamp).toJSON(),
+          525000000000000000n,
+          BigInt(block?.timestamp ?? 0),
         ],
       ],
-      1,
+      1n,
     ]);
   });
   it("completeAuction completes an auction - random1 - offset 0", async () => {
     const { bids, offers } = await parseBidsOffers(
       clearingPriceTestCSV_random1,
-      testPurchaseToken.address,
-      testCollateralToken.address,
+      await testPurchaseToken.getAddress(),
+      await testCollateralToken.getAddress(),
       wallets,
     );
 
@@ -517,26 +550,26 @@ describe("TermAuctionIntegration", () => {
       const managedWallet = new NonceManager(wallet as any);
       walletsByAddress[wallet.address] = managedWallet;
       const collateralToken = (await ethers.getContractAt(
-        TestTokenABI,
-        testCollateralToken.address,
+        "TestToken",
+        await testCollateralToken.getAddress(),
         managedWallet,
-      )) as TestToken;
+      )) as unknown as TestToken;
       const purchaseToken = (await ethers.getContractAt(
-        TestTokenABI,
-        testPurchaseToken.address,
+        "TestToken",
+        await testPurchaseToken.getAddress(),
         managedWallet,
-      )) as TestToken;
+      )) as unknown as TestToken;
       let tx = await collateralToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await collateralToken.approve(
-        maturityPeriodOffset0.termRepoLocker.address,
+        await maturityPeriodOffset0.termRepoLocker.getAddress(),
         "1" + "0".repeat(25),
       );
       await tx.wait();
       tx = await purchaseToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await purchaseToken.approve(
-        maturityPeriodOffset0.termRepoLocker.address,
+        await maturityPeriodOffset0.termRepoLocker.getAddress(),
         "1" + "0".repeat(25),
       );
       await tx.wait();
@@ -547,10 +580,10 @@ describe("TermAuctionIntegration", () => {
     for (const bid of bids) {
       const wallet = walletsByAddress[bid.bidder.toString()];
       const termAuctionBidLocker = (await ethers.getContractAt(
-        TermAuctionBidLockerABI,
-        maturityPeriodOffset0.termAuctionBidLocker.address,
+        "TermAuctionBidLocker",
+        await maturityPeriodOffset0.termAuctionBidLocker.getAddress(),
         wallet,
-      )) as TermAuctionBidLocker;
+      )) as unknown as TermAuctionBidLocker;
       const submission = bidToSubmission(bid);
       const bidId = await getGeneratedTenderId(
         bid.id.toString() || "",
@@ -571,10 +604,10 @@ describe("TermAuctionIntegration", () => {
     for (const offer of offers) {
       const wallet = walletsByAddress[offer.offeror.toString()];
       const termAuctionOfferLocker = (await ethers.getContractAt(
-        TermAuctionOfferLockerABI,
-        maturityPeriodOffset0.termAuctionOfferLocker.address,
+        "TermAuctionOfferLocker",
+        await maturityPeriodOffset0.termAuctionOfferLocker.getAddress(),
         wallet,
-      )) as TermAuctionOfferLocker;
+      )) as unknown as TermAuctionOfferLocker;
 
       const offerId = await getGeneratedTenderId(
         offer.id.toString() || "",
@@ -598,10 +631,10 @@ describe("TermAuctionIntegration", () => {
     for (const bid of bids) {
       const wallet = walletsByAddress[bid.bidder.toString()];
       const termAuctionBidLocker = (await ethers.getContractAt(
-        TermAuctionBidLockerABI,
-        maturityPeriodOffset0.termAuctionBidLocker.address,
+        "TermAuctionBidLocker",
+        await maturityPeriodOffset0.termAuctionBidLocker.getAddress(),
         wallet,
-      )) as TermAuctionBidLocker;
+      )) as unknown as TermAuctionBidLocker;
       console.log(bid.bidPriceRevealed);
 
       const bidId = bidIdMappings.get(bid.id.toString());
@@ -618,10 +651,10 @@ describe("TermAuctionIntegration", () => {
     for (const offer of offers) {
       const wallet = walletsByAddress[offer.offeror.toString()];
       const termAuctionOfferLocker = (await ethers.getContractAt(
-        TermAuctionOfferLockerABI,
-        maturityPeriodOffset0.termAuctionOfferLocker.address,
+        "TermAuctionOfferLocker",
+        await maturityPeriodOffset0.termAuctionOfferLocker.getAddress(),
         wallet,
-      )) as TermAuctionOfferLocker;
+      )) as unknown as TermAuctionOfferLocker;
 
       const offerId = offerIdMappings.get(offer.id.toString());
       const tx = await termAuctionOfferLocker.revealOffers(
@@ -639,10 +672,10 @@ describe("TermAuctionIntegration", () => {
 
     const wallet = new NonceManager(wallets[0] as any);
     const auction = (await ethers.getContractAt(
-      TermAuctionABI,
-      maturityPeriodOffset0.auction.address,
+      "TermAuction",
+      await maturityPeriodOffset0.auction.getAddress(),
       wallet,
-    )) as TermAuction;
+    )) as unknown as TermAuction;
 
     await expect(
       auction.completeAuction({
@@ -682,13 +715,13 @@ describe("TermAuctionIntegration", () => {
       );
 
     const clearingPrice = await auction.clearingPrice();
-    expectBigNumberEq(clearingPrice, "525000000000000000");
+    expectbigintEq(clearingPrice, "525000000000000000");
   });
   it("cancelAuctionForWithdrawal cancels auction and allows participants to withdraw funds...complete auction reverts after", async () => {
     const { bids, offers } = await parseBidsOffers(
       clearingPriceTestCSV_random1,
-      testPurchaseToken.address,
-      testCollateralToken.address,
+      await testPurchaseToken.getAddress(),
+      await testCollateralToken.getAddress(),
       wallets,
     );
 
@@ -697,26 +730,26 @@ describe("TermAuctionIntegration", () => {
       const managedWallet = new NonceManager(wallet as any);
       walletsByAddress[wallet.address] = managedWallet;
       const collateralToken = (await ethers.getContractAt(
-        TestTokenABI,
-        testCollateralToken.address,
+        "TestToken",
+        await testCollateralToken.getAddress(),
         managedWallet,
-      )) as TestToken;
+      )) as unknown as TestToken;
       const purchaseToken = (await ethers.getContractAt(
-        TestTokenABI,
-        testPurchaseToken.address,
+        "TestToken",
+        await testPurchaseToken.getAddress(),
         managedWallet,
-      )) as TestToken;
+      )) as unknown as TestToken;
       let tx = await collateralToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await collateralToken.approve(
-        maturityPeriodOffset1.termRepoLocker.address,
+        await maturityPeriodOffset1.termRepoLocker.getAddress(),
         "1" + "0".repeat(25),
       );
       await tx.wait();
       tx = await purchaseToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await purchaseToken.approve(
-        maturityPeriodOffset1.termRepoLocker.address,
+        await maturityPeriodOffset1.termRepoLocker.getAddress(),
         "1" + "0".repeat(25),
       );
       await tx.wait();
@@ -727,10 +760,10 @@ describe("TermAuctionIntegration", () => {
     for (const bid of bids) {
       const wallet = walletsByAddress[bid.bidder.toString()];
       const termAuctionBidLocker = (await ethers.getContractAt(
-        TermAuctionBidLockerABI,
-        maturityPeriodOffset1.termAuctionBidLocker.address,
+        "TermAuctionBidLocker",
+        await maturityPeriodOffset1.termAuctionBidLocker.getAddress(),
         wallet,
-      )) as TermAuctionBidLocker;
+      )) as unknown as TermAuctionBidLocker;
       const submission = bidToSubmission(bid);
       const bidId = await getGeneratedTenderId(
         bid.id.toString() || "",
@@ -750,10 +783,10 @@ describe("TermAuctionIntegration", () => {
     for (const offer of offers) {
       const wallet = walletsByAddress[offer.offeror.toString()];
       const termAuctionOfferLocker = (await ethers.getContractAt(
-        TermAuctionOfferLockerABI,
-        maturityPeriodOffset1.termAuctionOfferLocker.address,
+        "TermAuctionOfferLocker",
+        await maturityPeriodOffset1.termAuctionOfferLocker.getAddress(),
         wallet,
-      )) as TermAuctionOfferLocker;
+      )) as unknown as TermAuctionOfferLocker;
 
       const offerId = await getGeneratedTenderId(
         offer.id.toString() || "",
@@ -777,10 +810,10 @@ describe("TermAuctionIntegration", () => {
     for (const bid of bids) {
       const wallet = walletsByAddress[bid.bidder.toString()];
       const termAuctionBidLocker = (await ethers.getContractAt(
-        TermAuctionBidLockerABI,
-        maturityPeriodOffset1.termAuctionBidLocker.address,
+        "TermAuctionBidLocker",
+        await maturityPeriodOffset1.termAuctionBidLocker.getAddress(),
         wallet,
-      )) as TermAuctionBidLocker;
+      )) as unknown as TermAuctionBidLocker;
       console.log(bid.bidPriceRevealed);
 
       const bidId = bidIdMappings.get(bid.id.toString());
@@ -797,10 +830,10 @@ describe("TermAuctionIntegration", () => {
     for (const offer of offers) {
       const wallet = walletsByAddress[offer.offeror.toString()];
       const termAuctionOfferLocker = (await ethers.getContractAt(
-        TermAuctionOfferLockerABI,
-        maturityPeriodOffset1.termAuctionOfferLocker.address,
+        "TermAuctionOfferLocker",
+        await maturityPeriodOffset1.termAuctionOfferLocker.getAddress(),
         wallet,
-      )) as TermAuctionOfferLocker;
+      )) as unknown as TermAuctionOfferLocker;
 
       const offerId = offerIdMappings.get(offer.id.toString());
       const tx = await termAuctionOfferLocker.revealOffers(
@@ -818,10 +851,10 @@ describe("TermAuctionIntegration", () => {
 
     const wallet = new NonceManager(wallets[0] as any);
     const auction = (await ethers.getContractAt(
-      TermAuctionABI,
-      maturityPeriodOffset1.auction.address,
+      "TermAuction",
+      await maturityPeriodOffset1.auction.getAddress(),
       wallet,
-    )) as TermAuction;
+    )) as unknown as TermAuction;
 
     expect(await auction.auctionCancelledForWithdrawal()).to.eq(false);
 
@@ -836,14 +869,12 @@ describe("TermAuctionIntegration", () => {
       const wallet = new NonceManager(
         walletsByAddress[bid.bidder.toString()] as any,
       );
-      console.log(
-        `${await wallet.getAddress()} ${await wallet.getTransactionCount()}`,
-      );
+      console.log(`${await wallet.getAddress()} ${await wallet.getNonce()}`);
       const termAuctionBidLocker = (await ethers.getContractAt(
-        TermAuctionBidLockerABI,
-        maturityPeriodOffset1.termAuctionBidLocker.address,
+        "TermAuctionBidLocker",
+        await maturityPeriodOffset1.termAuctionBidLocker.getAddress(),
         wallet,
-      )) as TermAuctionBidLocker;
+      )) as unknown as TermAuctionBidLocker;
       const bidId = await getGeneratedTenderId(
         bid.id.toString() || "",
         termAuctionBidLocker,
@@ -869,10 +900,10 @@ describe("TermAuctionIntegration", () => {
         walletsByAddress[offer.offeror.toString()] as any,
       );
       const termAuctionOfferLocker = (await ethers.getContractAt(
-        TermAuctionOfferLockerABI,
-        maturityPeriodOffset1.termAuctionOfferLocker.address,
+        "TermAuctionOfferLocker",
+        await maturityPeriodOffset1.termAuctionOfferLocker.getAddress(),
         wallet,
-      )) as TermAuctionOfferLocker;
+      )) as unknown as TermAuctionOfferLocker;
 
       const offerId = await getGeneratedTenderId(
         offer.id.toString() || "",
@@ -888,10 +919,10 @@ describe("TermAuctionIntegration", () => {
     }
 
     const auctionAdminConnection = (await ethers.getContractAt(
-      TermAuctionABI,
-      maturityPeriodOffset1.auction.address,
+      "TermAuction",
+      await maturityPeriodOffset1.auction.getAddress(),
       walletsByAddress[wallets[6].address],
-    )) as TermAuction;
+    )) as unknown as TermAuction;
 
     const cancelTx = await auctionAdminConnection.cancelAuctionForWithdrawal(
       [],
@@ -928,10 +959,10 @@ describe("TermAuctionIntegration", () => {
       );
 
       const termAuctionBidLocker = (await ethers.getContractAt(
-        TermAuctionBidLockerABI,
-        maturityPeriodOffset1.termAuctionBidLocker.address,
+        "TermAuctionBidLocker",
+        await maturityPeriodOffset1.termAuctionBidLocker.getAddress(),
         wallet,
-      )) as TermAuctionBidLocker;
+      )) as unknown as TermAuctionBidLocker;
       const bidId = await getGeneratedTenderId(
         bid.id.toString() || "",
         termAuctionBidLocker,
@@ -956,10 +987,10 @@ describe("TermAuctionIntegration", () => {
         walletsByAddress[offer.offeror.toString()] as any,
       );
       const termAuctionOfferLocker = (await ethers.getContractAt(
-        TermAuctionOfferLockerABI,
-        maturityPeriodOffset1.termAuctionOfferLocker.address,
+        "TermAuctionOfferLocker",
+        await maturityPeriodOffset1.termAuctionOfferLocker.getAddress(),
         wallet,
-      )) as TermAuctionOfferLocker;
+      )) as unknown as TermAuctionOfferLocker;
 
       const offerId = await getGeneratedTenderId(
         offer.id.toString() || "",
@@ -978,8 +1009,8 @@ describe("TermAuctionIntegration", () => {
   it("completeAuction cancels an auction when all bids are undercollateralized after collateral price tanks", async () => {
     const { bids, offers } = await parseBidsOffers(
       clearingPriceTestCSV_random1,
-      testPurchaseToken.address,
-      testCollateralToken.address,
+      await testPurchaseToken.getAddress(),
+      await testCollateralToken.getAddress(),
       wallets,
     );
 
@@ -988,26 +1019,26 @@ describe("TermAuctionIntegration", () => {
       const managedWallet = new NonceManager(wallet as any);
       walletsByAddress[wallet.address] = managedWallet;
       const collateralToken = (await ethers.getContractAt(
-        TestTokenABI,
-        testCollateralToken.address,
+        "TestToken",
+        await testCollateralToken.getAddress(),
         managedWallet,
-      )) as TestToken;
+      )) as unknown as TestToken;
       const purchaseToken = (await ethers.getContractAt(
-        TestTokenABI,
-        testPurchaseToken.address,
+        "TestToken",
+        await testPurchaseToken.getAddress(),
         managedWallet,
-      )) as TestToken;
+      )) as unknown as TestToken;
       let tx = await collateralToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await collateralToken.approve(
-        maturityPeriodOffset1.termRepoLocker.address,
+        await maturityPeriodOffset1.termRepoLocker.getAddress(),
         "1" + "0".repeat(25),
       );
       await tx.wait();
       tx = await purchaseToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await purchaseToken.approve(
-        maturityPeriodOffset1.termRepoLocker.address,
+        await maturityPeriodOffset1.termRepoLocker.getAddress(),
         "1" + "0".repeat(25),
       );
       await tx.wait();
@@ -1017,10 +1048,10 @@ describe("TermAuctionIntegration", () => {
     for (const bid of bids) {
       const wallet = walletsByAddress[bid.bidder.toString()];
       const termAuctionBidLocker = (await ethers.getContractAt(
-        TermAuctionBidLockerABI,
-        maturityPeriodOffset1.termAuctionBidLocker.address,
+        "TermAuctionBidLocker",
+        await maturityPeriodOffset1.termAuctionBidLocker.getAddress(),
         wallet,
-      )) as TermAuctionBidLocker;
+      )) as unknown as TermAuctionBidLocker;
       const submission = bidToSubmission(bid);
       const bidId = await getGeneratedTenderId(
         bid.id.toString() || "",
@@ -1040,10 +1071,10 @@ describe("TermAuctionIntegration", () => {
     for (const offer of offers) {
       const wallet = walletsByAddress[offer.offeror.toString()];
       const termAuctionOfferLocker = (await ethers.getContractAt(
-        TermAuctionOfferLockerABI,
-        maturityPeriodOffset1.termAuctionOfferLocker.address,
+        "TermAuctionOfferLocker",
+        await maturityPeriodOffset1.termAuctionOfferLocker.getAddress(),
         wallet,
-      )) as TermAuctionOfferLocker;
+      )) as unknown as TermAuctionOfferLocker;
 
       const offerId = await getGeneratedTenderId(
         offer.id.toString() || "",
@@ -1067,10 +1098,10 @@ describe("TermAuctionIntegration", () => {
     for (const bid of bids) {
       const wallet = walletsByAddress[bid.bidder.toString()];
       const termAuctionBidLocker = (await ethers.getContractAt(
-        TermAuctionBidLockerABI,
-        maturityPeriodOffset1.termAuctionBidLocker.address,
+        "TermAuctionBidLocker",
+        await maturityPeriodOffset1.termAuctionBidLocker.getAddress(),
         wallet,
-      )) as TermAuctionBidLocker;
+      )) as unknown as TermAuctionBidLocker;
       console.log(bid.bidPriceRevealed);
 
       const bidId = bidIdMappings.get(bid.id.toString());
@@ -1087,10 +1118,10 @@ describe("TermAuctionIntegration", () => {
     for (const offer of offers) {
       const wallet = walletsByAddress[offer.offeror.toString()];
       const termAuctionOfferLocker = (await ethers.getContractAt(
-        TermAuctionOfferLockerABI,
-        maturityPeriodOffset1.termAuctionOfferLocker.address,
+        "TermAuctionOfferLocker",
+        await maturityPeriodOffset1.termAuctionOfferLocker.getAddress(),
         wallet,
-      )) as TermAuctionOfferLocker;
+      )) as unknown as TermAuctionOfferLocker;
 
       const offerId = offerIdMappings.get(offer.id.toString());
       const tx = await termAuctionOfferLocker.revealOffers(
@@ -1111,10 +1142,10 @@ describe("TermAuctionIntegration", () => {
 
     const wallet = new NonceManager(wallets[0] as any);
     const auction = (await ethers.getContractAt(
-      TermAuctionABI,
-      maturityPeriodOffset1.auction.address,
+      "TermAuction",
+      await maturityPeriodOffset1.auction.getAddress(),
       wallet,
-    )) as TermAuction;
+    )) as unknown as TermAuction;
     await expect(
       auction.completeAuction({
         revealedBidSubmissions: revealedBids,
@@ -1139,6 +1170,9 @@ describe("TermAuctionIntegration", () => {
   it("completeAuction completes an auction after reopening", async () => {
     const blockNumBefore = await ethers.provider.getBlockNumber();
     const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+    if (!blockBefore) {
+      throw new Error("blockBefore is null");
+    }
     const timestampBefore = blockBefore.timestamp;
     const auctionStart = dayjs.unix(timestampBefore).subtract(1, "minute");
 
@@ -1152,37 +1186,40 @@ describe("TermAuctionIntegration", () => {
     const minimumTenderAmount = "10";
 
     const auctionGroup2 = await deployAdditionalAuction({
-      termControllerAddress: termController.address,
-      termOracleAddress: termOracle.address,
-      termEventEmitterAddress: termEventEmitter.address,
-      termInitializerAddress: termInitializer.address,
+      termControllerAddress: await termController.getAddress(),
+      termOracleAddress: await termOracle.getAddress(),
+      termEventEmitterAddress: await termEventEmitter.getAddress(),
+      termInitializerAddress: await termInitializer.getAddress(),
       auctionStartDate: auctionStart.unix().toString(),
       auctionRevealDate: auctionReveal.unix().toString(),
       auctionEndDate: auctionEnd.unix().toString(),
       redemptionTimestamp: maturity.unix().toString(),
       minimumTenderAmount,
-      purchaseTokenAddress: testPurchaseToken.address,
-      collateralTokenAddresses: [testCollateralToken.address],
-      termRepoServicerAddress: maturityPeriodOffset1.termRepoServicer.address,
+      purchaseTokenAddress: await testPurchaseToken.getAddress(),
+      collateralTokenAddresses: [await testCollateralToken.getAddress()],
+      termRepoServicerAddress:
+        await maturityPeriodOffset1.termRepoServicer.getAddress(),
       collateralManagerAddress:
-        maturityPeriodOffset1.termRepoCollateralManager.address,
+        await maturityPeriodOffset1.termRepoCollateralManager.getAddress(),
       termApprovalMultisig: wallets[7],
       devopsMultisig: wallets[4].address,
       controllerAdmin: wallets[5],
       adminWallet: wallets[6].address,
       termRepoIdUnhashed: maturityPeriodOffset1.termRepoId,
       auctionVersion: "0.1.0",
+      clearingPricePostProcessingOffset: "0",
+      termDiamond: await maturityPeriodOffset1.termDiamond.getAddress(),
     });
 
-    const auctionId2 = ethers.utils.solidityKeccak256(
+    const auctionId2 = solidityPackedKeccak256(
       ["string"],
       [auctionGroup2.termAuctionId],
     );
 
     const { bids, offers } = await parseBidsOffers(
       clearingPriceTestCSV_random1,
-      testPurchaseToken.address,
-      testCollateralToken.address,
+      await testPurchaseToken.getAddress(),
+      await testCollateralToken.getAddress(),
       wallets,
     );
 
@@ -1191,26 +1228,26 @@ describe("TermAuctionIntegration", () => {
       const managedWallet = new NonceManager(wallet as any);
       walletsByAddress[wallet.address] = managedWallet;
       const collateralToken = (await ethers.getContractAt(
-        TestTokenABI,
-        testCollateralToken.address,
+        "TestToken",
+        await testCollateralToken.getAddress(),
         managedWallet,
-      )) as TestToken;
+      )) as unknown as TestToken;
       const purchaseToken = (await ethers.getContractAt(
-        TestTokenABI,
-        testPurchaseToken.address,
+        "TestToken",
+        await testPurchaseToken.getAddress(),
         managedWallet,
-      )) as TestToken;
+      )) as unknown as TestToken;
       let tx = await collateralToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await collateralToken.approve(
-        maturityPeriodOffset1.termRepoLocker.address,
+        await maturityPeriodOffset1.termRepoLocker.getAddress(),
         "1" + "0".repeat(25),
       );
       await tx.wait();
       tx = await purchaseToken.mint(wallet.address, "1" + "0".repeat(25));
       await tx.wait();
       tx = await purchaseToken.approve(
-        maturityPeriodOffset1.termRepoLocker.address,
+        await maturityPeriodOffset1.termRepoLocker.getAddress(),
         "1" + "0".repeat(25),
       );
       await tx.wait();
@@ -1221,10 +1258,10 @@ describe("TermAuctionIntegration", () => {
     for (const bid of bids) {
       const wallet = walletsByAddress[bid.bidder.toString()];
       const termAuctionBidLocker = (await ethers.getContractAt(
-        TermAuctionBidLockerABI,
-        auctionGroup2.termAuctionBidLocker.address,
+        "TermAuctionBidLocker",
+        await auctionGroup2.termAuctionBidLocker.getAddress(),
         wallet,
-      )) as TermAuctionBidLocker;
+      )) as unknown as TermAuctionBidLocker;
       const submission = bidToSubmission(bid);
       const bidId = await getGeneratedTenderId(
         bid.id.toString() || "",
@@ -1244,10 +1281,10 @@ describe("TermAuctionIntegration", () => {
     for (const offer of offers) {
       const wallet = walletsByAddress[offer.offeror.toString()];
       const termAuctionOfferLocker = (await ethers.getContractAt(
-        TermAuctionOfferLockerABI,
-        auctionGroup2.termAuctionOfferLocker.address,
+        "TermAuctionOfferLocker",
+        await auctionGroup2.termAuctionOfferLocker.getAddress(),
         wallet,
-      )) as TermAuctionOfferLocker;
+      )) as unknown as TermAuctionOfferLocker;
 
       const offerId = await getGeneratedTenderId(
         offer.id.toString() || "",
@@ -1271,10 +1308,10 @@ describe("TermAuctionIntegration", () => {
     for (const bid of bids) {
       const wallet = walletsByAddress[bid.bidder.toString()];
       const termAuctionBidLocker = (await ethers.getContractAt(
-        TermAuctionBidLockerABI,
-        auctionGroup2.termAuctionBidLocker.address,
+        "TermAuctionBidLocker",
+        await auctionGroup2.termAuctionBidLocker.getAddress(),
         wallet,
-      )) as TermAuctionBidLocker;
+      )) as unknown as TermAuctionBidLocker;
       console.log(bid.bidPriceRevealed);
 
       const bidId = bidIdMappings.get(bid.id.toString());
@@ -1291,10 +1328,10 @@ describe("TermAuctionIntegration", () => {
     for (const offer of offers) {
       const wallet = walletsByAddress[offer.offeror.toString()];
       const termAuctionOfferLocker = (await ethers.getContractAt(
-        TermAuctionOfferLockerABI,
-        auctionGroup2.termAuctionOfferLocker.address,
+        "TermAuctionOfferLocker",
+        await auctionGroup2.termAuctionOfferLocker.getAddress(),
         wallet,
-      )) as TermAuctionOfferLocker;
+      )) as unknown as TermAuctionOfferLocker;
 
       const offerId = offerIdMappings.get(offer.id.toString());
       const tx = await termAuctionOfferLocker.revealOffers(
@@ -1312,10 +1349,10 @@ describe("TermAuctionIntegration", () => {
 
     const wallet = new NonceManager(wallets[0] as any);
     const auction = (await ethers.getContractAt(
-      TermAuctionABI,
-      auctionGroup2.auction.address,
+      "TermAuction",
+      await auctionGroup2.auction.getAddress(),
       wallet,
-    )) as TermAuction;
+    )) as unknown as TermAuction;
 
     const completeAuctionTx = await auction.completeAuction({
       revealedBidSubmissions: revealedBids,
@@ -1351,11 +1388,11 @@ describe("TermAuctionIntegration", () => {
         anyValue,
         anyValue,
         anyValue,
-        "545000000000000000",
+        "525000000000000000",
       );
 
     const clearingPrice = await auction.clearingPrice();
-    expectBigNumberEq(clearingPrice, "545000000000000000");
+    expectbigintEq(clearingPrice, "525000000000000000");
 
     const tx = await completeAuctionTx.wait();
 
@@ -1363,21 +1400,12 @@ describe("TermAuctionIntegration", () => {
       termRepoIdOffset1Hash,
     );
 
-    const termAuctionHistoryJson = JSON.parse(
-      JSON.stringify(termAuctionHistory),
-    );
-    const blockNumber = tx.blockNumber;
-    const block = await ethers.provider.getBlock(blockNumber);
+    const blockNumber = tx?.blockNumber;
+    const block = await ethers.provider.getBlock(blockNumber!);
 
-    expect(termAuctionHistoryJson).to.deep.eq([
-      [
-        [
-          auctionId2,
-          BigNumber.from("545000000000000000").toJSON(),
-          BigNumber.from(block.timestamp).toJSON(),
-        ],
-      ],
-      1,
+    expect(termAuctionHistory).to.deep.eq([
+      [[auctionId2, 525000000000000000n, BigInt(block?.timestamp ?? 0)]],
+      1n,
     ]);
   });
 });

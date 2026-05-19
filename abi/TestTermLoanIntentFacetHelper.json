@@ -1,0 +1,22 @@
+[
+  {
+    "inputs": [],
+    "name": "clearMulticallInitiator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_initiator",
+        "type": "address"
+      }
+    ],
+    "name": "setMulticallInitiator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

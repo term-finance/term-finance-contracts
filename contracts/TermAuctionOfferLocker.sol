@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermAuction} from "./interfaces/ITermAuction.sol";
 import {ITermAuctionOfferLocker} from "./interfaces/ITermAuctionOfferLocker.sol";
@@ -7,12 +7,13 @@ import {ITermAuctionOfferLockerErrors} from "./interfaces/ITermAuctionOfferLocke
 import {ITermEventEmitter} from "./interfaces/ITermEventEmitter.sol";
 import {ITermRepoServicer} from "./interfaces/ITermRepoServicer.sol";
 import {TermAuctionOffer} from "./lib/TermAuctionOffer.sol";
+import {TermContractsPausable} from "./lib/TermContractsPausable.sol";
 import {TermAuctionOfferSubmission} from "./lib/TermAuctionOfferSubmission.sol";
 import {TermAuctionRevealedOffer} from "./lib/TermAuctionRevealedOffer.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Versionable} from "./lib/Versionable.sol";
 
 /// @author TermLabs
@@ -25,6 +26,7 @@ contract TermAuctionOfferLocker is
     UUPSUpgradeable,
     AccessControlUpgradeable,
     ReentrancyGuardUpgradeable,
+    TermContractsPausable,
     Versionable
 {
     // ========================================================================
@@ -41,6 +43,7 @@ contract TermAuctionOfferLocker is
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant AUCTIONEER_ROLE = keccak256("AUCTIONEER_ROLE");
     bytes32 public constant DEVOPS_ROLE = keccak256("DEVOPS_ROLE");
+    bytes32 public constant DIAMOND_ROLE = keccak256("DIAMOND_ROLE");
     bytes32 public constant INITIALIZER_ROLE = keccak256("INITIALIZER_ROLE");
 
     // ========================================================================
@@ -54,11 +57,11 @@ contract TermAuctionOfferLocker is
     uint256 public revealTime;
     uint256 public auctionEndTime;
     uint256 public minimumTenderAmount;
-    IERC20Upgradeable public purchaseToken;
-    mapping(IERC20Upgradeable => bool) public collateralTokens;
+    IERC20 public purchaseToken;
+    mapping(IERC20 => bool) public collateralTokens;
     ITermRepoServicer public termRepoServicer;
     ITermEventEmitter internal emitter;
-    ITermAuction internal termAuction;
+    ITermAuction public termAuction;
 
     // Auction in-progress state
     mapping(bytes32 => TermAuctionOffer) internal offers;
@@ -139,8 +142,8 @@ contract TermAuctionOfferLocker is
         uint256 revealTime_,
         uint256 auctionEndTime_,
         uint256 minimumTenderAmount_,
-        IERC20Upgradeable purchaseToken_,
-        IERC20Upgradeable[] memory collateralTokens_,
+        IERC20 purchaseToken_,
+        IERC20[] memory collateralTokens_,
         address termInitializer_
     ) external initializer {
         UUPSUpgradeable.__UUPSUpgradeable_init();
@@ -178,12 +181,14 @@ contract TermAuctionOfferLocker is
         ITermEventEmitter emitter_,
         ITermRepoServicer termRepoServicer_,
         address devopsMultisig_,
-        address adminWallet_
+        address adminWallet_,
+        address termDiamond_
     ) external onlyRole(INITIALIZER_ROLE) notTermContractPaired {
         termAuction = ITermAuction(termAuction_);
-        _setupRole(AUCTIONEER_ROLE, termAuction_);
+        _grantRole(AUCTIONEER_ROLE, termAuction_);
         _grantRole(DEVOPS_ROLE, devopsMultisig_);
         _grantRole(ADMIN_ROLE, adminWallet_);
+        _grantRole(DIAMOND_ROLE, termDiamond_);
 
         emitter = emitter_;
 
@@ -214,6 +219,7 @@ contract TermAuctionOfferLocker is
         external
         onlyWhileAuctionOpen
         whenLockingNotPaused
+        whileTermContractsNotPaused(termRepoServicer.termController())
         nonReentrant
         returns (bytes32[] memory)
     {
@@ -226,6 +232,50 @@ contract TermAuctionOfferLocker is
         for (uint256 i = 0; i < offerSubmissions.length; ++i) {
             TermAuctionOffer storage offer = _lock(
                 offerSubmissions[i],
+                msg.sender,
+                msg.sender
+            );
+            offerIds[i] = offer.id;
+            emitter.emitOfferLocked(
+                termAuctionId,
+                offer.id,
+                offer.offeror,
+                offer.offerPriceHash,
+                offer.amount,
+                offer.purchaseToken,
+                referralAddress
+            );
+        }
+        return offerIds;
+    }
+
+    /// @param offeror The address of the offeror
+    /// @param offerSubmissions An array of Term Auction offer submissions to lend an amount of money at rate no lower than the offer rate
+    /// @param referralAddress A user address that referred the submitter of this offer
+    /// @return A bytes32 array of unique on chain offer ids.
+    function lockOffersWithReferral(
+        address offeror,
+        TermAuctionOfferSubmission[] calldata offerSubmissions,
+        address referralAddress
+    )
+        external
+        onlyWhileAuctionOpen
+        whenLockingNotPaused
+        whileTermContractsNotPaused(termRepoServicer.termController())
+        nonReentrant
+        onlyRole(DIAMOND_ROLE)
+        returns (bytes32[] memory)
+    {
+        if (offeror == referralAddress) {
+            revert InvalidSelfReferral();
+        }
+
+        bytes32[] memory offerIds = new bytes32[](offerSubmissions.length);
+
+        for (uint256 i = 0; i < offerSubmissions.length; ++i) {
+            TermAuctionOffer storage offer = _lock(
+                offerSubmissions[i],
+                offeror,
                 msg.sender
             );
             offerIds[i] = offer.id;
@@ -250,6 +300,7 @@ contract TermAuctionOfferLocker is
         external
         onlyWhileAuctionOpen
         whenLockingNotPaused
+        whileTermContractsNotPaused(termRepoServicer.termController())
         nonReentrant
         returns (bytes32[] memory)
     {
@@ -257,6 +308,7 @@ contract TermAuctionOfferLocker is
         for (uint256 i = 0; i < offerSubmissions.length; ++i) {
             TermAuctionOffer storage offer = _lock(
                 offerSubmissions[i],
+                msg.sender,
                 msg.sender
             );
             offerIds[i] = offer.id;
@@ -298,7 +350,7 @@ contract TermAuctionOfferLocker is
     /// @param ids An array of offer ids
     function unlockOffers(
         bytes32[] calldata ids
-    ) external whenUnlockingNotPaused nonReentrant {
+    ) external whenUnlockingNotPaused whileTermContractsNotPaused(termRepoServicer.termController()) nonReentrant {
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp < auctionStartTime) {
             revert AuctionNotOpen();
@@ -319,6 +371,35 @@ contract TermAuctionOfferLocker is
                 revert OfferNotOwned();
             }
             _unlock(ids[i], msg.sender);
+        }
+    }
+
+    /// @notice unlockOffers unlocks multiple offers and returns funds to the offeror
+    /// @param ids An array of offer ids
+    function unlockOffers(
+        address offeror,
+        bytes32[] calldata ids
+    ) external onlyRole(DIAMOND_ROLE) whenUnlockingNotPaused whileTermContractsNotPaused(termRepoServicer.termController()) nonReentrant {
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp < auctionStartTime) {
+            revert AuctionNotOpen();
+        }
+        // solhint-disable-next-line not-rely-on-time
+        if (
+            block.timestamp > revealTime &&
+            !termAuction.auctionCancelledForWithdrawal()
+        ) {
+            revert AuctionNotOpen();
+        }
+
+        for (uint256 i = 0; i < ids.length; ++i) {
+            if (offers[ids[i]].amount == 0) {
+                revert NonExistentOffer(ids[i]);
+            }
+            if (offeror != offers[ids[i]].offeror) {
+                revert OfferNotOwned();
+            }
+            _unlock(ids[i], offeror);
         }
     }
 
@@ -412,7 +493,8 @@ contract TermAuctionOfferLocker is
 
     function _lock(
         TermAuctionOfferSubmission memory offerSubmission,
-        address authedUser
+        address authedUser,
+        address sender
     )
         internal
         onlyOfferor(offerSubmission.offeror, authedUser)
@@ -457,6 +539,7 @@ contract TermAuctionOfferLocker is
         // Calculate the amount of purchase tokens to lock.
         if (oldLockedAmount < offerSubmission.amount) {
             termRepoServicer.lockOfferAmount(
+                sender,
                 offerSubmission.offeror,
                 offerSubmission.amount - oldLockedAmount
             );

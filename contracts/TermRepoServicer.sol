@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermEventEmitter} from "./interfaces/ITermEventEmitter.sol";
 import {ITermRepoServicer} from "./interfaces/ITermRepoServicer.sol";
@@ -15,7 +15,7 @@ import {TermRepoRolloverElection} from "./lib/TermRepoRolloverElection.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import {IERC20MetadataUpgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/IERC20MetadataUpgradeable.sol";
+import {IERC20Metadata} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import {Versionable} from "./lib/Versionable.sol";
 
 /// @author TermLabs
@@ -40,7 +40,6 @@ contract TermRepoServicer is
     // = Access Roles  ========================================================
     // ========================================================================
 
-    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant AUCTION_LOCKER = keccak256("AUCTION_LOCKER");
     bytes32 public constant AUCTIONEER = keccak256("AUCTIONEER");
     bytes32 public constant COLLATERAL_MANAGER =
@@ -50,6 +49,8 @@ contract TermRepoServicer is
     bytes32 public constant ROLLOVER_TARGET_AUCTIONEER_ROLE =
         keccak256("ROLLOVER_TARGET_AUCTIONEER_ROLE");
     bytes32 public constant INITIALIZER_ROLE = keccak256("INITIALIZER_ROLE");
+    bytes32 public constant DIAMOND_ROLE = keccak256("DIAMOND_ROLE");
+
 
     // ========================================================================
     // = State Variables  =====================================================
@@ -78,6 +79,9 @@ contract TermRepoServicer is
     /// proportion of redemption value for redemption
     uint256 public shortfallHaircutMantissa;
 
+    /// threshold for determining whether term repo is balanced
+    uint256 public termRepoBalancedThreshold;
+
     // token used for purchase/loans
     address public purchaseToken;
 
@@ -94,7 +98,7 @@ contract TermRepoServicer is
     ITermRepoToken public termRepoToken;
 
     // global term controller contract
-    ITermController internal termController;
+    ITermController public termController;
 
     // global term event emitter
     ITermEventEmitter internal emitter;
@@ -152,6 +156,11 @@ contract TermRepoServicer is
 
         require(purchaseToken_ != address(0), "Zero address purchase token");
         purchaseToken = purchaseToken_;
+        IERC20Metadata purchaseTokenInstance = IERC20Metadata(
+                purchaseToken_
+            );
+        uint8 purchaseTokenDecimals = purchaseTokenInstance.decimals();
+        termRepoBalancedThreshold = 10 ** (purchaseTokenDecimals / 4 < 2 ? 2 : purchaseTokenDecimals / 4);
 
         termController = termController_;
         emitter = emitter_;
@@ -165,13 +174,15 @@ contract TermRepoServicer is
         address termRepoLocker_,
         address termRepoCollateralManager_,
         address termRepoToken_,
+        address termDiamond_,
         address termAuctionOfferLocker_,
         address termAuction_,
         address rolloverManager_,
         address devopsMultisig_,
-        address adminWallet_,
+        address deployerWallet_,
         string calldata version_
-    ) external onlyRole(INITIALIZER_ROLE) notTermContractPaired {
+    )  external onlyRole(INITIALIZER_ROLE) notTermContractPaired {
+        require(deployerWallet_ != address(0), "Zero address deployer wallet");
         termRepoLocker = ITermRepoLocker(termRepoLocker_);
         termRepoCollateralManager = ITermRepoCollateralManager(
             termRepoCollateralManager_
@@ -181,10 +192,10 @@ contract TermRepoServicer is
 
         _grantRole(AUCTION_LOCKER, termAuctionOfferLocker_);
         _grantRole(AUCTIONEER, termAuction_);
-        _grantRole(ADMIN_ROLE, adminWallet_);
         _grantRole(DEVOPS_ROLE, devopsMultisig_);
         _grantRole(COLLATERAL_MANAGER, termRepoCollateralManager_);
         _grantRole(ROLLOVER_MANAGER, rolloverManager_);
+        _grantRole(DIAMOND_ROLE, termDiamond_);
 
         emitter.emitTermRepoServicerInitialized(
             termRepoId,
@@ -194,6 +205,7 @@ contract TermRepoServicer is
             endOfRepurchaseWindow,
             redemptionTimestamp,
             servicingFee,
+            deployerWallet_,
             version_
         );
     }
@@ -205,107 +217,29 @@ contract TermRepoServicer is
     /// @notice The max repurchase amount is the repurchase balance less any amounts earmarked for rollover
     /// @param amount The amount of purchase token to submit for repurchase
     function submitRepurchasePayment(uint256 amount) external {
-        address borrower = msg.sender;
-
-        if (amount == 0) {
-            revert InvalidParameters("zero amount");
-        }
-
-        // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp >= endOfRepurchaseWindow) {
-            revert AfterRepurchaseWindow();
-        }
-
-        if (repurchaseExposureLedger[borrower] == 0) {
-            revert ZeroBorrowerRepurchaseObligation();
-        }
-
-        if (amount == type(uint256).max) {
-            revert InvalidParameters("repurchase amount cannot be uint max");
-        }
-
-        uint256 maxRepurchaseAmount = _getMaxRepaymentAroundRollover(borrower);
-
-        if (amount > maxRepurchaseAmount) {
-            revert RepurchaseAmountTooHigh();
-        }
-
-        _repay(borrower, borrower, amount);
-
-        if (repurchaseExposureLedger[borrower] == 0) {
-            termRepoCollateralManager.unlockCollateralOnRepurchase(borrower);
-        }
-
-        emitter.emitRepurchasePaymentSubmitted(termRepoId, borrower, amount);
+        _submitRepurchasePaymentInternal(msg.sender, amount);
     }
+
+    /// @notice Allows DIAMOND_ROLE to submit repurchase payment on behalf of a borrower
+    /// @param borrower The address of the borrower making the repurchase payment
+    /// @param amount The amount of purchase token to submit for repurchase
+    function submitRepurchasePayment(address borrower, uint256 amount) external onlyRole(DIAMOND_ROLE) {
+        _submitRepurchasePaymentInternal(borrower, amount);
+    }
+
 
     /// @param amountToBurn The amount of TermRepoTokens to burn
     function burnCollapseExposure(uint256 amountToBurn) external {
-        // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp >= endOfRepurchaseWindow) {
-            revert AfterRepurchaseWindow();
-        }
-
-        address borrower = msg.sender;
-
-        if (repurchaseExposureLedger[borrower] == 0) {
-            revert ZeroBorrowerRepurchaseObligation();
-        }
-
-        IERC20MetadataUpgradeable purchaseTokenInstance = IERC20MetadataUpgradeable(
-                purchaseToken
-            );
-        uint256 purchaseTokenDecimals = uint256(
-            purchaseTokenInstance.decimals()
-        );
-
-        uint256 maxRepurchaseAmount = _getMaxRepaymentAroundRollover(borrower);
-
-        if (maxRepurchaseAmount == 0){
-            revert ZeroMaxRepurchase();
-        }
-
-        uint256 termRepoTokenValueOfRepurchase = div_(
-            Exp({
-                mantissa: maxRepurchaseAmount *
-                    10 ** (18 - purchaseTokenDecimals)
-            }),
-            Exp({mantissa: termRepoToken.redemptionValue()})
-        ).mantissa / 10 ** (18 - purchaseTokenDecimals);
-
-        if (amountToBurn < termRepoTokenValueOfRepurchase) {
-            uint256 repayAmount = termRepoToken.burnAndReturnValue(
-                borrower,
-                amountToBurn
-            );
-            // slither-disable-start reentrancy-no-eth
-            repurchaseExposureLedger[borrower] -= repayAmount;
-
-            totalOutstandingRepurchaseExposure -= repayAmount;
-            // slither-disable-end reentrancy-no-eth
-
-            assert(_isTermRepoBalanced());
-
-            emitter.emitBurnCollapseExposure(termRepoId, borrower, repayAmount);
-        } else {
-            // slither-disable-start reentrancy-no-eth
-            totalOutstandingRepurchaseExposure -= maxRepurchaseAmount;
-            repurchaseExposureLedger[borrower] -= maxRepurchaseAmount;
-            // slither-disable-end reentrancy-no-eth
-
-            termRepoToken.burn(borrower, termRepoTokenValueOfRepurchase);
-
-            assert(_isTermRepoBalanced());
-
-            emitter.emitBurnCollapseExposure(
-                termRepoId,
-                borrower,
-                maxRepurchaseAmount
-            );
-
-            termRepoCollateralManager.unlockCollateralOnRepurchase(borrower);
-        }
+        _burnCollapseExposureInternal(msg.sender, amountToBurn);
     }
+
+    /// @notice Allows DIAMOND_ROLE to burn and collapse exposure on behalf of a borrower
+    /// @param borrower The address of the borrower whose exposure is being collapsed
+    /// @param amountToBurn The amount of TermRepoTokens to burn
+    function burnCollapseExposure(address borrower, uint256 amountToBurn) external onlyRole(DIAMOND_ROLE) {
+        _burnCollapseExposureInternal(borrower, amountToBurn);
+    }
+
 
     /// @param borrower The address of the borrower to query
     /// @return The total repurchase price due at maturity for a given borrower
@@ -315,20 +249,45 @@ contract TermRepoServicer is
         return repurchaseExposureLedger[borrower];
     }
 
-    /// @dev This method allows SPECIALIST_ROLE to open repurchase price exposure against a TermRepoToken mint of corresponding value outside of a Term Auction to create new supply
+    /// @dev This method allows verified users to open repurchase price exposure against a TermRepoToken mint of corresponding value outside of a Term Auction to create new supply
     /// @param amount The amount of Term Repo Tokens to mint
     /// @param collateralAmounts An array containing an amount of collateral token for each token in collateral basket
     function mintOpenExposure(
         uint256 amount,
         uint256[] calldata collateralAmounts
     ) external {
-        address borrower = msg.sender;
-
-        if (!termController.verifyMintExposureAccess(borrower)) {
+        if (!termController.verifyMintExposureAccess(msg.sender)) {
             revert NoMintOpenExposureAccess();
         }
+        _mintOpenExposureInternal(msg.sender, msg.sender, amount, collateralAmounts);
+    }
 
-        // solhint-disable-next-line not-rely-on-time
+    /// @dev This method allows DIAMOND_ROLE to open repurchase price exposure against a TermRepoToken mint on behalf of a borrower outside of a Term Auction to create new supply
+    /// @param borrower The address of the borrower for whom exposure is being minted
+    /// @param amount The amount of Term Repo Tokens to mint
+    /// @param collateralAmounts An array containing an amount of collateral token for each token in collateral basket
+    function mintOpenExposure(address borrower, uint256 amount, uint256[] calldata collateralAmounts) external onlyRole(DIAMOND_ROLE) {
+        _mintOpenExposureInternal(borrower, msg.sender, amount, collateralAmounts);
+    }
+
+    /// @notice Mint open exposure for intent-based order settlement (DIAMOND_ROLE)
+    /// @dev This method allows DIAMOND_ROLE to open repurchase price exposure against a TermRepoToken mint for intent-based orders
+    /// @param borrower The address of the borrower for whom exposure is being minted
+    /// @param lender The address of the lender providing the purchase tokens
+    /// @param purchaseTokenAmount The amount of purchase tokens being lent
+    /// @param collateralAmounts An array containing collateral token amounts for each token in the collateral basket
+    /// @param offerRate The interest rate for the position (percentage in 1e18 format)
+    /// @param isRoutedCollateral Whether the collateral tokens are already routed to the contract
+    /// @return Amount of Term Repo Tokens minted
+    function mintOpenExposureFromIntent(
+        address borrower,
+        address lender,
+        uint256 purchaseTokenAmount,
+        uint256[] calldata collateralAmounts,
+        uint256 offerRate,
+        bool isRoutedCollateral
+    ) external onlyRole(DIAMOND_ROLE) returns (uint256) {
+         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > maturityTimestamp) {
             revert AfterMaturity();
         }
@@ -342,56 +301,48 @@ contract TermRepoServicer is
             );
         }
 
-        uint256 maxMintValue = 0;
-        for (uint256 i = 0; i < collateralAmounts.length; ++i) {
-            termRepoCollateralManager.mintOpenExposureLockCollateral(
-                borrower,
-                termRepoCollateralManager.collateralTokens(i),
-                collateralAmounts[i]
-            );
-            uint256 maxTokensFromCollateral = truncate(
-                div_(
-                    termRepoCollateralManager.calculateMintableExposure(
-                        termRepoCollateralManager.collateralTokens(i),
-                        collateralAmounts[i]
-                    ),
-                    Exp({mantissa: termRepoToken.redemptionValue()})
-                )
-            );
-            maxMintValue += maxTokensFromCollateral;
-        }
-        if (amount > maxMintValue) {
-            revert InsufficientCollateral();
-        }
-
+        // Calculate repo tokens to mint based on offer rate
         Exp memory proRate = div_(
             // solhint-disable-next-line not-rely-on-time
             Exp({mantissa: (maturityTimestamp - block.timestamp)}),
             Exp({mantissa: (YEAR_SECONDS)})
         );
 
-        Exp memory protocolShareProRated = mul_(
-            Exp({mantissa: servicingFee}),
-            proRate
+        Exp memory repurchaseFactor = add_(
+            Exp({mantissa: expScale}),
+            mul_(
+                proRate,
+                Exp({mantissa: offerRate})
+            )
         );
 
-        uint256 protocolMintTokens = mul_ScalarTruncate(
-            protocolShareProRated,
-            amount
+        uint256 amountOfRepoTokenToMint = truncate(
+            div_(
+                mul_(
+                    Exp({mantissa: purchaseTokenAmount * expScale}),
+                    repurchaseFactor
+                ),
+                Exp({mantissa: termRepoToken.redemptionValue()})
+            )
         );
-        uint256 minterTokens = amount - protocolMintTokens;
 
-        uint256 protocolMintTokensValue = termRepoToken.mintTokens(
-            termController.getTreasuryAddress(),
-            protocolMintTokens
-        );
-        uint256 minterTokensValue = termRepoToken.mintTokens(
-            borrower,
-            minterTokens
-        );
-        termRepoToken.decrementMintExposureCap(amount);
+        uint256 maxMintValue;
+        if (isRoutedCollateral) {
+            maxMintValue = _handleCollateral(borrower, msg.sender, collateralAmounts);
+        } else {
+            maxMintValue = _handleCollateral(borrower, borrower, collateralAmounts);
+        }
+        if (amountOfRepoTokenToMint > maxMintValue) {
+            revert InsufficientCollateral();
+        }
 
-        uint256 totalMintValue = protocolMintTokensValue + minterTokensValue;
+        // protocol fee is handled by the settler contract
+        uint256 totalMintValue = termRepoToken.mintTokens(
+            lender,
+            amountOfRepoTokenToMint
+        );
+        
+        termRepoToken.decrementMintExposureCap(amountOfRepoTokenToMint);
 
         // slither-disable-start reentrancy-benign
         repurchaseExposureLedger[borrower] += totalMintValue;
@@ -401,22 +352,17 @@ contract TermRepoServicer is
 
         assert(_isTermRepoBalanced());
 
-        emitter.emitBidFulfilled(
-            termRepoId,
-            borrower,
-            minterTokensValue,
-            totalMintValue,
-            protocolMintTokensValue
-        );
-
         emitter.emitMintExposure(
             termRepoId,
             borrower,
-            minterTokens,
-            protocolMintTokens,
+            amountOfRepoTokenToMint,
+            0, // @dev Fee is 0 because fees are deducted from the borrower's purchase token amount in TermLoanIntentFacet
             totalMintValue
         );
+
+        return amountOfRepoTokenToMint;
     }
+
 
     /// @param redeemer The address of redeemer
     /// @param amountToRedeem The amount of TermRepoTokens to redeem
@@ -454,13 +400,15 @@ contract TermRepoServicer is
     // = Auction Functions  ===================================================
     // ========================================================================
 
+    /// @param sender The address of the sender
     /// @param offeror The address of the offeror
     /// @param amount The amount of purchase tokens to lock
     function lockOfferAmount(
+        address sender,
         address offeror,
         uint256 amount
     ) external onlyRole(AUCTION_LOCKER) {
-        termRepoLocker.transferTokenFromWallet(offeror, purchaseToken, amount);
+        termRepoLocker.transferTokenFromWallet(sender, purchaseToken, amount);
 
         emitter.emitOfferLockedByServicer(termRepoId, offeror, amount);
     }
@@ -519,14 +467,14 @@ contract TermRepoServicer is
             revert AfterMaturity();
         }
 
-        repurchaseExposureLedger[bidder] += repurchasePrice;
-        totalOutstandingRepurchaseExposure += repurchasePrice;
-
         termRepoCollateralManager.journalBidCollateralToCollateralManager(
             bidder,
             collateralTokens,
             collateralAmounts
         );
+
+        repurchaseExposureLedger[bidder] += repurchasePrice;
+        totalOutstandingRepurchaseExposure += repurchasePrice;
 
         uint256 protocolShare = mul_ScalarTruncate(
             mul_(
@@ -746,24 +694,220 @@ contract TermRepoServicer is
     // = Internal Functions  ==================================================
     // ========================================================================
 
+    function _submitRepurchasePaymentInternal(address borrower, uint256 amount) internal {
+        if (amount == 0) {
+            revert InvalidParameters("zero amount");
+        }
+
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp >= endOfRepurchaseWindow) {
+            revert AfterRepurchaseWindow();
+        }
+
+        if (repurchaseExposureLedger[borrower] == 0) {
+            revert ZeroBorrowerRepurchaseObligation();
+        }
+
+        if (amount == type(uint256).max) {
+            revert InvalidParameters("repurchase amount cannot be uint max");
+        }
+
+        uint256 maxRepurchaseAmount = _getMaxRepaymentAroundRollover(borrower);
+
+        if (amount > maxRepurchaseAmount) {
+            revert RepurchaseAmountTooHigh();
+        }
+
+        _repay(borrower, msg.sender, amount);
+
+        if (repurchaseExposureLedger[borrower] == 0) {
+            termRepoCollateralManager.unlockCollateralOnRepurchase(borrower);
+        }
+
+        emitter.emitRepurchasePaymentSubmitted(termRepoId, borrower, amount);
+    }
+
+    function _burnCollapseExposureInternal (address borrower, uint256 amountToBurn) internal {
+        if (block.timestamp >= endOfRepurchaseWindow) {
+            revert AfterRepurchaseWindow();
+        }
+        
+        if (repurchaseExposureLedger[borrower] == 0) {
+            revert ZeroBorrowerRepurchaseObligation();
+        }
+
+        IERC20Metadata purchaseTokenInstance = IERC20Metadata(
+                purchaseToken
+            );
+        uint256 purchaseTokenDecimals = uint256(
+            purchaseTokenInstance.decimals()
+        );
+
+        uint256 maxRepurchaseAmount = _getMaxRepaymentAroundRollover(borrower);
+
+        if (maxRepurchaseAmount == 0) {
+            revert ZeroMaxRepurchase();
+        }
+
+        uint256 termRepoTokenValueOfRepurchase = div_(
+            Exp({
+                mantissa: maxRepurchaseAmount *
+                    10 ** (18 - purchaseTokenDecimals)
+            }),
+            Exp({mantissa: termRepoToken.redemptionValue()})
+        ).mantissa / 10 ** (18 - purchaseTokenDecimals);
+
+        if (amountToBurn < termRepoTokenValueOfRepurchase) {
+            uint256 repayAmount = termRepoToken.burnAndReturnValue(
+                borrower,
+                amountToBurn
+            );
+            // slither-disable-start reentrancy-no-eth
+            repurchaseExposureLedger[borrower] -= repayAmount;
+
+            totalOutstandingRepurchaseExposure -= repayAmount;
+            // slither-disable-end reentrancy-no-eth
+
+            assert(_isTermRepoBalanced());
+
+            emitter.emitBurnCollapseExposure(termRepoId, borrower, repayAmount);
+        } else {
+            // slither-disable-start reentrancy-no-eth
+            totalOutstandingRepurchaseExposure -= maxRepurchaseAmount;
+            repurchaseExposureLedger[borrower] -= maxRepurchaseAmount;
+            // slither-disable-end reentrancy-no-eth
+
+            termRepoToken.burn(borrower, termRepoTokenValueOfRepurchase);
+
+            assert(_isTermRepoBalanced());
+
+            emitter.emitBurnCollapseExposure(
+                termRepoId,
+                borrower,
+                maxRepurchaseAmount
+            );
+
+            if (repurchaseExposureLedger[borrower] == 0) {
+                termRepoCollateralManager.unlockCollateralOnRepurchase(borrower);
+            }
+        }
+    }
+
+    function _mintOpenExposureInternal(address borrower, address sender, uint256 amount, uint256[] calldata collateralAmounts) internal {
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp > maturityTimestamp) {
+            revert AfterMaturity();
+        }
+
+        if (
+            collateralAmounts.length !=
+            termRepoCollateralManager.numOfAcceptedCollateralTokens()
+        ) {
+            revert InvalidParameters(
+                "Collateral Amounts array not same length as collateral tokens list"
+            );
+        }
+
+        uint256 maxMintValue = _handleCollateral(borrower, sender, collateralAmounts);
+        if (amount > maxMintValue) {
+            revert InsufficientCollateral();
+        }
+
+        Exp memory proRate = div_(
+            // solhint-disable-next-line not-rely-on-time
+            Exp({mantissa: (redemptionTimestamp - block.timestamp)}),
+            Exp({mantissa: (YEAR_SECONDS)})
+        );
+
+        Exp memory protocolShareProRated = mul_(
+            Exp({mantissa: servicingFee}),
+            proRate
+        );
+
+        uint256 protocolMintTokens = mul_ScalarTruncate(
+            protocolShareProRated,
+            amount
+        );
+        uint256 minterTokens = amount - protocolMintTokens;
+
+        uint256 protocolMintTokensValue = termRepoToken.mintTokens(
+            termController.getTreasuryAddress(),
+            protocolMintTokens
+        );
+        uint256 minterTokensValue = termRepoToken.mintTokens(
+            msg.sender,
+            minterTokens
+        );
+        termRepoToken.decrementMintExposureCap(amount);
+
+        uint256 totalMintValue = protocolMintTokensValue + minterTokensValue;
+
+        // slither-disable-start reentrancy-benign
+        repurchaseExposureLedger[borrower] += totalMintValue;
+
+        totalOutstandingRepurchaseExposure += totalMintValue;
+        // slither-disable-end reentrancy-benign
+
+        assert(_isTermRepoBalanced());
+
+        emitter.emitMintExposure(
+            termRepoId,
+            borrower,
+            minterTokens,
+            protocolMintTokens,
+            totalMintValue
+        );
+    }
+
+    function _handleCollateral(
+        address borrower, 
+        address sender,
+        uint256[] calldata collateralAmounts
+    ) private returns (uint256 maxMintValue) {
+        for (uint256 i = 0; i < collateralAmounts.length; ++i) {
+            termRepoCollateralManager.mintOpenExposureLockCollateral(
+                borrower,
+                sender,
+                termRepoCollateralManager.collateralTokens(i),
+                collateralAmounts[i]
+            );
+            uint256 maxTokensFromCollateral = truncate(
+                div_(
+                    termRepoCollateralManager.calculateMintableExposure(
+                        termRepoCollateralManager.collateralTokens(i),
+                        collateralAmounts[i]
+                    ),
+                    Exp({mantissa: termRepoToken.redemptionValue()})
+                )
+            );
+            maxMintValue += maxTokensFromCollateral;
+        }
+    }
+
     /// @notice Truncation is by 4 decimal places due to the assumption that number of participants < 10000
     function _isTermRepoBalanced() internal view returns (bool) {
         if (shortfallHaircutMantissa == 0) {
-            return
-                (totalOutstandingRepurchaseExposure +
-                    totalRepurchaseCollected) /
-                    (10 ** 4) ==
-                termRepoToken.totalRedemptionValue() / (10 ** 4);
+            uint256 totalLiquidity = totalOutstandingRepurchaseExposure + totalRepurchaseCollected;
+            uint256 totalRedemptionValue = termRepoToken.totalRedemptionValue();
+            if (totalLiquidity >= totalRedemptionValue) {
+                return totalLiquidity - totalRedemptionValue <= termRepoBalancedThreshold;
+            } else {
+                return totalRedemptionValue - totalLiquidity <= termRepoBalancedThreshold;
+            }
+      
         }
-
-        // @note in the case of shortfall, purchase currency in termRepoLocker must balance the pro rata redemption value of remaining term repo tokens
-        return
-            (totalRepurchaseCollected) / (10 ** 4) ==
-            mul_ScalarTruncate(
+        else {
+            uint256 haircutRedemptionValue = mul_ScalarTruncate(
                 Exp({mantissa: shortfallHaircutMantissa}),
                 termRepoToken.totalRedemptionValue()
-            ) /
-                (10 ** 4);
+            );
+            if (totalRepurchaseCollected >= haircutRedemptionValue) {
+                return totalRepurchaseCollected - haircutRedemptionValue <= termRepoBalancedThreshold;
+            } else {
+                return haircutRedemptionValue - totalRepurchaseCollected <= termRepoBalancedThreshold;
+            }
+
+        }
     }
 
     function _getMaxRepaymentAroundRollover(
@@ -779,6 +923,10 @@ contract TermRepoServicer is
             outstandingRolloverAmount = 0;
         } else {
             outstandingRolloverAmount = rolloverElection.rolloverAmount;
+        }
+
+        if (repurchaseExposureLedger[borrower] < outstandingRolloverAmount) {
+            return 0;
         }
 
         return repurchaseExposureLedger[borrower] - outstandingRolloverAmount;

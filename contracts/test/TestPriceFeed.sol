@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 
@@ -85,5 +85,9 @@ contract TestPriceFeed is AggregatorV3Interface {
 
     function setStartedAt(uint256 startedAt_) public {
         _startedAt = startedAt_;
+    }
+
+    function setUpdatedAt(uint256 updatedAt_) public {
+        _updatedAt = updatedAt_;
     }
 }

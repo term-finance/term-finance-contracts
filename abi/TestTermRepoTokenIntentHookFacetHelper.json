@@ -1,0 +1,1218 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "AddressEmptyCode",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AfterMaturity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "AlreadyInitialized",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "signer",
+        "type": "address"
+      }
+    ],
+    "name": "AlreadyPreSigned",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ECDSAInvalidSignature",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "length",
+        "type": "uint256"
+      }
+    ],
+    "name": "ECDSAInvalidSignatureLength",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "s",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ECDSAInvalidSignatureS",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FeeRecipientAlreadyApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InputOutputTokenCollision",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "balance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "needed",
+        "type": "uint256"
+      }
+    ],
+    "name": "InsufficientBalance",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InsufficientFundsRetrieved",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "capacityRemaining",
+        "type": "uint256"
+      }
+    ],
+    "name": "InsufficientRemainingCapacity",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidCollateralAmountsInput",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidDiscountRate",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidFee",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidFeeRecipient",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidFillAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidMinSalt",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidOfferRate",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidOrderStatus",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "message",
+        "type": "string"
+      }
+    ],
+    "name": "InvalidParameters",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidPurchaseTokenAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidRepoId",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidRetrieveFundsFunction",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidRetrieveFundsListLength",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "expected",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "actual",
+        "type": "address"
+      }
+    ],
+    "name": "InvalidSender",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidSignature",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "expected",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "actual",
+        "type": "address"
+      }
+    ],
+    "name": "InvalidTaker",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidTermController",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "MakerCannotBeTaker",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OrderCancelled",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "OrderExpired",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "RetrieveFundsNotSpecified",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "bits",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "SafeCastOverflowedUintDowncast",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "SafeERC20FailedOperation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TermControllerAlreadyApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnsupportedHookSelector",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UnsupportedSelector",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      }
+    ],
+    "name": "addApprovedFeeRecipient",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "controller",
+        "type": "address"
+      }
+    ],
+    "name": "addApprovedTermController",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "repoToken",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "makerAssetIsPurchaseToken",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "purchaseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "discountRate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "feeRecipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "salt",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes4",
+                "name": "method",
+                "type": "bytes4"
+              },
+              {
+                "internalType": "address",
+                "name": "target",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "additionalCalldata",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct ITermIntent.RetrieveFundsStruct",
+            "name": "retrieveFunds",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct ITermIntent.RepoTokenSwapOrder",
+        "name": "order",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          {
+            "internalType": "enum ITermIntent.SignatureType",
+            "name": "sigType",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes",
+            "name": "sigData",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ITermIntent.Signature",
+        "name": "signature",
+        "type": "tuple"
+      }
+    ],
+    "name": "cancelRepoTokenSwap",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "clearActiveFlashLoanBorrower",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "inputToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxInputAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "outputToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minOutputAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes4",
+        "name": "selector",
+        "type": "bytes4"
+      },
+      {
+        "internalType": "address",
+        "name": "targetAddress",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "additionalCalldata",
+        "type": "bytes"
+      }
+    ],
+    "name": "generateActionCalldata",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "expectedInputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "expectedOutputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isDeterministic",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PreviewAction",
+        "name": "",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "repoToken",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "makerAssetIsPurchaseToken",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "purchaseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "discountRate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "feeRecipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "salt",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes4",
+                "name": "method",
+                "type": "bytes4"
+              },
+              {
+                "internalType": "address",
+                "name": "target",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "additionalCalldata",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct ITermIntent.RetrieveFundsStruct",
+            "name": "retrieveFunds",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct ITermIntent.RepoTokenSwapOrder",
+        "name": "order",
+        "type": "tuple"
+      }
+    ],
+    "name": "getSwapOrderHash",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "maker",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IERC20",
+        "name": "makerToken",
+        "type": "address"
+      },
+      {
+        "internalType": "contract IERC20",
+        "name": "takerToken",
+        "type": "address"
+      }
+    ],
+    "name": "getSwapOrderMakerTokenPairMinSaltValue",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "name": "previewMapping",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "targetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "additionalCalldata",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ActionHookInput",
+        "name": "actionHookInput",
+        "type": "tuple"
+      }
+    ],
+    "name": "previewSwapRepoToken",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "expectedInputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "expectedOutputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isDeterministic",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PreviewAction",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "orderHash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "revokePreSignedSwapOrderHash",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "borrower",
+        "type": "address"
+      }
+    ],
+    "name": "setActiveFlashLoanBorrower",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "emitter",
+        "type": "address"
+      }
+    ],
+    "name": "setEmitter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "repoToken",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "makerAssetIsPurchaseToken",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "purchaseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "discountRate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "feeRecipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "salt",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes4",
+                "name": "method",
+                "type": "bytes4"
+              },
+              {
+                "internalType": "address",
+                "name": "target",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "additionalCalldata",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct ITermIntent.RetrieveFundsStruct",
+            "name": "retrieveFunds",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct ITermIntent.RepoTokenSwapOrder",
+        "name": "order",
+        "type": "tuple"
+      }
+    ],
+    "name": "setPreSignedSwapHash",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "orderHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "signer",
+        "type": "address"
+      }
+    ],
+    "name": "setPreSignedSwapOrder",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "makerToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "takerToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minValidSalt",
+        "type": "uint256"
+      }
+    ],
+    "name": "setSwapOrderMakerTokenPairMinSaltValue",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "repoToken",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "makerAssetIsPurchaseToken",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "purchaseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "discountRate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "feeRecipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "salt",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes4",
+                "name": "method",
+                "type": "bytes4"
+              },
+              {
+                "internalType": "address",
+                "name": "target",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "additionalCalldata",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct ITermIntent.RetrieveFundsStruct",
+            "name": "retrieveFunds",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct ITermIntent.RepoTokenSwapOrder",
+        "name": "order",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fillAmount",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "enum ITermIntent.SignatureType",
+            "name": "sigType",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes",
+            "name": "sigData",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ITermIntent.Signature",
+        "name": "signature",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bool",
+        "name": "usePermit2",
+        "type": "bool"
+      }
+    ],
+    "name": "swapRepoToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "repoToken",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "makerAssetIsPurchaseToken",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "purchaseTokenAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "discountRate",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "maker",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "taker",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "makerFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "takerFee",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "feeRecipient",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expiry",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "salt",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "bytes4",
+                "name": "method",
+                "type": "bytes4"
+              },
+              {
+                "internalType": "address",
+                "name": "target",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "additionalCalldata",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct ITermIntent.RetrieveFundsStruct",
+            "name": "retrieveFunds",
+            "type": "tuple"
+          }
+        ],
+        "internalType": "struct ITermIntent.RepoTokenSwapOrder",
+        "name": "order",
+        "type": "tuple"
+      },
+      {
+        "internalType": "address",
+        "name": "taker",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "fillAmount",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "enum ITermIntent.SignatureType",
+            "name": "sigType",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes",
+            "name": "sigData",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ITermIntent.Signature",
+        "name": "signature",
+        "type": "tuple"
+      }
+    ],
+    "name": "swapRepoToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "inputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "maxInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "outputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "minOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "targetAddress",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes",
+            "name": "additionalCalldata",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct ActionHookInput",
+        "name": "input",
+        "type": "tuple"
+      }
+    ],
+    "name": "swapRepoTokenHook",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "version",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

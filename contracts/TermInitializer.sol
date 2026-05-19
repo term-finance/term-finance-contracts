@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.22;
 
 import {ITermController} from "./interfaces/ITermController.sol";
 import {ITermEventEmitter} from "./interfaces/ITermEventEmitter.sol";
@@ -45,6 +45,7 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
     ITermController internal controller;
     ITermEventEmitter internal emitter;
     TermPriceConsumerV3 internal priceOracle;
+    address internal termDiamond;
     bool internal deployingPaused;
 
     // ========================================================================
@@ -73,11 +74,13 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
     function pairTermContracts(
         ITermController controller_,
         ITermEventEmitter emitter_,
-        TermPriceConsumerV3 priceOracle_
+        TermPriceConsumerV3 priceOracle_,
+        address termDiamond_
     ) external onlyRole(DEPLOYER_ROLE) {
         controller = controller_;
         emitter = emitter_;
         priceOracle = priceOracle_;
+        termDiamond = termDiamond_;
     }
 
     // ========================================================================
@@ -89,9 +92,11 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
         TermContractGroup calldata termContractGroup,
         address devOpsMultiSig,
         address adminWallet,
+        address deployerWallet,
         string memory termVersion,
         string memory auctionVersion
     ) external onlyRole(INITIALIZER_APPROVAL_ROLE) whileDeployingNotPaused {
+        require(deployerWallet != address(0), "Zero address deployer wallet");
         require(
             controller.isTermDeployed(
                 address(termContractGroup.termRepoServicer)
@@ -170,10 +175,20 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             address(termContractGroup.auction) != address(0),
             "Zero Address auction"
         );
+        require(
+            !controller.registeredRepoIds(termContractGroup.termRepoServicer.termRepoId()),
+            "Duplicate Repo ID"
+        );
+        require(
+            !controller.registeredAuctionIds((termContractGroup.termAuctionBidLocker).termAuctionId()),
+            "Duplicate Auction ID"
+        );
 
         emitter.pairTermContract(address(termContractGroup.termRepoLocker));
 
         controller.pairAuction(address(termContractGroup.auction));
+        controller.registerRepoId(termContractGroup.termRepoServicer.termRepoId());
+        controller.registerAuctionId(termContractGroup.termAuctionBidLocker.termAuctionId());
 
         termContractGroup.termRepoLocker.pairTermContracts(
             address(termContractGroup.termRepoCollateralManager),
@@ -201,7 +216,8 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             termContractGroup.termRepoCollateralManager,
             priceOracle,
             devOpsMultiSig,
-            adminWallet
+            adminWallet,
+            termDiamond
         );
 
         emitter.pairTermContract(
@@ -212,7 +228,8 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             emitter,
             termContractGroup.termRepoServicer,
             devOpsMultiSig,
-            adminWallet
+            adminWallet,
+            termDiamond
         );
 
         emitter.pairTermContract(address(termContractGroup.auction));
@@ -224,6 +241,7 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             termContractGroup.termAuctionOfferLocker,
             devOpsMultiSig,
             adminWallet,
+            deployerWallet,
             auctionVersion
         );
 
@@ -232,11 +250,12 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             address(termContractGroup.termRepoLocker),
             address(termContractGroup.termRepoCollateralManager),
             address(termContractGroup.termRepoToken),
+            termDiamond,
             address(termContractGroup.termAuctionOfferLocker),
             address(termContractGroup.auction),
             address(termContractGroup.rolloverManager),
             devOpsMultiSig,
-            adminWallet,
+            deployerWallet,
             termVersion
         );
 
@@ -251,6 +270,7 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             address(controller),
             address(priceOracle),
             address(termContractGroup.rolloverManager),
+            termDiamond,
             devOpsMultiSig,
             adminWallet
         );
@@ -258,6 +278,7 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
         emitter.pairTermContract(address(termContractGroup.rolloverManager));
         termContractGroup.rolloverManager.pairTermContracts(
             address(termContractGroup.termRepoServicer),
+            termDiamond,
             emitter,
             devOpsMultiSig,
             adminWallet
@@ -273,8 +294,10 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
         TermAuction auction,
         address devOpsMultiSig,
         address adminWallet,
+        address deployerWallet,
         string calldata auctionVersion
     ) external onlyRole(INITIALIZER_APPROVAL_ROLE) whileDeployingNotPaused {
+        require(deployerWallet != address(0), "Zero address deployer wallet");
         require(
             controller.isTermDeployed(address(termRepoServicer)),
             "Non-Term TRS"
@@ -302,13 +325,15 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             address(termAuctionOfferLocker) != address(0),
             "Zero Address termAuctionOfferLocker"
         );
+        require(address(auction) != address(0), "Zero Address auction");
+
         require(
-            address(auction) != address(0),
-            "Zero Address auction"
+            !controller.registeredAuctionIds((termAuctionBidLocker).termAuctionId()),
+            "Duplicate Auction ID"
         );
 
-
         controller.pairAuction(address(auction));
+        controller.registerAuctionId(termAuctionBidLocker.termAuctionId());
 
         emitter.pairTermContract(address(termAuctionBidLocker));
         termAuctionBidLocker.pairTermContracts(
@@ -318,7 +343,8 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             termRepoCollateralManager,
             priceOracle,
             devOpsMultiSig,
-            adminWallet
+            adminWallet,
+            termDiamond
         );
 
         emitter.pairTermContract(address(termAuctionOfferLocker));
@@ -327,7 +353,8 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             emitter,
             termRepoServicer,
             devOpsMultiSig,
-            adminWallet
+            adminWallet,
+            termDiamond
         );
 
         emitter.pairTermContract(address(auction));
@@ -339,6 +366,7 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             termAuctionOfferLocker,
             devOpsMultiSig,
             adminWallet,
+            deployerWallet,
             auctionVersion
         );
 

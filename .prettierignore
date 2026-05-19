@@ -10,3 +10,4 @@ typechain-types
 .yarn
 yarn.lock
 .openzeppelin
+audits

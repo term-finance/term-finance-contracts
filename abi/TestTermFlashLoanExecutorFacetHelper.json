@@ -1,0 +1,766 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "agg",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "target",
+        "type": "address"
+      }
+    ],
+    "name": "AddressEmptyCode",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "EmptyActions",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "actionIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "ExpectedInputExceedsMax",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "actionIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "ExpectedOutputBelowMin",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FailedCall",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FinalOutputTokenMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FlashloanAlreadyActive",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FlashloanNotActive",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "FlashloanRepayIncompatible",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "IncorrectFlashLoanAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "actionIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "InputAmountExceeded",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "actionIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "InputTokenMatchesOutputToken",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "actionIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "InputTokenMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "balance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "needed",
+        "type": "uint256"
+      }
+    ],
+    "name": "InsufficientBalance",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidCaller",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidFlashLoanReceived",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidFlashloanAsset",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidInitiator",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "actionIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "InvalidInputToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NoTokensReceived",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "actionIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "OutputAmountInsufficient",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "actionIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "OutputTokenMismatch",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint8",
+        "name": "bits",
+        "type": "uint8"
+      },
+      {
+        "internalType": "uint256",
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "SafeCastOverflowedUintDowncast",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "SafeERC20FailedOperation",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "SelectorNotFound",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "UserNotFlashLoanInitiator",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "actionIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "ZeroInputToken",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "actionIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "ZeroOutputToken",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "clearFlashLoanBorrower",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "sel",
+        "type": "bytes4"
+      }
+    ],
+    "name": "facetAddress",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "flashLoanRoute",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "flashLoanInstaData",
+            "type": "bytes"
+          },
+          {
+            "internalType": "address",
+            "name": "flashLoanToken",
+            "type": "address"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "inputToken",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "maxInputAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "outputToken",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "minOutputAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "outputTokenAmountIn",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "usePermit2ForOutputTokenIn",
+                "type": "bool"
+              },
+              {
+                "internalType": "bytes4",
+                "name": "method",
+                "type": "bytes4"
+              },
+              {
+                "internalType": "address",
+                "name": "targetAddress",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "additionalCalldata",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct TermFlashLoanExecutorFacet.Action[]",
+            "name": "actions",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "bool",
+            "name": "backPropagate",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct TermFlashLoanExecutorFacet.FlashExecuteRequest",
+        "name": "flashExecuteRequest",
+        "type": "tuple"
+      }
+    ],
+    "name": "flashExecute",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "assets",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "amounts",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "premiums",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "address",
+        "name": "initiator",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "flashExecuteCallback",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "success",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes4",
+        "name": "sel",
+        "type": "bytes4"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "name": "generateActionCalldata",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "expectedInputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "expectedOutputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isDeterministic",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PreviewAction",
+        "name": "",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "tokenIn",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "burnAmt",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "mintAmt",
+        "type": "uint256"
+      }
+    ],
+    "name": "mockSwap",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "flashLoanToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "flashLoanAmount",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "inputToken",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "maxInputAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "outputToken",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "minOutputAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "outputTokenAmountIn",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "usePermit2ForOutputTokenIn",
+                "type": "bool"
+              },
+              {
+                "internalType": "bytes4",
+                "name": "method",
+                "type": "bytes4"
+              },
+              {
+                "internalType": "address",
+                "name": "targetAddress",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "additionalCalldata",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct TermFlashLoanExecutorFacet.Action[]",
+            "name": "actions",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "bool",
+            "name": "backPropagate",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct TermFlashLoanExecutorFacet.ExecutionPlan",
+        "name": "executionPlan",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amountOwing",
+        "type": "uint256"
+      }
+    ],
+    "name": "quoteExecutionPlan",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "user",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "flashLoanToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "flashLoanAmount",
+            "type": "uint256"
+          },
+          {
+            "components": [
+              {
+                "internalType": "address",
+                "name": "inputToken",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "maxInputAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "address",
+                "name": "outputToken",
+                "type": "address"
+              },
+              {
+                "internalType": "uint256",
+                "name": "minOutputAmount",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "outputTokenAmountIn",
+                "type": "uint256"
+              },
+              {
+                "internalType": "bool",
+                "name": "usePermit2ForOutputTokenIn",
+                "type": "bool"
+              },
+              {
+                "internalType": "bytes4",
+                "name": "method",
+                "type": "bytes4"
+              },
+              {
+                "internalType": "address",
+                "name": "targetAddress",
+                "type": "address"
+              },
+              {
+                "internalType": "bytes",
+                "name": "additionalCalldata",
+                "type": "bytes"
+              }
+            ],
+            "internalType": "struct TermFlashLoanExecutorFacet.Action[]",
+            "name": "actions",
+            "type": "tuple[]"
+          },
+          {
+            "internalType": "bool",
+            "name": "backPropagate",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct TermFlashLoanExecutorFacet.ExecutionPlan",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "sel",
+        "type": "bytes4"
+      },
+      {
+        "internalType": "address",
+        "name": "f",
+        "type": "address"
+      }
+    ],
+    "name": "setFacetAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "b",
+        "type": "address"
+      }
+    ],
+    "name": "setFlashLoanBorrower",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "sel",
+        "type": "bytes4"
+      },
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "expectedInputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedInputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "expectedOutputToken",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "expectedOutputAmount",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "isDeterministic",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct PreviewAction",
+        "name": "preview",
+        "type": "tuple"
+      },
+      {
+        "internalType": "bytes",
+        "name": "data_",
+        "type": "bytes"
+      }
+    ],
+    "name": "setMockAction",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
