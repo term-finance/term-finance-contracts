@@ -38,7 +38,7 @@ rule onlyPairTermContractsChangesIsTermContractPaired(
 ) filtered { f ->
     !f.isView &&
     f.contract == currentContract &&
-    f.selector != sig:pairTermContracts(address,address,address,address).selector &&
+    f.selector != sig:pairTermContracts(address,address,address,address,address).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
     f.selector != sig:initialize(string,address,address,address,address).selector
 } {

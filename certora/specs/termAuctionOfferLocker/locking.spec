@@ -90,7 +90,7 @@ invariant offerCountAlwaysMatchesNumberOfStoredOffers()
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
     f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,address,address[],address).selector &&
     f.selector != sig:getAllOffers(bytes32[],bytes32[]).selector &&
-    f.selector != sig:pairTermContracts(address,address,address,address,address).selector
+    f.selector != sig:pairTermContracts(address,address,address,address,address,address).selector
   }   { preserved {
       require(minimumTenderAmount() > 0);
     }
