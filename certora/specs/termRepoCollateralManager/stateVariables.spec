@@ -252,7 +252,7 @@ rule onlyAllowedMethodsChangeTermContracts(
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,address).selector
+    f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,address,address).selector
 } {
     address servicerBefore = termRepoServicerAddress();
     address oracleBefore = termPriceOracleAddress();
