@@ -3,13 +3,11 @@ import "../methods/emitMethods.spec";
 
 methods {
     function hasRole(bytes32, address) external returns (bool) envfree;
-    function ADMIN_ROLE() external returns (bytes32) envfree;
     function AUCTION_LOCKER() external returns (bytes32) envfree;
     function AUCTIONEER() external returns (bytes32) envfree;
     function COLLATERAL_MANAGER() external returns (bytes32) envfree;
     function DEVOPS_ROLE() external returns (bytes32) envfree;
     function INITIALIZER_ROLE() external returns (bytes32) envfree;
-    function SPECIALIST_ROLE() external returns (bytes32) envfree;
     function ROLLOVER_MANAGER() external returns (bytes32) envfree;
     function ROLLOVER_TARGET_AUCTIONEER_ROLE() external returns (bytes32) envfree;
 }
@@ -30,12 +28,10 @@ rule onlyRoleCanCallRevert(method f, calldataarg args, env e) filtered {
     currentContract.f@withrevert(e,args);
 
     assert !lastReverted => 
-        hasRole(ADMIN_ROLE(),e.msg.sender)
-        || hasRole(AUCTION_LOCKER(),e.msg.sender)
+        hasRole(AUCTION_LOCKER(),e.msg.sender)
         || hasRole(AUCTIONEER(),e.msg.sender)
         || hasRole(COLLATERAL_MANAGER(),e.msg.sender)
         || hasRole(DEVOPS_ROLE(),e.msg.sender)
-        || hasRole(SPECIALIST_ROLE(),e.msg.sender)
         || hasRole(ROLLOVER_MANAGER(),e.msg.sender)
         || hasRole(ROLLOVER_TARGET_AUCTIONEER_ROLE(),e.msg.sender)
         || hasRole(INITIALIZER_ROLE(),e.msg.sender);
@@ -57,12 +53,10 @@ rule onlyRoleCanCallStorage(method f, calldataarg args, env e) filtered {
     currentContract.f(e,args);
     storage storeAfter = lastStorage;
 
-    assert storeBefore != storeAfter => hasRole(ADMIN_ROLE(),e.msg.sender)
-        || hasRole(AUCTION_LOCKER(),e.msg.sender)
+    assert storeBefore != storeAfter => hasRole(AUCTION_LOCKER(),e.msg.sender)
         || hasRole(AUCTIONEER(),e.msg.sender)
         || hasRole(COLLATERAL_MANAGER(),e.msg.sender)
         || hasRole(DEVOPS_ROLE(),e.msg.sender)
-        || hasRole(SPECIALIST_ROLE(),e.msg.sender)
         || hasRole(ROLLOVER_MANAGER(),e.msg.sender)
         || hasRole(ROLLOVER_TARGET_AUCTIONEER_ROLE(),e.msg.sender)
         || hasRole(INITIALIZER_ROLE(),e.msg.sender);
