@@ -83,3 +83,11 @@
 
 
 **Full Changelog**: https://github.com/term-finance/term-finance/compare/2.0.3...2.1.0
+
+## 2.1.1
+
+### What's Changed
+* mintAndSellRepoToken emits intentFilled by @aazhou1 in https://github.com/term-finance/term-finance/pull/1666
+
+
+**Full Changelog**: https://github.com/term-finance/term-finance/compare/2.1.0...2.1.1

@@ -27,9 +27,11 @@ contract TestMockRepoServicerFull {
     uint256 private _redemptionTimestamp;
     uint256 private _servicingFee;
     uint256 private _repurchaseObligation;
+    bytes32 private _termRepoId;
 
     // ---- setters ----
 
+    function setTermRepoId(bytes32 id) external { _termRepoId = id; }
     function setPurchaseToken(address t) external { _purchaseToken = t; }
     function setTermController(address c) external { _termController = c; }
     function setCollateralManager(address m) external { _collateralManager = m; }
@@ -41,6 +43,10 @@ contract TestMockRepoServicerFull {
     function setRepurchaseObligation(uint256 amount) external { _repurchaseObligation = amount; }
 
     // ---- ITermRepoServicer view functions ----
+
+    function termRepoId() external view returns (bytes32) {
+        return _termRepoId;
+    }
 
     function purchaseToken() external view returns (address) {
         return _purchaseToken;

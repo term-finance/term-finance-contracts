@@ -3,6 +3,10 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
 import {
+  MockContract,
+  deployMockContract,
+} from "@term-finance/ethers-mock-contract/compat/waffle";
+import {
   TestToken,
 } from "../typechain-types";
 
@@ -248,6 +252,7 @@ describe("TermStrategyFacet Tests", () => {
     let mockServicer: any;
     let mockStrategyFull: any;
     let collateralToken: TestToken;
+    let mockTermEventEmitter: MockContract;
 
     const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 
@@ -329,6 +334,14 @@ describe("TermStrategyFacet Tests", () => {
         await mockStrategyFull.getAddress(),
         ethers.parseEther("500"),
       );
+
+      // Wire up a mock event emitter so mintAndSellRepoToken's emitIntentFilled call succeeds
+      const eventEmitterABI = [
+        "function emitIntentFilled(bytes32,bytes32,address,address,address,address,address,uint256,uint256,uint256,uint256,address,uint256,uint256,uint256) external",
+      ];
+      mockTermEventEmitter = await deployMockContract(wallet1, eventEmitterABI);
+      await mockTermEventEmitter.mock.emitIntentFilled.returns();
+      await termStrategyFacet.setEmitter(await mockTermEventEmitter.getAddress());
     });
 
     it("should revert InvalidTermController when strategy controller is not approved", async () => {
