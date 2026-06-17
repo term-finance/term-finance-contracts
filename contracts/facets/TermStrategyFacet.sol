@@ -363,6 +363,11 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
                 )
             );
 
+        uint256 proratedFee = mul_ScalarTruncate(
+            proRatedServicingFee,
+            amountOfRepoTokensToMint
+        );
+
         uint256 repoTokenBalanceBeforeMint = termRepoTokenMinted.balanceOf(address(this));
         
         _termRepoServicer.mintOpenExposure(
@@ -410,6 +415,21 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
         if (payoutToUser) {
             IERC20(asset).safeTransfer(borrower, proceeds);
         }
+
+        _emitIntentFilled(
+            bytes32(0), // orderHash is not applicable for this flow
+            _termRepoServicer,
+            address(strategy),
+            borrower,
+            discountRate + discountRateMarkup,
+            proceeds,
+            actualMintedAmount,
+            proratedFee,
+            _termRepoServicer.termController().getTreasuryAddress(), 
+            0, // originalOrderAmount is not applicable for this flow
+            0, // expiry is not applicable for this flow
+            0 // salt is not applicable for this flow
+        );
     }
 
     function _validateStrategy(IStrategy strategy, IStrategy.StrategyState memory strategyState) private view {
@@ -463,5 +483,40 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
         }
 
         return collateralAmounts;
+    }
+
+    function _emitIntentFilled(
+        bytes32 orderHash,
+        ITermRepoServicer servicer,
+        address maker,
+        address taker,
+        uint256 offerRate,
+        uint256 fillAmount,
+        uint256 termRepoTokenFillAmount,
+        uint256 proratedBorrowFee,
+        address feeRecipient,
+        uint256 originalOrderAmount,
+        uint256 expiry,
+        uint256 salt
+    ) private {
+        TermStorage storage s = LibTermStorage.termStorage();
+        address purchaseToken = servicer.purchaseToken();
+        s.emitter.emitIntentFilled(
+            orderHash,
+            servicer.termRepoId(),
+            purchaseToken,
+            maker,
+            taker,
+            purchaseToken,
+            address(servicer.termRepoToken()),
+            offerRate,
+            fillAmount,
+            termRepoTokenFillAmount,
+            proratedBorrowFee,
+            feeRecipient,
+            originalOrderAmount,
+            expiry,
+            salt
+        );
     }
 }
