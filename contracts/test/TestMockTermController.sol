@@ -7,6 +7,15 @@ contract TestMockTermController {
     mapping(address => bool) public approvedVaults;
     mapping(address => bool) private _deployedTerms;
     mapping(address => bool) private _factoryDeployed;
+    address private _treasuryAddress;
+
+    function setTreasuryAddress(address t) external {
+        _treasuryAddress = t;
+    }
+
+    function getTreasuryAddress() external view returns (address) {
+        return _treasuryAddress;
+    }
 
      function setFactoryDeployed(address factory, bool deployed) external {
         _factoryDeployed[factory] = deployed;
