@@ -12,12 +12,14 @@ jobs:
       - uses: actions/checkout@master
         with:
           fetch-depth: 0
-      - run: corepack enable
+      - id: nodeversion
+        run: echo "version=$(grep nodejs .tool-versions | sed -e 's/[^[:space:]]*[[:space:]]*//')" >> $GITHUB_OUTPUT
       - uses: actions/setup-node@v4
         with:
-          node-version: "18.15"
+          node-version: ${{ steps.nodeversion.outputs.version }}
           cache: yarn
-      - run: yarn install  --immutable
+      - run: corepack enable
+      - run: yarn install --immutable
       - run: yarn build
       - run: yarn check:coverage
         env:
@@ -52,6 +54,7 @@ jobs:
           - "termRepoServicer-stateVariables.conf"
           - "termRepoServicer.conf"
           - "termRepoToken.conf"
+      fail-fast: false
     steps:
       - uses: actions/checkout@master
         with:
