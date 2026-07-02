@@ -1,6 +1,7 @@
 using DummyERC20A as lockingAuctionPurchaseToken;
 using TermRepoServicer as repoServicerLocking;
 using TermRepoLocker as repoLockerOfferLocking;
+using TermController as controllerOfferLocker;
 
 /*
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -44,6 +45,7 @@ methods {
   function TermRepoLocker.SERVICER_ROLE() external returns (bytes32) envfree;
   function TermRepoLocker.hasRole(bytes32,address) external returns (bool) envfree;
   function TermRepoLocker.transfersPaused() external returns (bool) envfree;
+  function harnessTermControllerAddress() external returns (address) envfree;
 
 }
 
@@ -90,7 +92,9 @@ invariant offerCountAlwaysMatchesNumberOfStoredOffers()
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
     f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,address,address[],address).selector &&
     f.selector != sig:getAllOffers(bytes32[],bytes32[]).selector &&
-    f.selector != sig:pairTermContracts(address,address,address,address,address).selector
+    f.selector != sig:pairTermContracts(address,address,address,address,address,address).selector &&
+    f.selector != sig:lockOffersWithReferral(address,TermAuctionOfferLockerHarness.TermAuctionOfferSubmission[],address).selector &&
+    f.selector != sig:unlockOffers(address,bytes32[]).selector
   }   { preserved {
       require(minimumTenderAmount() > 0);
     }
@@ -255,18 +259,21 @@ rule lockOffersRevertConditions(
   bool purchaseTokenNotApproved = offerSubmissions[0].purchaseToken != purchaseToken() ? true : false; // PurchaseTokenNotApproved
   bool offerAmountTooLow = offerSubmissions[0].amount < minimumTenderAmount(); // OfferAmountTooLow
   bool purchaseTokenBalanceTooLow = existingOfferAmount < offerSubmissions[0].amount  && lockingAuctionPurchaseToken.balanceOf(offerSubmissions[0].offeror) < offerDiff;
-  bool purchaseTokenApprovalsTooLow = existingOfferAmount < offerSubmissions[0].amount && lockingAuctionPurchaseToken.allowance(offerSubmissions[0].offeror, repoLockerUnlocking) < offerDiff;
+  bool purchaseTokenApprovalsTooLow = existingOfferAmount < offerSubmissions[0].amount && lockingAuctionPurchaseToken.allowance(offerSubmissions[0].offeror, repoLockerOfferLocking) < offerDiff;
   bool lockerTransfersPaused = existingOfferAmount != offerSubmissions[0].amount && repoLockerOfferLocking.transfersPaused();
   bool repoServicerNotPairedToLocker = existingOfferAmount != offerSubmissions[0].amount && !repoLockerOfferLocking.hasRole(repoLockerOfferLocking.SERVICER_ROLE(), repoServicerLocking);
   bool offerLockerNotPairedToRepoServicer = existingOfferAmount != offerSubmissions[0].amount && !repoServicerLocking.hasRole(repoServicerLocking.AUCTION_LOCKER(), currentContract);
 
   bool nonZeroMsgValue = e.msg.value != 0;
 
+  require(harnessTermControllerAddress() == controllerOfferLocker); // Bounds for test
+  bool globalPaused = controllerOfferLocker.termContractsPaused(e);
+
   bool isExpectedToRevert =
     auctionNotOpen || lockingPaused || reentrant || notSameOfferor ||
     offerCountReached || offerNotOwned || editingOfferNotOwned || offerIdAlreadyExists ||
-    purchaseTokenNotApproved || offerAmountTooLow || purchaseTokenBalanceTooLow || purchaseTokenApprovalsTooLow || lockerTransfersPaused 
-    || repoServicerNotPairedToLocker || offerLockerNotPairedToRepoServicer || nonZeroMsgValue;
+    purchaseTokenNotApproved || offerAmountTooLow || purchaseTokenBalanceTooLow || purchaseTokenApprovalsTooLow || lockerTransfersPaused
+    || repoServicerNotPairedToLocker || offerLockerNotPairedToRepoServicer || nonZeroMsgValue || globalPaused;
 
   lockOffers@withrevert(e, offerSubmissions);
   assert lastReverted <=> isExpectedToRevert,
@@ -421,18 +428,21 @@ rule lockOffersWithReferralRevertConditions(
     && existingOfferor != offerSubmissions[0].offeror; // OfferNotOwned
   
   bool purchaseTokenBalanceTooLow = existingOfferAmount < offerSubmissions[0].amount  && lockingAuctionPurchaseToken.balanceOf(offerSubmissions[0].offeror) < offerDiff;
-  bool purchaseTokenApprovalsTooLow = existingOfferAmount < offerSubmissions[0].amount && lockingAuctionPurchaseToken.allowance(offerSubmissions[0].offeror, repoLockerUnlocking) < offerDiff;
+  bool purchaseTokenApprovalsTooLow = existingOfferAmount < offerSubmissions[0].amount && lockingAuctionPurchaseToken.allowance(offerSubmissions[0].offeror, repoLockerOfferLocking) < offerDiff;
   bool lockerTransfersPaused = existingOfferAmount != offerSubmissions[0].amount && repoLockerOfferLocking.transfersPaused();
   bool repoServicerNotPairedToLocker = existingOfferAmount != offerSubmissions[0].amount && !repoLockerOfferLocking.hasRole(repoLockerOfferLocking.SERVICER_ROLE(), repoServicerLocking);
   bool offerLockerNotPairedToRepoServicer = existingOfferAmount != offerSubmissions[0].amount && !repoServicerLocking.hasRole(repoServicerLocking.AUCTION_LOCKER(), currentContract);
 
   bool nonZeroMsgValue = e.msg.value != 0;
 
+  require(harnessTermControllerAddress() == controllerOfferLocker); // Bounds for test
+  bool globalPausedReferral = controllerOfferLocker.termContractsPaused(e);
+
   bool isExpectedToRevert =
     auctionNotOpen || lockingPaused || reentrant || notSameOfferor || sameReferral ||
     offerCountReached || offerNotOwned || editingOfferNotOwned || offerIdAlreadyExists ||
-    purchaseTokenNotApproved || offerAmountTooLow || purchaseTokenBalanceTooLow || purchaseTokenApprovalsTooLow || lockerTransfersPaused 
-    || repoServicerNotPairedToLocker || offerLockerNotPairedToRepoServicer || nonZeroMsgValue;
+    purchaseTokenNotApproved || offerAmountTooLow || purchaseTokenBalanceTooLow || purchaseTokenApprovalsTooLow || lockerTransfersPaused
+    || repoServicerNotPairedToLocker || offerLockerNotPairedToRepoServicer || nonZeroMsgValue || globalPausedReferral;
 
   lockOffersWithReferral@withrevert(e, offerSubmissions, referrer);
   assert lastReverted <=> isExpectedToRevert,

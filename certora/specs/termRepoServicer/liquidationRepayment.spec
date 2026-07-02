@@ -3,6 +3,7 @@ using TermRepoRolloverManager as liquidationRepaymentExposureRolloverManager;
 using TermRepoCollateralManagerHarness as liquidationRepaymentExposureRepaymentCollateralManager;
 using TermRepoToken as liquidationRepaymentExposureRepoToken;
 using DummyERC20A as liquidationRepaymentExposureToken;
+using TermController as termControllerLiqRepayment;
 
 methods {
     
@@ -17,6 +18,7 @@ methods {
     function shortfallHaircutMantissa() external returns (uint256) envfree;
     function totalRepurchaseCollected() external returns (uint256) envfree;
     function isTermRepoBalanced() external returns (bool) envfree;
+    function termRepoBalancedThreshold() external returns (uint256) envfree;
 
     function TermRepoCollateralManagerHarness.SERVICER_ROLE() external returns(bytes32) envfree;
     function TermRepoCollateralManagerHarness.hasRole(bytes32,address) external returns (bool) envfree;
@@ -119,7 +121,10 @@ rule liquidatorCoverExposureRevertConditions(env e) {
     bool liquidatorTokenBalanceTooLow = liquidationRepaymentExposureToken.balanceOf(liquidator) < amountToCover;
     bool borrowBalancecLowerThanCoverAmount = getBorrowerRepurchaseObligation(borrower) < amountToCover;
 
-    bool isExpectedToRevert = payable || callerNotCollateralManager || servicerDoesNotHaveLockerServicerRole  || lockerTransfersPaused || liquidatorTokenBalanceTooLow || allowanceTooLow || borrowBalancecLowerThanCoverAmount ;
+    require(termControllerAddress() == termControllerLiqRepayment); // Bounds for test
+    bool globalPaused = termControllerLiqRepayment.termContractsPaused(e);
+
+    bool isExpectedToRevert = payable || callerNotCollateralManager || servicerDoesNotHaveLockerServicerRole  || lockerTransfersPaused || liquidatorTokenBalanceTooLow || allowanceTooLow || borrowBalancecLowerThanCoverAmount || globalPaused;
 
     liquidatorCoverExposure@withrevert(e, borrower, liquidator, amountToCover);
 
@@ -207,9 +212,11 @@ rule liquidatorCoverExposureWithRepoTokenRevertConditions(env e) {
     require(totalRepurchaseCollected() + amountOfRepoToken <= max_uint256 ); // Prevents totalRepurchaseCollected overflow errors;
     require (shortfallHaircutMantissa() == 0 ); // Assumption proven in rule shortfallHaircutMantissaAlwaysZeroBeforeRedemption in stateVariables.spec
     require(isTermRepoBalanced()); // Safe assumption that term repo must be balanced before transaction due to assertion in code.
-    require(liquidationRepaymentExposureRepoToken.totalSupply() * expScale <= max_uint256); // Prevents overflow of repo token redemption value calculation
+    require(liquidationRepaymentExposureRepoToken.totalSupply() * expScale * liquidationRepaymentExposureRepoToken.redemptionValue() <= max_uint256); // Prevents overflow of totalRedemptionValue()'s (totalSupply * expScale * redemptionValue) checked multiply, evaluated by _isTermRepoBalanced after the burn
+    require(amountOfRepoToken * expScale * liquidationRepaymentExposureRepoToken.redemptionValue() <= max_uint256); // Prevents overflow in burnAndReturnValue's (amount * expScale * redemptionValue) checked multiply (avoids safe_math_narrow_bv256 DUMP)
     require(liquidationRepaymentExposureRepoToken.mintExposureCap() + amountOfRepoToken <= max_uint256); // Prevents overflow of repo token mint exposure cap
     require(liquidationRepaymentExposureRepoToken.redemptionValue() > 10 ^ 4); // necessary for term repo balance to never fail
+    require(amountOfRepoToken <= liquidationRepaymentExposureRepoToken.totalSupply()); // burn cannot exceed total supply (amount > supply >= liquidator balance always reverts via liquidatorTokenBalanceTooLow); keeps (totalSupply - amountOfRepoToken) non-negative in the balance-diff narrowing below
 
     bool payable = e.msg.value > 0;
     bool callerNotCollateralManager = !hasRole(COLLATERAL_MANAGER(), e.msg.sender);
@@ -217,10 +224,15 @@ rule liquidatorCoverExposureWithRepoTokenRevertConditions(env e) {
     bool servicerNotHaveRepoTokenBurnerRole = !liquidationRepaymentExposureRepoToken.hasRole(liquidationRepaymentExposureRepoToken.BURNER_ROLE(), currentContract);
     bool liquidatorTokenBalanceTooLow = liquidationRepaymentExposureRepoToken.balanceOf(liquidator) < amountOfRepoToken;
     bool repoTokenBurningPaused = liquidationRepaymentExposureRepoToken.burningPaused();
-    bool termPoolBalanceThresholdBreached = ((totalOutstandingRepurchaseExposure() - amountToCover + totalRepurchaseCollected()) / 10 ^ 4) != (((((liquidationRepaymentExposureRepoToken.totalSupply() -  amountOfRepoToken) * expScale * liquidationRepaymentExposureRepoToken.redemptionValue()) / expScale ) / expScale) / 10 ^ 4);
+    mathint termBalanceThreshold = to_mathint(termRepoBalancedThreshold());
+    mathint termRepoBalanceDiff = (totalOutstandingRepurchaseExposure() - amountToCover + totalRepurchaseCollected()) - (((((liquidationRepaymentExposureRepoToken.totalSupply() -  amountOfRepoToken) * expScale * liquidationRepaymentExposureRepoToken.redemptionValue()) / expScale ) / expScale));
+    bool termPoolBalanceThresholdBreached = termRepoBalanceDiff > termBalanceThreshold || termRepoBalanceDiff < -termBalanceThreshold;
     bool borrowBalanceLowerThanCoverAmount = borrowerBalance < amountToCover;
 
-    bool isExpectedToRevert = payable ||   callerNotCollateralManager || liquidatorIsAddressZero || servicerNotHaveRepoTokenBurnerRole  || liquidatorTokenBalanceTooLow  || repoTokenBurningPaused  ||  termPoolBalanceThresholdBreached ||  borrowBalanceLowerThanCoverAmount;
+    require(termControllerAddress() == termControllerLiqRepayment); // Bounds for test
+    bool globalPausedRepoToken = termControllerLiqRepayment.termContractsPaused(e);
+
+    bool isExpectedToRevert = payable ||   callerNotCollateralManager || liquidatorIsAddressZero || servicerNotHaveRepoTokenBurnerRole  || liquidatorTokenBalanceTooLow  || repoTokenBurningPaused  ||  termPoolBalanceThresholdBreached ||  borrowBalanceLowerThanCoverAmount || globalPausedRepoToken;
 
     liquidatorCoverExposureWithRepoToken@withrevert(e, borrower, liquidator, amountOfRepoToken);
 

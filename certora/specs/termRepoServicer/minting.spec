@@ -6,7 +6,6 @@ using TermRepoToken as mintingRepoToken;
 using DummyERC20A as mintingToken;
 
 methods {
-    function SPECIALIST_ROLE() external returns (bytes32) envfree;
     function collateralBalance(address,uint256) external returns (uint256) envfree;
     function endOfRepurchaseWindow() external returns (uint256) envfree;
     function getBorrowerRepurchaseObligation(address) external returns (uint256) envfree;
@@ -43,6 +42,7 @@ methods {
     function TermRepoToken.mintExposureCap() external returns(uint256) envfree;
     function TermRepoToken.redemptionValue() external returns(uint256) envfree;
     function TermRepoToken.totalRedemptionValue() external returns(uint256) envfree;
+    function TermController.verifyMintExposureAccess(address) external returns (bool) envfree;
     function DummyERC20A.allowance(address,address) external returns(uint256) envfree;
     function DummyERC20A.balanceOf(address) external returns(uint256) envfree;
     function DummyERC20A.totalSupply() external returns(uint256) envfree;
@@ -89,6 +89,11 @@ rule mintOpenExposureIntegrity(
 
     uint256 expScale = 1000000000000000000;
 
+    // Pre-state must be reachable: totalOutstandingRepurchaseExposure equals the sum of repurchase obligations.
+    // Without this the prover can start from totalOutstandingRepurchaseExposure == 2^256-1 while the sum is 0,
+    // an unreachable state that forces degenerate (zero-redemption-value) arithmetic and spurious assertion failures.
+    requireInvariant totalOutstandingRepurchaseExposureIsSumOfRepurchases;
+
     // Bind term contracts to servicer fields.
     require(termRepoToken() == mintingRepoToken);
     require(termControllerAddress() == mintingController);
@@ -105,13 +110,13 @@ rule mintOpenExposureIntegrity(
     require(e.msg.sender != 100); // treasury address will not participate in minting allowlist.
 
     mathint minterRepoTokenBalanceBefore = mintingRepoToken.balanceOf(e.msg.sender);
-    mathint protocolRepoTokenBalanceBefore = mintingRepoToken.balanceOf(100); // TREASURY address fixed to 100 in methods
+    mathint protocolRepoTokenBalanceBefore = mintingRepoToken.balanceOf(mintingController.getTreasuryAddress()); // protocol share is minted to the actual treasury (getTreasuryAddress), not a hardcoded 100
     mathint minterRepoExposureBefore = getBorrowerRepurchaseObligation(e.msg.sender);
     mathint totalOutstandingRepurchaseExposureBefore = totalOutstandingRepurchaseExposure();
     mathint collateralToken0BalanceBefore = collateralBalance(e.msg.sender, 0);
     mathint collateralToken1BalanceBefore = collateralBalance(e.msg.sender, 1);
 
-    mathint protocolShareDayCountFraction = ((maturityTimestamp() - e.block.timestamp) * expScale) / (31104000); // 1 year in seconds
+    mathint protocolShareDayCountFraction = ((redemptionTimestamp() - e.block.timestamp) * expScale) / (31104000); // 1 year in seconds; matches _mintOpenExposureInternal proRate over redemptionTimestamp
     mathint protocolShareFee = (protocolShareDayCountFraction * 3000000000000000) / expScale;
 
     mathint protocolShare = (protocolShareFee * amount) / (expScale);
@@ -131,7 +136,7 @@ rule mintOpenExposureIntegrity(
     mintOpenExposure(e, amount, collateralAmounts);
 
     mathint minterRepoTokenBalanceAfter = mintingRepoToken.balanceOf(e.msg.sender);
-    mathint protocolRepoTokenBalanceAfter = mintingRepoToken.balanceOf(100); // TREASURY address fixed to 100 in methods
+    mathint protocolRepoTokenBalanceAfter = mintingRepoToken.balanceOf(mintingController.getTreasuryAddress()); // protocol share is minted to the actual treasury (getTreasuryAddress), not a hardcoded 100
     mathint minterRepoExposureAfter = getBorrowerRepurchaseObligation(e.msg.sender);
     mathint totalOutstandingRepurchaseExposureAfter = totalOutstandingRepurchaseExposure();
     uint256 mintExposureCapAfter = mintingRepoToken.mintExposureCap();
@@ -154,12 +159,14 @@ rule mintOpenExposureDoesNotAffectThirdParty(
     address minter2
 ) {
     // Bind term contracts to servicer fields.
-    require(termRepoToken() == mintingRepoToken); //fixing connection 
+    require(termRepoToken() == mintingRepoToken); //fixing connection
     require(termControllerAddress() == mintingController); //fixing connection
+    require(termRepoCollateralManager() == mintingCollateralManager); // bind manager so _handleCollateral calls resolve instead of autohavocing third-party balances
 
     require(!isTokenCollateral(termRepoToken()));
     require (e.msg.sender != minter2);
     require(minter2 != 100); // treasury address will not participate in minting allowlist.
+    require(minter2 != mintingController.getTreasuryAddress()); // third party is not the protocol treasury, which receives the protocol-share mint
 
     uint256 thirdPartyBalanceBefore = mintingRepoToken.balanceOf(minter2);
     mintOpenExposure(e, amount, collateralAmounts);
@@ -185,10 +192,13 @@ rule mintOpenExposureRevertConditions(env e) {
     uint256 minterRepoTokenBalanceBefore = mintingRepoToken.balanceOf(e.msg.sender);
 
     require(minterRepoTokenBalanceBefore + amount <= max_uint256); // Repo Token balances do not overflow. Proved with invariant totalSupplyIsSumOfBalances and rule onlyAllow
-    require(mintingCollateralManager.encumberedCollateralBalance(mintingToken) + collateralAmounts[0] <= max_uint256 );
+    // _lockCollateral re-encumbers the borrower's existing locked balance when their repurchase obligation is zero,
+    // so encumberedCollateralBalances[token] can grow by (currentBalance + amount). Bound the worst case to avoid an
+    // unexpected overflow revert. (TermRepoCollateralManager._lockCollateral)
+    require(mintingCollateralManager.encumberedCollateralBalance(mintingToken) + mintingCollateralManager.getCollateralBalance(e.msg.sender, mintingToken) + collateralAmounts[0] <= max_uint256 );
     require(mintingCollateralManager.getCollateralBalance(e.msg.sender, mintingToken) + collateralAmounts[0] <= max_uint256);
     bool payable = e.msg.value > 0;
-    bool callerNotSpecialist = !hasRole(SPECIALIST_ROLE(), e.msg.sender);
+    bool callerNotSpecialist = !mintingController.verifyMintExposureAccess(e.msg.sender);
     bool noMinterRole = !mintingRepoToken.hasRole(mintingRepoToken.MINTER_ROLE(), currentContract);
     bool noServicerRoleToCollatManager = !mintingCollateralManager.hasRole(mintingCollateralManager.SERVICER_ROLE(), currentContract);
     bool borrowerNotEnoughCollateralBalance = mintingToken.balanceOf(e.msg.sender) < collateralAmounts[0];
@@ -198,7 +208,10 @@ rule mintOpenExposureRevertConditions(env e) {
     bool afterMaturity = e.block.timestamp > maturityTimestamp();
     bool noServicerRoleOnCollateralManager = !mintingCollateralManager.hasRole(mintingCollateralManager.SERVICER_ROLE(), currentContract);
 
-    bool isExpectedToRevert = payable || callerNotSpecialist || noMinterRole || noServicerRoleToCollatManager || borrowerNotEnoughCollateralBalance || lockerTransfersPaused || noLockerServicerAccessForCollatManager || collateralAmountsNotProperLength  || afterMaturity || noServicerRoleOnCollateralManager;
+    require(termControllerAddress() == mintingController); // Bounds for test
+    bool globalPaused = mintingController.termContractsPaused(e);
+
+    bool isExpectedToRevert = payable || callerNotSpecialist || noMinterRole || noServicerRoleToCollatManager || borrowerNotEnoughCollateralBalance || lockerTransfersPaused || noLockerServicerAccessForCollatManager || collateralAmountsNotProperLength  || afterMaturity || noServicerRoleOnCollateralManager || globalPaused;
 
     mintOpenExposure@withrevert(e, amount, collateralAmounts);
         

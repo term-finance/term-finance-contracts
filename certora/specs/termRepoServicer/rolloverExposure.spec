@@ -3,6 +3,7 @@ using TermRepoRolloverManager as rolloverExposureRolloverManager;
 using TermRepoCollateralManagerHarness as rolloverExposureRepaymentCollateralManager;
 using TermRepoToken as rolloverExposureRepoToken;
 using DummyERC20A as rolloverExposureToken;
+using TermController as termControllerRollover;
 
 methods {
     
@@ -30,6 +31,11 @@ methods {
     function TermRepoRolloverManager.getRolloverInstructions(address) external returns (TermRepoRolloverManager.TermRepoRolloverElection) envfree;
     function TermRepoRolloverManager.hasRole(bytes32,address) external returns (bool) envfree;
 
+    // TermController is linked/in-scene, so getTreasuryAddress() resolves to the real
+    // function reading unconstrained treasuryWallet storage (the wildcard ALWAYS(100)
+    // summary does not apply to resolved/linked calls). Read the actual treasury address.
+    function TermController.getTreasuryAddress() external returns (address) envfree;
+
     function TermRepoToken.redemptionValue() external returns(uint256) envfree;
     function DummyERC20A.allowance(address,address) external returns(uint256) envfree;
     function DummyERC20A.balanceOf(address) external returns(uint256) envfree;
@@ -45,16 +51,18 @@ rule openExposureOnRolloverNewIntegrity(env e) {
 
     uint256 expScale = 10 ^ 18;
 
+    address treasury = termControllerRollover.getTreasuryAddress(); // protocol share is sent to the actual treasury, not a hardcoded 100
+
     require(purchaseToken() == rolloverExposureToken); // bounds for test
     require(termRepoLocker() == rolloverExposureLocker); // bounds for test
     require(rolloverExposureLocker != previousTermRepoLocker);
-    require(rolloverExposureLocker != 100); // Protecting locker from using treasury address;
-    require(previousTermRepoLocker != 100); // Protecting previous locker from using treasury address;
+    require(treasury != rolloverExposureLocker); // protocol share leaves the locker (treasury is a distinct wallet)
+    require(treasury != previousTermRepoLocker); // treasury and previous locker are distinct recipients
 
     mathint balanceBefore = getBorrowerRepurchaseObligation(borrower);
     mathint tokenBalanceTermRepoLockerBefore = rolloverExposureToken.balanceOf(rolloverExposureLocker);
     mathint tokenBalancePreviousTermRepoLockerBefore = rolloverExposureToken.balanceOf(previousTermRepoLocker);
-    mathint tokenBalanceTreasuryBefore = rolloverExposureToken.balanceOf(100);
+    mathint tokenBalanceTreasuryBefore = rolloverExposureToken.balanceOf(treasury);
     mathint totalOutstandingRepurchaseExposureBefore = totalOutstandingRepurchaseExposure();
 
     mathint protocolShareFee = (dayCountFractionMantissa * servicingFee()) / expScale;
@@ -68,7 +76,7 @@ rule openExposureOnRolloverNewIntegrity(env e) {
     mathint totalOutstandingRepurchaseExposureAfter = totalOutstandingRepurchaseExposure();
     mathint tokenBalanceTermRepoLockerAfter = rolloverExposureToken.balanceOf(rolloverExposureLocker);
     mathint tokenBalancePreviousTermRepoLockerAfter = rolloverExposureToken.balanceOf(previousTermRepoLocker);
-    mathint tokenBalanceTreasuryAfter = rolloverExposureToken.balanceOf(100);
+    mathint tokenBalanceTreasuryAfter = rolloverExposureToken.balanceOf(treasury);
 
     assert balanceAfter == balanceBefore + repurchasePrice;
     assert totalOutstandingRepurchaseExposureAfter == totalOutstandingRepurchaseExposureBefore + repurchasePrice;
@@ -108,11 +116,13 @@ rule openExposureOnRolloverNewRevertConditions(env e) {
     uint256 expScale = 10 ^ 18;
 
 
+    address treasury = termControllerRollover.getTreasuryAddress(); // protocol share is sent to the actual treasury, not a hardcoded 100
+
     require(termRepoLocker() == rolloverExposureLocker); // Bounds for test
     require(purchaseToken() == rolloverExposureToken); // Bounds for test
     require(rolloverExposureLocker != previousTermRepoLocker);
-    require(rolloverExposureLocker != 100); // Protecting locker from using treasury address;
-    require(previousTermRepoLocker != 100); // Protecting previous locker from using treasury address;
+    require(treasury != rolloverExposureLocker); // protocol share leaves the locker (treasury is a distinct wallet)
+    require(treasury != previousTermRepoLocker); // treasury and previous locker are distinct recipients
 
     mathint protocolShareFee = (dayCountFractionMantissa * servicingFee()) / expScale;
     mathint protocolShare = (protocolShareFee * purchasePrice) / (expScale);
@@ -129,7 +139,7 @@ rule openExposureOnRolloverNewRevertConditions(env e) {
     require(getBorrowerRepurchaseObligation(borrower) + repurchasePrice <= max_uint256); // Prevent overflow errors
     require(totalOutstandingRepurchaseExposure() + repurchasePrice <= max_uint256); // Prevent overflow errors
     require(rolloverExposureToken.balanceOf(previousTermRepoLocker) + previousRepoLockerRepayment <= max_uint256); // Prevents locker token balance from overflowing. ERC20 balances do not overflow.
-    require(rolloverExposureToken.balanceOf(100) + protocolShare <= max_uint256); // Prevents treasury token balance from overflowing. ERC20 balances do not overflow.
+    require(rolloverExposureToken.balanceOf(treasury) + protocolShare <= max_uint256); // Prevents treasury token balance from overflowing. ERC20 balances do not overflow.
 
 
 
@@ -141,8 +151,10 @@ rule openExposureOnRolloverNewRevertConditions(env e) {
 
     bool lockerTokenBalanceTooLow = rolloverExposureToken.balanceOf(rolloverExposureLocker) < purchasePrice;
 
+    require(termControllerAddress() == termControllerRollover); // Bounds for test
+    bool globalPaused = termControllerRollover.termContractsPaused(e);
 
-    bool isExpectedToRevert = payable ||   callerNotAuctioneer || afterMaturity || lockerTransfersPaused  || servicerNoLockerAccess  || lockerTokenBalanceTooLow;
+    bool isExpectedToRevert = payable ||   callerNotAuctioneer || afterMaturity || lockerTransfersPaused  || servicerNoLockerAccess  || lockerTokenBalanceTooLow || globalPaused;
 
     openExposureOnRolloverNew@withrevert(e, borrower, purchasePrice, repurchasePrice, previousTermRepoLocker, dayCountFractionMantissa);
 

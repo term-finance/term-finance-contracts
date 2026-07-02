@@ -10,11 +10,12 @@ methods {
     function SERVICER_ROLE() external returns (bytes32) envfree;
     function ROLLOVER_MANAGER() external returns (bytes32) envfree;
     function ROLLOVER_TARGET_AUCTIONEER_ROLE() external returns (bytes32) envfree;
+    function DIAMOND_ROLE() external returns (bytes32) envfree;
 }
 
 
 rule onlyRoleCanCallRevert(method f, calldataarg args, env e) filtered {
-    f -> !f.isView 
+    f -> !f.isView
     && f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector
     && f.selector != sig:upgradeToAndCall(address,bytes).selector
     && f.selector != sig:grantRole(bytes32,address).selector
@@ -25,6 +26,7 @@ rule onlyRoleCanCallRevert(method f, calldataarg args, env e) filtered {
     && f.selector != sig:batchLiquidation(address,uint256[]).selector
     && f.selector != sig:batchLiquidationWithRepoToken(address,uint256[]).selector
     && f.selector != sig:batchDefault(address,uint256[]).selector
+    && f.selector != sig:batchDefaultWithRepoToken(address,uint256[]).selector
     && f.selector != sig:harnessWithinNetExposureCapOnLiquidation(address).selector
     && f.selector != sig:willBeWithinNetExposureCapOnLiquidation(address,uint256,address,uint256).selector
     && f.selector != sig:allowFullLiquidation(address,uint256[]).selector
@@ -32,19 +34,20 @@ rule onlyRoleCanCallRevert(method f, calldataarg args, env e) filtered {
 } {
     currentContract.f@withrevert(e,args);
 
-    assert !lastReverted => 
+    assert !lastReverted =>
         hasRole(ADMIN_ROLE(),e.msg.sender)
         || hasRole(AUCTION_LOCKER(),e.msg.sender)
         || hasRole(DEVOPS_ROLE(),e.msg.sender)
         || hasRole(INITIALIZER_ROLE(),e.msg.sender)
         || hasRole(SERVICER_ROLE(),e.msg.sender)
         || hasRole(ROLLOVER_MANAGER(),e.msg.sender)
-        || hasRole(ROLLOVER_TARGET_AUCTIONEER_ROLE(),e.msg.sender);
+        || hasRole(ROLLOVER_TARGET_AUCTIONEER_ROLE(),e.msg.sender)
+        || hasRole(DIAMOND_ROLE(),e.msg.sender);
 
 }
 
 rule onlyRoleCanCallStorage(method f, calldataarg args, env e) filtered {
-    f -> !f.isView 
+    f -> !f.isView
     && f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector
     && f.selector != sig:upgradeToAndCall(address,bytes).selector
     && f.selector != sig:grantRole(bytes32,address).selector
@@ -55,6 +58,7 @@ rule onlyRoleCanCallStorage(method f, calldataarg args, env e) filtered {
     && f.selector != sig:batchLiquidation(address,uint256[]).selector
     && f.selector != sig:batchLiquidationWithRepoToken(address,uint256[]).selector
     && f.selector != sig:batchDefault(address,uint256[]).selector
+    && f.selector != sig:batchDefaultWithRepoToken(address,uint256[]).selector
     && f.selector != sig:harnessWithinNetExposureCapOnLiquidation(address).selector
     && f.selector != sig:harnessCollateralSeizureAmounts(uint256,address).selector
 } {
@@ -68,5 +72,6 @@ rule onlyRoleCanCallStorage(method f, calldataarg args, env e) filtered {
         || hasRole(INITIALIZER_ROLE(),e.msg.sender)
         || hasRole(SERVICER_ROLE(),e.msg.sender)
         || hasRole(ROLLOVER_MANAGER(),e.msg.sender)
-        || hasRole(ROLLOVER_TARGET_AUCTIONEER_ROLE(),e.msg.sender);
+        || hasRole(ROLLOVER_TARGET_AUCTIONEER_ROLE(),e.msg.sender)
+        || hasRole(DIAMOND_ROLE(),e.msg.sender);
 }

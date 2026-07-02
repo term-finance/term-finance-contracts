@@ -25,20 +25,25 @@ methods {
 
 }
 
-definition canIncreaseTotalOutstandingRepurchaseExposure(method f) returns bool = 
-	f.selector == sig:fulfillBid(address,uint256,uint256,address[],uint256[],uint256).selector || 
+definition canIncreaseTotalOutstandingRepurchaseExposure(method f) returns bool =
+	f.selector == sig:fulfillBid(address,uint256,uint256,address[],uint256[],uint256).selector ||
     f.selector == sig:openExposureOnRolloverNew(address,uint256,uint256,address,uint256).selector ||
-    f.selector == sig:mintOpenExposure(uint256,uint256[]).selector;
+    f.selector == sig:mintOpenExposure(uint256,uint256[]).selector ||
+    f.selector == sig:mintOpenExposure(address,uint256,uint256[]).selector ||
+    f.selector == sig:mintOpenExposureFromIntent(address,address,uint256,uint256[],uint256,bool).selector;
 
-definition canDecreaseTotalOutstandingRepurchaseExposure(method f) returns bool = 
-	f.selector == sig:submitRepurchasePayment(uint256).selector || 
+definition canDecreaseTotalOutstandingRepurchaseExposure(method f) returns bool =
+	f.selector == sig:submitRepurchasePayment(uint256).selector ||
+    f.selector == sig:submitRepurchasePayment(address,uint256).selector ||
     f.selector == sig:closeExposureOnRolloverExisting(address,uint256).selector ||
     f.selector == sig:liquidatorCoverExposureWithRepoToken(address,address,uint256).selector ||
     f.selector == sig:liquidatorCoverExposure(address,address,uint256).selector ||
-    f.selector == sig:burnCollapseExposure(uint256).selector;
+    f.selector == sig:burnCollapseExposure(uint256).selector ||
+    f.selector == sig:burnCollapseExposure(address,uint256).selector;
 
-definition canIncreaseTotalRepurchaseCollected(method f) returns bool = 
-    f.selector == sig:submitRepurchasePayment(uint256).selector || 
+definition canIncreaseTotalRepurchaseCollected(method f) returns bool =
+    f.selector == sig:submitRepurchasePayment(uint256).selector ||
+    f.selector == sig:submitRepurchasePayment(address,uint256).selector ||
     f.selector == sig:closeExposureOnRolloverExisting(address,uint256).selector ||
     f.selector == sig:liquidatorCoverExposure(address,address,uint256).selector;
 
@@ -156,7 +161,12 @@ rule totalRepurchaseCollectedLessThanOrEqualToLockerPurchaseTokenBalance(method 
     f.selector != sig:openExposureOnRolloverNew(address,uint256,uint256,address,uint256).selector &&
     f.selector != sig:fulfillBid(address,uint256,uint256,address[],uint256[],uint256).selector &&
     f.selector != sig:liquidatorCoverExposure(address,address,uint256).selector &&
-    f.selector != sig:unlockOfferAmount(address,uint256).selector
+    f.selector != sig:unlockOfferAmount(address,uint256).selector &&
+    f.selector != sig:submitRepurchasePayment(address,uint256).selector &&
+    f.selector != sig:mintOpenExposure(uint256,uint256[]).selector &&
+    f.selector != sig:mintOpenExposure(address,uint256,uint256[]).selector &&
+    f.selector != sig:mintOpenExposureFromIntent(address,address,uint256,uint256[],uint256,bool).selector &&
+    f.selector != sig:burnCollapseExposure(address,uint256).selector
 
 }{
     calldataarg args;
@@ -278,7 +288,7 @@ rule onlyAllowedMethodsMayChangeTermContracts(
     !f.isView  && 
     f.selector != sig:initialize(string,uint256,uint256,uint256,uint256,address,address,address,address).selector && 
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,string).selector
+    f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,address,string).selector
 } {
     address termRepoCollateralManagerBefore = termRepoCollateralManager();
     address termRepoRolloverManagerBefore = termRepoRolloverManager();
@@ -323,7 +333,12 @@ rule onlyAllowedMethodsMayChangeRepurchaseExposureLedger(
     f.selector != sig:liquidatorCoverExposure(address,address,uint256).selector &&
     f.selector != sig:liquidatorCoverExposureWithRepoToken(address,address,uint256).selector &&
     f.selector != sig:redeemTermRepoTokens(address,uint256).selector &&
-    f.selector != sig:burnCollapseExposure(uint256).selector
+    f.selector != sig:burnCollapseExposure(uint256).selector &&
+    f.selector != sig:burnCollapseExposure(address,uint256).selector &&
+    f.selector != sig:submitRepurchasePayment(address,uint256).selector &&
+    f.selector != sig:mintOpenExposure(uint256,uint256[]).selector &&
+    f.selector != sig:mintOpenExposure(address,uint256,uint256[]).selector &&
+    f.selector != sig:mintOpenExposureFromIntent(address,address,uint256,uint256[],uint256,bool).selector
 } {
     uint256 repurchaseExposureLedgerBefore = repurchaseExposureLedger(borrower);
     f(e, args);

@@ -96,4 +96,8 @@ contract TermAuctionOfferLockerHarness is TermAuctionOfferLocker {
     function harnessReentrancyGuardEntered() external view returns (bool) {
         return _reentrancyGuardEntered();
     }
+
+    function harnessTermControllerAddress() external view returns (address) {
+        return address(termRepoServicer.termController());
+    }
 }

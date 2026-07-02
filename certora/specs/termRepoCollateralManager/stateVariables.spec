@@ -37,20 +37,25 @@ methods {
     function DummyERC20A.balanceOf(address) external returns (uint256) envfree;
 
     function TermRepoServicer.purchaseToken() external returns (address) envfree;
+    function TermRepoServicer.getBorrowerRepurchaseObligation(address) external returns (uint256) envfree;
 }
 
-definition canIncreaseEncumberedCollateralBalances(method f) returns bool = 
-	f.selector == sig:externalLockCollateral(address,uint256).selector || 
+definition canIncreaseEncumberedCollateralBalances(method f) returns bool =
+	f.selector == sig:externalLockCollateral(address,uint256).selector ||
+    f.selector == sig:externalLockCollateral(address,address,uint256).selector ||
     f.selector == sig:acceptRolloverCollateral(address,address,uint256).selector ||
-    f.selector == sig:mintOpenExposureLockCollateral(address,address,uint256).selector ||
-    f.selector == sig:journalBidCollateralToCollateralManager(address,address[],uint256[]).selector;
+    f.selector == sig:mintOpenExposureLockCollateral(address,address,address,uint256).selector ||
+    f.selector == sig:journalBidCollateralToCollateralManager(address,address[],uint256[]).selector ||
+    f.selector == sig:encumberExistingCollateral(address).selector;
 
-definition canDecreaseEncumberedCollateralBalances(method f) returns bool = 
-	f.selector == sig:externalUnlockCollateral(address,uint256).selector || 
+definition canDecreaseEncumberedCollateralBalances(method f) returns bool =
+	f.selector == sig:externalUnlockCollateral(address,uint256).selector ||
+    f.selector == sig:externalUnlockCollateral(address,address,uint256).selector ||
     f.selector == sig:batchLiquidation(address,uint256[]).selector ||
     f.selector == sig:batchLiquidationWithRepoToken(address,uint256[]).selector ||
     f.selector == sig:batchDefault(address,uint256[]).selector ||
-    f.selector == sig:transferRolloverCollateral(address,uint256,address).selector || 
+    f.selector == sig:batchDefaultWithRepoToken(address,uint256[]).selector ||
+    f.selector == sig:transferRolloverCollateral(address,uint256,address).selector ||
     f.selector == sig:unlockCollateralOnRepurchase(address).selector;
 
 /*
@@ -92,8 +97,10 @@ rule lockerCollateralTokenBalanceGreaterThanCollateralLedgerBalance(
     f.selector != sig:auctionLockCollateral(address,address,uint256).selector &&
     f.selector != sig:auctionUnlockCollateral(address,address,uint256).selector &&
     f.selector != sig:transferRolloverCollateral(address,uint256,address).selector &&
-    f.selector != sig:acceptRolloverCollateral(address,address,uint256).selector && 
-    f.selector != sig:mintOpenExposureLockCollateral(address,address,uint256).selector
+    f.selector != sig:acceptRolloverCollateral(address,address,uint256).selector &&
+    f.selector != sig:mintOpenExposureLockCollateral(address,address,address,uint256).selector &&
+    f.selector != sig:externalLockCollateral(address,address,uint256).selector &&
+    f.selector != sig:externalUnlockCollateral(address,address,uint256).selector
 
 } {
     address token; 
@@ -252,7 +259,7 @@ rule onlyAllowedMethodsChangeTermContracts(
     !f.isView &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,address).selector
+    f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,address,address).selector
 } {
     address servicerBefore = termRepoServicerAddress();
     address oracleBefore = termPriceOracleAddress();
@@ -341,15 +348,18 @@ rule onlyAllowedMethodsChangeLockedCollateralLedger(
 ) filtered { f ->
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
-    f.selector != sig:mintOpenExposureLockCollateral(address,address,uint256).selector &&
+    f.selector != sig:mintOpenExposureLockCollateral(address,address,address,uint256).selector &&
     f.selector != sig:acceptRolloverCollateral(address,address,uint256).selector &&
     f.selector != sig:unlockCollateralOnRepurchase(address).selector && 
     f.selector != sig:batchDefault(address,uint256[]).selector && 
+    f.selector != sig:batchDefaultWithRepoToken(address,uint256[]).selector &&
     f.selector != sig:batchLiquidation(address,uint256[]).selector && 
     f.selector != sig:batchLiquidationWithRepoToken(address,uint256[]).selector && 
-    f.selector != sig:externalLockCollateral(address,uint256).selector && 
+    f.selector != sig:externalLockCollateral(address,uint256).selector &&
+    f.selector != sig:externalLockCollateral(address,address,uint256).selector &&
     f.selector != sig:externalUnlockCollateral(address,uint256).selector &&
-    f.selector != sig:journalBidCollateralToCollateralManager(address,address[],uint256[]).selector && 
+    f.selector != sig:externalUnlockCollateral(address,address,uint256).selector &&
+    f.selector != sig:journalBidCollateralToCollateralManager(address,address[],uint256[]).selector &&
     f.selector != sig:transferRolloverCollateral(address,uint256,address).selector
 } {
     uint256 lockedCollateralLedgerBefore = getCollateralBalance(borrower, token);
@@ -389,8 +399,10 @@ rule sumOfCollateralBalancesLessThanEncumberedBalances(
     calldataarg args
 ) filtered { f -> (canIncreaseEncumberedCollateralBalances(f) || canDecreaseEncumberedCollateralBalances(f)) 
 && f.selector !=  sig:batchDefault(address,uint256[]).selector &&
-f.selector != sig:batchLiquidation(address,uint256[]).selector && 
-f.selector != sig:batchLiquidationWithRepoToken(address,uint256[]).selector  
+f.selector != sig:batchDefaultWithRepoToken(address,uint256[]).selector &&
+f.selector != sig:batchLiquidation(address,uint256[]).selector &&
+f.selector != sig:batchLiquidationWithRepoToken(address,uint256[]).selector &&
+f.selector != sig:unlockCollateralOnRepurchase(address).selector
 } {
     require(collateralTokensLength() == 1);
     require(isInCollateralTokenArray(stateToken));
@@ -404,4 +416,118 @@ f.selector != sig:batchLiquidationWithRepoToken(address,uint256[]).selector
     mathint sumOfCollateralBalancesAfter = sumOfCollateralBalances;
 
     assert sumOfCollateralBalancesAfter <= encumberedCollateralBalanceAfter;
+}
+
+/** NOTE: These rules verify the encumbered collateral invariant for liquidation/default/repurchase functions
+    specifically in the non-terminal case (partial liquidation where the borrower still has an obligation).
+    Full liquidations (terminal states) are intentionally excluded because _unencumberRemainingBorrowerCollateralOnZeroObligation
+    decrements encumberedCollateralBalances without decrementing lockedCollateralLedger — the borrower reclaims
+    remaining collateral separately via externalUnlockCollateral.
+**/
+
+rule sumOfCollateralBalancesForBatchDefault(
+    env e,
+    address borrower,
+    uint256[] closureAmounts
+) {
+    require(collateralTokensLength() == 1);
+    require(isInCollateralTokenArray(stateToken));
+
+    mathint encumberedCollateralBalanceBefore = encumberedCollateralBalance(stateToken);
+    mathint sumOfCollateralBalancesBefore = sumOfCollateralBalances;
+    require(sumOfCollateralBalancesBefore <= encumberedCollateralBalanceBefore);
+
+    batchDefault(e, borrower, closureAmounts);
+
+    mathint encumberedCollateralBalanceAfter = encumberedCollateralBalance(stateToken);
+    mathint sumOfCollateralBalancesAfter = sumOfCollateralBalances;
+
+    assert stateServicer.getBorrowerRepurchaseObligation(borrower) > 0 =>
+        sumOfCollateralBalancesAfter <= encumberedCollateralBalanceAfter;
+}
+
+rule sumOfCollateralBalancesForBatchDefaultWithRepoToken(
+    env e,
+    address borrower,
+    uint256[] closureRepoTokenAmounts
+) {
+    require(collateralTokensLength() == 1);
+    require(isInCollateralTokenArray(stateToken));
+
+    mathint encumberedCollateralBalanceBefore = encumberedCollateralBalance(stateToken);
+    mathint sumOfCollateralBalancesBefore = sumOfCollateralBalances;
+    require(sumOfCollateralBalancesBefore <= encumberedCollateralBalanceBefore);
+
+    batchDefaultWithRepoToken(e, borrower, closureRepoTokenAmounts);
+
+    mathint encumberedCollateralBalanceAfter = encumberedCollateralBalance(stateToken);
+    mathint sumOfCollateralBalancesAfter = sumOfCollateralBalances;
+
+    assert stateServicer.getBorrowerRepurchaseObligation(borrower) > 0 =>
+        sumOfCollateralBalancesAfter <= encumberedCollateralBalanceAfter;
+}
+
+rule sumOfCollateralBalancesForBatchLiquidation(
+    env e,
+    address borrower,
+    uint256[] closureAmounts
+) {
+    require(collateralTokensLength() == 1);
+    require(isInCollateralTokenArray(stateToken));
+
+    mathint encumberedCollateralBalanceBefore = encumberedCollateralBalance(stateToken);
+    mathint sumOfCollateralBalancesBefore = sumOfCollateralBalances;
+    require(sumOfCollateralBalancesBefore <= encumberedCollateralBalanceBefore);
+
+    batchLiquidation(e, borrower, closureAmounts);
+
+    mathint encumberedCollateralBalanceAfter = encumberedCollateralBalance(stateToken);
+    mathint sumOfCollateralBalancesAfter = sumOfCollateralBalances;
+
+    assert stateServicer.getBorrowerRepurchaseObligation(borrower) > 0 =>
+        sumOfCollateralBalancesAfter <= encumberedCollateralBalanceAfter;
+}
+
+rule sumOfCollateralBalancesForBatchLiquidationWithRepoToken(
+    env e,
+    address borrower,
+    uint256[] closureRepoTokenAmounts
+) {
+    require(collateralTokensLength() == 1);
+    require(isInCollateralTokenArray(stateToken));
+
+    mathint encumberedCollateralBalanceBefore = encumberedCollateralBalance(stateToken);
+    mathint sumOfCollateralBalancesBefore = sumOfCollateralBalances;
+    require(sumOfCollateralBalancesBefore <= encumberedCollateralBalanceBefore);
+
+    batchLiquidationWithRepoToken(e, borrower, closureRepoTokenAmounts);
+
+    mathint encumberedCollateralBalanceAfter = encumberedCollateralBalance(stateToken);
+    mathint sumOfCollateralBalancesAfter = sumOfCollateralBalances;
+
+    assert stateServicer.getBorrowerRepurchaseObligation(borrower) > 0 =>
+        sumOfCollateralBalancesAfter <= encumberedCollateralBalanceAfter;
+}
+
+rule sumOfCollateralBalancesForUnlockCollateralOnRepurchase(
+    env e,
+    address borrower
+) {
+    require(collateralTokensLength() == 1);
+    require(isInCollateralTokenArray(stateToken));
+
+    mathint encumberedCollateralBalanceBefore = encumberedCollateralBalance(stateToken);
+    mathint sumOfCollateralBalancesBefore = sumOfCollateralBalances;
+    require(sumOfCollateralBalancesBefore <= encumberedCollateralBalanceBefore);
+
+    unlockCollateralOnRepurchase(e, borrower);
+
+    mathint encumberedCollateralBalanceAfter = encumberedCollateralBalance(stateToken);
+    mathint sumOfCollateralBalancesAfter = sumOfCollateralBalances;
+
+    // If borrower's collateral was actually unlocked (transfer succeeded), invariant should hold.
+    // When transfer fails in _unlockCollateral's try/catch, lockedCollateralLedger is not decremented
+    // but encumberedCollateralBalances was already decremented by the caller.
+    assert getCollateralBalance(borrower, stateToken) == 0 =>
+        sumOfCollateralBalancesAfter <= encumberedCollateralBalanceAfter;
 }

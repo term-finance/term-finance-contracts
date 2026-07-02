@@ -11,6 +11,8 @@ methods {
     function _.usdValueOfTokens(address,uint256) external => NONDET DELETE;
     function _.div_(uint256 x, uint256 y) internal => divCVL(x,y) expect uint256;
     function _.mul_(uint256 x, uint256 y) internal => mulCVL(x,y) expect uint256;
+    function _.termContractsPaused() external => DISPATCHER(true);
+    function _.termController() external => DISPATCHER(true);
 
     // // TermRepoToken
     // function _.totalRedemptionValue() external => DISPATCHER(true);

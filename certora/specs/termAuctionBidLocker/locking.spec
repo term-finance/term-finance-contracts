@@ -2,6 +2,7 @@ using DummyERC20A as lockingAuctionCollateralTokenOne;
 using DummyERC20B as lockingAuctionCollateralTokenTwo;
 using TermRepoCollateralManager as collateralManagerLocking;
 using TermRepoLocker as lockerLocking;
+using TermController as controllerBidLocker;
 
 /*
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
@@ -60,6 +61,8 @@ methods {
     function TermRepoLocker.SERVICER_ROLE() external returns (bytes32) envfree;
     function TermRepoLocker.hasRole(bytes32,address) external returns (bool) envfree;
     function TermRepoLocker.transfersPaused() external returns (bool) envfree;
+    function harnessTermControllerAddress() external returns (address) envfree;
+    function _.termContractsPaused() external => DISPATCHER(true);
 
     function DummyERC20A.allowance(address,address) external returns (uint256) envfree;
     function DummyERC20A.decimals() external returns (uint256) envfree => CONSTANT;
@@ -127,7 +130,9 @@ invariant bidCountAlwaysMatchesNumberOfStoredBids()
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
     f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,uint256,address,address[],address).selector &&
     f.selector != sig:getAllBids(bytes32[],bytes32[],bytes32[]).selector &&
-    f.selector != sig:lockRolloverBid(TermAuctionBidLockerHarness.TermAuctionBid).selector
+    f.selector != sig:lockRolloverBid(TermAuctionBidLockerHarness.TermAuctionBid).selector &&
+    f.selector != sig:lockBidsWithReferral(address,TermAuctionBidLockerHarness.TermAuctionBidSubmission[],address).selector &&
+    f.selector != sig:unlockBids(address,bytes32[]).selector
   }{ preserved {
       require(minimumTenderAmount() > 0);
     }
@@ -138,7 +143,9 @@ invariant bidCountAlwaysMatchesNumberOfStoredBidsWithoutRollovers()
     f.contract == currentContract &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
     f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,uint256,address,address[],address).selector &&
-    f.selector != sig:getAllBids(bytes32[],bytes32[],bytes32[]).selector
+    f.selector != sig:getAllBids(bytes32[],bytes32[],bytes32[]).selector &&
+    f.selector != sig:lockBidsWithReferral(address,TermAuctionBidLockerHarness.TermAuctionBidSubmission[],address).selector &&
+    f.selector != sig:unlockBids(address,bytes32[]).selector
   }{ preserved {
       require(minimumTenderAmount() > 0);
     }
@@ -356,6 +363,9 @@ rule lockBidsRevertConditions(
   bool collateralManagerNotPairedToLocker = (bidCollat1Diff != 0 || bidCollat2Diff != 0) && !lockerLocking.hasRole(lockerLocking.SERVICER_ROLE(), collateralManagerLocking);
   bool bidLockerNotPairedToCollatManager = (bidCollat1Diff != 0 || bidCollat2Diff != 0) && !collateralManagerLocking.hasRole(collateralManagerLocking.AUCTION_LOCKER(), currentContract);
 
+  require(harnessTermControllerAddress() == controllerBidLocker); // Bounds for test
+  bool globalPaused = controllerBidLocker.termContractsPaused(e);
+
   bool isExpectedToRevert =
     msgValueIsNotZero ||
     reentrant ||
@@ -363,7 +373,7 @@ rule lockBidsRevertConditions(
     lockingPaused ||
     bidSubmissionNotOwned ||
     maxBidCountReached ||
-    bidIdAlreadyExists || 
+    bidIdAlreadyExists ||
     editingBidNotOwned ||
     bidAmountTooLow ||
     purchaseTokenNotApproved ||
@@ -371,11 +381,12 @@ rule lockBidsRevertConditions(
     secondCollateralTokenNotApproved ||
     bidAmountTooLow ||
     collateralBalanceTooLow ||
-    collateralApprovalsTooLow || 
-    collateralAmountTooLow || 
-    lockerTransfersPaused || 
+    collateralApprovalsTooLow ||
+    collateralAmountTooLow ||
+    lockerTransfersPaused ||
     collateralManagerNotPairedToLocker ||
-    bidLockerNotPairedToCollatManager
+    bidLockerNotPairedToCollatManager ||
+    globalPaused
     ;
 
   lockBids@withrevert(e, bidSubmissions);
@@ -588,13 +599,17 @@ rule lockBidsWithReferralRevertConditions(
     bidSubmissions[0].collateralAmounts
   ); // CollateralAmountTooLow
   bool msgValueNotZero = e.msg.value != 0;
+
+  require(harnessTermControllerAddress() == controllerBidLocker); // Bounds for test
+  bool globalPausedReferral = controllerBidLocker.termContractsPaused(e);
+
   bool isExpectedToRevert =
     auctionNotOpen || lockingPaused || reentrant || sameReferral ||
-    bidSubmissionNotOwned || maxBidCountReached ||  bidIdAlreadyExists || 
+    bidSubmissionNotOwned || maxBidCountReached ||  bidIdAlreadyExists ||
     editingBidNotOwned ||
     bidAmountTooLow || collateralBalanceTooLow || collateralApprovalsTooLow || purchaseTokenNotApproved ||
     firstCollateralTokenNotApproved || secondCollateralTokenNotApproved ||
-    bidAmountTooLow || collateralAmountTooLow || lockerTransfersPaused || collateralManagerNotPairedToLocker || bidLockerNotPairedToCollatManager || msgValueNotZero;
+    bidAmountTooLow || collateralAmountTooLow || lockerTransfersPaused || collateralManagerNotPairedToLocker || bidLockerNotPairedToCollatManager || msgValueNotZero || globalPausedReferral;
 
   lockBidsWithReferral@withrevert(e, bidSubmissions, refer);
   assert lastReverted <=> isExpectedToRevert,
@@ -719,9 +734,12 @@ rule lockRolloverBidRevertConditions(
   bool bidAmountTooLow = bid.amount != 0 && bid.amount < minimumTenderAmount(); // BidAmountTooLow
   bool invalidPurchaseToken = bid.amount != 0 && bid.purchaseToken != purchaseToken(); // InvalidPurchaseToken
 
-  bool isExpectedToRevert = lockingPaused || auctionNotOpen || nonExistentBid || maxBidCountReached || nonRolloverBid || bidAmountTooLow || invalidPurchaseToken;
+  require(harnessTermControllerAddress() == controllerBidLocker); // Bounds for test
+  bool globalPausedRollover = controllerBidLocker.termContractsPaused(e);
 
-  lockRolloverBid(e, bid);
+  bool isExpectedToRevert = lockingPaused || auctionNotOpen || nonExistentBid || maxBidCountReached || nonRolloverBid || bidAmountTooLow || invalidPurchaseToken || globalPausedRollover;
+
+  lockRolloverBid@withrevert(e, bid);
 
   assert lastReverted == isExpectedToRevert,
     "lockRolloverBid should revert when one of the revert conditions is reached";

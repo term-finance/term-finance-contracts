@@ -30,6 +30,8 @@ methods {
     function TermRepoCollateralManagerHarness.hasRole(bytes32, address) external returns (bool) envfree;
     function TermRepoCollateralManagerHarness.harnessLockedCollateralLedger(address, address) external returns (uint256) envfree;
     function TermRepoCollateralManagerHarness.encumberedCollateralBalance(address) external returns (uint256) envfree;
+    function TermRepoCollateralManagerHarness.collateralTokens(uint256) external returns (address) envfree;
+    function TermRepoCollateralManagerHarness.collateralTokensLength() external returns (uint256) envfree;
     function TermRepoLocker.SERVICER_ROLE() external returns (bytes32) envfree;
     function TermRepoLocker.hasRole(bytes32, address) external returns (bool) envfree;
     function TermRepoLocker.transfersPaused() external returns (bool) envfree;
@@ -110,6 +112,7 @@ rule fulfillOfferRevertsIfNotValid(
     bytes32 offerId
 ) {
     require(termRepoToken() == repoTokenFulfill);
+    require(termControllerAddress() == controllerFulfill); // Bounds for test
 
     bool notAuctioneer = !hasRole(AUCTIONEER(), e.msg.sender);
     bool servicerNotMinterRole = !repoTokenFulfill.hasRole(repoTokenFulfill.MINTER_ROLE(), currentContract);
@@ -119,6 +122,7 @@ rule fulfillOfferRevertsIfNotValid(
         || ((repoTokenFulfill.redemptionValue() > 0) && (repoTokenFulfill.totalSupply() + (repurchasePrice * 10^18) / repoTokenFulfill.redemptionValue()) >= 2^256);
     bool mintingPaused = repoTokenFulfill.mintingPaused();
     bool zeroAddress = offeror == 0;
+    bool globalPaused = controllerFulfill.termContractsPaused(e);
     fulfillOffer@withrevert(e, offeror, purchasePrice, repurchasePrice, offerId);
     assert lastReverted == (
         notAuctioneer ||
@@ -127,7 +131,8 @@ rule fulfillOfferRevertsIfNotValid(
         servicerNotMinterRole ||
         overflow ||
         mintingPaused ||
-        zeroAddress
+        zeroAddress ||
+        globalPaused
     ), "fulfillOffer should revert if not valid";
 }
 
@@ -146,6 +151,13 @@ rule fulfillBidRevertsIfNotValid(
     require(collateralAmounts.length == 1);
     require(collateralTokens.length == 1);
 
+    // When the borrower's repurchase obligation is zero, journalBidCollateralToCollateralManager calls
+    // _encumberExistingCollateralInternal, which loops over the manager's ENTIRE collateral-token list and
+    // re-encumbers each locked balance. Bound the scene to a single collateral token (matching the length-1 input)
+    // so the re-encumbered balance modeled below fully captures that loop. (TermRepoCollateralManager line 809)
+    require(collateralManagerFulfill.collateralTokensLength() == 1);
+    require(collateralTokens[0] == collateralManagerFulfill.collateralTokens(0));
+
     require(lockerFulfill != 100);
     require(lockerFulfill != bidder);
     require(bidder != 100);
@@ -159,7 +171,11 @@ rule fulfillBidRevertsIfNotValid(
     bool overflowRepurchaseExposureLedger = getBorrowerRepurchaseObligation(bidder) + repurchasePrice >= 2^256;
     bool overflowTotalOutstandingRepurchaseExposure = totalOutstandingRepurchaseExposure() + repurchasePrice >= 2^256;
     bool overflowLockedCollateralLedger0 = collateralManagerFulfill.harnessLockedCollateralLedger(bidder, collateralTokens[0]) + collateralAmounts[0] >= 2^256;
-    bool overflowEncumberedCollateralBalance0 = collateralManagerFulfill.encumberedCollateralBalance(collateralTokens[0]) + collateralAmounts[0] >= 2^256;
+    // If the bidder's repurchase obligation is zero, _encumberExistingCollateralInternal first re-encumbers the
+    // bidder's existing locked balance for this token, so encumberedCollateralBalances grows by (currentBalance + amount).
+    bool zeroObligationBid = getBorrowerRepurchaseObligation(bidder) == 0;
+    mathint reEncumbered0 = zeroObligationBid ? to_mathint(collateralManagerFulfill.harnessLockedCollateralLedger(bidder, collateralTokens[0])) : 0;
+    bool overflowEncumberedCollateralBalance0 = collateralManagerFulfill.encumberedCollateralBalance(collateralTokens[0]) + reEncumbered0 + collateralAmounts[0] >= 2^256;
     mathint dcfServicingFee = dayCountFractionMantissa * servicingFee();
     bool overflowDcfServicingFee = dcfServicingFee >= 2^256;
     mathint dcfServicingFeePrice = (dcfServicingFee / 10^18) * purchasePrice;
@@ -170,6 +186,7 @@ rule fulfillBidRevertsIfNotValid(
     bool transfersPaused = lockerFulfill.transfersPaused();
     bool overflowTreasuryBalance = tokenFulfill.balanceOf(100) + protocolShare >= 2^256;
     bool overflowBidderBalance = tokenFulfill.balanceOf(bidder) + purchasePrice - protocolShare >= 2^256;
+    bool globalPausedBid = controllerFulfill.termContractsPaused(e);
     fulfillBid@withrevert(e, bidder, purchasePrice, repurchasePrice, collateralTokens, collateralAmounts, dayCountFractionMantissa);
     assert lastReverted == (
         notAuctioneer ||
@@ -187,7 +204,8 @@ rule fulfillBidRevertsIfNotValid(
         overflowBidderBalance ||
         overflowTreasuryBalance ||
         overflowBidderBalance ||
-        insufficientBalance
+        insufficientBalance ||
+        globalPausedBid
     ), "fulfillBid should revert if not valid";
 }
 

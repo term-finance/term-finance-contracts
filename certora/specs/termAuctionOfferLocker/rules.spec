@@ -5,6 +5,10 @@ import "./locking.spec";
 import "./unlocking.spec";
 import "./revealing.spec";
 
+methods {
+  function _.termContractsPaused() external => DISPATCHER(true);
+}
+
 // termContractPaired
 use rule pairTermContractsSucceedsWhenNotPaired;
 use rule pairTermContractsRevertsWhenAlreadyPaired;
@@ -15,7 +19,7 @@ rule onlyPairTermContractsChangesIsTermContractPaired(
 ) filtered { f ->
     !f.isView &&
     f.contract == currentContract &&
-    f.selector != sig:pairTermContracts(address,address,address,address,address).selector &&
+    f.selector != sig:pairTermContracts(address,address,address,address,address,address).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
     f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,address,address[],address).selector
 } {

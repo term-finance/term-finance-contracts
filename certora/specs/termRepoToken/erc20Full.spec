@@ -15,6 +15,28 @@ methods {
     function mintingPaused() external returns (bool) envfree;
     function mintExposureCap() external returns (uint256) envfree;
     function redemptionValue() external returns(uint256) envfree;
+
+    // mint/burn carry whileTermContractsNotPaused(ITermRepoServicer(config.termRepoServicer).termController()).
+    // config.termRepoServicer is a struct field that can't be conf-linked and no servicer/controller is in this
+    // conf's scene, so the getter is summarized side-effect-free (no havoc) and the global pause is backed by a
+    // ghost so the value is consistent between the modifier and the revert-condition rules that read it.
+    function _.termController() external => termControllerCVL() expect address;
+    function _.termContractsPaused() external => termContractsPausedCVL() expect bool;
+}
+
+// Arbitrary-but-consistent global pause state, shared by the termContractsPaused() summary and the rules below.
+ghost bool globalPaused;
+
+function termContractsPausedCVL() returns bool {
+    return globalPaused;
+}
+
+// termController() returns ITermController (an address). Return a CVL address so the value is constrained to the
+// address range [0, 2^160-1]; a raw NONDET return can have dirty high bits and make the caller's ABI decode revert.
+// The concrete address is irrelevant here since termContractsPaused() is summarized for any receiver above.
+function termControllerCVL() returns address {
+    address controllerAddr;
+    return controllerAddr;
 }
 
 /*
@@ -73,11 +95,11 @@ ghost mathint numberOfChangesOfBalances {
 // having an initial state where Alice initial balance is larger than totalSupply, which 
 // overflows Alice's balance when receiving a transfer. This is not possible unless the contract is deployed into an 
 // already used address (or upgraded from corrupted state).
-hook Sload uint256 balance currentContract.ext_openzeppelin_storage_ERC20_ERC20Storage._balances[KEY address addr] {
+hook Sload uint256 balance currentContract.ext_openzeppelin_storage_ERC20._balances[KEY address addr] {
     require sumOfBalances >= to_mathint(balance);
 }
 
-hook Sstore currentContract.ext_openzeppelin_storage_ERC20_ERC20Storage._balances[KEY address addr] uint256 newValue (uint256 oldValue) {
+hook Sstore currentContract.ext_openzeppelin_storage_ERC20._balances[KEY address addr] uint256 newValue (uint256 oldValue) {
     sumOfBalances = sumOfBalances - oldValue + newValue;
     numberOfChangesOfBalances = numberOfChangesOfBalances + 1;
 }
@@ -258,7 +280,7 @@ rule onlyHolderOfSpenderCanChangeAllowance(method f, env e) filtered { f ->
     assert (
         allowanceAfter > allowanceBefore
     ) => (
-        ((f.selector == sig:approve(address,uint256).selector || f.selector == sig:increaseAllowance(address,uint256).selector) && e.msg.sender == holder) ||
+        (f.selector == sig:approve(address,uint256).selector && e.msg.sender == holder) ||
         f.selector == sig:permit(address,address,uint256,uint256,uint8,bytes32,bytes32).selector
 
     );
@@ -268,7 +290,7 @@ rule onlyHolderOfSpenderCanChangeAllowance(method f, env e) filtered { f ->
     ) => (
         f.selector == sig:permit(address,address,uint256,uint256,uint8,bytes32,bytes32).selector ||
         (f.selector == sig:transferFrom(address,address,uint256).selector && e.msg.sender == spender) ||
-        ((f.selector == sig:approve(address,uint256).selector || f.selector == sig:decreaseAllowance(address,uint256).selector) && e.msg.sender == holder )
+        (f.selector == sig:approve(address,uint256).selector && e.msg.sender == holder )
     );
 }
 /*
@@ -337,8 +359,9 @@ rule mintTokensRevertingConditions(env e) {
     bool payable = e.msg.value > 0;
     bool toZeroAccount = account == 0;
     bool notMinterRole = !hasRole(MINTER_ROLE(), e.msg.sender);
+    bool isGlobalPaused = globalPaused;
 
-    bool isExpectedToRevert = paused || payable || notMinterRole || toZeroAccount;
+    bool isExpectedToRevert = paused || payable || notMinterRole || toZeroAccount || isGlobalPaused;
 
     mintTokens@withrevert(e, account, amount);
     
@@ -366,8 +389,9 @@ rule mintRedemptionValueRevertingConditions(env e) {
     bool payable = e.msg.value > 0;
     bool toZeroAccount = account == 0;
     bool notMinterRole = !hasRole(MINTER_ROLE(), e.msg.sender);
+    bool isGlobalPaused = globalPaused;
 
-    bool isExpectedToRevert = paused || payable || notMinterRole || toZeroAccount;
+    bool isExpectedToRevert = paused || payable || notMinterRole || toZeroAccount || isGlobalPaused;
 
     mintRedemptionValue@withrevert(e, account, amount);
     
@@ -458,7 +482,8 @@ rule burnRevertingConditions(env e) {
     bool notBurnerRole = !hasRole(BURNER_ROLE(), e.msg.sender);
     bool fromZeroAccount = account == 0;
     bool paused = burningPaused();
-    bool isExpectedToRevert = notEnoughBalance || notBurnerRole || paused || fromZeroAccount || payable;
+    bool isGlobalPaused = globalPaused;
+    bool isExpectedToRevert = notEnoughBalance || notBurnerRole || paused || fromZeroAccount || payable || isGlobalPaused;
 
     burn@withrevert(e, account, amount);
     // if(lastReverted) {
@@ -529,11 +554,11 @@ rule transferIsOneWayAdditive(env e) {
 	address recipient;
 	uint256 amount_a;
     uint256 amount_b;
-	mathint sum = amount_a + amount_b;
-	require sum < max_uint256;
+	mathint sumAmounts = amount_a + amount_b;
+	require sumAmounts < max_uint256;
 	storage init = lastStorage; // saves storage
 	
-	transfer(e, recipient, assert_uint256(sum));
+	transfer(e, recipient, assert_uint256(sumAmounts));
 	storage after1 = lastStorage;
 
 	transfer@withrevert(e, recipient, amount_a) at init; // restores storage
@@ -671,11 +696,11 @@ rule transferFromIsOneWayAdditive(env e) {
     address spender = e.msg.sender;
 	uint256 amount_a;
     uint256 amount_b;
-	mathint sum = amount_a + amount_b;
-	require sum < max_uint256;
+	mathint sumAmounts = amount_a + amount_b;
+	require sumAmounts < max_uint256;
 	storage init = lastStorage; // saves storage
 	
-	transferFrom(e, owner, recipient, assert_uint256(sum));
+	transferFrom(e, owner, recipient, assert_uint256(sumAmounts));
 	storage after1 = lastStorage;
 
 	transferFrom@withrevert(e, owner, recipient, amount_a) at init; // restores storage

@@ -4,6 +4,7 @@ using TermRepoCollateralManagerHarness as repaymentCollateralManager;
 using TermRepoToken as repoToken;
 using DummyERC20A as token;
 using DummyERC20A as repaymentCollateralToken;
+using TermController as termControllerRepayment;
 
 
 methods {
@@ -104,7 +105,11 @@ rule repaymentsIntegrity(env e) {
     assert balanceBefore == balanceAfter + repaymentAmount;
     assert totalOutstandingRepurchaseExposureBefore  == totalOutstandingRepurchaseExposureAfter + repaymentAmount; 
     assert totalRepurchaseCollectedBefore + repaymentAmount == totalRepurchaseCollectedAfter;
-    assert balanceAfter == 0 => totalCollateralAfter == 0;
+    // When the obligation is fully repaid the servicer attempts to return all collateral, but _unlockCollateral
+    // wraps the locker transfer in try/catch: if the transfer back to the borrower fails the collateral stays in
+    // the locker and lockedCollateralLedger is not decremented. So a zero obligation no longer implies zero
+    // collateral; collateral can only stay the same or decrease. (TermRepoCollateralManager._unlockCollateral)
+    assert balanceAfter == 0 => totalCollateralAfter <= totalCollateralBefore;
     assert balanceAfter != 0 => totalCollateralBefore == totalCollateralAfter;
 }
 
@@ -177,10 +182,14 @@ rule repaymentsRevertingConditions(env e){
     bool afterRepurchaseWindow = e.block.timestamp >= endOfRepurchaseWindow();
     bool borrowerZeroObligation = getBorrowerRepurchaseObligation(borrower) == 0;
     bool uintMaxRepayment = repayment == max_uint256;
+    bool zeroRepayment = repayment == 0;
     bool repaymentGreaterThanMax = repaymentAmount > maxRepayment;
     bool noServicerRoleOnCollateralManager = !repaymentCollateralManager.hasRole(repaymentCollateralManager.SERVICER_ROLE(), currentContract);
 
-    bool isExpectedToRevert = payable || lockerTransfersPaused || noLockerServicerAccess || borrowTokenBalanceTooLow || allowanceTooLow || afterRepurchaseWindow || borrowerZeroObligation || uintMaxRepayment || repaymentGreaterThanMax || noServicerRoleOnCollateralManager;
+    require(termControllerAddress() == termControllerRepayment); // Bounds for test
+    bool globalPaused = termControllerRepayment.termContractsPaused(e);
+
+    bool isExpectedToRevert = payable || lockerTransfersPaused || noLockerServicerAccess || borrowTokenBalanceTooLow || allowanceTooLow || afterRepurchaseWindow || borrowerZeroObligation || uintMaxRepayment || zeroRepayment || repaymentGreaterThanMax || noServicerRoleOnCollateralManager || globalPaused;
 
     submitRepurchasePayment@withrevert(e, repayment);
     
