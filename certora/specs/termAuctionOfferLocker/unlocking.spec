@@ -2,6 +2,7 @@ using DummyERC20A as unlockingAuctionPurchaseToken;
 using TermRepoServicer as repoServicerUnlocking;
 using TermRepoLocker as repoLockerUnlocking;
 using TermAuction as termAuction;
+using TermController as controllerOfferUnlocking;
 /*
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │ Methods                                                                                                             |
@@ -25,6 +26,7 @@ methods {
   function TermRepoLocker.SERVICER_ROLE() external returns (bytes32) envfree;
   function TermRepoLocker.hasRole(bytes32 role, address account) external returns (bool) envfree;
   function TermRepoLocker.transfersPaused() external returns (bool) envfree;
+  function harnessTermControllerAddress() external returns (address) envfree;
 }
 
 /*
@@ -101,8 +103,11 @@ rule unlockOffersRevertConditions(
 
   bool nonZeroMsgValue = e.msg.value != 0;
 
-  bool isExpectedToRevert = unlockingPaused || reentrant || auctionNotOpen || auctionNotCancelledForWithdrawal || nonExistentOffer || offerNotOwned 
-  || lockerTransfersPaused || repoServicerNotPairedToLocker ||  offerLockerNotPairedToRepoServicer || nonZeroMsgValue;
+  require(harnessTermControllerAddress() == controllerOfferUnlocking);
+  bool globalPaused = controllerOfferUnlocking.termContractsPaused(e);
+
+  bool isExpectedToRevert = unlockingPaused || reentrant || auctionNotOpen || auctionNotCancelledForWithdrawal || nonExistentOffer || offerNotOwned
+  || lockerTransfersPaused || repoServicerNotPairedToLocker ||  offerLockerNotPairedToRepoServicer || nonZeroMsgValue || globalPaused;
 
   unlockOffers@withrevert(e, [unlockOfferId]);
 
@@ -186,13 +191,17 @@ rule unlockOfferPartialRevertConditions(
   bool insufficientLockerBalance = amount > unlockingAuctionPurchaseToken.balanceOf(repoLockerUnlocking);
   bool lockerTransfersPaused = repoLockerUnlocking.transfersPaused();
 
+  require(harnessTermControllerAddress() == controllerOfferUnlocking);
+  bool globalPaused = controllerOfferUnlocking.termContractsPaused(e);
+
   bool isExpectedToRevert =
     msgValueNotZero ||
     notAuctioneer ||
     lockerNotAuctionLocker ||
     servicerNotServicer ||
     insufficientLockerBalance ||
-    lockerTransfersPaused;
+    lockerTransfersPaused ||
+    globalPaused;
 
   unlockOfferPartial@withrevert(e, id, offeror, amount);
 

@@ -1,6 +1,7 @@
 using TermRepoCollateralManager as collateralManagerUnlocking;
 using TermRepoLocker as lockerUnlocking;
 using TermAuction as termAuction;
+using TermController as controllerUnlocking;
 using DummyERC20A as unlockingAuctionCollateralTokenOne;
 using DummyERC20B as unlockingAuctionCollateralTokenTwo;
 
@@ -32,6 +33,8 @@ methods {
     function TermRepoLocker.hasRole(bytes32,address) external returns (bool) envfree;
     function TermRepoLocker.transfersPaused() external returns (bool) envfree;
     function TermAuction.auctionCancelledForWithdrawal() external returns(bool) envfree;
+    function harnessTermControllerAddress() external returns (address) envfree;
+    function _.termContractsPaused() external => DISPATCHER(true);
     function harnessGetInternalBidId(bytes32 bidId) external returns (bytes32) envfree;
     function harnessGetInternalBidBidder(bytes32 bidId) external returns (address) envfree;
     function harnessGetInternalBidBidPriceHash(bytes32 bidId) external returns (bytes32) envfree;
@@ -213,8 +216,11 @@ rule unlockBidsRevertConditions(
 
   bool nonZeroMsgValue = e.msg.value != 0;
 
+  require(harnessTermControllerAddress() == controllerUnlocking);
+  bool globalPaused = controllerUnlocking.termContractsPaused(e);
+
   bool isExpectedToRevert = unlockingPaused || reentrant || auctionNotOpen || auctionNotCancelledForWithdrawal || nonExistentBid || bidNotOwned || rolloverBid ||
-  lockerTransfersPaused || collateralManagerNotPairedToLocker || bidLockerNotPairedToCollatManager || nonZeroMsgValue;
+  lockerTransfersPaused || collateralManagerNotPairedToLocker || bidLockerNotPairedToCollatManager || nonZeroMsgValue || globalPaused;
 
   unlockBids@withrevert(e, [unlockBidId]);
 
@@ -353,8 +359,10 @@ rule auctionUnlockBidRevertConditions(
   bool bidLockerNotPairedToCollatManager = !collateralManagerUnlocking.hasRole(collateralManagerUnlocking.AUCTION_LOCKER(), currentContract);
   bool insufficientLockerBalance = amounts[0] > unlockingAuctionCollateralTokenOne.balanceOf(lockerUnlocking) ||  amounts[1] > unlockingAuctionCollateralTokenTwo.balanceOf(lockerUnlocking);
 
+  require(harnessTermControllerAddress() == controllerUnlocking);
+  bool globalPaused = controllerUnlocking.termContractsPaused(e);
 
-  bool isExpectedToRevert = isRollover || msgValueIsNotZero || callerNotAuctioneer || lockerTransfersPaused || collateralManagerNotPairedToLocker || bidLockerNotPairedToCollatManager || insufficientLockerBalance;
+  bool isExpectedToRevert = isRollover || msgValueIsNotZero || callerNotAuctioneer || lockerTransfersPaused || collateralManagerNotPairedToLocker || bidLockerNotPairedToCollatManager || insufficientLockerBalance || globalPaused;
 
   auctionUnlockBid@withrevert(e, unlockBidId, bidder, bidCollateralTokens, amounts);
   assert isExpectedToRevert <=> lastReverted,

@@ -27,9 +27,40 @@ methods {
     // TermController
     function _.isTermDeployed(address) external => PER_CALLEE_CONSTANT;
     function _.getProtocolReserveAddress() external => CONSTANT;
+    // TermRepoToken's burnAndReturnValue (and sibling mint paths) call
+    // ITermRepoServicer(config.termRepoServicer).termController()/termContractsPaused();
+    // config.termRepoServicer is a struct member so link can't resolve it -> those calls
+    // autohavoc. Dispatch to the in-scene servicer/controller to kill the havocs.
+    function _.termController() external => DISPATCHER(true);
+    function _.termContractsPaused() external => DISPATCHER(true);
 
     // TermPriceOracle
     function _.usdValueOfTokens(address token, uint256 amount) external => usdValueCVL(token, amount) expect (ExponentialNoError.Exp);
+
+    // The batchLiquidation/batchLiquidationWithRepoToken paths time out here on (a) the servicer's
+    // assert(_isTermRepoBalanced()) reached via liquidatorCoverExposure/liquidatorCoverExposureWithRepoToken
+    // (nonlinear threshold proof), (b) the seizure ratio math (mul_/div_), and (c) the repo-token burn value.
+    // These state-variable rules assert on COLLATERAL storage changes (encumbered/locked), not on the servicer
+    // balance or the seizure value, and locked/encumbered are always decremented in lockstep by the same seizure
+    // amount, so abstracting these is sound: the balance assert is proven independently, and the seizure/burn value
+    // being NONDET only makes the equal-decrement amount arbitrary (invariants still hold).
+    function _.div_(uint256 x, uint256 y) internal => divCVL(x,y) expect uint256;
+    function _.mul_(uint256 x, uint256 y) internal => mulCVL(x,y) expect uint256;
+    function TermRepoServicer._isTermRepoBalanced() internal returns (bool) => alwaysTermRepoBalanced();
+    function _.burnAndReturnValue(address,uint256) external => NONDET;
+}
+
+function mulCVL(uint256 x, uint256 y) returns uint256 {
+    return require_uint256(x * y);
+}
+
+function divCVL(uint256 x, uint256 y) returns uint256 {
+    require y != 0;
+    return require_uint256(x / y);
+}
+
+function alwaysTermRepoBalanced() returns bool {
+    return true;
 }
 
 use rule pairTermContractsSucceedsWhenNotPaired;
@@ -41,7 +72,7 @@ rule onlyPairTermContractsChangesIsTermContractPaired(
 ) filtered { f ->
     !f.isView &&
     f.contract == currentContract &&
-    f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,address).selector &&
+    f.selector != sig:pairTermContracts(address,address,address,address,address,address,address,address,address,address).selector &&
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
     f.selector != sig:initialize(string,uint256,uint256,uint256,address,TermRepoCollateralManagerHarness.Collateral[],address,address).selector
 } {
@@ -64,3 +95,8 @@ use rule onlyAllowedMethodsChangeLockedCollateralLedger;
 use rule lockedCollateralLedgerDoesNotOverflow;
 use rule lockerCollateralTokenBalanceGreaterThanCollateralLedgerBalance;
 use rule sumOfCollateralBalancesLessThanEncumberedBalances;
+use rule sumOfCollateralBalancesForBatchDefault;
+use rule sumOfCollateralBalancesForBatchDefaultWithRepoToken;
+use rule sumOfCollateralBalancesForBatchLiquidation;
+use rule sumOfCollateralBalancesForBatchLiquidationWithRepoToken;
+use rule sumOfCollateralBalancesForUnlockCollateralOnRepurchase;

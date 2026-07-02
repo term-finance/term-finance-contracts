@@ -1,6 +1,7 @@
 using TermRepoServicer as electionRepoServicer;
 using TermAuctionBidLockerHarness as electionBidLocker;
 using TermRepoCollateralManagerHarness as electionCollateralManager;
+using TermController as controllerRollover;
 
 methods {
     
@@ -13,7 +14,7 @@ methods {
     function TermRepoCollateralManagerHarness.collateralTokensLength() external returns (uint256) envfree;
     
     function TermRepoServicer.getBorrowerRepurchaseObligation(address) external returns (uint256) envfree;
-    function TermRepoServicer.maturityTimestamp() external returns (uint256) envfree;
+    function TermRepoServicer.endOfRepurchaseWindow() external returns (uint256) envfree;
     function TermRepoServicer.purchaseToken() external returns (address) envfree;
     function TermRepoServicer.servicingFee() external returns (uint256) envfree;
 
@@ -30,6 +31,8 @@ methods {
 
 
     function TermAuctionBidLockerHarness.revealTime() external returns (uint256) envfree;
+    function TermAuctionBidLockerHarness.harnessTermControllerAddress() external returns (address) envfree;
+    function _.termContractsPaused() external => DISPATCHER(true);
 
 }
 
@@ -97,7 +100,7 @@ rule electRolloverRevertConditions(env e) {
     mathint minTenderAmountBidLocker = electionBidLocker.minimumTenderAmount();
 
     bool payable = e.msg.value > 0;
-    bool pastMaturity = e.block.timestamp >= electionRepoServicer.maturityTimestamp();
+    bool pastRepaymentWindow = e.block.timestamp >= electionRepoServicer.endOfRepurchaseWindow();
     bool zeroBorrowerRepurchaseObligation = electionRepoServicer.getBorrowerRepurchaseObligation(e.msg.sender) == 0;
     bool rolloverAuctionNotApproved = !isRolloverAuctionApproved(submission.rolloverAuctionBidLocker);
     bool rolloverAlreadyProcessed = getRolloverInstructions(e.msg.sender).processed;
@@ -108,9 +111,12 @@ rule electRolloverRevertConditions(env e) {
     bool beyondAuctionRevealTime = e.block.timestamp > electionBidLocker.revealTime();
     bool maxBidCountReached = electionBidLocker.bidCount() == electionBidLocker.MAX_BID_COUNT();
     bool purchaseTokensNotMatch = electionBidLocker.purchaseToken() != electionRepoServicer.purchaseToken();
-    bool bidBelowMinimumTender = bidAmount < minTenderAmountBidLocker;
+    bool bidBelowMinimumTender = bidAmount < minTenderAmountBidLocker / 10;
 
-    bool isExpectedToRevert = payable || pastMaturity || zeroBorrowerRepurchaseObligation || rolloverAuctionNotApproved || rolloverAlreadyProcessed || zeroRolloverAmount || rolloverAmountGreaterThanBorrowerObligation || lockingPausedForRolloverAuction || noRolloverManagerAccessToBidLocker || beyondAuctionRevealTime || maxBidCountReached || purchaseTokensNotMatch || bidBelowMinimumTender;
+    require(electionBidLocker.harnessTermControllerAddress() == controllerRollover);
+    bool globalPaused = controllerRollover.termContractsPaused(e);
+
+    bool isExpectedToRevert = payable || pastRepaymentWindow || zeroBorrowerRepurchaseObligation || rolloverAuctionNotApproved || rolloverAlreadyProcessed || zeroRolloverAmount || rolloverAmountGreaterThanBorrowerObligation || lockingPausedForRolloverAuction || noRolloverManagerAccessToBidLocker || beyondAuctionRevealTime || maxBidCountReached || purchaseTokensNotMatch || bidBelowMinimumTender || globalPaused;
     electRollover@withrevert(e, submission);
 
     assert lastReverted <=> isExpectedToRevert;
@@ -170,7 +176,10 @@ rule cancelRolloverRevertConditions(env e) {
     bool beyondAuctionRevealTime = e.block.timestamp > electionBidLocker.revealTime();
     bool nonExistentRolloverBid = existingRolloverBidAmount == 0;
 
-    bool isExpectedToRevert = payable || zeroBorrowerRepurchaseObligation || noRolloverToCancel || rolloverAlreadyProcessed || lockingPausedForRolloverAuction || noRolloverManagerAccessToBidLocker || beyondAuctionRevealTime || nonExistentRolloverBid;
+    require(electionBidLocker.harnessTermControllerAddress() == controllerRollover);
+    bool globalPaused = controllerRollover.termContractsPaused(e);
+
+    bool isExpectedToRevert = payable || zeroBorrowerRepurchaseObligation || noRolloverToCancel || rolloverAlreadyProcessed || lockingPausedForRolloverAuction || noRolloverManagerAccessToBidLocker || beyondAuctionRevealTime || nonExistentRolloverBid || globalPaused;
     cancelRollover@withrevert(e);
 
     assert lastReverted <=> isExpectedToRevert;

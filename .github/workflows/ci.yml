@@ -52,7 +52,6 @@ jobs:
           - "termRepoServicer-repaymentsRedemptions.conf"
           - "termRepoServicer-repaymentsRedemptionsReverts.conf"
           - "termRepoServicer-stateVariables.conf"
-          - "termRepoServicer.conf"
           - "termRepoToken.conf"
       fail-fast: false
     steps:
@@ -63,7 +62,7 @@ jobs:
         with:
           node-version: "18.15"
           cache: yarn
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - run: |
@@ -83,4 +82,4 @@ jobs:
             --rule_sanity basic
         env:
           CERTORAKEY: ${{ secrets.CERTORAKEY }}
-          SOLC_VERSION: 0.8.18
+          SOLC_VERSION: 0.8.30

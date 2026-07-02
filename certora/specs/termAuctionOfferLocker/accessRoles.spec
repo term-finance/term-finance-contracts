@@ -7,6 +7,7 @@ methods {
     function AUCTIONEER_ROLE() external returns (bytes32) envfree;
     function DEVOPS_ROLE() external returns (bytes32) envfree;
     function INITIALIZER_ROLE() external returns (bytes32) envfree;
+    function DIAMOND_ROLE() external returns (bytes32) envfree;
 }
 
 
@@ -15,7 +16,7 @@ rule onlyRoleCanCallRevert(
     calldataarg args,
     env e
 ) filtered {
-    f -> !f.isView 
+    f -> !f.isView
     && f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,address,address[],address).selector
     && f.selector != sig:upgradeToAndCall(address,bytes).selector
     && f.selector != sig:grantRole(bytes32,address).selector
@@ -29,11 +30,12 @@ rule onlyRoleCanCallRevert(
 } {
     currentContract.f@withrevert(e,args);
 
-    assert !lastReverted => 
+    assert !lastReverted =>
         hasRole(ADMIN_ROLE(),e.msg.sender)
         || hasRole(AUCTIONEER_ROLE(),e.msg.sender)
         || hasRole(DEVOPS_ROLE(),e.msg.sender)
-        || hasRole(INITIALIZER_ROLE(),e.msg.sender);
+        || hasRole(INITIALIZER_ROLE(),e.msg.sender)
+        || hasRole(DIAMOND_ROLE(),e.msg.sender);
 }
 
 rule onlyRoleCanCallStorage(
@@ -41,7 +43,7 @@ rule onlyRoleCanCallStorage(
     calldataarg args,
     env e
 ) filtered {
-    f -> !f.isView 
+    f -> !f.isView
     && f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,address,address[],address).selector
     && f.selector != sig:upgradeToAndCall(address,bytes).selector
     && f.selector != sig:grantRole(bytes32,address).selector
@@ -60,5 +62,6 @@ rule onlyRoleCanCallStorage(
     assert storeBefore != storeAfter => hasRole(ADMIN_ROLE(),e.msg.sender)
         || hasRole(AUCTIONEER_ROLE(),e.msg.sender)
         || hasRole(DEVOPS_ROLE(),e.msg.sender)
-        || hasRole(INITIALIZER_ROLE(),e.msg.sender);
+        || hasRole(INITIALIZER_ROLE(),e.msg.sender)
+        || hasRole(DIAMOND_ROLE(),e.msg.sender);
 }

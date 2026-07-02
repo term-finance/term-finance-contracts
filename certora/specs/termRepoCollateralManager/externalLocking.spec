@@ -7,6 +7,7 @@ methods {
     function AUCTION_LOCKER() external returns (bytes32) envfree;
     function SERVICER_ROLE() external returns (bytes32) envfree;
     function collateralTokens(uint256) external returns(address)  envfree;
+    function collateralTokensLength() external returns (uint256) envfree;
 
     function encumberedCollateralBalance(address) external returns (uint256) envfree;
     function getCollateralBalance(address,address) external returns (uint256) envfree;
@@ -102,8 +103,11 @@ rule externalLockCollateralRevertConditions(env e){
     bool lockerNotPaired = !extLockingCollateralLocker.hasRole(extLockingCollateralLocker.SERVICER_ROLE(), currentContract);
     bool allowanceTooLow = extLockingCollateralToken.allowance( e.msg.sender, termRepoLocker()) < amount;
     bool borrowTokenBalanceTooLow = extLockingCollateralToken.balanceOf(e.msg.sender) < amount;
+    // externalLockCollateral -> _lockCollateral -> termRepoLocker.transferTokenFromWallet, which has
+    // whileTermContractsNotPaused (direct call, not try/catch), so a globally-paused controller reverts.
+    bool globalPaused = controllerLiquidations.termContractsPaused(e);
 
-    bool isExpectedToRevert = payable || isNotCollateralToken || collateralDepositClosed || zeroBorrowerRepurchaseObligation || lockerTransfersPaused || lockerNotPaired ||  borrowTokenBalanceTooLow || allowanceTooLow ;
+    bool isExpectedToRevert = payable || isNotCollateralToken || collateralDepositClosed || zeroBorrowerRepurchaseObligation || lockerTransfersPaused || lockerNotPaired ||  borrowTokenBalanceTooLow || allowanceTooLow || globalPaused;
 
     externalLockCollateral@withrevert(e, extLockingCollateralToken, amount);
 
@@ -125,10 +129,21 @@ rule externalUnlockCollateralIntegrity(env e){
 
     require(e.msg.sender != extLockingCollateralLocker); // externalLockCollateral() is never called in the repo locker
 
+    // _unlockCollateral wraps termRepoLocker.transferTokenToWallet in try/catch: on a failed transfer the collateral
+    // stays locked (ledger NOT decremented) and the call still succeeds. For this integrity rule to observe the unlock,
+    // require the transfer to succeed: locker transfers not paused, controller not globally paused, collateral manager
+    // has the locker SERVICER_ROLE, and the locker holds (and the borrower wallet can receive) the amount.
+    require(!extLockingCollateralLocker.transfersPaused());
+    require(!controllerLiquidations.termContractsPaused(e));
+    require(extLockingCollateralLocker.hasRole(extLockingCollateralLocker.SERVICER_ROLE(), currentContract));
+
     mathint borrowerCollateralBalanceBefore = getCollateralBalance(e.msg.sender, extLockingCollateralToken);
     mathint encumberedCollateralBalanceBefore = encumberedCollateralBalance(extLockingCollateralToken);
     mathint borrowerCollateralTokenBalanceBefore = extLockingCollateralToken.balanceOf(e.msg.sender);
     mathint lockerCollateralBalanceBefore = extLockingCollateralToken.balanceOf(extLockingCollateralLocker);
+
+    require(lockerCollateralBalanceBefore >= to_mathint(amount)); // locker holds enough for the transfer (else safeTransfer reverts inside the try/catch)
+    require(borrowerCollateralTokenBalanceBefore + amount <= max_uint256); // borrower wallet does not overflow on receipt
 
     externalUnlockCollateral(e, extLockingCollateralToken, amount);
 
@@ -178,17 +193,33 @@ rule externalUnlockCollateralRevertConditions(env e){
     require(extLockingCollateralToken.balanceOf(extLockingCollateralLocker) >= getCollateralBalance(e.msg.sender, extLockingCollateralToken)); // Proved lockerCollateralTokenBalanceGreaterThanCollateralLedgerBalance in stateVariables.spec
     require(extLockingCollateralToken.balanceOf(e.msg.sender) + amount <= max_uint256); // erc20 balances do not overflow
 
+    // _unlockCollateral wraps the locker transfer in try/catch: on a failed transfer the collateral is NOT unlocked, so
+    // the contract's post-unlock isBorrowerInShortfall would use the unchanged balance instead of (locked - amount),
+    // diverging from willBorrowerBeInShortfall(..., amount) below. Require the transfer to succeed so the unlock happens
+    // and the two shortfall computations agree.
+    require(!extLockingCollateralLocker.transfersPaused());
+    require(!controllerLiquidations.termContractsPaused(e));
+    require(extLockingCollateralLocker.hasRole(extLockingCollateralLocker.SERVICER_ROLE(), currentContract));
+
+    // Single collateral token, and bound its USD value so div_(usdValue, maintenanceCollateralRatio) = usdValue * expScale
+    // / ratio doesn't overflow in the shortfall computation (evaluated over the post-unlock balance, locked - amount).
+    require(collateralTokensLength() == 1);
+    mathint postUnlockCollateral = getCollateralBalance(e.msg.sender, extLockingCollateralToken) >= amount ? getCollateralBalance(e.msg.sender, extLockingCollateralToken) - amount : 0;
+    require(tokenPricesPerAmount[extLockingCollateralToken][assert_uint256(postUnlockCollateral)] * (10 ^ 18) <= max_uint256);
+
     bool payable = e.msg.value > 0;
     bool zeroAmount = amount == 0;
     bool isNotCollateralToken = !isTokenCollateral(extLockingCollateralToken);
-    bool borrowerEndsUpInShortfall = willBorrowerBeInShortfall(e.msg.sender,0,extLockingCollateralToken,amount); 
+    bool borrowerEndsUpInShortfall = willBorrowerBeInShortfall(e.msg.sender,0,extLockingCollateralToken,amount);
     bool collateralDepositClosed = e.block.timestamp >= extLockingRepoServicer.endOfRepurchaseWindow() && e.block.timestamp < extLockingRepoServicer.redemptionTimestamp();
     bool zeroBorrowerCollateralBalance = getCollateralBalance(e.msg.sender, extLockingCollateralToken) == 0;
     bool notEnoughCollateralToUnlock = getCollateralBalance(e.msg.sender, extLockingCollateralToken) < amount;
-    bool lockerTransfersPaused = extLockingCollateralLocker.transfersPaused();
-    bool lockerNotPaired = !extLockingCollateralLocker.hasRole(extLockingCollateralLocker.SERVICER_ROLE(), currentContract);
+    // externalUnlockCollateral routes through _unlockCollateral, which wraps termRepoLocker.transferTokenToWallet in
+    // try/catch. A paused locker, a globally-paused controller, or the collateral manager lacking the locker
+    // SERVICER_ROLE all revert INSIDE that transfer and are swallowed, so they no longer revert externalUnlockCollateral.
+    // (notEnoughCollateralToUnlock above is the pre-try/catch amount > locked check, which still reverts directly.)
 
-    bool isExpectedToRevert = payable || zeroAmount || isNotCollateralToken || borrowerEndsUpInShortfall || collateralDepositClosed || zeroBorrowerCollateralBalance || notEnoughCollateralToUnlock || lockerTransfersPaused || lockerNotPaired  ;
+    bool isExpectedToRevert = payable || zeroAmount || isNotCollateralToken || borrowerEndsUpInShortfall || collateralDepositClosed || zeroBorrowerCollateralBalance || notEnoughCollateralToUnlock ;
 
     externalUnlockCollateral@withrevert(e, extLockingCollateralToken, amount);
 

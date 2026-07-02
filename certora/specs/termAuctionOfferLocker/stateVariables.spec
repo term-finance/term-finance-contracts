@@ -46,6 +46,7 @@ rule pauseLockingCausesOfferLockingToRevert(
     calldataarg args
 ) filtered { f ->
   f.selector == sig:TermAuctionOfferLockerHarness.lockOffersWithReferral(TermAuctionOfferLockerHarness.TermAuctionOfferSubmission[],address).selector ||
+  f.selector == sig:TermAuctionOfferLockerHarness.lockOffersWithReferral(address,TermAuctionOfferLockerHarness.TermAuctionOfferSubmission[],address).selector ||
   f.selector == sig:TermAuctionOfferLockerHarness.lockOffers(TermAuctionOfferLockerHarness.TermAuctionOfferSubmission[]).selector
 } {
     require lockingPaused() == true;
@@ -61,6 +62,7 @@ rule unpauseLockingAllowsOfferLocking(
   calldataarg args
 ) filtered { f ->
   f.selector == sig:TermAuctionOfferLockerHarness.lockOffersWithReferral(TermAuctionOfferLockerHarness.TermAuctionOfferSubmission[],address).selector ||
+  f.selector == sig:TermAuctionOfferLockerHarness.lockOffersWithReferral(address,TermAuctionOfferLockerHarness.TermAuctionOfferSubmission[],address).selector ||
   f.selector == sig:TermAuctionOfferLockerHarness.lockOffers(TermAuctionOfferLockerHarness.TermAuctionOfferSubmission[]).selector
 } {
   require lockingPaused() == false;
@@ -106,8 +108,10 @@ rule lockerPurchaseTokenBalanceGreaterThanOfferLedgerBalance(
     f.selector != sig:upgradeToAndCall(address,bytes).selector &&
     f.selector != sig:initialize(string,string,uint256,uint256,uint256,uint256,address,address[],address).selector &&
     f.selector != sig:getAllOffers(bytes32[],bytes32[]).selector &&
-    f.selector != sig:unlockOfferPartial(bytes32,address,uint256).selector && 
-    f.selector != sig:pairTermContracts(address,address,address,address,address).selector
+    f.selector != sig:unlockOfferPartial(bytes32,address,uint256).selector &&
+    f.selector != sig:lockOffersWithReferral(address,TermAuctionOfferLockerHarness.TermAuctionOfferSubmission[],address).selector &&
+    f.selector != sig:unlockOffers(address,bytes32[]).selector &&
+    f.selector != sig:pairTermContracts(address,address,address,address,address,address).selector
 
 } {
     require(termRepoServicer() == repoServicerOfferState); // bounds for test 

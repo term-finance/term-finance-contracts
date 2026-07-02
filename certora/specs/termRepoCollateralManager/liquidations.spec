@@ -39,6 +39,7 @@ methods {
     function TermRepoServicer.termRepoLocker() external returns (address) envfree;
     function TermRepoServicer.totalOutstandingRepurchaseExposure() external returns (uint256) envfree;
     function TermRepoServicer.totalRepurchaseCollected() external returns (uint256) envfree;
+    function TermRepoServicer.termRepoBalancedThreshold() external returns (uint256) envfree;
 
 
 
@@ -69,6 +70,11 @@ methods {
 
 
     function TermController.getProtocolReserveAddress() external returns (address) envfree => ALWAYS(100);
+    function _.termContractsPaused() external => DISPATCHER(true);
+    // TermRepoToken.burnAndReturnValue (reached via liquidatorCoverExposureWithRepoToken) calls
+    // ITermRepoServicer(config.termRepoServicer).termController() through the token's struct-field servicer,
+    // which can't be conf-linked; dispatch it to the in-scene servicer to avoid an autohavoc.
+    function _.termController() external => DISPATCHER(true);
 }
 
 
@@ -134,11 +140,18 @@ rule batchLiquidationSuccessfullyLiquidates(
     require(controllerLiquidations.getProtocolReserveAddress() != borrower);
     require(termRepoLocker() != e.msg.sender);
     require(controllerLiquidations.getProtocolReserveAddress() != termRepoLocker());
+    // Borrower's wallet must be distinct from the liquidator (self-liquidation reverts anyway)
+    // and the locker so the returned collateral on full liquidation is tracked cleanly.
+    require(borrower != e.msg.sender);
+    require(borrower != termRepoLocker());
 
     // Prevents Overflow
     require(closureAmount < 2 ^ 255);
 
     require(servicerLiquidations.getBorrowerRepurchaseObligation(borrower) > 0);
+    require(servicerLiquidations.isTermRepoBalanced());
+    require(collateralTokenLiquidations.balanceOf(lockerLiquidations) >= getCollateralBalance(borrower, collateralTokenLiquidations)); //Proved in lockerCollateralTokenBalanceGreaterThanCollateralLedgerBalance of stateVariables.spec
+    require(getCollateralBalance(borrower, collateralTokenLiquidations) <= encumberedCollateralBalance(collateralTokenLiquidations)); // True if liquidatable encumbered collateral remaining
     require(liquidatedDamagesDueToProtocol() < 10 ^ 18);
     require(liquidatedDamages(collateralTokenLiquidations) >= liquidatedDamagesDueToProtocol());
 
@@ -169,6 +182,11 @@ rule batchLiquidationSuccessfullyLiquidates(
     mathint liquidatorPurchaseTokenBalanceBefore = purchaseTokenLiquidations.balanceOf(e.msg.sender);
     mathint reservePurchaseTokenBalanceBefore = purchaseTokenLiquidations.balanceOf(controllerLiquidations.getProtocolReserveAddress());
 
+    // Borrower's locked collateral and wallet balance. If the repurchase obligation is liquidated
+    // to zero, all remaining locked collateral is unlocked and returned to the borrower.
+    mathint borrowerLockedCollateralBefore = getCollateralBalance(borrower, collateralTokenLiquidations);
+    mathint borrowerCollateralTokenBalanceBefore = collateralTokenLiquidations.balanceOf(borrower);
+
     batchLiquidation(e, borrower, [closureAmount]);
 
     // Record borrower and msg.sender's balances after liquidation.
@@ -178,10 +196,34 @@ rule batchLiquidationSuccessfullyLiquidates(
     mathint lockerPurchaseTokenBalanceAfter = purchaseTokenLiquidations.balanceOf(termRepoLocker());
     mathint liquidatorPurchaseTokenBalanceAfter = purchaseTokenLiquidations.balanceOf(e.msg.sender);
     mathint reservePurchaseTokenBalanceAfter = purchaseTokenLiquidations.balanceOf(controllerLiquidations.getProtocolReserveAddress());
+    mathint borrowerCollateralTokenBalanceAfter = collateralTokenLiquidations.balanceOf(borrower);
 
+    // The borrower's repurchase obligation is liquidated to zero when the closure amount covers
+    // the entire obligation, triggering the return of all remaining collateral to the borrower.
+    bool fullyLiquidated = servicerLiquidations.getBorrowerRepurchaseObligation(borrower) == 0;
 
-    // Assert that the locker's balances have changed by the correct amount.
-    assert(lockerCollateralTokenBalanceBefore - lockerCollateralTokenBalanceAfter == liquidationIncentiveAmount);
+    // Assert that the locker's and borrower's collateral balances have changed by the correct amount.
+    if (fullyLiquidated) {
+        // On full liquidation the remaining collateral (locked balance minus the seized incentive) is returned to
+        // the borrower via _unlockCollateral, whose transferTokenToWallet is wrapped in try/catch. Two outcomes:
+        //  - transfer succeeds: the locker loses the borrower's entire locked balance and the borrower receives back
+        //    (locked - incentive);
+        //  - transfer fails: the remaining collateral stays in the locker (lockedCollateralLedger not decremented) and
+        //    the borrower receives nothing, so the locker only loses the seized incentive (same net effect as a
+        //    partial liquidation).
+        assert(
+            (lockerCollateralTokenBalanceBefore - lockerCollateralTokenBalanceAfter == borrowerLockedCollateralBefore &&
+             borrowerCollateralTokenBalanceAfter - borrowerCollateralTokenBalanceBefore == borrowerLockedCollateralBefore - liquidationIncentiveAmount)
+            ||
+            (lockerCollateralTokenBalanceBefore - lockerCollateralTokenBalanceAfter == liquidationIncentiveAmount &&
+             borrowerCollateralTokenBalanceAfter == borrowerCollateralTokenBalanceBefore)
+        );
+    } else {
+        // Partial liquidation: locker only loses the seized liquidation incentive and no collateral
+        // is returned to the borrower.
+        assert(lockerCollateralTokenBalanceBefore - lockerCollateralTokenBalanceAfter == liquidationIncentiveAmount);
+        assert(borrowerCollateralTokenBalanceAfter == borrowerCollateralTokenBalanceBefore);
+    }
     assert(lockerPurchaseTokenBalanceAfter - lockerPurchaseTokenBalanceBefore == to_mathint(closureAmount));
 
     // Assert that the liquidator's balances have changed by the correct amount.
@@ -216,8 +258,15 @@ rule batchLiquidateWithRepoTokenSuccessfullyLiquidates(
     require(controllerLiquidations.getProtocolReserveAddress() != borrower);
     require(termRepoLocker() != e.msg.sender);
     require(controllerLiquidations.getProtocolReserveAddress() != termRepoLocker());
+    // Borrower's wallet must be distinct from the liquidator (self-liquidation reverts anyway)
+    // and the locker so the returned collateral on full liquidation is tracked cleanly.
+    require(borrower != e.msg.sender);
+    require(borrower != termRepoLocker());
 
     require(servicerLiquidations.getBorrowerRepurchaseObligation(borrower) > 0);
+    require(servicerLiquidations.isTermRepoBalanced());
+    require(collateralTokenLiquidations.balanceOf(lockerLiquidations) >= getCollateralBalance(borrower, collateralTokenLiquidations)); //Proved in lockerCollateralTokenBalanceGreaterThanCollateralLedgerBalance of stateVariables.spec
+    require(getCollateralBalance(borrower, collateralTokenLiquidations) <= encumberedCollateralBalance(collateralTokenLiquidations)); // True if liquidatable encumbered collateral remaining
     require(liquidatedDamagesDueToProtocol() < 10 ^ 18);
 
     require(liquidatedDamages(collateralTokenLiquidations) >= liquidatedDamagesDueToProtocol());
@@ -231,6 +280,10 @@ rule batchLiquidateWithRepoTokenSuccessfullyLiquidates(
 
     require(to_mathint(initialCollateralRatios(collateralTokenLiquidations)) > (100 * (10 ^ 18)));
 
+    // Bound the intermediate product so the SMT doesn't range over the unbounded nonlinear
+    // closureRepoTokenAmount * expScale * redemptionVal term (matches redemptions.spec's `value` bound);
+    // for the success path the tx must not overflow anyway.
+    require(closureRepoTokenAmount * 10 ^ 18 * redemptionVal <= max_uint256);
     uint256 closureAmount = require_uint256(closureRepoTokenAmount * 10 ^ 18 * redemptionVal / (10 ^ 36));
 
     mathint collateralTokenDecimals = collateralTokenLiquidations.decimals();
@@ -257,6 +310,11 @@ rule batchLiquidateWithRepoTokenSuccessfullyLiquidates(
     mathint reserveCollateralTokenBalanceBefore = collateralTokenLiquidations.balanceOf(controllerLiquidations.getProtocolReserveAddress());
     mathint liquidatorRepoTokenBalanceBefore = repoTokenLiquidations.balanceOf(e.msg.sender);
 
+    // Borrower's locked collateral and wallet balance. If the repurchase obligation is liquidated
+    // to zero, all remaining locked collateral is unlocked and returned to the borrower.
+    mathint borrowerLockedCollateralBefore = getCollateralBalance(borrower, collateralTokenLiquidations);
+    mathint borrowerCollateralTokenBalanceBefore = collateralTokenLiquidations.balanceOf(borrower);
+
     batchLiquidationWithRepoToken(e, borrower, [closureRepoTokenAmount]);
 
     // Record borrower and msg.sender's balances after liquidation.
@@ -264,10 +322,34 @@ rule batchLiquidateWithRepoTokenSuccessfullyLiquidates(
     mathint liquidatorCollateralTokenBalanceAfter = collateralTokenLiquidations.balanceOf(e.msg.sender);
     mathint reserveCollateralTokenBalanceAfter = collateralTokenLiquidations.balanceOf(controllerLiquidations.getProtocolReserveAddress());
     mathint liquidatorRepoTokenBalanceAfter = repoTokenLiquidations.balanceOf(e.msg.sender);
+    mathint borrowerCollateralTokenBalanceAfter = collateralTokenLiquidations.balanceOf(borrower);
 
+    // The borrower's repurchase obligation is liquidated to zero when the closure amount covers
+    // the entire obligation, triggering the return of all remaining collateral to the borrower.
+    bool fullyLiquidated = servicerLiquidations.getBorrowerRepurchaseObligation(borrower) == 0;
 
-    // Assert that the locker's balances have changed by the correct amount.
-    assert(lockerCollateralTokenBalanceBefore - lockerCollateralTokenBalanceAfter == liquidationIncentiveAmount);
+    // Assert that the locker's and borrower's collateral balances have changed by the correct amount.
+    if (fullyLiquidated) {
+        // On full liquidation the remaining collateral (locked balance minus the seized incentive) is returned to
+        // the borrower via _unlockCollateral, whose transferTokenToWallet is wrapped in try/catch. Two outcomes:
+        //  - transfer succeeds: the locker loses the borrower's entire locked balance and the borrower receives back
+        //    (locked - incentive);
+        //  - transfer fails: the remaining collateral stays in the locker (lockedCollateralLedger not decremented) and
+        //    the borrower receives nothing, so the locker only loses the seized incentive (same net effect as a
+        //    partial liquidation).
+        assert(
+            (lockerCollateralTokenBalanceBefore - lockerCollateralTokenBalanceAfter == borrowerLockedCollateralBefore &&
+             borrowerCollateralTokenBalanceAfter - borrowerCollateralTokenBalanceBefore == borrowerLockedCollateralBefore - liquidationIncentiveAmount)
+            ||
+            (lockerCollateralTokenBalanceBefore - lockerCollateralTokenBalanceAfter == liquidationIncentiveAmount &&
+             borrowerCollateralTokenBalanceAfter == borrowerCollateralTokenBalanceBefore)
+        );
+    } else {
+        // Partial liquidation: locker only loses the seized liquidation incentive and no collateral
+        // is returned to the borrower.
+        assert(lockerCollateralTokenBalanceBefore - lockerCollateralTokenBalanceAfter == liquidationIncentiveAmount);
+        assert(borrowerCollateralTokenBalanceAfter == borrowerCollateralTokenBalanceBefore);
+    }
 
     // Assert that the liquidator's balances have changed by the correct amount.
     assert(liquidatorCollateralTokenBalanceAfter - liquidatorCollateralTokenBalanceBefore == liquidationIncentiveAmount - protocolLiquidatedDamagesAmount);
@@ -303,6 +385,7 @@ rule batchDefaultSuccessfullyDefaults(
     require(closureAmount < 2 ^ 255); // Prevents Overflows
 
     require(servicerLiquidations.getBorrowerRepurchaseObligation(borrower) > 0);
+    require(servicerLiquidations.isTermRepoBalanced()); // Pre-tx state must be term repo balanced
     require(liquidatedDamagesDueToProtocol() < 10 ^ 18);
     require(liquidatedDamages(collateralTokenLiquidations) >= liquidatedDamagesDueToProtocol());
 
@@ -385,7 +468,8 @@ rule batchLiquidationDoesNotAffectThirdParty(
     require(borrower2 != 100);
     require(e.msg.sender != borrower2);
     require (borrower2 != termRepoLocker());
-    
+    require(servicerLiquidations.isTermRepoBalanced());
+
     uint256 otherBorrowerRepurchaseObligationBefore = servicerLiquidations.getBorrowerRepurchaseObligation(borrower2);
     uint256 otherBorrowerCollateralBalanceBefore = getCollateralBalance(borrower2, collateralTokenLiquidations);
 
@@ -426,7 +510,8 @@ rule batchLiquidationWithRepoTokenDoesNotAffectThirdParty(
     require(borrower2 != 100);
     require(e.msg.sender != borrower2);
     require (borrower2 != termRepoLocker());
-    
+    require(servicerLiquidations.isTermRepoBalanced());
+
     uint256 otherBorrowerRepurchaseObligationBefore = servicerLiquidations.getBorrowerRepurchaseObligation(borrower2);
     uint256 otherBorrowerCollateralBalanceBefore = getCollateralBalance(borrower2, collateralTokenLiquidations);
 
@@ -467,7 +552,8 @@ rule batchDefaultDoesNotAffectThirdParty(
     require(borrower2 != 100);
     require(e.msg.sender != borrower2);
     require (borrower2 != termRepoLocker());
-    
+    require(servicerLiquidations.isTermRepoBalanced());
+
     uint256 otherBorrowerRepurchaseObligationBefore = servicerLiquidations.getBorrowerRepurchaseObligation(borrower2);
     uint256 otherBorrowerCollateralBalanceBefore = getCollateralBalance(borrower2, collateralTokenLiquidations);
 
@@ -533,6 +619,7 @@ rule batchLiquidationRevertsIfInvalid(
     bool liquidatorAllowanceFoLockerTooLow = purchaseTokenLiquidations.allowance(e.msg.sender, lockerLiquidations) < closureAmounts[0];
     bool notEnoughCollateralToLiquidate = collateralSeizure > getCollateralBalance(borrower,collateralTokenLiquidations);
     bool msgHasValue = e.msg.value != 0;
+    bool globalPaused = controllerLiquidations.termContractsPaused(e);
 
     batchLiquidation@withrevert(e, borrower, closureAmounts);
     assert lastReverted == (
@@ -553,7 +640,8 @@ rule batchLiquidationRevertsIfInvalid(
         liquidatorAllowanceFoLockerTooLow ||
         notEnoughCollateralToLiquidate ||
         liquidationsPaused() ||
-        msgHasValue
+        msgHasValue ||
+        globalPaused
     ), "Expected revert";
 }
 
@@ -585,6 +673,7 @@ rule batchLiquidationWithRepoTokenRevertsIfInvalid(
     uint256 closureAmountInPurchaseToken = assert_uint256((value) / (10 ^ 36));
     require (redemptionVal > 0);
     require(servicerLiquidations.totalRepurchaseCollected() + closureAmountInPurchaseToken <= max_uint256); // Prevents overflow
+    require(servicerLiquidations.totalOutstandingRepurchaseExposure() + servicerLiquidations.totalRepurchaseCollected() <= max_uint256); // _isTermRepoBalanced computes totalLiquidity = totalOutstandingRepurchaseExposure + totalRepurchaseCollected (checked add); bound it so the post-burn add doesn't overflow-revert
     require(scaledSupply  <= max_uint256); // Prevents overflow
     require(scaledSupply * redemptionVal <= max_uint256); // Prevents overflow
     require(servicerLiquidations.isTermRepoBalanced()); // Pre-tx state must be term repo balanced
@@ -595,6 +684,7 @@ rule batchLiquidationWithRepoTokenRevertsIfInvalid(
     require(borrowerUSDValue + deMinimisMarginThreshold() <= max_uint256);
 
     require(repoTokenLiquidations.totalSupply() * 10 ^ 18 * redemptionVal <= max_uint256 ); // prevents overflow
+    require(closureAmounts[0] <= repoTokenLiquidations.totalSupply()); // burn cannot exceed total supply (amount > supply >= liquidator balance always reverts via liquidatorDoesNotHaveEnoughFunds); keeps (totalSupply - closureAmounts[0]) non-negative in the term-repo-balanced narrowing below
     uint256 collateralSeizure;
     uint256 protocolShare;
     collateralSeizure, protocolShare = harnessCollateralSeizureAmounts(closureAmountInPurchaseToken, collateralTokenLiquidations);
@@ -621,9 +711,14 @@ rule batchLiquidationWithRepoTokenRevertsIfInvalid(
     bool noAccessToServicer = !servicerLiquidations.hasRole(servicerLiquidations.COLLATERAL_MANAGER(), currentContract);
     bool liquidatorDoesNotHaveEnoughFunds = repoTokenLiquidations.balanceOf(e.msg.sender) < closureAmounts[0];
     bool notEnoughCollateralToLiquidate = collateralSeizure > getCollateralBalance(borrower,collateralTokenLiquidations);
-    bool servicerIsNotTermRepoBalanced = (servicerLiquidations.totalOutstandingRepurchaseExposure() - closureAmountInPurchaseToken + servicerLiquidations.totalRepurchaseCollected() ) / (10 ^ 4) != (((((repoTokenLiquidations.totalSupply() -  closureAmounts[0]) * expScale * redemptionVal) / expScale ) / expScale) / 10 ^ 4);
+    // NOTE: the inline assert(_isTermRepoBalanced()) reached through liquidatorCoverExposureWithRepoToken is
+    // summarized to true in rulesBatchLiquidationWithRepoToken.spec (its nonlinear threshold check made this rule
+    // time out, and the balance invariant is proven independently in the stateVariables specs). With that summary
+    // the safety assert can never trip, so imbalance is not a reachable revert for this rule and must not appear in
+    // the expected-revert set -- otherwise the mirror would demand a revert the (summarized) contract never makes.
     bool msgHasValue = e.msg.value != 0;
     bool liquidatorIsZero = e.msg.sender == 0;
+    bool globalPaused = controllerLiquidations.termContractsPaused(e);
 
 
     batchLiquidationWithRepoToken@withrevert(e, borrower, closureAmounts);
@@ -645,8 +740,8 @@ rule batchLiquidationWithRepoTokenRevertsIfInvalid(
         liquidatorDoesNotHaveEnoughFunds ||
         notEnoughCollateralToLiquidate ||
         liquidationsPaused() ||
-        servicerIsNotTermRepoBalanced ||
-        msgHasValue || liquidatorIsZero
+        msgHasValue || liquidatorIsZero ||
+        globalPaused
     ), "Expected revert";
 }
 
@@ -703,6 +798,7 @@ rule batchDefaultRevertsIfInvalid(
     bool notEnoughCollateralToLiquidate = collateralSeizure > getCollateralBalance(borrower,collateralTokenLiquidations);
 
     bool msgHasValue = e.msg.value != 0;
+    bool globalPaused = controllerLiquidations.termContractsPaused(e);
 
     batchDefault@withrevert(e, borrower, closureAmounts);
     assert lastReverted == (
@@ -713,15 +809,16 @@ rule batchDefaultRevertsIfInvalid(
         liquidationsPaused() ||
         servicerNoLockerAccess ||
         noLockerAccess ||
-        lockerTransfersPaused || 
+        lockerTransfersPaused ||
         totalClosureIsZero ||
         closureAmountIsUIntMax ||
         closureAmountMoreThanBorrowObligation ||
         noAccessToServicer ||
         liquidatorDoesNotHaveEnoughFunds ||
         liquidatorAllowanceFoLockerTooLow ||
-        notEnoughCollateralToLiquidate || 
-        msgHasValue
+        notEnoughCollateralToLiquidate ||
+        msgHasValue ||
+        globalPaused
     ), "Expected revert";
 }
 

@@ -21,12 +21,10 @@ rule onlyRoleCanCallRevert(method f, calldataarg args, env e) filtered {
     && f.selector != sig:renounceRole(bytes32,address).selector
     && f.selector != sig:revokeRole(bytes32,address).selector
     && f.selector != sig:approve(address,uint256).selector
-    && f.selector != sig:increaseAllowance(address,uint256).selector
-    && f.selector != sig:decreaseAllowance(address,uint256).selector
     && f.selector != sig:transferFrom(address,address,uint256).selector
     && f.selector != sig:transfer(address,uint256).selector
     && f.selector != sig:permit(address,address,uint256,uint256,uint8,bytes32,bytes32).selector
-    
+
 
 } {
     currentContract.f@withrevert(e,args);
@@ -46,8 +44,6 @@ rule onlyRoleCanCallStorage(method f, calldataarg args, env e) filtered {
     && f.selector != sig:renounceRole(bytes32,address).selector
     && f.selector != sig:revokeRole(bytes32,address).selector
     && f.selector != sig:approve(address,uint256).selector
-    && f.selector != sig:increaseAllowance(address,uint256).selector
-    && f.selector != sig:decreaseAllowance(address,uint256).selector
     && f.selector != sig:transferFrom(address,address,uint256).selector
     && f.selector != sig:transfer(address,uint256).selector
     && f.selector != sig:permit(address,address,uint256,uint256,uint8,bytes32,bytes32).selector

@@ -3,6 +3,7 @@ using TermRepoRolloverManager as rolloverManagerRedempt;
 using TermRepoCollateralManagerHarness as collateralManagerRedempt;
 using TermRepoToken as repoTokenRedempt;
 using DummyERC20A as tokenRedempt;
+using TermController as termControllerRedempt;
 
 
 methods {
@@ -10,6 +11,7 @@ methods {
     function endOfRepurchaseWindow() external returns (uint256) envfree;
     function getBorrowerRepurchaseObligation(address) external returns (uint256) envfree;
     function isTermRepoBalanced() external returns (bool) envfree;
+    function termRepoBalancedThreshold() external returns (uint256) envfree;
 
     function termRepoLocker() external returns(address) envfree;
     function termRepoToken() external returns(address) envfree;
@@ -146,9 +148,11 @@ rule redemptionsRevertConditions(env e) {
     require(isTermRepoBalanced()); // Term pool must start out balanced;
     require(repoTokenRedempt.redemptionValue() != 0); // Will not have a zero redemptionValue for repo token
     require(repoTokenRedempt.totalSupply() >= repoTokenRedempt.balanceOf(redeemer)); // Common ERC20 invariant that total Supply is sum of balances.
+    require(amount <= repoTokenRedempt.totalSupply()); // burn cannot exceed total supply (amount > supply >= redeemer balance always reverts via notEnoughRepoTokens); keeps totalSupplyExpected = (totalSupply - amount) non-negative in the nonlinear balance-diff terms below
     require(repoTokenRedempt.totalSupply() * expScale * repoTokenRedempt.redemptionValue() <= max_uint256); // Prevents overflow
     require(repoTokenRedempt.mintExposureCap() + amount <= max_uint256); // Prevents overflow;
     require((totalRepurchaseCollected() + totalOutstandingRepurchaseExposure()) * expScale <= max_uint256); // Prevents overflow
+    require(totalRepurchaseCollected() * expScale * expScale <= max_uint256); // Bounds the shortfall-haircut numerator (totalRepurchaseCollected * expScale^2) so the nonlinear div_ doesn't range over unbounded products
     require(value<= max_uint256); // Prevent overflow
     require (shortfallHaircutMantissa() < expScale); // shortfallHaircutMantissaAlwaysZeroBeforeRedemptionAndLessThanExpScaleAfter certora/specs/termRepoServicer/stateVariables.spec
     require(shortfallHaircutMantissa() * ((value) / (expScale * expScale)) <= max_uint256); // Prevents overflow
@@ -190,9 +194,14 @@ rule redemptionsRevertConditions(env e) {
     bool noServicerAccessToLocker = !lockerRedempt.hasRole(lockerRedempt.SERVICER_ROLE(), currentContract);
     bool lockerTransfersPaused = lockerRedempt.transfersPaused();
     bool notEnoughRepoTokens = repoTokenRedempt.balanceOf(redeemer) < amount; 
-    bool termRepoUnbalanced = (termRepoUnbalancedLeftSide) / (10 ^ 4) != (totalRedemptionValueExpected / 10 ^ 4);
+    mathint termBalanceThreshold = to_mathint(termRepoBalancedThreshold());
+    mathint termRepoBalanceDiff = termRepoUnbalancedLeftSide - totalRedemptionValueExpected;
+    bool termRepoUnbalanced = termRepoBalanceDiff > termBalanceThreshold || termRepoBalanceDiff < -termBalanceThreshold;
 
-    bool isExpectedToRevert = payable || zeroAddress || beforeRedemption || zeroRepoTokens || encumberedCollateralRemaining || servicerNotHaveRepoTokenBurnerRole || repoTokenBurningPaused || lockerTransfersPaused || noServicerAccessToLocker ||  notEnoughRepoTokens || termRepoUnbalanced;
+    require(termControllerAddress() == termControllerRedempt); // Bounds for test
+    bool globalPaused = termControllerRedempt.termContractsPaused(e);
+
+    bool isExpectedToRevert = payable || zeroAddress || beforeRedemption || zeroRepoTokens || encumberedCollateralRemaining || servicerNotHaveRepoTokenBurnerRole || repoTokenBurningPaused || lockerTransfersPaused || noServicerAccessToLocker ||  notEnoughRepoTokens || termRepoUnbalanced || globalPaused;
 
     redeemTermRepoTokens@withrevert(e, redeemer, amount);
         

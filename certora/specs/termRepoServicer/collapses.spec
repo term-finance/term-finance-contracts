@@ -22,6 +22,7 @@ methods {
     function shortfallHaircutMantissa() external returns (uint256) envfree;
     function totalCollateral(address) external returns (uint256) envfree;
     function isTermRepoBalanced() external returns (bool) envfree;
+    function termRepoBalancedThreshold() external returns (uint256) envfree;
 
 
 
@@ -191,8 +192,27 @@ rule burnCollapseExposureRevertConditions(env e) {
 
     mathint repaymentInPurchaseToken = collapseAmount < maxRepaymentInRepoTokens ?  repaymentFromRepoTokenAmount : maxRepayment;
 
+    // _burnCollapseExposureInternal computes div_(Exp(maxRepurchase * 10^(18-decimals)), Exp(redemptionValue)),
+    // whose checked intermediate is maxRepurchase * 10^(18-decimals) * expScale. Bound it so that multiply does not
+    // overflow-revert in a way the revert conditions below don't model.
+    require(maxRepayment * 10 ^ (18 - purchaseTokenDecimals) * expScale <= max_uint256);
+
+    // _isTermRepoBalanced evaluates totalRedemptionValue() = totalSupply * expScale * redemptionValue (checked) on the
+    // post-burn supply. Bound the pre-burn product so that multiply doesn't overflow-revert (post-burn supply is smaller).
+    require(collapsingRepoToken.totalSupply() * expScale * collapsingRepoToken.redemptionValue() <= max_uint256);
+
+    // The burn cannot exceed total supply (else _burn's checked _totalSupply -= amount underflow-reverts, or
+    // borrowerRepoTokenBalanceTooLow triggers). Keep (totalSupply - repaymentInTokens) non-negative so totalRedemptionValue's
+    // post-burn supply doesn't underflow in the bv256 narrowing.
+    require(repaymentInTokens <= collapsingRepoToken.totalSupply());
+
     require(collapsingRepoToken.mintExposureCap() + repaymentInTokens <= max_uint256); // Prevent mint exposure cap from overflowing
     require(collapsingToken.balanceOf(e.msg.sender) + collapsingCollateralManager.getCollateralBalance(e.msg.sender, collapsingToken) <= max_uint256); // Prevent borrower collateral token balance from overflowing
+
+    // Collateral tokens in the array are distinct. Without this, the unlockCollateralOnRepurchase loop could process the
+    // same token at indices 0 and 1; with _unlockCollateral's try/catch leaving lockedCollateralLedger un-decremented on a
+    // failed transfer, encumberedCollateralBalances[token] -= locked would run twice and underflow on the second iteration.
+    require(collapsingCollateralManager.collateralTokens(0) != collapsingCollateralManager.collateralTokens(1));
 
     require(collapsingCollateralManager.getCollateralBalance(e.msg.sender, collapsingCollateralManager.collateralTokens(0)) <= collapsingCollateralManager.encumberedCollateralBalance(collapsingCollateralManager.collateralTokens(0))); // Proved in lockerCollateralTokenBalanceGreaterThanCollateralLedgerBalance in ../termRepoCollateralManager/stateVariables.spec
     require(collapsingCollateralManager.getCollateralBalance(e.msg.sender, collapsingCollateralManager.collateralTokens(1)) <= collapsingCollateralManager.encumberedCollateralBalance(collapsingCollateralManager.collateralTokens(1))); // Proved in lockerCollateralTokenBalanceGreaterThanCollateralLedgerBalance in ../termRepoCollateralManager/stateVariables.spec
@@ -208,12 +228,23 @@ rule burnCollapseExposureRevertConditions(env e) {
     bool servicerNotHaveRepoTokenBurnerRole = !collapsingRepoToken.hasRole(collapsingRepoToken.BURNER_ROLE(), currentContract);
     bool borrowerRepoTokenBalanceTooLow = (collapserRepoTokenBalanceBefore < collapseAmount && repaymentInTokens == collapseAmount) || (collapserRepoTokenBalanceBefore < maxRepaymentInRepoTokens && maxRepaymentInRepoTokens <= collapseAmount);
     bool repoTokenBurningPaused = collapsingRepoToken.burningPaused();
-    bool noServicerRoleOnCollateralManager = !collapsingCollateralManager.hasRole(collapsingCollateralManager.SERVICER_ROLE(), currentContract) && maxRepaymentInRepoTokens <= collapseAmount;
-    bool collatManagerDoesNotHaveLockerServicerRole = !collapsingLocker.hasRole(collapsingLocker.SERVICER_ROLE(), collapsingCollateralManager) && maxRepaymentInRepoTokens <= collapseAmount && totalCollateral(e.msg.sender) > 0; 
-    bool lockerTransfersPaused = collapsingLocker.transfersPaused() && maxRepaymentInRepoTokens <= collapseAmount && totalCollateral(e.msg.sender) > 0; // Only in the case of full repayment
-    bool termRepoUnbalanced = (totalOutstandingRepurchaseExposure() - repaymentInPurchaseToken + totalRepurchaseCollected() ) / (10 ^ 4) != (((((collapsingRepoToken.totalSupply() -  repaymentInTokens) * expScale * collapsingRepoToken.redemptionValue()) / expScale ) / expScale) / 10 ^ 4);
+    // unlockCollateralOnRepurchase (onlyRole(SERVICER_ROLE) on the collateral manager) is only called when the
+    // obligation is fully zeroed after the collapse: contract does `if (repurchaseExposureLedger[borrower] == 0)`,
+    // and post-collapse the ledger equals the outstanding rollover amount. So the role check only reverts when it's a
+    // full-repo-token repayment AND there is no outstanding rollover (outstandingRolloverAmount == 0).
+    bool noServicerRoleOnCollateralManager = !collapsingCollateralManager.hasRole(collapsingCollateralManager.SERVICER_ROLE(), currentContract) && maxRepaymentInRepoTokens <= collapseAmount && outstandingRolloverAmount == 0;
+    // A paused locker, or the collateral manager lacking the locker SERVICER_ROLE, used to revert the collapse on full
+    // repayment. Collateral return now goes through _unlockCollateral, which wraps transferTokenToWallet in try/catch and
+    // swallows any failure (collateral simply stays locked). So neither is a revert condition for burnCollapseExposure
+    // anymore. 
+    mathint termBalanceThreshold = to_mathint(termRepoBalancedThreshold());
+    mathint termRepoBalanceDiff = (totalOutstandingRepurchaseExposure() - repaymentInPurchaseToken + totalRepurchaseCollected()) - (((((collapsingRepoToken.totalSupply() -  repaymentInTokens) * expScale * collapsingRepoToken.redemptionValue()) / expScale ) / expScale));
+    bool termRepoUnbalanced = termRepoBalanceDiff > termBalanceThreshold || termRepoBalanceDiff < -termBalanceThreshold;
 
-    bool isExpectedToRevert = payable || zeroAddressSender || pastRepurchaseWindow  || zeroBorrowerRepurchaseObligation || zeroMaxRepayment || servicerNotHaveRepoTokenBurnerRole || borrowerRepoTokenBalanceTooLow || repoTokenBurningPaused || noServicerRoleOnCollateralManager ||  collatManagerDoesNotHaveLockerServicerRole || lockerTransfersPaused || termRepoUnbalanced ;
+    require(termControllerAddress() == collapsingController); // Bounds for test
+    bool globalPaused = collapsingController.termContractsPaused(e);
+
+    bool isExpectedToRevert = payable || zeroAddressSender || pastRepurchaseWindow  || zeroBorrowerRepurchaseObligation || zeroMaxRepayment || servicerNotHaveRepoTokenBurnerRole || borrowerRepoTokenBalanceTooLow || repoTokenBurningPaused || noServicerRoleOnCollateralManager || termRepoUnbalanced || globalPaused;
 
     burnCollapseExposure@withrevert(e, amount);
 

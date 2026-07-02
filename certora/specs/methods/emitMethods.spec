@@ -28,7 +28,7 @@ methods {
     function _.emitLiquidation(bytes32,address,address,uint256,address,uint256,uint256,bool) external => NONDET DELETE;
     function _.emitLiquidationPaused(bytes32) external => NONDET DELETE;
     function _.emitLiquidationUnpaused(bytes32) external => NONDET DELETE;
-    function _.emitTermRepoServicerInitialized(bytes32,address,address,uint256,uint256,uint256,uint256,string) external => NONDET DELETE;
+    function _.emitTermRepoServicerInitialized(bytes32,address,address,uint256,uint256,uint256,uint256,address,string) external => NONDET DELETE;
     function _.emitReopeningOfferLockerPaired(bytes32,address,address,address) external => NONDET DELETE;
     function _.emitOfferLockedByServicer(bytes32,address,uint256) external => NONDET DELETE;
     function _.emitOfferUnlockedByServicer(bytes32,address,uint256) external => NONDET DELETE;

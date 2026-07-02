@@ -158,9 +158,11 @@ rule notAllowedMethodsCannotChangeBidCount(
     f.selector != sig:TermAuctionBidLockerHarness.upgradeToAndCall(address,bytes).selector &&
     f.selector != sig:TermAuctionBidLockerHarness.initialize(string,string,uint256,uint256,uint256,uint256,uint256,address,address[],address).selector &&
     f.selector != sig:TermAuctionBidLockerHarness.lockBidsWithReferral(TermAuctionBidLockerHarness.TermAuctionBidSubmission[],address).selector &&
+    f.selector != sig:TermAuctionBidLockerHarness.lockBidsWithReferral(address,TermAuctionBidLockerHarness.TermAuctionBidSubmission[],address).selector &&
     f.selector != sig:TermAuctionBidLockerHarness.lockRolloverBid(TermAuctionBidLockerHarness.TermAuctionBid).selector &&
     f.selector != sig:TermAuctionBidLockerHarness.lockBids(TermAuctionBidLockerHarness.TermAuctionBidSubmission[]).selector &&
     f.selector != sig:TermAuctionBidLockerHarness.unlockBids(bytes32[]).selector &&
+    f.selector != sig:TermAuctionBidLockerHarness.unlockBids(address,bytes32[]).selector &&
     f.selector != sig:TermAuctionBidLockerHarness.getAllBids(bytes32[],bytes32[],bytes32[]).selector &&
     f.selector != sig:TermAuctionBidLockerHarness.auctionUnlockBid(bytes32,address,address[],uint256[]).selector
 } {
@@ -185,9 +187,11 @@ rule onlyAllowedMethodsCanChangeBidCount(
   f.selector != sig:TermAuctionBidLockerHarness.upgradeToAndCall(address,bytes).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.initialize(string,string,uint256,uint256,uint256,uint256,uint256,address,address[],address).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.lockBidsWithReferral(TermAuctionBidLockerHarness.TermAuctionBidSubmission[],address).selector &&
+  f.selector != sig:TermAuctionBidLockerHarness.lockBidsWithReferral(address,TermAuctionBidLockerHarness.TermAuctionBidSubmission[],address).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.lockRolloverBid(TermAuctionBidLockerHarness.TermAuctionBid).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.lockBids(TermAuctionBidLockerHarness.TermAuctionBidSubmission[]).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.unlockBids(bytes32[]).selector &&
+  f.selector != sig:TermAuctionBidLockerHarness.unlockBids(address,bytes32[]).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.getAllBids(bytes32[],bytes32[],bytes32[]).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.auctionUnlockBid(bytes32,address,address[],uint256[]).selector
 } {
@@ -211,7 +215,9 @@ rule lockerCollateralTokenBalanceGreaterThanCollateralLedgerBalance(
   f.selector != sig:TermAuctionBidLockerHarness.initialize(string,string,uint256,uint256,uint256,uint256,uint256,address,address[],address).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.lockRolloverBid(TermAuctionBidLockerHarness.TermAuctionBid).selector &&
   f.selector != sig:TermAuctionBidLockerHarness.getAllBids(bytes32[],bytes32[],bytes32[]).selector &&
-  f.selector != sig:TermAuctionBidLockerHarness.auctionUnlockBid(bytes32,address,address[],uint256[]).selector
+  f.selector != sig:TermAuctionBidLockerHarness.auctionUnlockBid(bytes32,address,address[],uint256[]).selector &&
+  f.selector != sig:TermAuctionBidLockerHarness.lockBidsWithReferral(address,TermAuctionBidLockerHarness.TermAuctionBidSubmission[],address).selector &&
+  f.selector != sig:TermAuctionBidLockerHarness.unlockBids(address,bytes32[]).selector
 
 } {
     require(termRepoCollateralManager() == collateralManagerBidLockingState); // bounds for test 

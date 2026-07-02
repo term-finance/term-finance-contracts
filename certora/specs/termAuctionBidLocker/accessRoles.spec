@@ -8,6 +8,7 @@ methods {
     function DEVOPS_ROLE() external returns (bytes32) envfree;
     function INITIALIZER_ROLE() external returns (bytes32) envfree;
     function ROLLOVER_MANAGER() external returns (bytes32) envfree;
+    function DIAMOND_ROLE() external returns (bytes32) envfree;
 }
 
 
@@ -32,12 +33,13 @@ rule onlyRoleCanCallRevert(
 } {
     currentContract.f@withrevert(e,args);
 
-    assert !lastReverted => 
+    assert !lastReverted =>
         hasRole(ADMIN_ROLE(),e.msg.sender)
         || hasRole(AUCTIONEER_ROLE(),e.msg.sender)
         || hasRole(DEVOPS_ROLE(),e.msg.sender)
         || hasRole(INITIALIZER_ROLE(),e.msg.sender)
-        || hasRole(ROLLOVER_MANAGER(),e.msg.sender);
+        || hasRole(ROLLOVER_MANAGER(),e.msg.sender)
+        || hasRole(DIAMOND_ROLE(),e.msg.sender);
 }
 
 rule onlyRoleCanCallStorage(
@@ -67,5 +69,6 @@ rule onlyRoleCanCallStorage(
         || hasRole(AUCTIONEER_ROLE(),e.msg.sender)
         || hasRole(DEVOPS_ROLE(),e.msg.sender)
         || hasRole(INITIALIZER_ROLE(),e.msg.sender)
-        || hasRole(ROLLOVER_MANAGER(),e.msg.sender);
+        || hasRole(ROLLOVER_MANAGER(),e.msg.sender)
+        || hasRole(DIAMOND_ROLE(),e.msg.sender);
 }
