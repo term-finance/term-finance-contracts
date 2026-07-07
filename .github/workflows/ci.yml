@@ -12,12 +12,14 @@ jobs:
       - uses: actions/checkout@master
         with:
           fetch-depth: 0
-      - run: corepack enable
+      - id: nodeversion
+        run: echo "version=$(grep nodejs .tool-versions | sed -e 's/[^[:space:]]*[[:space:]]*//')" >> $GITHUB_OUTPUT
       - uses: actions/setup-node@v4
         with:
-          node-version: "18.15"
+          node-version: ${{ steps.nodeversion.outputs.version }}
           cache: yarn
-      - run: yarn install  --immutable
+      - run: corepack enable
+      - run: yarn install --immutable
       - run: yarn build
       - run: yarn check:coverage
         env:
@@ -50,8 +52,8 @@ jobs:
           - "termRepoServicer-repaymentsRedemptions.conf"
           - "termRepoServicer-repaymentsRedemptionsReverts.conf"
           - "termRepoServicer-stateVariables.conf"
-          - "termRepoServicer.conf"
           - "termRepoToken.conf"
+      fail-fast: false
     steps:
       - uses: actions/checkout@master
         with:
@@ -60,7 +62,7 @@ jobs:
         with:
           node-version: "18.15"
           cache: yarn
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - run: |
@@ -80,4 +82,4 @@ jobs:
             --rule_sanity basic
         env:
           CERTORAKEY: ${{ secrets.CERTORAKEY }}
-          SOLC_VERSION: 0.8.18
+          SOLC_VERSION: 0.8.30
