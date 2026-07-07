@@ -38,6 +38,9 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
     /// @notice Thrown when input amount doesn't match expected PT amount
     error InputAmountMismatch();
 
+    /// @notice Thrown when insufficient output amount is received after swap
+    error InsufficientOutputAmount();
+
     /// @notice Thrown when Pendle router address is zero
     error InvalidPendleRouterAddress();
 
@@ -74,16 +77,23 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
     /// @dev Reverts if both input and output tokens are Pendle PTs
     /// @param tokenIn Address of the input token
     /// @param amountIn Amount of input tokens to swap
+    /// @param tokenOut Address of the output token
+    /// @param minTokenOut Minimum acceptable amount of output tokens to receive
+    /// @param usePermit2 Whether to use Permit2 for token transfer approval
     /// @param data Swap routing data containing swap parameters and token type flags
-    function swap(address tokenIn, uint256 amountIn, bool usePermit2, SwapRouterData calldata data) external{
+    function swap(address tokenIn, uint256 amountIn, address tokenOut, uint256 minTokenOut, bool usePermit2, SwapRouterData calldata data) external nonReentrant {
         if (usePermit2){
             Permit2Lib.PERMIT2.transferFrom(msg.sender, address(this), amountIn.toUint160(), tokenIn);
 
         } else {
             ERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
         }
-        
-        _swapInternal(tokenIn, amountIn, data);
+        uint256 userBalanceBefore = ERC20(tokenOut).balanceOf(msg.sender);
+        _swapInternal(tokenIn, amountIn, msg.sender, data);
+        uint256 userBalanceAfter = ERC20(tokenOut).balanceOf(msg.sender);
+        if (userBalanceAfter - userBalanceBefore < minTokenOut) {
+            revert InsufficientOutputAmount();
+        }
     }
 
     // ========================================================================
@@ -99,7 +109,7 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         address tokenIn = input.inputToken;
         uint256 amountIn = input.maxInputAmount;
         SwapRouterData memory data = abi.decode(input.additionalCalldata, (SwapRouterData));
-        _swapInternal(tokenIn, amountIn, data);
+        _swapInternal(tokenIn, amountIn, address(this), data);
     }
 
     // ========================================================================
@@ -134,7 +144,7 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
     // = Internal Functions  ==================================================
     // ========================================================================
 
-    function _swapInternal(address tokenIn, uint256 amountIn, SwapRouterData memory data) internal {
+    function _swapInternal(address tokenIn, uint256 amountIn, address receiver, SwapRouterData memory data) internal {
         if (data.isTokenInPendlePT && data.isTokenOutPendlePT){
             revert BothTokensCannotBePendlePT();
         }
@@ -145,7 +155,7 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
             );
             uint256 expiry = IPPrincipalToken(tokenIn).expiry();
             if (block.timestamp >= expiry) {
-                (address receiver, address market, uint256 netPtIn, uint256 netLpIn, TokenOutput memory output) = abi.decode(data.swapData, (address, address, uint256, uint256, TokenOutput));
+                (, address market, uint256 netPtIn, uint256 netLpIn, TokenOutput memory output) = abi.decode(data.swapData, (address, address, uint256, uint256, TokenOutput));
                 if (netPtIn != amountIn) revert InputAmountMismatch();
                 IPActionMiscV3(pendleRouter).exitPostExpToToken(
                     receiver,
@@ -157,7 +167,7 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
 
             }
             else {
-                (address receiver, address market, uint256 exactPtIn, TokenOutput memory output, LimitOrderData memory limit) = abi.decode(data.swapData, (address, address, uint256, TokenOutput, LimitOrderData));
+                (, address market, uint256 exactPtIn, TokenOutput memory output, LimitOrderData memory limit) = abi.decode(data.swapData, (address, address, uint256, TokenOutput, LimitOrderData));
                 if (exactPtIn != amountIn) revert InputAmountMismatch();
                 IPActionSwapPTV3(pendleRouter).swapExactPtForToken(
                     receiver,
@@ -176,7 +186,7 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
                 address(pendleRouter),
                 amountIn
             );
-            (address receiver, address market, uint256 minPtOut, ApproxParams memory guessPtOut, TokenInput memory input, LimitOrderData memory limit) = abi.decode(data.swapData, (address, address, uint256, ApproxParams, TokenInput, LimitOrderData));
+            (, address market, uint256 minPtOut, ApproxParams memory guessPtOut, TokenInput memory input, LimitOrderData memory limit) = abi.decode(data.swapData, (address, address, uint256, ApproxParams, TokenInput, LimitOrderData));
             if (input.netTokenIn != amountIn) {
                 revert InputAmountMismatch();
             }

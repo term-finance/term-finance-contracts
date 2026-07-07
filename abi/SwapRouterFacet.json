@@ -48,6 +48,11 @@
   },
   {
     "inputs": [],
+    "name": "InsufficientOutputAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidPendleRouterAddress",
     "type": "error"
   },
@@ -291,6 +296,16 @@
       {
         "internalType": "uint256",
         "name": "amountIn",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "tokenOut",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minTokenOut",
         "type": "uint256"
       },
       {

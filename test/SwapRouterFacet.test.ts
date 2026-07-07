@@ -119,13 +119,28 @@ describe("SwapRouterFacet Tests", () => {
   });
 
   describe("swap function", () => {
+    // The new `swap` signature measures ERC20(tokenOut).balanceOf(msg.sender)
+    // before and after the swap, so tokenOut must be a real ERC20. The mocked
+    // Pendle router/aggregator never actually credits msg.sender, so the
+    // measured delta is 0 and every success case uses minTokenOut = 0.
+    let outputTokenAddr: string;
+
+    beforeEach(async () => {
+      const TestTokenFactory = await ethers.getContractFactory("TestToken");
+      const outputToken = await upgrades.deployProxy(TestTokenFactory, [
+        "Output Token", "OUT", 18, [], [],
+      ], { initializer: "initialize" });
+      await outputToken.waitForDeployment();
+      outputTokenAddr = await outputToken.getAddress();
+    });
+
     it("should revert BothTokensCannotBePendlePT when both flags are true", async () => {
       // The new `swap` flow pulls tokens via safeTransferFrom before entering
       // _swapInternal, so tokenIn must be a contract with transferFrom mocked.
       const mockPT = await deployMockContract(wallet1, ptAbi);
       await (mockPT.mock as any).transferFrom.returns(true);
       await expect(
-        swapRouterFacet.swap(await mockPT.getAddress(), 1000, false, {
+        swapRouterFacet.swap(await mockPT.getAddress(), 1000, outputTokenAddr, 0, false, {
           swapData: "0x",
           isTokenInPendlePT: true,
           isTokenOutPendlePT: true,
@@ -149,7 +164,7 @@ describe("SwapRouterFacet Tests", () => {
       );
 
       await expect(
-        swapRouterFacet.swap(await mockPT.getAddress(), amountIn, false, {
+        swapRouterFacet.swap(await mockPT.getAddress(), amountIn, outputTokenAddr, 0, false, {
           swapData: swapDataEncoded,
           isTokenInPendlePT: true,
           isTokenOutPendlePT: false,
@@ -171,7 +186,7 @@ describe("SwapRouterFacet Tests", () => {
       );
 
       await expect(
-        swapRouterFacet.swap(await mockPT.getAddress(), amountIn, false, {
+        swapRouterFacet.swap(await mockPT.getAddress(), amountIn, outputTokenAddr, 0, false, {
           swapData: swapDataEncoded,
           isTokenInPendlePT: true,
           isTokenOutPendlePT: false,
@@ -195,7 +210,7 @@ describe("SwapRouterFacet Tests", () => {
       );
 
       await expect(
-        swapRouterFacet.swap(await mockPT.getAddress(), amountIn, false, {
+        swapRouterFacet.swap(await mockPT.getAddress(), amountIn, outputTokenAddr, 0, false, {
           swapData: swapDataEncoded,
           isTokenInPendlePT: true,
           isTokenOutPendlePT: false,
@@ -217,7 +232,7 @@ describe("SwapRouterFacet Tests", () => {
       );
 
       await expect(
-        swapRouterFacet.swap(await mockPT.getAddress(), amountIn, false, {
+        swapRouterFacet.swap(await mockPT.getAddress(), amountIn, outputTokenAddr, 0, false, {
           swapData: swapDataEncoded,
           isTokenInPendlePT: true,
           isTokenOutPendlePT: false,
@@ -255,7 +270,7 @@ describe("SwapRouterFacet Tests", () => {
       );
 
       await expect(
-        swapRouterFacet.swap(tokenInAddr, amountIn, false, {
+        swapRouterFacet.swap(tokenInAddr, amountIn, outputTokenAddr, 0, false, {
           swapData: swapDataEncoded,
           isTokenInPendlePT: false,
           isTokenOutPendlePT: true,
@@ -292,7 +307,7 @@ describe("SwapRouterFacet Tests", () => {
       );
 
       await expect(
-        swapRouterFacet.swap(await tokenIn.getAddress(), amountIn, false, {
+        swapRouterFacet.swap(await tokenIn.getAddress(), amountIn, outputTokenAddr, 0, false, {
           swapData: swapDataEncoded,
           isTokenInPendlePT: false,
           isTokenOutPendlePT: false,
@@ -328,7 +343,7 @@ describe("SwapRouterFacet Tests", () => {
       );
 
       await expect(
-        swapRouterFacet.swap(tokenInAddr, amountIn, false, {
+        swapRouterFacet.swap(tokenInAddr, amountIn, outputTokenAddr, 0, false, {
           swapData: swapDataEncoded,
           isTokenInPendlePT: false,
           isTokenOutPendlePT: true,
