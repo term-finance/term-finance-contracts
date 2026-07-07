@@ -59,8 +59,8 @@ describe("TermStrategyFacet Tests", () => {
     );
     await mockStrategy.waitForDeployment();
 
-    // Register strategy as a deployed term in the controller
-    await mockController.setTermDeployed(await mockStrategy.getAddress(), true);
+    // Register strategy as an approved external contract in the controller
+    await mockController.setVaultApproval(await mockStrategy.getAddress(), true);
   });
 
   describe("sellRepoToken", () => {
@@ -119,8 +119,8 @@ describe("TermStrategyFacet Tests", () => {
       );
       await maliciousStrategy.waitForDeployment();
 
-      // Register malicious strategy as deployed term
-      await mockController.setTermDeployed(await maliciousStrategy.getAddress(), true);
+      // Register malicious strategy as approved
+      await mockController.setVaultApproval(await maliciousStrategy.getAddress(), true);
 
       // Give the facet some initial assets
       await asset.connect(wallet2).transfer(await termStrategyFacet.getAddress(), ethers.parseEther("50"));
@@ -194,7 +194,7 @@ describe("TermStrategyFacet Tests", () => {
       ).to.be.revertedWithCustomError(termStrategyFacet, "InvalidTermController");
     });
 
-    it("should revert InvalidStrategy when strategy is not deployed by controller", async () => {
+    it("should revert InvalidStrategy when strategy is not approved by controller", async () => {
       const MockStrategyFullFactory = await ethers.getContractFactory("TestMockStrategyFull");
       const unregisteredStrategy = await MockStrategyFullFactory.deploy(
         await asset.getAddress(),
@@ -202,7 +202,7 @@ describe("TermStrategyFacet Tests", () => {
         ethers.ZeroAddress,
       );
       await unregisteredStrategy.waitForDeployment();
-      // NOT calling mockController.setTermDeployed
+      // NOT calling mockController.setVaultApproval
 
       const repoTokenAmount = ethers.parseEther("100");
       await repoToken.connect(wallet1).approve(await termStrategyFacet.getAddress(), repoTokenAmount);
@@ -224,7 +224,7 @@ describe("TermStrategyFacet Tests", () => {
         ethers.ZeroAddress,
       );
       await partialStrategy.waitForDeployment();
-      await mockController.setTermDeployed(await partialStrategy.getAddress(), true);
+      await mockController.setVaultApproval(await partialStrategy.getAddress(), true);
       await partialStrategy.setPartialConsume(true);
 
       // Give strategy some assets for the partial proceeds it will pay
@@ -315,8 +315,8 @@ describe("TermStrategyFacet Tests", () => {
       );
       await mockStrategyFull.waitForDeployment();
 
-      // Register contracts as deployed in their respective controllers
-      await mockController2.setTermDeployed(await mockStrategyFull.getAddress(), true);
+      // Register strategy as approved and servicer as deployed in their respective controllers
+      await mockController2.setVaultApproval(await mockStrategyFull.getAddress(), true);
       await mockServicerController.setTermDeployed(await mockServicer.getAddress(), true);
 
       // Add controllers to approved list
@@ -368,7 +368,7 @@ describe("TermStrategyFacet Tests", () => {
       ).to.be.revertedWithCustomError(termStrategyFacet, "InvalidTermController");
     });
 
-    it("should revert InvalidStrategy when strategy is not deployed by controller", async () => {
+    it("should revert InvalidStrategy when strategy is not approved by controller", async () => {
       const StrategyFullFactory = await ethers.getContractFactory("TestMockStrategyFull");
       const unregisteredStrategy = await StrategyFullFactory.deploy(
         await asset.getAddress(),
@@ -634,7 +634,7 @@ describe("TermStrategyFacet Tests", () => {
           await mockDiscountRateAdapter.getAddress(),
         );
         await mismatchedStrategy.waitForDeployment();
-        await mockController2.setTermDeployed(await mismatchedStrategy.getAddress(), true);
+        await mockController2.setVaultApproval(await mismatchedStrategy.getAddress(), true);
 
         const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
           ["address"],
@@ -730,7 +730,7 @@ describe("TermStrategyFacet Tests", () => {
           await mockDiscountRateAdapter.getAddress(),
         );
         await mismatchedStrategy.waitForDeployment();
-        await mockController2.setTermDeployed(await mismatchedStrategy.getAddress(), true);
+        await mockController2.setVaultApproval(await mismatchedStrategy.getAddress(), true);
 
         const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
           ["address"],

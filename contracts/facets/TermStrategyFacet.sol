@@ -438,7 +438,7 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
         if (!s.approvedTermControllers[address(controller)]) {
             revert InvalidTermController();
         }
-        if (!controller.isTermDeployed(address(strategy))) {
+        if (!controller.isTermApproved(address(strategy))) {
             revert InvalidStrategy();
         }
     }
