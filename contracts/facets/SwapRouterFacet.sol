@@ -14,6 +14,7 @@ import {Permit2Lib} from "permit2/src/libraries/Permit2Lib.sol";
 
 import {ActionHookInput} from "../lib/ActionHookInput.sol";
 import {PreviewAction} from "../lib/PreviewAction.sol";
+import {Versionable} from "../lib/Versionable.sol";
 import {TermFlashHookFacet} from "./base/TermFlashHookFacet.sol";
 import {TermMultiContextAuth} from "./base/TermMultiContextAuth.sol";
 
@@ -22,7 +23,7 @@ import {TermMultiContextAuth} from "./base/TermMultiContextAuth.sol";
 /// @notice Provides token swap functionality through Pendle protocol
 /// @dev Handles swaps involving Pendle Principal Tokens (PT) and regular tokens via Pendle router and aggregator
 /// @dev Supports pre-expiry and post-expiry PT operations
-contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContextAuth {
+contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContextAuth, Versionable {
     using SafeERC20 for ERC20;
     using SafeCast for uint256;
 
@@ -37,9 +38,6 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
 
     /// @notice Thrown when input amount doesn't match expected PT amount
     error InputAmountMismatch();
-
-    /// @notice Thrown when insufficient output amount is received after swap
-    error InsufficientOutputAmount();
 
     /// @notice Thrown when Pendle router address is zero
     error InvalidPendleRouterAddress();
@@ -77,23 +75,16 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
     /// @dev Reverts if both input and output tokens are Pendle PTs
     /// @param tokenIn Address of the input token
     /// @param amountIn Amount of input tokens to swap
-    /// @param tokenOut Address of the output token
-    /// @param minTokenOut Minimum acceptable amount of output tokens to receive
     /// @param usePermit2 Whether to use Permit2 for token transfer approval
     /// @param data Swap routing data containing swap parameters and token type flags
-    function swap(address tokenIn, uint256 amountIn, address tokenOut, uint256 minTokenOut, bool usePermit2, SwapRouterData calldata data) external nonReentrant {
+    function swap(address tokenIn, uint256 amountIn, bool usePermit2, SwapRouterData calldata data) external nonReentrant {
         if (usePermit2){
             Permit2Lib.PERMIT2.transferFrom(msg.sender, address(this), amountIn.toUint160(), tokenIn);
 
         } else {
             ERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
         }
-        uint256 userBalanceBefore = ERC20(tokenOut).balanceOf(msg.sender);
         _swapInternal(tokenIn, amountIn, msg.sender, data);
-        uint256 userBalanceAfter = ERC20(tokenOut).balanceOf(msg.sender);
-        if (userBalanceAfter - userBalanceBefore < minTokenOut) {
-            revert InsufficientOutputAmount();
-        }
     }
 
     // ========================================================================

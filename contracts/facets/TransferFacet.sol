@@ -2,6 +2,7 @@
 pragma solidity ^0.8.22;
 
 import {TermMulticallProtection} from "./base/TermMulticallProtection.sol";
+import {Versionable} from "../lib/Versionable.sol";
 import { LibAccessControl } from "../libraries/LibAccessControl.sol";
 
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -14,7 +15,7 @@ import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol"
 /// @title TransferFacet
 /// @notice Provides token transfer functionality for moving assets within the Term Finance protocol
 /// @dev Implements secure token transfers with validation and routing for protocol operations
-contract TransferFacet is TermMulticallProtection, AccessControl {
+contract TransferFacet is TermMulticallProtection, AccessControl, Versionable {
     using SafeERC20 for ERC20;
 
     // ========================================================================

@@ -4,6 +4,7 @@ pragma solidity ^0.8.22;
 import {IDiamondLoupe} from "../DiamondLoupeFacet.sol";
 import {ITermFlashLoan} from "../../interfaces/ITermFlashLoan.sol";
 import {PreviewAction} from "../../lib/PreviewAction.sol";
+import {Versionable} from "../../lib/Versionable.sol";
 
 import {TermFlashBase} from "../base/TermFlashBase.sol";
 import {TermFlashHookFacet} from "../base/TermFlashHookFacet.sol";
@@ -37,7 +38,8 @@ interface IFlashLoanAggregator {
 ///      5. Repays the flash loan (principal + premium) and refunds any surplus to the user.
 contract TermFlashLoanExecutorFacet is
     ITermFlashLoan,
-    TermFlashBase
+    TermFlashBase,
+    Versionable
 {
     using SafeCast for uint256;
     using SafeERC20 for IERC20;

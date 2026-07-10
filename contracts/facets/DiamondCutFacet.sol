@@ -8,6 +8,7 @@ pragma solidity ^0.8.22;
 
 import { LibDiamond, IDiamondCut, IDiamondInit, IDiamondPause } from "../libraries/LibDiamond.sol";
 import { LibAccessControl } from "../libraries/LibAccessControl.sol";
+import { Versionable } from "../lib/Versionable.sol";
 
 import { AccessControl } from "@openzeppelin/contracts/access/AccessControl.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
@@ -17,7 +18,7 @@ import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol
 /// @notice Facet for managing diamond upgrades and pause functionality
 /// @dev Implements EIP-2535 Diamond Standard for adding, replacing, and removing functions
 /// @dev Provides pause/unpause functionality to halt diamond operations in emergency situations
-contract DiamondCutFacet is IDiamondCut, IDiamondInit, IDiamondPause, AccessControl {
+contract DiamondCutFacet is IDiamondCut, IDiamondInit, IDiamondPause, AccessControl, Versionable {
 
     // ========================================================================
     // = Errors  ==============================================================

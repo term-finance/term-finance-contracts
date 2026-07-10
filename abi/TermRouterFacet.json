@@ -804,6 +804,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "version",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "type": "error",
     "name": "ERC20InsufficientBalance",
     "inputs": [

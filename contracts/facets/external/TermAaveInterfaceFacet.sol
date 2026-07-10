@@ -7,6 +7,7 @@ import {TermMulticallProtection} from "../base/TermMulticallProtection.sol";
 import {TermMultiContextAuth} from "../base/TermMultiContextAuth.sol";
 import {ActionHookInput} from "../../lib/ActionHookInput.sol";
 import {PreviewAction} from "../../lib/PreviewAction.sol";
+import {Versionable} from "../../lib/Versionable.sol";
 import {LibTermStorage, TermStorage} from "../../libraries/LibTermStorage.sol";
 import {ITermController} from "../../interfaces/ITermController.sol";
 
@@ -29,7 +30,7 @@ import {DataTypes} from "@aave/core-v3/contracts/protocol/libraries/types/DataTy
 /// @title TermAaveInterfaceFacet
 /// @notice Provides interface functions for interacting with Aave V3 protocol
 /// @dev Implements all major Aave operations with onBehalfOf pattern
-contract TermAaveInterfaceFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxProtection, TermMulticallProtection, TermMultiContextAuth {
+contract TermAaveInterfaceFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxProtection, TermMulticallProtection, TermMultiContextAuth, Versionable {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
 

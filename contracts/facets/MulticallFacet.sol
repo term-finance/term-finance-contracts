@@ -6,8 +6,9 @@ import {LibTermStorage, TermStorage} from "../libraries/LibTermStorage.sol";
 
 import { IDiamondLoupe } from "./DiamondLoupeFacet.sol";
 import { TermMulticallProtection } from "./base/TermMulticallProtection.sol";
+import { Versionable } from "../lib/Versionable.sol";
 
-contract MulticallFacet is TermMulticallProtection {
+contract MulticallFacet is TermMulticallProtection, Versionable {
     
     // Custom ReentrancyGuard storage slot to avoid conflicts with other facets
     bytes32 private constant MULTICALL_REENTRANCY_SLOT = keccak256("multicall.reentrancy.guard");

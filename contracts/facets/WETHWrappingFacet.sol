@@ -1,6 +1,8 @@
 //SPDX-License-Identifier: CC-BY-NC-ND-4.0
 pragma solidity ^0.8.22;
 
+import {Versionable} from "../lib/Versionable.sol";
+
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -16,7 +18,7 @@ interface IWETH is IERC20 {
 /// @title WETHWrappingFacet
 /// @notice Provides functionality to wrap and unwrap native ETH tokens using the WETH pattern.
 /// @dev This facet can be used as part of a diamond proxy pattern to add ETH wrapping capabilities
-contract WETHWrappingFacet {
+contract WETHWrappingFacet is Versionable {
     using SafeERC20 for IWETH;
     using SafeCast for uint256; 
 
