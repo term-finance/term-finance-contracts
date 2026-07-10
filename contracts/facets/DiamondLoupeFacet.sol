@@ -6,6 +6,7 @@ pragma solidity ^0.8.22;
 /******************************************************************************/
 
 import { LibDiamond, IDiamondCut } from  "../libraries/LibDiamond.sol";
+import { Versionable } from "../lib/Versionable.sol";
 import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 /// @title IDiamondLoupe
@@ -49,7 +50,7 @@ interface IDiamondLoupe is IERC165 {
 /// @notice Provides introspection functions for the Diamond Standard
 /// @dev Implements EIP-2535 Diamond Loupe interface for querying facet information
 /// @dev These functions are expected to be called frequently by tools and interfaces
-contract DiamondLoupeFacet is IDiamondLoupe {
+contract DiamondLoupeFacet is IDiamondLoupe, Versionable {
 
     /// @notice Gets all facets and their selectors.
     /// @return facets_ Facet

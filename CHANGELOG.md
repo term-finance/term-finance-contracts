@@ -108,3 +108,16 @@
 
 
 **Full Changelog**: https://github.com/term-finance/term-finance/compare/2.1.1...2.1.2
+
+## 2.1.2
+
+### What's Changed
+* fv upgrade by @aazhou1 in https://github.com/term-finance/term-finance/pull/1664
+* fixed swap receiver by @aazhou1 in https://github.com/term-finance/term-finance/pull/1683
+* strategy validation using isTermApproved by @aazhou1 in https://github.com/term-finance/term-finance/pull/1682
+* Bump version to 2.1.2 by @github-actions[bot] in https://github.com/term-finance/term-finance/pull/1667
+* revert interface and remove unnecessary balance check nonhook swap by @aazhou1 in https://github.com/term-finance/term-finance/pull/1685
+* add versionable to facets by @aazhou1 in https://github.com/term-finance/term-finance/pull/1686
+
+
+**Full Changelog**: https://github.com/term-finance/term-finance/compare/2.1.1...2.1.2

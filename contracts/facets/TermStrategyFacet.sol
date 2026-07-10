@@ -19,6 +19,7 @@ import {TermStorage, LibTermStorage} from "../libraries/LibTermStorage.sol";
 import {ActionHookInput} from "../lib/ActionHookInput.sol";
 import {ExponentialNoError} from "../lib/ExponentialNoError.sol";
 import {PreviewAction} from "../lib/PreviewAction.sol";
+import {Versionable} from "../lib/Versionable.sol";
 
 interface IStrategy {
     struct StrategyState {
@@ -52,7 +53,7 @@ interface IDiscountRateAdapter {
 /// @title Term Strategy Facet
 /// @notice This facet provides functionality to interact with strategy contracts for repo token operations
 /// @dev This facet allows users to sell repo tokens through approved strategy contracts with automatic asset handling
-contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxProtection, TermMulticallProtection, TermMultiContextAuth, ExponentialNoError {
+contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxProtection, TermMulticallProtection, TermMultiContextAuth, ExponentialNoError, Versionable {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
 

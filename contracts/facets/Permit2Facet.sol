@@ -3,6 +3,7 @@ pragma solidity ^0.8.22;
 
 import {TermMulticallProtection} from "./base/TermMulticallProtection.sol";
 import {ITermController} from "../interfaces/ITermController.sol";
+import {Versionable} from "../lib/Versionable.sol";
 
 import {LibTermStorage, TermStorage} from "../libraries/LibTermStorage.sol";
 
@@ -15,7 +16,7 @@ import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 /// @title Permit2Facet
 /// @notice Provides Uniswap Permit2 integration for advanced signature-based token approvals
 /// @dev Enables batch permits, allowance transfers, and signature-based token operations via Permit2 protocol
-contract Permit2Facet is TermMulticallProtection {
+contract Permit2Facet is TermMulticallProtection, Versionable {
     using SafeCast for uint256;
 
     // ========================================================================

@@ -5,6 +5,7 @@ import {TermAtomicTxProtection} from "./base/TermAtomicTxProtection.sol";
 import {ITermController} from "../interfaces/ITermController.sol";
 import {ActionHookInput} from "../lib/ActionHookInput.sol";
 import {PreviewAction} from "../lib/PreviewAction.sol";
+import {Versionable} from "../lib/Versionable.sol";
 import {LibTermStorage, TermERC4626VaultManagement, TermStorage} from "../libraries/LibTermStorage.sol";
 
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -21,7 +22,7 @@ import {TermMultiContextAuth} from "./base/TermMultiContextAuth.sol";
 /// @title ERC4626InterfaceFacet Facet
 /// @notice This facet provides deposit and withdrawal functions for ERC4626 vaults
 /// @dev This facet allows the TermDiamond to interact with ERC4626 compliant vaults
-contract ERC4626InterfaceFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxProtection, TermMultiContextAuth  {
+contract ERC4626InterfaceFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxProtection, TermMultiContextAuth, Versionable  {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     
