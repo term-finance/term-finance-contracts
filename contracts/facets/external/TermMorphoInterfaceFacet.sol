@@ -7,6 +7,7 @@ import {TermAtomicTxProtection} from "../base/TermAtomicTxProtection.sol";
 import {TermMultiContextAuth} from "../base/TermMultiContextAuth.sol";
 import {ActionHookInput} from "../../lib/ActionHookInput.sol";
 import {PreviewAction} from "../../lib/PreviewAction.sol";
+import {Versionable} from "../../lib/Versionable.sol";
 
 import {Authorization, IMorpho, Id, MarketParams, Signature} from "@morpho-org/morpho-blue/src/interfaces/IMorpho.sol";
 import {MathLib} from "@morpho-org/morpho-blue/src/libraries/MathLib.sol";
@@ -24,7 +25,7 @@ import {Permit2Lib} from "permit2/src/libraries/Permit2Lib.sol";
 /// @title TermMorphoInterfaceFacet
 /// @notice Provides interface functions for interacting with Morpho protocol
 /// @dev Implements all major Morpho operations with onBehalfOf pattern
-contract TermMorphoInterfaceFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxProtection, TermMulticallProtection, TermMultiContextAuth {
+contract TermMorphoInterfaceFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxProtection, TermMulticallProtection, TermMultiContextAuth, Versionable {
     using SafeERC20 for IERC20;
     using MathLib for uint256;
     using SafeCast for uint256;

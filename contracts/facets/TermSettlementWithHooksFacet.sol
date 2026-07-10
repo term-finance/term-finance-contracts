@@ -8,6 +8,7 @@ import {TermRepoToken} from "../TermRepoToken.sol";
 import {TermRepoTokenIntentFacet} from "./TermRepoTokenIntentFacet.sol";
 
 import {TermAtomicTxProtection} from "./base/TermAtomicTxProtection.sol";
+import {Versionable} from "../lib/Versionable.sol";
 
 import {LibTermStorage, TermStorage}  from "../libraries/LibTermStorage.sol";
 import {IDiamondLoupe} from "./DiamondLoupeFacet.sol";
@@ -15,7 +16,7 @@ import {IDiamondLoupe} from "./DiamondLoupeFacet.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract TermSettlementWithHooksFacet is TermAtomicTxProtection, ITermIntent {
+contract TermSettlementWithHooksFacet is TermAtomicTxProtection, ITermIntent, Versionable {
     using Address for address;
 
     // ========================================================================

@@ -11,7 +11,7 @@ import {IDiamondLoupe} from "./DiamondLoupeFacet.sol";
 /// @title Term Controller Facet
 /// @notice This facet manages approval and revocation of term controller contracts and fee recipients
 /// @dev This facet whitelists term controller contracts and fee recipients for use in Term Repos
-contract TermControllerFacet is AccessControl {
+contract TermControllerFacet is AccessControl, Versionable {
 
     // ========================================================================
     // = Errors  ==============================================================

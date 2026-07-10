@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IDiamondLoupe} from "../DiamondLoupeFacet.sol";
 import {TermFlashBase} from "../base/TermFlashBase.sol";
+import {Versionable} from "../../lib/Versionable.sol";
 
 
 interface InstaFlashReceiverInterface {
@@ -22,7 +23,7 @@ interface InstaFlashReceiverInterface {
 /// @title TermFlashLoanCentralReceiverFacet
 /// @notice Central flash loan receiver for Term Finance protocol operations
 /// @dev Implements flash loan callback interface for various Term Finance operations
-contract TermFlashLoanCentralReceiverFacet is InstaFlashReceiverInterface, TermFlashBase {
+contract TermFlashLoanCentralReceiverFacet is InstaFlashReceiverInterface, TermFlashBase, Versionable {
     struct TermFlashLoanCallback {
         address callbackFacet;
         bytes4 selector;

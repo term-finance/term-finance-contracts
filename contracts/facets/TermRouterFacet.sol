@@ -16,6 +16,7 @@ import {TermAuctionBidSubmission} from "../lib/TermAuctionBidSubmission.sol";
 import {TermAuctionOffer} from "../lib/TermAuctionOffer.sol";
 import {TermAuctionOfferSubmission} from "../lib/TermAuctionOfferSubmission.sol";
 import {TermRepoRolloverElectionSubmission} from "../lib/TermRepoRolloverElectionSubmission.sol";
+import {Versionable} from "../lib/Versionable.sol";
 import {TermFlashHookFacet} from "./base/TermFlashHookFacet.sol";
 import {TermMultiContextAuth} from "./base/TermMultiContextAuth.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -31,7 +32,7 @@ error InputOutputTokenCollision();
 /// @title Term Router Facet
 /// @notice This facet provides centralized access to all DIAMOND_ROLE functions across Term contracts
 /// @dev This facet aggregates settlement operations from TermRepoServicer, TermRepoCollateralManager, and TermRepoRolloverManager
-contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContextAuth, ExponentialNoError {
+contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContextAuth, ExponentialNoError, Versionable {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     

@@ -9,6 +9,7 @@ import {ITermIntent} from "../interfaces/ITermIntent.sol";
 import {ActionHookInput} from "../lib/ActionHookInput.sol";
 import {ExponentialNoError} from "../lib/ExponentialNoError.sol";
 import {PreviewAction} from "../lib/PreviewAction.sol";
+import {Versionable} from "../lib/Versionable.sol";
 
 import {LibTermStorage, TermStorage}  from "../libraries/LibTermStorage.sol";
 import {TermFlashHookFacet} from "./base/TermFlashHookFacet.sol";
@@ -29,7 +30,7 @@ import {Permit2Lib} from "permit2/src/libraries/Permit2Lib.sol";
 /// @dev Wraps TermLoanIntentFacet settlement functions for use within flash loan callback contexts.
 ///      Each hook action is gated by `onlyFlashLoanContext` and delegates to the corresponding
 ///      TermLoanIntentFacet function via a self-call through the diamond proxy.
-contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContextAuth, ITermIntent, ExponentialNoError {
+contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContextAuth, ITermIntent, ExponentialNoError, Versionable {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
 

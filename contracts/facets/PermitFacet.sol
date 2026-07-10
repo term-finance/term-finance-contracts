@@ -3,6 +3,7 @@ pragma solidity ^0.8.22;
 
 import {TermMulticallProtection} from "./base/TermMulticallProtection.sol";
 import {ITermController} from "../interfaces/ITermController.sol";
+import {Versionable} from "../lib/Versionable.sol";
 
 import {LibTermStorage, TermStorage} from "../libraries/LibTermStorage.sol";
 
@@ -13,7 +14,7 @@ import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC2
 /// @title PermitFacet
 /// @notice Provides EIP-2612 permit functionality for gasless token approvals
 /// @dev Enables users to approve token spending via signatures instead of transactions
-contract PermitFacet is TermMulticallProtection {
+contract PermitFacet is TermMulticallProtection, Versionable {
 
     // ========================================================================
     // = Errors  ==============================================================
