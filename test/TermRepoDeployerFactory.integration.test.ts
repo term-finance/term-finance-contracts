@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
@@ -84,8 +83,9 @@ describe("TermRepoDeployerFactory Integration", () => {
     );
 
     // 2. Deploy TermPriceConsumerV3
-    const termPriceOracleFactory =
-      await ethers.getContractFactory("TermPriceConsumerV3");
+    const termPriceOracleFactory = await ethers.getContractFactory(
+      "TermPriceConsumerV3",
+    );
     termOracle = (await upgrades.deployProxy(
       termPriceOracleFactory,
       [wallets[4].address],
@@ -110,10 +110,11 @@ describe("TermRepoDeployerFactory Integration", () => {
     // 4. Deploy TermInitializer (needed as param for TermEventEmitter init)
     const termInitializerFactory =
       await ethers.getContractFactory("TermInitializer");
-    const termInitializer: TermInitializer = await termInitializerFactory.deploy(
-      wallets[7].address,
-      wallets[3].address,
-    );
+    const termInitializer: TermInitializer =
+      await termInitializerFactory.deploy(
+        wallets[7].address,
+        wallets[3].address,
+      );
     await termInitializer.waitForDeployment();
     await termController
       .connect(wallets[6])
@@ -272,20 +273,24 @@ describe("TermRepoDeployerFactory Integration", () => {
       .pairTermFactory(await factory.getAddress());
 
     // 12. Set implementation addresses on factory (requires DEVOPS_ROLE = wallets[4])
-    await factory.connect(wallets[4]).setTermRepoImplementations(
-      await termRepoServicerImpl.getAddress(),
-      await termRepoCollateralManagerImpl.getAddress(),
-      await termRepoLockerImpl.getAddress(),
-      await termRepoTokenImpl.getAddress(),
-      await termRepoRolloverManagerImpl.getAddress(),
-      "0.1.0",
-    );
-    await factory.connect(wallets[4]).setTermAuctionImplementations(
-      await termAuctionImpl.getAddress(),
-      await termAuctionBidLockerImpl.getAddress(),
-      await termAuctionOfferLockerImpl.getAddress(),
-      "0.1.0",
-    );
+    await factory
+      .connect(wallets[4])
+      .setTermRepoImplementations(
+        await termRepoServicerImpl.getAddress(),
+        await termRepoCollateralManagerImpl.getAddress(),
+        await termRepoLockerImpl.getAddress(),
+        await termRepoTokenImpl.getAddress(),
+        await termRepoRolloverManagerImpl.getAddress(),
+        "0.1.0",
+      );
+    await factory
+      .connect(wallets[4])
+      .setTermAuctionImplementations(
+        await termAuctionImpl.getAddress(),
+        await termAuctionBidLockerImpl.getAddress(),
+        await termAuctionOfferLockerImpl.getAddress(),
+        "0.1.0",
+      );
   });
 
   afterEach(async () => {
@@ -342,8 +347,7 @@ describe("TermRepoDeployerFactory Integration", () => {
 
     const receipt = await tx.wait();
 
-    const eventTopic =
-      factory.interface.getEvent("TermRepoDeployed").topicHash;
+    const eventTopic = factory.interface.getEvent("TermRepoDeployed").topicHash;
     const log = receipt!.logs.find((l) => l.topics[0] === eventTopic);
     if (!log) throw new Error("TermRepoDeployed event not found");
     const decoded = factory.interface.parseLog(log)!;
@@ -380,10 +384,8 @@ describe("TermRepoDeployerFactory Integration", () => {
     const now = (await ethers.provider.getBlock("latest"))!.timestamp;
     // Add a 120s buffer so auctionStartTime > block.timestamp when the tx is mined
     const auctionStart = now + 120;
-    const revealTime =
-      auctionStart + dayjs.duration(1, "hour").asSeconds();
-    const auctionEnd =
-      revealTime + dayjs.duration(10, "minutes").asSeconds();
+    const revealTime = auctionStart + dayjs.duration(1, "hour").asSeconds();
+    const auctionEnd = revealTime + dayjs.duration(10, "minutes").asSeconds();
     const termStart = auctionEnd; // termStart >= auctionEndTime
 
     const tx = await factory.deployAuctionAndReopenTerm(
@@ -414,8 +416,9 @@ describe("TermRepoDeployerFactory Integration", () => {
 
     const receipt = await tx.wait();
 
-    const eventTopic =
-      factory.interface.getEvent("TermAuctionDeployed").topicHash;
+    const eventTopic = factory.interface.getEvent(
+      "TermAuctionDeployed",
+    ).topicHash;
     const log = receipt!.logs.find((l) => l.topics[0] === eventTopic);
     if (!log) throw new Error("TermAuctionDeployed event not found");
     const decoded = factory.interface.parseLog(log)!;
@@ -433,11 +436,22 @@ describe("TermRepoDeployerFactory Integration", () => {
       decoded.args.termAuctionOfferLocker,
     )) as unknown as TermAuctionOfferLocker;
 
-    return { auction, bidLocker, offerLocker, auctionStart, revealTime, auctionEnd };
+    return {
+      auction,
+      bidLocker,
+      offerLocker,
+      auctionStart,
+      revealTime,
+      auctionEnd,
+    };
   }
 
   // Deploys an auction and runs it to completion; returns bids/offers arrays
-  async function runAuction(termRepoId: string, servicerAddress: string, lockerAddress: string) {
+  async function runAuction(
+    termRepoId: string,
+    servicerAddress: string,
+    lockerAddress: string,
+  ) {
     const { bids, offers } = await parseBidsOffers(
       clearingPriceTestCSV,
       await testPurchaseToken.getAddress(),
@@ -445,12 +459,20 @@ describe("TermRepoDeployerFactory Integration", () => {
       wallets,
     );
 
-    const { auction, bidLocker, offerLocker, auctionStart, revealTime, auctionEnd } =
-      await deployTestAuction(termRepoId, servicerAddress);
+    const {
+      auction,
+      bidLocker,
+      offerLocker,
+      auctionStart,
+      revealTime,
+      auctionEnd,
+    } = await deployTestAuction(termRepoId, servicerAddress);
 
     const walletsByAddress: { [address: string]: Signer } = {};
     for (const wallet of wallets) {
-      walletsByAddress[wallet.address] = new NonceManager(wallet as unknown as Signer);
+      walletsByAddress[wallet.address] = new NonceManager(
+        wallet as unknown as Signer,
+      );
     }
 
     // Fund bidders with collateral tokens (approved to locker)
@@ -461,8 +483,12 @@ describe("TermRepoDeployerFactory Integration", () => {
         await testCollateralToken.getAddress(),
         wallet,
       )) as unknown as TestToken;
-      await (await collateral.mint(bid.bidder.toString(), "1" + "0".repeat(25))).wait();
-      await (await collateral.approve(lockerAddress, "1" + "0".repeat(25))).wait();
+      await (
+        await collateral.mint(bid.bidder.toString(), "1" + "0".repeat(25))
+      ).wait();
+      await (
+        await collateral.approve(lockerAddress, "1" + "0".repeat(25))
+      ).wait();
     }
 
     // Fund offerors with purchase tokens (approved to locker)
@@ -473,14 +499,20 @@ describe("TermRepoDeployerFactory Integration", () => {
         await testPurchaseToken.getAddress(),
         wallet,
       )) as unknown as TestToken;
-      await (await purchase.mint(offer.offeror.toString(), "1" + "0".repeat(25))).wait();
-      await (await purchase.approve(lockerAddress, "1" + "0".repeat(25))).wait();
+      await (
+        await purchase.mint(offer.offeror.toString(), "1" + "0".repeat(25))
+      ).wait();
+      await (
+        await purchase.approve(lockerAddress, "1" + "0".repeat(25))
+      ).wait();
     }
 
     // Advance time past auctionStart so bids/offers can be locked
     const nowBeforeLock = (await ethers.provider.getBlock("latest"))!.timestamp;
     if (nowBeforeLock < auctionStart) {
-      await network.provider.send("evm_increaseTime", [auctionStart - nowBeforeLock + 1]);
+      await network.provider.send("evm_increaseTime", [
+        auctionStart - nowBeforeLock + 1,
+      ]);
       await network.provider.send("evm_mine", []);
     }
 
@@ -558,7 +590,8 @@ describe("TermRepoDeployerFactory Integration", () => {
     }
 
     // Advance time past auctionEnd
-    const nowAfterReveal = (await ethers.provider.getBlock("latest"))!.timestamp;
+    const nowAfterReveal = (await ethers.provider.getBlock("latest"))!
+      .timestamp;
     await network.provider.send("evm_increaseTime", [
       auctionEnd - nowAfterReveal + 60,
     ]);
@@ -592,7 +625,8 @@ describe("TermRepoDeployerFactory Integration", () => {
   ) {
     const unique = [...new Set(borrowerAddresses)];
     for (const borrower of unique) {
-      const obligation = await servicer.getBorrowerRepurchaseObligation(borrower);
+      const obligation =
+        await servicer.getBorrowerRepurchaseObligation(borrower);
       if (obligation === 0n) continue;
 
       const borrowerWallet = wallets.find(
@@ -622,10 +656,7 @@ describe("TermRepoDeployerFactory Integration", () => {
 
     // mint 100 repo tokens; collateral at 150% ratio
     const mintAmount = "100" + "0".repeat(8); // 100 tokens (8 dec)
-    const collateralAmount = (
-      (BigInt(mintAmount) * 3n) /
-      2n
-    ).toString(); // 150 tokens (8 dec)
+    const collateralAmount = ((BigInt(mintAmount) * 3n) / 2n).toString(); // 150 tokens (8 dec)
 
     await testCollateralToken.mint(wallets[9].address, collateralAmount);
     await testCollateralToken
@@ -716,8 +747,15 @@ describe("TermRepoDeployerFactory Integration", () => {
   // =========================================================================
 
   it("TC4: term repo token redemptions after fast forward to redemption period", async () => {
-    const { termRepoId, maturity, repurchaseWindow, redemptionBuffer, servicer, token, locker } =
-      await deployTestTermRepo();
+    const {
+      termRepoId,
+      maturity,
+      repurchaseWindow,
+      redemptionBuffer,
+      servicer,
+      token,
+      locker,
+    } = await deployTestTermRepo();
 
     // Mint open exposure for wallets[9] (receives repo tokens)
     await termController
@@ -770,7 +808,9 @@ describe("TermRepoDeployerFactory Integration", () => {
     }
 
     // Redeem for each offeror who received repo tokens from the auction
-    const uniqueOfferors = [...new Set(offers.map((o) => o.offeror.toString()))];
+    const uniqueOfferors = [
+      ...new Set(offers.map((o) => o.offeror.toString())),
+    ];
     for (const offeror of uniqueOfferors) {
       const balance = await token.balanceOf(offeror);
       if (balance > 0n) {

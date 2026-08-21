@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
@@ -78,8 +77,11 @@ describe("TermMorphoInterfaceFacet Tests", () => {
     await collateralToken.waitForDeployment();
 
     // Deploy mock oracle
-    const OracleFactory = await ethers.getContractFactory("TestMockMorphoOracle");
-    mockOracle = (await OracleFactory.deploy()) as unknown as TestMockMorphoOracle;
+    const OracleFactory = await ethers.getContractFactory(
+      "TestMockMorphoOracle",
+    );
+    mockOracle =
+      (await OracleFactory.deploy()) as unknown as TestMockMorphoOracle;
     await mockOracle.waitForDeployment();
     // Default price: 1e36 (MORPHO_ORACLE_PRICE_SCALE) so 1:1 collateral to loan
     await mockOracle.setPrice(ethers.parseUnits("1", 36));
@@ -91,10 +93,10 @@ describe("TermMorphoInterfaceFacet Tests", () => {
 
     // Deploy facet helper (deployed with mockPool address)
     const FacetFactory = await ethers.getContractFactory(
-      "TestTermMorphoInterfaceFacetHelper"
+      "TestTermMorphoInterfaceFacetHelper",
     );
     facetHelper = (await FacetFactory.deploy(
-      await mockPool.getAddress()
+      await mockPool.getAddress(),
     )) as unknown as TestTermMorphoInterfaceFacetHelper;
     await facetHelper.waitForDeployment();
 
@@ -111,8 +113,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
     defaultMarketId = ethers.keccak256(
       ethers.AbiCoder.defaultAbiCoder().encode(
         [MARKET_PARAMS_TYPE],
-        [defaultMarketParams]
-      )
+        [defaultMarketParams],
+      ),
     );
 
     // Register market params in mock pool
@@ -127,11 +129,16 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       .transfer(await mockPool.getAddress(), ethers.parseEther("5000"));
 
     // Deploy supporting mocks for fulfillOrder tests
-    const ServicerFactory = await ethers.getContractFactory("TestMockRepoServicer");
-    mockServicer = (await ServicerFactory.deploy()) as unknown as TestMockRepoServicer;
+    const ServicerFactory = await ethers.getContractFactory(
+      "TestMockRepoServicer",
+    );
+    mockServicer =
+      (await ServicerFactory.deploy()) as unknown as TestMockRepoServicer;
     await mockServicer.waitForDeployment();
 
-    const CMFactory = await ethers.getContractFactory("TestMockCollateralManager");
+    const CMFactory = await ethers.getContractFactory(
+      "TestMockCollateralManager",
+    );
     mockCollateralManager =
       (await CMFactory.deploy()) as unknown as TestMockCollateralManager;
     await mockCollateralManager.waitForDeployment();
@@ -142,7 +149,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
 
     await mockServicer.setPurchaseToken(await loanToken.getAddress());
     await mockServicer.setCollateralManager(
-      await mockCollateralManager.getAddress()
+      await mockCollateralManager.getAddress(),
     );
     await mockCollateralManager.setCollateralTokens([
       await collateralToken.getAddress(),
@@ -151,7 +158,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       Math.floor(Date.now() / 1000) + 86400,
       await loanToken.getAddress(),
       await mockServicer.getAddress(),
-      await mockCollateralManager.getAddress()
+      await mockCollateralManager.getAddress(),
     );
   });
 
@@ -163,12 +170,14 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"](
+          [
+            "morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"
+          ](
             wallet2.address, // not approved
             defaultMarketParams,
             ethers.parseEther("100"),
-            false
-          )
+            false,
+          ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMorphoPoolAddress");
     });
   });
@@ -189,8 +198,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
             deadline: ethers.MaxUint256,
           },
           { v: 27, r: ethers.ZeroHash, s: ethers.ZeroHash },
-          false
-        )
+          false,
+        ),
       ).to.be.revertedWith("uninitialized");
     });
 
@@ -207,8 +216,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
             deadline: ethers.MaxUint256,
           },
           { v: 27, r: ethers.ZeroHash, s: ethers.ZeroHash },
-          false
-        )
+          false,
+        ),
       ).to.be.revertedWith("unauthorized");
       await facetHelper.clearMulticallInitiator();
     });
@@ -226,8 +235,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
             deadline: ethers.MaxUint256,
           },
           { v: 27, r: ethers.ZeroHash, s: ethers.ZeroHash },
-          false
-        )
+          false,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMorphoPoolAddress");
       await facetHelper.clearMulticallInitiator();
     });
@@ -245,8 +254,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
             deadline: ethers.MaxUint256,
           },
           { v: 27, r: ethers.ZeroHash, s: ethers.ZeroHash },
-          false
-        )
+          false,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMorphoPoolAddress");
       await facetHelper.clearMulticallInitiator();
     });
@@ -264,8 +273,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
             deadline: ethers.MaxUint256,
           },
           { v: 27, r: ethers.ZeroHash, s: ethers.ZeroHash },
-          false
-        )
+          false,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidUserAddress");
       await facetHelper.clearMulticallInitiator();
     });
@@ -283,8 +292,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
             deadline: 1n, // always expired
           },
           { v: 27, r: ethers.ZeroHash, s: ethers.ZeroHash },
-          false
-        )
+          false,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "Expired");
       await facetHelper.clearMulticallInitiator();
     });
@@ -302,7 +311,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           deadline: ethers.MaxUint256,
         },
         { v: 27, r: ethers.ZeroHash, s: ethers.ZeroHash },
-        false
+        false,
       );
       await facetHelper.clearMulticallInitiator();
     });
@@ -321,7 +330,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           deadline: ethers.MaxUint256,
         },
         { v: 27, r: ethers.ZeroHash, s: ethers.ZeroHash },
-        true // skipRevert
+        true, // skipRevert
       );
       await mockPool.setShouldRevertAuth(false);
       await facetHelper.clearMulticallInitiator();
@@ -341,8 +350,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
             deadline: ethers.MaxUint256,
           },
           { v: 27, r: ethers.ZeroHash, s: ethers.ZeroHash },
-          false // skipRevert
-        )
+          false, // skipRevert
+        ),
       ).to.be.reverted;
       await mockPool.setShouldRevertAuth(false);
       await facetHelper.clearMulticallInitiator();
@@ -357,12 +366,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"](
-            ethers.ZeroAddress,
-            defaultMarketParams,
-            ethers.parseEther("100"),
-            false
-          )
+          [
+            "morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"
+          ](ethers.ZeroAddress, defaultMarketParams, ethers.parseEther("100"), false),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMorphoPoolAddress");
     });
 
@@ -370,26 +376,23 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            0,
-            false
-          )
+          [
+            "morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"
+          ](await mockPool.getAddress(), defaultMarketParams, 0, false),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAmount");
     });
 
     it("should revert with InvalidCollateralAsset when collateralToken = address(0)", async () => {
-      const badMp = { ...defaultMarketParams, collateralToken: ethers.ZeroAddress };
+      const badMp = {
+        ...defaultMarketParams,
+        collateralToken: ethers.ZeroAddress,
+      };
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"](
-            await mockPool.getAddress(),
-            badMp,
-            ethers.parseEther("100"),
-            false
-          )
+          [
+            "morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"
+          ](await mockPool.getAddress(), badMp, ethers.parseEther("100"), false),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidCollateralAsset");
     });
 
@@ -404,12 +407,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            amount,
-            false
-          )
+          [
+            "morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"
+          ](await mockPool.getAddress(), defaultMarketParams, amount, false),
       ).to.be.revertedWithCustomError(facetHelper, "SupplyAmountMismatch");
       await mockPool.resetSupplyPullOverride();
     });
@@ -417,26 +417,21 @@ describe("TermMorphoInterfaceFacet Tests", () => {
     it("should successfully supply collateral (4-arg)", async () => {
       const amount = ethers.parseEther("100");
       const facetAddr = await facetHelper.getAddress();
-      await collateralToken
-        .connect(wallet1)
-        .approve(facetAddr, amount);
+      await collateralToken.connect(wallet1).approve(facetAddr, amount);
 
       expect(await loanToken.balanceOf(facetAddr)).to.equal(0);
       expect(await collateralToken.balanceOf(facetAddr)).to.equal(0);
 
       const poolBefore = await collateralToken.balanceOf(
-        await mockPool.getAddress()
+        await mockPool.getAddress(),
       );
       await facetHelper
         .connect(wallet1)
-        ["morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          amount,
-          false
-        );
+        [
+          "morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"
+        ](await mockPool.getAddress(), defaultMarketParams, amount, false);
       const poolAfter = await collateralToken.balanceOf(
-        await mockPool.getAddress()
+        await mockPool.getAddress(),
       );
       expect(poolAfter - poolBefore).to.equal(amount);
 
@@ -453,13 +448,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet2)
-          ["morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,address,bool)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            ethers.parseEther("100"),
-            wallet1.address,
-            false
-          )
+          [
+            "morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,address,bool)"
+          ](await mockPool.getAddress(), defaultMarketParams, ethers.parseEther("100"), wallet1.address, false),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
@@ -470,19 +461,15 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         .approve(await facetHelper.getAddress(), amount);
 
       const poolBefore = await collateralToken.balanceOf(
-        await mockPool.getAddress()
+        await mockPool.getAddress(),
       );
       await facetHelper
         .connect(wallet1)
-        ["morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,address,bool)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          amount,
-          wallet1.address,
-          false
-        );
+        [
+          "morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,address,bool)"
+        ](await mockPool.getAddress(), defaultMarketParams, amount, wallet1.address, false);
       const poolAfter = await collateralToken.balanceOf(
-        await mockPool.getAddress()
+        await mockPool.getAddress(),
       );
       expect(poolAfter - poolBefore).to.equal(amount);
     });
@@ -502,7 +489,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         defaultMarketParams,
         amount,
         wallet1.address,
-        false
+        false,
       );
     });
   });
@@ -515,7 +502,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const P2Factory = await ethers.getContractFactory("TestMockPermit2");
       const tempP2 = await P2Factory.deploy();
       await tempP2.waitForDeployment();
-      const runtimeCode = await ethers.provider.getCode(await tempP2.getAddress());
+      const runtimeCode = await ethers.provider.getCode(
+        await tempP2.getAddress(),
+      );
       await ethers.provider.send("hardhat_setCode", [
         PERMIT2_CANONICAL_ADDRESS,
         runtimeCode,
@@ -531,7 +520,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
 
       const mockPermit2 = await ethers.getContractAt(
         "TestMockPermit2",
-        PERMIT2_CANONICAL_ADDRESS
+        PERMIT2_CANONICAL_ADDRESS,
       );
 
       expect(await loanToken.balanceOf(facetAddr)).to.equal(0);
@@ -539,18 +528,15 @@ describe("TermMorphoInterfaceFacet Tests", () => {
 
       await facetHelper
         .connect(wallet1)
-        ["morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          amount,
-          true
-        );
+        [
+          "morphoSupplyCollateral(address,(address,address,address,address,uint256),uint256,bool)"
+        ](await mockPool.getAddress(), defaultMarketParams, amount, true);
 
       expect(await mockPermit2.lastTransferFrom()).to.equal(wallet1.address);
       expect(await mockPermit2.lastTransferTo()).to.equal(facetAddr);
       expect(await mockPermit2.lastTransferAmount()).to.equal(amount);
       expect(await mockPermit2.lastTransferToken()).to.equal(
-        await collateralToken.getAddress()
+        await collateralToken.getAddress(),
       );
 
       expect(await loanToken.balanceOf(facetAddr)).to.equal(0);
@@ -566,12 +552,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoSupply(address,(address,address,address,address,uint256),uint256,bool)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            0,
-            false
-          )
+          [
+            "morphoSupply(address,(address,address,address,address,uint256),uint256,bool)"
+          ](await mockPool.getAddress(), defaultMarketParams, 0, false),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAmount");
     });
 
@@ -580,12 +563,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoSupply(address,(address,address,address,address,uint256),uint256,bool)"](
-            await mockPool.getAddress(),
-            badMp,
-            ethers.parseEther("100"),
-            false
-          )
+          [
+            "morphoSupply(address,(address,address,address,address,uint256),uint256,bool)"
+          ](await mockPool.getAddress(), badMp, ethers.parseEther("100"), false),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAssetAddress");
     });
 
@@ -600,12 +580,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoSupply(address,(address,address,address,address,uint256),uint256,bool)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            amount,
-            false
-          )
+          [
+            "morphoSupply(address,(address,address,address,address,uint256),uint256,bool)"
+          ](await mockPool.getAddress(), defaultMarketParams, amount, false),
       ).to.be.revertedWithCustomError(facetHelper, "SupplyAmountMismatch");
       await mockPool.resetSupplyPullOverride();
     });
@@ -621,12 +598,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoSupply(address,(address,address,address,address,uint256),uint256,bool)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            amount,
-            false
-          )
+          [
+            "morphoSupply(address,(address,address,address,address,uint256),uint256,bool)"
+          ](await mockPool.getAddress(), defaultMarketParams, amount, false),
       ).to.be.revertedWithCustomError(facetHelper, "SupplyAmountMismatch");
       await mockPool.resetSupplyReturnAmount();
     });
@@ -634,9 +608,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
     it("should successfully supply loan assets (4-arg)", async () => {
       const amount = ethers.parseEther("100");
       const facetAddr = await facetHelper.getAddress();
-      await loanToken
-        .connect(wallet1)
-        .approve(facetAddr, amount);
+      await loanToken.connect(wallet1).approve(facetAddr, amount);
 
       expect(await loanToken.balanceOf(facetAddr)).to.equal(0);
       expect(await collateralToken.balanceOf(facetAddr)).to.equal(0);
@@ -644,12 +616,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const poolBefore = await loanToken.balanceOf(await mockPool.getAddress());
       await facetHelper
         .connect(wallet1)
-        ["morphoSupply(address,(address,address,address,address,uint256),uint256,bool)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          amount,
-          false
-        );
+        [
+          "morphoSupply(address,(address,address,address,address,uint256),uint256,bool)"
+        ](await mockPool.getAddress(), defaultMarketParams, amount, false);
       const poolAfter = await loanToken.balanceOf(await mockPool.getAddress());
       expect(poolAfter - poolBefore).to.equal(amount);
 
@@ -666,13 +635,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet2)
-          ["morphoSupply(address,(address,address,address,address,uint256),uint256,address,bool)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            ethers.parseEther("100"),
-            wallet1.address,
-            false
-          )
+          [
+            "morphoSupply(address,(address,address,address,address,uint256),uint256,address,bool)"
+          ](await mockPool.getAddress(), defaultMarketParams, ethers.parseEther("100"), wallet1.address, false),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
@@ -684,13 +649,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
 
       await facetHelper
         .connect(wallet1)
-        ["morphoSupply(address,(address,address,address,address,uint256),uint256,address,bool)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          amount,
-          wallet1.address,
-          false
-        );
+        [
+          "morphoSupply(address,(address,address,address,address,uint256),uint256,address,bool)"
+        ](await mockPool.getAddress(), defaultMarketParams, amount, wallet1.address, false);
     });
 
     it("should succeed with activeSettlementMaker context", async () => {
@@ -708,7 +669,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         defaultMarketParams,
         amount,
         wallet1.address,
-        false
+        false,
       );
     });
   });
@@ -720,11 +681,13 @@ describe("TermMorphoInterfaceFacet Tests", () => {
     it("should use Permit2 for morphoSupply when usePermit2=true", async () => {
       const amount = ethers.parseEther("100");
       const facetAddr = await facetHelper.getAddress();
-      await loanToken.connect(wallet1).approve(PERMIT2_CANONICAL_ADDRESS, amount);
+      await loanToken
+        .connect(wallet1)
+        .approve(PERMIT2_CANONICAL_ADDRESS, amount);
 
       const mockPermit2 = await ethers.getContractAt(
         "TestMockPermit2",
-        PERMIT2_CANONICAL_ADDRESS
+        PERMIT2_CANONICAL_ADDRESS,
       );
 
       expect(await loanToken.balanceOf(facetAddr)).to.equal(0);
@@ -732,16 +695,13 @@ describe("TermMorphoInterfaceFacet Tests", () => {
 
       await facetHelper
         .connect(wallet1)
-        ["morphoSupply(address,(address,address,address,address,uint256),uint256,bool)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          amount,
-          true
-        );
+        [
+          "morphoSupply(address,(address,address,address,address,uint256),uint256,bool)"
+        ](await mockPool.getAddress(), defaultMarketParams, amount, true);
 
       expect(await mockPermit2.lastTransferFrom()).to.equal(wallet1.address);
       expect(await mockPermit2.lastTransferToken()).to.equal(
-        await loanToken.getAddress()
+        await loanToken.getAddress(),
       );
 
       expect(await loanToken.balanceOf(facetAddr)).to.equal(0);
@@ -757,24 +717,23 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            0
-          )
+          [
+            "morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256)"
+          ](await mockPool.getAddress(), defaultMarketParams, 0),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAmount");
     });
 
     it("should revert with InvalidAssetAddress when collateralToken = address(0)", async () => {
-      const badMp = { ...defaultMarketParams, collateralToken: ethers.ZeroAddress };
+      const badMp = {
+        ...defaultMarketParams,
+        collateralToken: ethers.ZeroAddress,
+      };
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256)"](
-            await mockPool.getAddress(),
-            badMp,
-            ethers.parseEther("100")
-          )
+          [
+            "morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256)"
+          ](await mockPool.getAddress(), badMp, ethers.parseEther("100")),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAssetAddress");
     });
 
@@ -786,8 +745,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           defaultMarketParams,
           ethers.parseEther("100"),
           ethers.ZeroAddress,
-          true
-        )
+          true,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidUserAddress");
     });
 
@@ -801,11 +760,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const assetBefore = await collateralToken.balanceOf(wallet1.address);
       await facetHelper
         .connect(wallet1)
-        ["morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          amount
-        );
+        [
+          "morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256)"
+        ](await mockPool.getAddress(), defaultMarketParams, amount);
       const assetAfter = await collateralToken.balanceOf(wallet1.address);
       expect(assetAfter - assetBefore).to.equal(amount);
 
@@ -822,13 +779,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet2)
-          ["morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256,address,bool)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            ethers.parseEther("100"),
-            wallet1.address,
-            true
-          )
+          [
+            "morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256,address,bool)"
+          ](await mockPool.getAddress(), defaultMarketParams, ethers.parseEther("100"), wallet1.address, true),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
@@ -837,15 +790,11 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const assetBefore = await collateralToken.balanceOf(wallet1.address);
       await facetHelper
         .connect(wallet1)
-        ["morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256,address,bool)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          amount,
-          wallet1.address,
-          true
-        );
+        [
+          "morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256,address,bool)"
+        ](await mockPool.getAddress(), defaultMarketParams, amount, wallet1.address, true);
       expect(
-        (await collateralToken.balanceOf(wallet1.address)) - assetBefore
+        (await collateralToken.balanceOf(wallet1.address)) - assetBefore,
       ).to.equal(amount);
     });
 
@@ -855,15 +804,11 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const assetBefore = await collateralToken.balanceOf(wallet1.address);
       await facetHelper
         .connect(wallet1)
-        ["morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256,address,bool)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          amount,
-          wallet1.address,
-          false
-        );
+        [
+          "morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256,address,bool)"
+        ](await mockPool.getAddress(), defaultMarketParams, amount, wallet1.address, false);
       expect(
-        (await collateralToken.balanceOf(wallet1.address)) - assetBefore
+        (await collateralToken.balanceOf(wallet1.address)) - assetBefore,
       ).to.equal(amount);
     });
 
@@ -879,14 +824,13 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           defaultMarketParams,
           amount,
           wallet1.address,
-          false
+          false,
         );
 
       const facetAfter = await collateralToken.balanceOf(facetAddr);
       expect(facetAfter - facetBefore).to.equal(amount);
     });
   });
-
 
   // ==========================================================================
   // = morphoBorrow (3-arg) ===================================================
@@ -896,11 +840,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoBorrow(address,(address,address,address,address,uint256),uint256)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            0
-          )
+          [
+            "morphoBorrow(address,(address,address,address,address,uint256),uint256)"
+          ](await mockPool.getAddress(), defaultMarketParams, 0),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAmount");
     });
 
@@ -909,11 +851,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoBorrow(address,(address,address,address,address,uint256),uint256)"](
-            await mockPool.getAddress(),
-            badMp,
-            ethers.parseEther("100")
-          )
+          [
+            "morphoBorrow(address,(address,address,address,address,uint256),uint256)"
+          ](await mockPool.getAddress(), badMp, ethers.parseEther("100")),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAssetAddress");
     });
 
@@ -924,8 +864,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           defaultMarketParams,
           ethers.parseEther("100"),
           ethers.ZeroAddress,
-          true
-        )
+          true,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidUserAddress");
     });
 
@@ -935,11 +875,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoBorrow(address,(address,address,address,address,uint256),uint256)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            amount
-          )
+          [
+            "morphoBorrow(address,(address,address,address,address,uint256),uint256)"
+          ](await mockPool.getAddress(), defaultMarketParams, amount),
       ).to.be.revertedWithCustomError(facetHelper, "BorrowedAssetsMismatch");
       await mockPool.resetBorrowReturnAmount();
     });
@@ -954,13 +892,11 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const assetBefore = await loanToken.balanceOf(wallet1.address);
       await facetHelper
         .connect(wallet1)
-        ["morphoBorrow(address,(address,address,address,address,uint256),uint256)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          amount
-        );
+        [
+          "morphoBorrow(address,(address,address,address,address,uint256),uint256)"
+        ](await mockPool.getAddress(), defaultMarketParams, amount);
       expect(
-        (await loanToken.balanceOf(wallet1.address)) - assetBefore
+        (await loanToken.balanceOf(wallet1.address)) - assetBefore,
       ).to.equal(amount);
 
       expect(await loanToken.balanceOf(facetAddr)).to.equal(0);
@@ -976,13 +912,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet2)
-          ["morphoBorrow(address,(address,address,address,address,uint256),uint256,address,bool)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            ethers.parseEther("100"),
-            wallet1.address,
-            true
-          )
+          [
+            "morphoBorrow(address,(address,address,address,address,uint256),uint256,address,bool)"
+          ](await mockPool.getAddress(), defaultMarketParams, ethers.parseEther("100"), wallet1.address, true),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
@@ -991,15 +923,11 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const assetBefore = await loanToken.balanceOf(wallet1.address);
       await facetHelper
         .connect(wallet1)
-        ["morphoBorrow(address,(address,address,address,address,uint256),uint256,address,bool)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          amount,
-          wallet1.address,
-          true
-        );
+        [
+          "morphoBorrow(address,(address,address,address,address,uint256),uint256,address,bool)"
+        ](await mockPool.getAddress(), defaultMarketParams, amount, wallet1.address, true);
       expect(
-        (await loanToken.balanceOf(wallet1.address)) - assetBefore
+        (await loanToken.balanceOf(wallet1.address)) - assetBefore,
       ).to.equal(amount);
     });
 
@@ -1008,15 +936,11 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const assetBefore = await loanToken.balanceOf(wallet1.address);
       await facetHelper
         .connect(wallet1)
-        ["morphoBorrow(address,(address,address,address,address,uint256),uint256,address,bool)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          amount,
-          wallet1.address,
-          false
-        );
+        [
+          "morphoBorrow(address,(address,address,address,address,uint256),uint256,address,bool)"
+        ](await mockPool.getAddress(), defaultMarketParams, amount, wallet1.address, false);
       expect(
-        (await loanToken.balanceOf(wallet1.address)) - assetBefore
+        (await loanToken.balanceOf(wallet1.address)) - assetBefore,
       ).to.equal(amount);
     });
 
@@ -1025,16 +949,18 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const facetAddr = await facetHelper.getAddress();
       const facetBefore = await loanToken.balanceOf(facetAddr);
 
-      await facetHelper.connect(wallet1).selfCallBorrow(
-        await mockPool.getAddress(),
-        defaultMarketParams,
-        amount,
-        wallet1.address,
-        false
-      );
+      await facetHelper
+        .connect(wallet1)
+        .selfCallBorrow(
+          await mockPool.getAddress(),
+          defaultMarketParams,
+          amount,
+          wallet1.address,
+          false,
+        );
 
       expect((await loanToken.balanceOf(facetAddr)) - facetBefore).to.equal(
-        amount
+        amount,
       );
     });
   });
@@ -1056,12 +982,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoRepay(address,(address,address,address,address,uint256),uint256,bool)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            0,
-            false
-          )
+          [
+            "morphoRepay(address,(address,address,address,address,uint256),uint256,bool)"
+          ](await mockPool.getAddress(), defaultMarketParams, 0, false),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAmount");
     });
 
@@ -1070,12 +993,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoRepay(address,(address,address,address,address,uint256),uint256,bool)"](
-            await mockPool.getAddress(),
-            badMp,
-            repayAmount,
-            false
-          )
+          [
+            "morphoRepay(address,(address,address,address,address,uint256),uint256,bool)"
+          ](await mockPool.getAddress(), badMp, repayAmount, false),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidLoanToken");
     });
 
@@ -1085,8 +1005,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           await mockPool.getAddress(),
           defaultMarketParams,
           repayAmount,
-          ethers.ZeroAddress
-        )
+          ethers.ZeroAddress,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidUserAddress");
     });
 
@@ -1095,12 +1015,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet1)
-          ["morphoRepay(address,(address,address,address,address,uint256),uint256,bool)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            repayAmount,
-            false
-          )
+          [
+            "morphoRepay(address,(address,address,address,address,uint256),uint256,bool)"
+          ](await mockPool.getAddress(), defaultMarketParams, repayAmount, false),
       ).to.be.revertedWithCustomError(facetHelper, "RepaidAssetsMismatch");
       await mockPool.resetRepayReturnAmount();
     });
@@ -1113,12 +1030,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const wallet1Before = await loanToken.balanceOf(wallet1.address);
       await facetHelper
         .connect(wallet1)
-        ["morphoRepay(address,(address,address,address,address,uint256),uint256,bool)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          repayAmount,
-          false
-        );
+        [
+          "morphoRepay(address,(address,address,address,address,uint256),uint256,bool)"
+        ](await mockPool.getAddress(), defaultMarketParams, repayAmount, false);
       const wallet1After = await loanToken.balanceOf(wallet1.address);
       expect(wallet1Before - wallet1After).to.equal(repayAmount);
 
@@ -1144,13 +1058,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await expect(
         facetHelper
           .connect(wallet2)
-          ["morphoRepay(address,(address,address,address,address,uint256),uint256,address,bool)"](
-            await mockPool.getAddress(),
-            defaultMarketParams,
-            repayAmount,
-            wallet1.address,
-            false
-          )
+          [
+            "morphoRepay(address,(address,address,address,address,uint256),uint256,address,bool)"
+          ](await mockPool.getAddress(), defaultMarketParams, repayAmount, wallet1.address, false),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
@@ -1158,13 +1068,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const wallet1Before = await loanToken.balanceOf(wallet1.address);
       await facetHelper
         .connect(wallet1)
-        ["morphoRepay(address,(address,address,address,address,uint256),uint256,address,bool)"](
-          await mockPool.getAddress(),
-          defaultMarketParams,
-          repayAmount,
-          wallet1.address,
-          false
-        );
+        [
+          "morphoRepay(address,(address,address,address,address,uint256),uint256,address,bool)"
+        ](await mockPool.getAddress(), defaultMarketParams, repayAmount, wallet1.address, false);
       const wallet1After = await loanToken.balanceOf(wallet1.address);
       expect(wallet1Before - wallet1After).to.equal(repayAmount);
     });
@@ -1180,7 +1086,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         defaultMarketParams,
         repayAmount,
         wallet1.address,
-        false
+        false,
       );
       const wallet1After = await loanToken.balanceOf(wallet1.address);
       expect(wallet1Before - wallet1After).to.equal(repayAmount);
@@ -1196,8 +1102,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         facetHelper.availableFunds(
           ethers.ZeroAddress,
           wallet1.address,
-          defaultMarketId
-        )
+          defaultMarketId,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMorphoPoolAddress");
     });
 
@@ -1206,8 +1112,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         facetHelper.availableFunds(
           await mockPool.getAddress(),
           ethers.ZeroAddress,
-          defaultMarketId
-        )
+          defaultMarketId,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidUserAddress");
     });
 
@@ -1216,8 +1122,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         facetHelper.availableFunds(
           await mockPool.getAddress(),
           wallet1.address,
-          ethers.ZeroHash
-        )
+          ethers.ZeroHash,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMarketId");
     });
 
@@ -1232,7 +1138,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const available = await facetHelper.availableFunds(
         await mockPool.getAddress(),
         wallet1.address,
-        defaultMarketId
+        defaultMarketId,
       );
       expect(available).to.equal(collateralAmount);
     });
@@ -1268,7 +1174,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const available = await facetHelper.availableFunds(
         await mockPool.getAddress(),
         wallet1.address,
-        defaultMarketId
+        defaultMarketId,
       );
       expect(available).to.equal(0n);
     });
@@ -1307,7 +1213,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const available = await facetHelper.availableFunds(
         await mockPool.getAddress(),
         wallet1.address,
-        defaultMarketId
+        defaultMarketId,
       );
       // VIRTUAL_SHARES=1e6 in SharesMathLib causes slight rounding:
       // borrowedAssets = mulDivUp(100e18, 100e18+1, 100e18+1e6) = 99999999999999000002
@@ -1317,9 +1223,15 @@ describe("TermMorphoInterfaceFacet Tests", () => {
     });
 
     it("should revert when oracle address = address(0) and borrowShares > 0", async () => {
-      const noOracleParams = { ...defaultMarketParams, oracle: ethers.ZeroAddress };
+      const noOracleParams = {
+        ...defaultMarketParams,
+        oracle: ethers.ZeroAddress,
+      };
       const noOracleId = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode([MARKET_PARAMS_TYPE], [noOracleParams])
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          [MARKET_PARAMS_TYPE],
+          [noOracleParams],
+        ),
       );
       await mockPool.setMarketParams(noOracleId, noOracleParams);
       await mockPool.setMarket(noOracleId, {
@@ -1336,14 +1248,21 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         collateral: ethers.parseEther("1000"),
       });
       await expect(
-        facetHelper.availableFunds(await mockPool.getAddress(), wallet1.address, noOracleId)
+        facetHelper.availableFunds(
+          await mockPool.getAddress(),
+          wallet1.address,
+          noOracleId,
+        ),
       ).to.be.revertedWith("Invalid oracle address");
     });
 
     it("should revert when price * lltv rounds to zero (lltv = 0)", async () => {
       const zeroLltvParams = { ...defaultMarketParams, lltv: 0n };
       const zeroLltvId = ethers.keccak256(
-        ethers.AbiCoder.defaultAbiCoder().encode([MARKET_PARAMS_TYPE], [zeroLltvParams])
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          [MARKET_PARAMS_TYPE],
+          [zeroLltvParams],
+        ),
       );
       await mockPool.setMarketParams(zeroLltvId, zeroLltvParams);
       await mockPool.setMarket(zeroLltvId, {
@@ -1360,7 +1279,11 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         collateral: ethers.parseEther("1000"),
       });
       await expect(
-        facetHelper.availableFunds(await mockPool.getAddress(), wallet1.address, zeroLltvId)
+        facetHelper.availableFunds(
+          await mockPool.getAddress(),
+          wallet1.address,
+          zeroLltvId,
+        ),
       ).to.be.revertedWith("Price*LTV rounds to zero");
     });
 
@@ -1393,8 +1316,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         facetHelper.availableFunds(
           await mockPool.getAddress(),
           wallet1.address,
-          defaultMarketId
-        )
+          defaultMarketId,
+        ),
       ).to.be.revertedWith("Invalid price");
 
       await mockOracle.setPrice(ethers.parseUnits("1", 36));
@@ -1409,8 +1332,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const badMpId = ethers.keccak256(
         ethers.AbiCoder.defaultAbiCoder().encode(
           [MARKET_PARAMS_TYPE],
-          [{ ...defaultMarketParams, oracle: ethers.ZeroAddress }]
-        )
+          [{ ...defaultMarketParams, oracle: ethers.ZeroAddress }],
+        ),
       );
       await mockPool.setMarketParams(badMpId, {
         ...defaultMarketParams,
@@ -1421,8 +1344,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         facetHelper.availableBorrow(
           await mockPool.getAddress(),
           wallet1.address,
-          badMpId
-        )
+          badMpId,
+        ),
       ).to.be.revertedWith("Invalid oracle address");
     });
 
@@ -1433,8 +1356,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         facetHelper.availableBorrow(
           await mockPool.getAddress(),
           wallet1.address,
-          defaultMarketId
-        )
+          defaultMarketId,
+        ),
       ).to.be.revertedWith("Invalid price");
 
       await mockOracle.setPrice(ethers.parseUnits("1", 36));
@@ -1450,7 +1373,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const result = await facetHelper.availableBorrow(
         await mockPool.getAddress(),
         wallet1.address,
-        defaultMarketId
+        defaultMarketId,
       );
       expect(result).to.equal(0n);
     });
@@ -1468,7 +1391,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const result = await facetHelper.availableBorrow(
         await mockPool.getAddress(),
         wallet1.address,
-        defaultMarketId
+        defaultMarketId,
       );
       // 1000 * 1e36/1e36 * 0.8 = 800 ETH
       expect(result).to.equal(ethers.parseEther("800"));
@@ -1479,8 +1402,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         facetHelper.availableBorrow(
           ethers.ZeroAddress,
           wallet1.address,
-          defaultMarketId
-        )
+          defaultMarketId,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMorphoPoolAddress");
     });
 
@@ -1489,8 +1412,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         facetHelper.availableBorrow(
           await mockPool.getAddress(),
           ethers.ZeroAddress,
-          defaultMarketId
-        )
+          defaultMarketId,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidUserAddress");
     });
 
@@ -1499,8 +1422,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         facetHelper.availableBorrow(
           await mockPool.getAddress(),
           wallet1.address,
-          ethers.ZeroHash
-        )
+          ethers.ZeroHash,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMarketId");
     });
 
@@ -1524,7 +1447,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const result = await facetHelper.availableBorrow(
         await mockPool.getAddress(),
         wallet1.address,
-        defaultMarketId
+        defaultMarketId,
       );
       expect(result).to.equal(0n);
     });
@@ -1539,8 +1462,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         facetHelper.currentBorrow(
           ethers.ZeroAddress,
           wallet1.address,
-          defaultMarketId
-        )
+          defaultMarketId,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMorphoPoolAddress");
     });
 
@@ -1549,8 +1472,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         facetHelper.currentBorrow(
           await mockPool.getAddress(),
           ethers.ZeroAddress,
-          defaultMarketId
-        )
+          defaultMarketId,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidUserAddress");
     });
 
@@ -1559,8 +1482,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         facetHelper.currentBorrow(
           await mockPool.getAddress(),
           wallet1.address,
-          ethers.ZeroHash
-        )
+          ethers.ZeroHash,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMarketId");
     });
 
@@ -1573,7 +1496,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const result = await facetHelper.currentBorrow(
         await mockPool.getAddress(),
         wallet1.address,
-        defaultMarketId
+        defaultMarketId,
       );
       expect(result).to.equal(0n);
     });
@@ -1597,7 +1520,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const result = await facetHelper.currentBorrow(
         await mockPool.getAddress(),
         wallet1.address,
-        defaultMarketId
+        defaultMarketId,
       );
       expect(result).to.equal(49999999999999500001n);
     });
@@ -1609,24 +1532,24 @@ describe("TermMorphoInterfaceFacet Tests", () => {
   describe("generateCalldata", () => {
     const WITHDRAW_COLLATERAL_SELECTOR = ethers.dataSlice(
       ethers.id(
-        "morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256,address,bool)"
+        "morphoWithdrawCollateral(address,(address,address,address,address,uint256),uint256,address,bool)",
       ),
       0,
-      4
+      4,
     );
     const BORROW_SELECTOR = ethers.dataSlice(
       ethers.id(
-        "morphoBorrow(address,(address,address,address,address,uint256),uint256,address,bool)"
+        "morphoBorrow(address,(address,address,address,address,uint256),uint256,address,bool)",
       ),
       0,
-      4
+      4,
     );
 
     it("should generate calldata for WITHDRAW_COLLATERAL_SELECTOR", async () => {
       const amount = ethers.parseEther("100");
       const marketIdData = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
 
       const calldata = await facetHelper.generateCalldata(
@@ -1636,13 +1559,19 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         wallet1.address,
         amount,
         true,
-        marketIdData
+        marketIdData,
       );
 
       // Should encode: (morphoPool, marketParams, amount, user, payoutUser)
       const expectedCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["address", MARKET_PARAMS_TYPE, "uint256", "address", "bool"],
-        [await mockPool.getAddress(), defaultMarketParams, amount, wallet1.address, true]
+        [
+          await mockPool.getAddress(),
+          defaultMarketParams,
+          amount,
+          wallet1.address,
+          true,
+        ],
       );
       const expected = WITHDRAW_COLLATERAL_SELECTOR + expectedCalldata.slice(2);
       expect(calldata).to.equal(expected);
@@ -1652,7 +1581,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const amount = ethers.parseEther("50");
       const marketIdData = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
 
       const calldata = await facetHelper.generateCalldata(
@@ -1662,12 +1591,18 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         wallet1.address,
         amount,
         false,
-        marketIdData
+        marketIdData,
       );
 
       const expectedCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["address", MARKET_PARAMS_TYPE, "uint256", "address", "bool"],
-        [await mockPool.getAddress(), defaultMarketParams, amount, wallet1.address, false]
+        [
+          await mockPool.getAddress(),
+          defaultMarketParams,
+          amount,
+          wallet1.address,
+          false,
+        ],
       );
       const expected = BORROW_SELECTOR + expectedCalldata.slice(2);
       expect(calldata).to.equal(expected);
@@ -1676,7 +1611,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
     it("should revert with UnsupportedSelector for unknown selector", async () => {
       const marketIdData = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       await expect(
         facetHelper.generateCalldata(
@@ -1686,8 +1621,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           wallet1.address,
           ethers.parseEther("100"),
           true,
-          marketIdData
-        )
+          marketIdData,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "UnsupportedSelector");
     });
   });
@@ -1699,7 +1634,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
     it("should revert with InvalidMorphoPoolAddress when pool not approved", async () => {
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       await expect(
         facetHelper.previewMorphoRefinanceIn({
@@ -1710,7 +1645,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           minOutputAmount: ethers.parseEther("50"),
           targetAddress: wallet2.address,
           additionalCalldata,
-        })
+        }),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMorphoPoolAddress");
     });
 
@@ -1725,14 +1660,15 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const collisionMarketId = ethers.keccak256(
         ethers.AbiCoder.defaultAbiCoder().encode(
           [MARKET_PARAMS_TYPE],
-          [collisionMarketParams]
-        )
+          [collisionMarketParams],
+        ),
       );
       await mockPool.setMarketParams(collisionMarketId, collisionMarketParams);
-      const collisionAdditionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
-        ["bytes32"],
-        [collisionMarketId]
-      );
+      const collisionAdditionalCalldata =
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ["bytes32"],
+          [collisionMarketId],
+        );
       await expect(
         facetHelper.previewMorphoRefinanceIn({
           user: wallet1.address,
@@ -1742,14 +1678,14 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           minOutputAmount: ethers.parseEther("50"),
           targetAddress: await mockPool.getAddress(),
           additionalCalldata: collisionAdditionalCalldata,
-        })
+        }),
       ).to.be.revertedWithCustomError(facetHelper, "InputOutputTokenCollision");
     });
 
     it("should return PreviewAction with collateral as input and loan as output", async () => {
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       const inputAmount = ethers.parseEther("100");
       const outputAmount = ethers.parseEther("50");
@@ -1762,7 +1698,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         targetAddress: await mockPool.getAddress(),
         additionalCalldata,
       });
-      expect(result.expectedInputToken).to.equal(await collateralToken.getAddress());
+      expect(result.expectedInputToken).to.equal(
+        await collateralToken.getAddress(),
+      );
       expect(result.expectedOutputToken).to.equal(await loanToken.getAddress());
       expect(result.expectedInputAmount).to.equal(inputAmount);
       expect(result.expectedOutputAmount).to.equal(outputAmount);
@@ -1777,7 +1715,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
     it("should revert with InvalidMorphoPoolAddress when pool not approved", async () => {
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       await expect(
         facetHelper.previewMorphoRefinanceOut({
@@ -1788,7 +1726,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           minOutputAmount: ethers.parseEther("100"),
           targetAddress: wallet2.address,
           additionalCalldata,
-        })
+        }),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMorphoPoolAddress");
     });
 
@@ -1803,14 +1741,15 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const collisionMarketId = ethers.keccak256(
         ethers.AbiCoder.defaultAbiCoder().encode(
           [MARKET_PARAMS_TYPE],
-          [collisionMarketParams]
-        )
+          [collisionMarketParams],
+        ),
       );
       await mockPool.setMarketParams(collisionMarketId, collisionMarketParams);
-      const collisionAdditionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
-        ["bytes32"],
-        [collisionMarketId]
-      );
+      const collisionAdditionalCalldata =
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ["bytes32"],
+          [collisionMarketId],
+        );
       await expect(
         facetHelper.previewMorphoRefinanceOut({
           user: wallet1.address,
@@ -1820,14 +1759,14 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           minOutputAmount: ethers.parseEther("100"),
           targetAddress: await mockPool.getAddress(),
           additionalCalldata: collisionAdditionalCalldata,
-        })
+        }),
       ).to.be.revertedWithCustomError(facetHelper, "InputOutputTokenCollision");
     });
 
     it("should return PreviewAction with loan as input and collateral as output", async () => {
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       const inputAmount = ethers.parseEther("100");
       const outputAmount = ethers.parseEther("100");
@@ -1841,7 +1780,9 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         additionalCalldata,
       });
       expect(result.expectedInputToken).to.equal(await loanToken.getAddress());
-      expect(result.expectedOutputToken).to.equal(await collateralToken.getAddress());
+      expect(result.expectedOutputToken).to.equal(
+        await collateralToken.getAddress(),
+      );
       expect(result.expectedInputAmount).to.equal(inputAmount);
       expect(result.expectedOutputAmount).to.equal(outputAmount);
       expect(result.isDeterministic).to.equal(true);
@@ -1855,7 +1796,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
     it("should revert with UnsupportedHookSelector for unknown selector", async () => {
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       await expect(
         facetHelper.generateActionCalldata(
@@ -1866,56 +1807,70 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           ethers.parseEther("50"),
           "0x12345678",
           await mockPool.getAddress(),
-          additionalCalldata
-        )
+          additionalCalldata,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "UnsupportedHookSelector");
     });
 
     it("should return preview and calldata for morphoRefinanceInHook selector", async () => {
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
-      const inSelector = facetHelper.interface.getFunction("morphoRefinanceInHook").selector;
+      const inSelector = facetHelper.interface.getFunction(
+        "morphoRefinanceInHook",
+      ).selector;
       const inputAmount = ethers.parseEther("100");
       const outputAmount = ethers.parseEther("50");
-      const [previewAction, encodedCalldata] = await facetHelper.generateActionCalldata(
-        wallet1.address,
-        await collateralToken.getAddress(),
-        inputAmount,
-        await loanToken.getAddress(),
-        outputAmount,
-        inSelector,
-        await mockPool.getAddress(),
-        additionalCalldata
-      );
+      const [previewAction, encodedCalldata] =
+        await facetHelper.generateActionCalldata(
+          wallet1.address,
+          await collateralToken.getAddress(),
+          inputAmount,
+          await loanToken.getAddress(),
+          outputAmount,
+          inSelector,
+          await mockPool.getAddress(),
+          additionalCalldata,
+        );
       expect(previewAction.isDeterministic).to.equal(true);
-      expect(previewAction.expectedInputToken).to.equal(await collateralToken.getAddress());
-      expect(previewAction.expectedOutputToken).to.equal(await loanToken.getAddress());
+      expect(previewAction.expectedInputToken).to.equal(
+        await collateralToken.getAddress(),
+      );
+      expect(previewAction.expectedOutputToken).to.equal(
+        await loanToken.getAddress(),
+      );
       expect(encodedCalldata.slice(0, 10)).to.equal(inSelector);
     });
 
     it("should return preview and calldata for morphoRefinanceOutHook selector", async () => {
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
-      const outSelector = facetHelper.interface.getFunction("morphoRefinanceOutHook").selector;
+      const outSelector = facetHelper.interface.getFunction(
+        "morphoRefinanceOutHook",
+      ).selector;
       const inputAmount = ethers.parseEther("100");
       const outputAmount = ethers.parseEther("100");
-      const [previewAction, encodedCalldata] = await facetHelper.generateActionCalldata(
-        wallet1.address,
-        await loanToken.getAddress(),
-        inputAmount,
-        await collateralToken.getAddress(),
-        outputAmount,
-        outSelector,
-        await mockPool.getAddress(),
-        additionalCalldata
-      );
+      const [previewAction, encodedCalldata] =
+        await facetHelper.generateActionCalldata(
+          wallet1.address,
+          await loanToken.getAddress(),
+          inputAmount,
+          await collateralToken.getAddress(),
+          outputAmount,
+          outSelector,
+          await mockPool.getAddress(),
+          additionalCalldata,
+        );
       expect(previewAction.isDeterministic).to.equal(true);
-      expect(previewAction.expectedInputToken).to.equal(await loanToken.getAddress());
-      expect(previewAction.expectedOutputToken).to.equal(await collateralToken.getAddress());
+      expect(previewAction.expectedInputToken).to.equal(
+        await loanToken.getAddress(),
+      );
+      expect(previewAction.expectedOutputToken).to.equal(
+        await collateralToken.getAddress(),
+      );
       expect(encodedCalldata.slice(0, 10)).to.equal(outSelector);
     });
 
@@ -1930,15 +1885,18 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       const collisionMarketId = ethers.keccak256(
         ethers.AbiCoder.defaultAbiCoder().encode(
           [MARKET_PARAMS_TYPE],
-          [collisionMarketParams]
-        )
+          [collisionMarketParams],
+        ),
       );
       await mockPool.setMarketParams(collisionMarketId, collisionMarketParams);
-      const collisionAdditionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
-        ["bytes32"],
-        [collisionMarketId]
-      );
-      const inSelector = facetHelper.interface.getFunction("morphoRefinanceInHook").selector;
+      const collisionAdditionalCalldata =
+        ethers.AbiCoder.defaultAbiCoder().encode(
+          ["bytes32"],
+          [collisionMarketId],
+        );
+      const inSelector = facetHelper.interface.getFunction(
+        "morphoRefinanceInHook",
+      ).selector;
       await expect(
         facetHelper.generateActionCalldata(
           wallet1.address,
@@ -1948,8 +1906,8 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           ethers.parseEther("50"),
           inSelector,
           await mockPool.getAddress(),
-          collisionAdditionalCalldata
-        )
+          collisionAdditionalCalldata,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InputOutputTokenCollision");
     });
   });
@@ -1961,7 +1919,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
     it("should revert with Unauthorized caller when no flash loan context is active", async () => {
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       await expect(
         facetHelper.morphoRefinanceInHook({
@@ -1972,7 +1930,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           minOutputAmount: ethers.parseEther("50"),
           targetAddress: await mockPool.getAddress(),
           additionalCalldata,
-        })
+        }),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
@@ -1980,7 +1938,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await facetHelper.setActiveFlashLoanBorrower(wallet2.address);
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       await expect(
         facetHelper.morphoRefinanceInHook({
@@ -1991,7 +1949,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           minOutputAmount: ethers.parseEther("50"),
           targetAddress: await mockPool.getAddress(),
           additionalCalldata,
-        })
+        }),
       ).to.be.revertedWith("Unauthorized caller");
       await facetHelper.clearActiveFlashLoanBorrower();
     });
@@ -2000,7 +1958,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await facetHelper.setActiveFlashLoanBorrower(wallet1.address);
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       await expect(
         facetHelper.morphoRefinanceInHook({
@@ -2011,7 +1969,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           minOutputAmount: ethers.parseEther("50"),
           targetAddress: wallet2.address,
           additionalCalldata,
-        })
+        }),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMorphoPoolAddress");
       await facetHelper.clearActiveFlashLoanBorrower();
     });
@@ -2026,7 +1984,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         .transfer(await facetHelper.getAddress(), collateralAmount);
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       await facetHelper.morphoRefinanceInHook({
         user: wallet1.address,
@@ -2048,7 +2006,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
     it("should revert with Unauthorized caller when no flash loan context is active", async () => {
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       await expect(
         facetHelper.morphoRefinanceOutHook({
@@ -2059,7 +2017,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           minOutputAmount: ethers.parseEther("100"),
           targetAddress: await mockPool.getAddress(),
           additionalCalldata,
-        })
+        }),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
@@ -2067,7 +2025,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await facetHelper.setActiveFlashLoanBorrower(wallet2.address);
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       await expect(
         facetHelper.morphoRefinanceOutHook({
@@ -2078,7 +2036,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           minOutputAmount: ethers.parseEther("100"),
           targetAddress: await mockPool.getAddress(),
           additionalCalldata,
-        })
+        }),
       ).to.be.revertedWith("Unauthorized caller");
       await facetHelper.clearActiveFlashLoanBorrower();
     });
@@ -2087,7 +2045,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
       await facetHelper.setActiveFlashLoanBorrower(wallet1.address);
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       await expect(
         facetHelper.morphoRefinanceOutHook({
@@ -2098,7 +2056,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
           minOutputAmount: ethers.parseEther("100"),
           targetAddress: wallet2.address,
           additionalCalldata,
-        })
+        }),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidMorphoPoolAddress");
       await facetHelper.clearActiveFlashLoanBorrower();
     });
@@ -2113,7 +2071,7 @@ describe("TermMorphoInterfaceFacet Tests", () => {
         .transfer(await facetHelper.getAddress(), repayAmount);
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
-        [defaultMarketId]
+        [defaultMarketId],
       );
       await facetHelper.morphoRefinanceOutHook({
         user: wallet1.address,

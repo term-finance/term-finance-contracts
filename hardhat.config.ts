@@ -9,7 +9,6 @@ import "hardhat-abi-exporter";
 import "hardhat-contract-sizer";
 import "solidity-coverage";
 // import * as tdly from "@tenderly/hardhat-tenderly";
-import * as fs from "fs";
 import { exec } from "child_process";
 import { promisify } from "util";
 
@@ -18,7 +17,26 @@ const execAsync = promisify(exec);
 dotenv.config();
 // tdly.setup();
 
-const isCoverage = process.argv.includes("coverage") || process.env.COVERAGE === "true";
+const isCoverage =
+  process.argv.includes("coverage") || process.env.COVERAGE === "true";
+
+// Coverage instrumentation needs a higher optimizer runs count and yul details
+// on the Aave facet (and its test helper) than the rest of the contracts use.
+const coverageAaveOverride = {
+  version: "0.8.22",
+  settings: {
+    evmVersion: "paris",
+    optimizer: {
+      runs: 50,
+      enabled: true,
+      details: {
+        yul: true,
+        yulDetails: { stackAllocation: true, optimizerSteps: "" },
+      },
+    },
+    viaIR: true,
+  },
+};
 
 // Override the compile task to run our script AFTER ABI export
 task("compile").setAction(async (args, hre, runSuper) => {
@@ -27,7 +45,9 @@ task("compile").setAction(async (args, hre, runSuper) => {
 
   // Now run our merge script after ABIs have been exported
   try {
-    const { stdout } = await execAsync("yarn ts-node scripts/merge-erc20-errors.ts");
+    const { stdout } = await execAsync(
+      "yarn ts-node scripts/merge-erc20-errors.ts",
+    );
     console.log(stdout);
   } catch (error) {
     console.warn("Warning: Failed to merge ERC20 errors:", error);
@@ -45,8 +65,8 @@ const config: HardhatUserConfig = {
       {
         version: "0.8.22",
         settings: {
-          "evmVersion": "paris",
-          "outputSelection": {
+          evmVersion: "paris",
+          outputSelection: {
             "*": {
               "*": [
                 "evm.bytecode",
@@ -54,9 +74,9 @@ const config: HardhatUserConfig = {
                 "devdoc",
                 "userdoc",
                 "metadata",
-                "abi"
-              ]
-            }
+                "abi",
+              ],
+            },
           },
           optimizer: {
             runs: 1,
@@ -68,36 +88,10 @@ const config: HardhatUserConfig = {
     ],
     ...(isCoverage && {
       overrides: {
-        "contracts/facets/external/TermAaveInterfaceFacet.sol": {
-          version: "0.8.22",
-          settings: {
-            evmVersion: "paris",
-            optimizer: {
-              runs: 50,
-              enabled: true,
-              details: {
-                yul: true,
-                yulDetails: { stackAllocation: true, optimizerSteps: "" },
-              },
-            },
-            viaIR: true,
-          },
-        },
-        "contracts/test/TestTermAaveInterfaceFacetHelper.sol": {
-          version: "0.8.22",
-          settings: {
-            evmVersion: "paris",
-            optimizer: {
-              runs: 50,
-              enabled: true,
-              details: {
-                yul: true,
-                yulDetails: { stackAllocation: true, optimizerSteps: "" },
-              },
-            },
-            viaIR: true,
-          },
-        },
+        "contracts/facets/external/TermAaveInterfaceFacet.sol":
+          coverageAaveOverride,
+        "contracts/test/TestTermAaveInterfaceFacetHelper.sol":
+          coverageAaveOverride,
       },
     }),
   },
@@ -107,28 +101,10 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      baseGoerli: "placeholder",
       mainnet: process.env.ETHERSCAN_API_KEY!,
-      polygon_mumbai: process.env.ETHERSCAN_API_KEY!,
       sepolia: process.env.ETHERSCAN_API_KEY!,
     },
     customChains: [
-      {
-        network: "baseGoerli",
-        chainId: 84531,
-        urls: {
-          apiURL: "https://api-goerli.basescan.org/api",
-          browserURL: "https://goerli.basescan.org",
-        },
-      },
-      {
-        network: "polygon_mumbai",
-        chainId: 80001,
-        urls: {
-          apiURL: "https://api-testnet.polygonscan.com/api",
-          browserURL: "https://api-testnet.polygonscan.com",
-        },
-      },
       {
         network: "sepolia",
         chainId: 11155111,
@@ -150,7 +126,6 @@ const config: HardhatUserConfig = {
   //   }
   // },
   docgen: {
-    // templates: "docs-templates",
     exclude: [
       "test",
       "ERC1967Proxy.sol",
@@ -168,34 +143,25 @@ const config: HardhatUserConfig = {
     flat: true,
     format: "json",
     except: [
-      // Exclude conflicting Errors libraries from node_modules
+      // Exclude conflicting Errors/IERC20/ERC20 declarations pulled in from node_modules.
+      // Anchored to the specific source:contract so we don't also drop production
+      // interfaces such as contracts/interfaces/ITermRepoLockerErrors.sol.
       "@openzeppelin/contracts/utils/Errors.sol",
       "@pendle/core-v2/contracts/core/libraries/Errors.sol",
-      // Exclude conflicting IERC20 interfaces from OpenZeppelin
       "@openzeppelin/contracts/token/ERC20/IERC20.sol",
       "@openzeppelin/contracts/interfaces/IERC20.sol",
-      "IStrategy.sol",
+      "@openzeppelin/contracts/token/ERC20/ERC20.sol",
       "SettlerFlattened.sol",
-      "ERC20.sol",
-      "Errors.sol",
-      "test/TestingTermAuction.sol",
-      "test/TestingTermAuctionBidLocker.sol",
-      "test/TestingTermAuctionOfferLocker.sol",
-      "test/TestnetToken.sol",
-      "test/TestPriceFeed.sol",
-      "test/TestTermController.sol",
-      "test/TestTermEventEmitter.sol",
-      "test/TestTermPriceConsumerV3.sol",
-      "test/TermRepoCollateralManager.sol",
-      "test/TestTermRepoLocker.sol",
-      "test/TestTermRepoRolloverManager.sol",
-      "test/TestTermRepoServicer.sol",
-      "test/TestTermRepoToken.sol",
+      // Conflicting inline interfaces declared in production facets. Anchored to the
+      // exact fully-qualified name so unrelated contracts aren't matched.
+      "contracts/facets/TermStrategyFacet.sol:IStrategy$",
+      "contracts/facets/flashloan/TermFlashLoanExecutorFacet.sol:IFlashLoanAggregator$",
+      // Tooling/proxy contracts that aren't part of the protocol ABI surface.
       "ERC1967Proxy.sol",
       "lib/MultiSend.sol",
-      "ERC20.sol",
-      "IStrategy",
-      "FlashLoanAggregator"
+      // All test mocks and helpers under contracts/test/. Anchored regex against the
+      // fully-qualified name (sourceName:contractName), which starts with the source path.
+      "^contracts/test/",
     ],
   },
   networks: {
@@ -220,11 +186,11 @@ const config: HardhatUserConfig = {
   },
 };
 
-// Setup goerli test network.
-const testWallet = process.env.GOERLI_TEST_WALLET;
-const testerWallets = process.env.GOERLI_TESTER_WALLETS?.split(",");
+// Shared test wallets, used by both the sepolia and mainnet network configs below.
+const testWallet = process.env.TEST_WALLET;
+const testerWallets = process.env.TESTER_WALLETS?.split(",");
 
-// Setup base-goerli test network.
+// Setup sepolia test network.
 const sepoliaRPC = process.env.SEPOLIA_RPC;
 if (sepoliaRPC) {
   if (!config.networks) {
@@ -269,24 +235,5 @@ if (tenderlyTestWallet && tenderlyForkUrl) {
     gasMultiplier: 2,
   };
 }
-
-// Custom task to log the standard JSON input
-task(
-  "logStandardJsonInput",
-  "Prints the standard JSON input of the compilation",
-  async (_, { artifacts }) => {
-    const artifactPaths = await artifacts.getArtifactPaths();
-
-    artifactPaths.forEach((path) => {
-      const artifact = require(path);
-      console.log(JSON.stringify(artifact._format, null, 2));
-      // Optionally write to a file
-      fs.writeFileSync(
-        `./artifacts/${artifact.contractName}-input.json`,
-        JSON.stringify(artifact._format, null, 2),
-      );
-    });
-  },
-);
 
 export default config;

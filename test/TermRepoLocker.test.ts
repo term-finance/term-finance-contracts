@@ -45,12 +45,18 @@ describe("TermRepoLocker Tests", () => {
       devopsMultisig,
       adminWallet,
       wallet1,
-      termDiamond
+      termDiamond,
     ] = await ethers.getSigners();
 
     eventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [devopsMultisig.address, wallet1.address, termInitializer.address, adminWallet.address, termDiamond.address],
+      [
+        devopsMultisig.address,
+        wallet1.address,
+        termInitializer.address,
+        adminWallet.address,
+        termDiamond.address,
+      ],
       {
         kind: "uups",
       },

@@ -576,9 +576,7 @@ describe("TermController Tests", () => {
         termController
           .connect(potentialTermAddress)
           .markTermFactoryDeployed(externalAddress.address),
-      ).to.be.revertedWith(
-        "Contract is already marked deployed by factory",
-      );
+      ).to.be.revertedWith("Contract is already marked deployed by factory");
     });
 
     it("unmarkTermFactoryDeployed reverts without CONTROLLER_ADMIN_ROLE", async () => {
@@ -780,16 +778,23 @@ describe("TermController Tests", () => {
 
     it("registerAuctionId succeeds with INITIALIZER_ROLE and sets mapping to true", async () => {
       const auctionId = solidityPackedKeccak256(["string"], ["someAuctionId"]);
-      expect(await termController.registeredAuctionIds(auctionId)).to.equal(false);
+      expect(await termController.registeredAuctionIds(auctionId)).to.equal(
+        false,
+      );
       await termController.connect(initializer).registerAuctionId(auctionId);
-      expect(await termController.registeredAuctionIds(auctionId)).to.equal(true);
+      expect(await termController.registeredAuctionIds(auctionId)).to.equal(
+        true,
+      );
     });
 
     it("registerAuctionId succeeds with FACTORY_DEPLOYER_ROLE and sets mapping to true", async () => {
       const auctionId = solidityPackedKeccak256(["string"], ["someAuctionId2"]);
-      await termController.connect(potentialTermAddress).registerAuctionId(auctionId);
-      expect(await termController.registeredAuctionIds(auctionId)).to.equal(true);
+      await termController
+        .connect(potentialTermAddress)
+        .registerAuctionId(auctionId);
+      expect(await termController.registeredAuctionIds(auctionId)).to.equal(
+        true,
+      );
     });
   });
 });
-/* eslint-enable camelcase */

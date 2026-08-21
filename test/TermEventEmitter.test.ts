@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
@@ -24,7 +23,13 @@ describe("TermEventEmitter", () => {
     );
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [wallets[3].address, wallets[4].address, wallets[5].address, wallets[4].address, wallets[5].address],
+      [
+        wallets[3].address,
+        wallets[4].address,
+        wallets[5].address,
+        wallets[4].address,
+        wallets[5].address,
+      ],
       { kind: "uups" },
     )) as unknown as TestTermEventEmitter;
   });
@@ -702,27 +707,44 @@ describe("TermEventEmitter", () => {
 
       await expect(
         tc.emitTermAuctionInitialized(
-          ZeroHash, ZeroHash, wallets[0].address, 0, wallets[0].address, "0.1.0",
+          ZeroHash,
+          ZeroHash,
+          wallets[0].address,
+          0,
+          wallets[0].address,
+          "0.1.0",
         ),
       ).to.emit(termEventEmitter, "TermAuctionInitialized");
 
-      await expect(tc.emitBidAssigned(ZeroHash, ZeroHash, 0))
-        .to.emit(termEventEmitter, "BidAssigned");
+      await expect(tc.emitBidAssigned(ZeroHash, ZeroHash, 0)).to.emit(
+        termEventEmitter,
+        "BidAssigned",
+      );
 
-      await expect(tc.emitOfferAssigned(ZeroHash, ZeroHash, 0))
-        .to.emit(termEventEmitter, "OfferAssigned");
+      await expect(tc.emitOfferAssigned(ZeroHash, ZeroHash, 0)).to.emit(
+        termEventEmitter,
+        "OfferAssigned",
+      );
 
-      await expect(tc.emitAuctionCompleted(ZeroHash, 0, 0, 0, 0, 0))
-        .to.emit(termEventEmitter, "AuctionCompleted");
+      await expect(tc.emitAuctionCompleted(ZeroHash, 0, 0, 0, 0, 0)).to.emit(
+        termEventEmitter,
+        "AuctionCompleted",
+      );
 
-      await expect(tc.emitAuctionCancelled(ZeroHash, true, false))
-        .to.emit(termEventEmitter, "AuctionCancelled");
+      await expect(tc.emitAuctionCancelled(ZeroHash, true, false)).to.emit(
+        termEventEmitter,
+        "AuctionCancelled",
+      );
 
-      await expect(tc.emitCompleteAuctionPaused(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "CompleteAuctionPaused");
+      await expect(tc.emitCompleteAuctionPaused(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "CompleteAuctionPaused",
+      );
 
-      await expect(tc.emitCompleteAuctionUnpaused(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "CompleteAuctionUnpaused");
+      await expect(tc.emitCompleteAuctionUnpaused(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "CompleteAuctionUnpaused",
+      );
     });
 
     it("bid locker events emit successfully", async () => {
@@ -730,7 +752,14 @@ describe("TermEventEmitter", () => {
 
       await expect(
         tc.emitTermAuctionBidLockerInitialized(
-          ZeroHash, ZeroHash, wallets[0].address, 0, 0, MaxUint256, 2n, 1n,
+          ZeroHash,
+          ZeroHash,
+          wallets[0].address,
+          0,
+          0,
+          MaxUint256,
+          2n,
+          1n,
         ),
       ).to.emit(termEventEmitter, "TermAuctionBidLockerInitialized");
 
@@ -754,26 +783,40 @@ describe("TermEventEmitter", () => {
         ),
       ).to.emit(termEventEmitter, "BidLocked");
 
-      await expect(tc.emitBidRevealed(ZeroHash, ZeroHash, 0))
-        .to.emit(termEventEmitter, "BidRevealed");
+      await expect(tc.emitBidRevealed(ZeroHash, ZeroHash, 0)).to.emit(
+        termEventEmitter,
+        "BidRevealed",
+      );
 
-      await expect(tc.emitBidUnlocked(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "BidUnlocked");
+      await expect(tc.emitBidUnlocked(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "BidUnlocked",
+      );
 
-      await expect(tc.emitBidInShortfall(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "BidInShortfall");
+      await expect(tc.emitBidInShortfall(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "BidInShortfall",
+      );
 
-      await expect(tc.emitBidLockingPaused(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "BidLockingPaused");
+      await expect(tc.emitBidLockingPaused(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "BidLockingPaused",
+      );
 
-      await expect(tc.emitBidLockingUnpaused(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "BidLockingUnpaused");
+      await expect(tc.emitBidLockingUnpaused(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "BidLockingUnpaused",
+      );
 
-      await expect(tc.emitBidUnlockingPaused(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "BidUnlockingPaused");
+      await expect(tc.emitBidUnlockingPaused(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "BidUnlockingPaused",
+      );
 
-      await expect(tc.emitBidUnlockingUnpaused(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "BidUnlockingUnpaused");
+      await expect(tc.emitBidUnlockingUnpaused(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "BidUnlockingUnpaused",
+      );
     });
 
     it("offer locker events emit successfully", async () => {
@@ -781,31 +824,57 @@ describe("TermEventEmitter", () => {
 
       await expect(
         tc.emitTermAuctionOfferLockerInitialized(
-          ZeroHash, ZeroHash, wallets[0].address, 0, 0, MaxUint256, 2n,
+          ZeroHash,
+          ZeroHash,
+          wallets[0].address,
+          0,
+          0,
+          MaxUint256,
+          2n,
         ),
       ).to.emit(termEventEmitter, "TermAuctionOfferLockerInitialized");
 
       await expect(
-        tc.emitOfferLocked(ZeroHash, ZeroHash, ZeroAddress, ZeroHash, 0, ZeroAddress, ZeroAddress),
+        tc.emitOfferLocked(
+          ZeroHash,
+          ZeroHash,
+          ZeroAddress,
+          ZeroHash,
+          0,
+          ZeroAddress,
+          ZeroAddress,
+        ),
       ).to.emit(termEventEmitter, "OfferLocked");
 
-      await expect(tc.emitOfferRevealed(ZeroHash, ZeroHash, 0))
-        .to.emit(termEventEmitter, "OfferRevealed");
+      await expect(tc.emitOfferRevealed(ZeroHash, ZeroHash, 0)).to.emit(
+        termEventEmitter,
+        "OfferRevealed",
+      );
 
-      await expect(tc.emitOfferUnlocked(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "OfferUnlocked");
+      await expect(tc.emitOfferUnlocked(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "OfferUnlocked",
+      );
 
-      await expect(tc.emitOfferLockingPaused(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "OfferLockingPaused");
+      await expect(tc.emitOfferLockingPaused(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "OfferLockingPaused",
+      );
 
-      await expect(tc.emitOfferLockingUnpaused(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "OfferLockingUnpaused");
+      await expect(tc.emitOfferLockingUnpaused(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "OfferLockingUnpaused",
+      );
 
-      await expect(tc.emitOfferUnlockingPaused(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "OfferUnlockingPaused");
+      await expect(tc.emitOfferUnlockingPaused(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "OfferUnlockingPaused",
+      );
 
-      await expect(tc.emitOfferUnlockingUnpaused(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "OfferUnlockingUnpaused");
+      await expect(tc.emitOfferUnlockingUnpaused(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "OfferUnlockingUnpaused",
+      );
     });
 
     it("collateral manager events emit successfully", async () => {
@@ -813,7 +882,12 @@ describe("TermEventEmitter", () => {
 
       await expect(
         tc.emitTermRepoCollateralManagerInitialized(
-          ZeroHash, ZeroAddress, [], [], [], [],
+          ZeroHash,
+          ZeroAddress,
+          [],
+          [],
+          [],
+          [],
         ),
       ).to.emit(termEventEmitter, "TermRepoCollateralManagerInitialized");
 
@@ -830,14 +904,27 @@ describe("TermEventEmitter", () => {
       ).to.emit(termEventEmitter, "CollateralUnlocked");
 
       await expect(
-        tc.emitLiquidation(ZeroHash, ZeroAddress, ZeroAddress, 0, ZeroAddress, 0, 0, false),
+        tc.emitLiquidation(
+          ZeroHash,
+          ZeroAddress,
+          ZeroAddress,
+          0,
+          ZeroAddress,
+          0,
+          0,
+          false,
+        ),
       ).to.emit(termEventEmitter, "Liquidation");
 
-      await expect(tc.emitLiquidationPaused(ZeroHash))
-        .to.emit(termEventEmitter, "LiquidationsPaused");
+      await expect(tc.emitLiquidationPaused(ZeroHash)).to.emit(
+        termEventEmitter,
+        "LiquidationsPaused",
+      );
 
-      await expect(tc.emitLiquidationUnpaused(ZeroHash))
-        .to.emit(termEventEmitter, "LiquidationsUnpaused");
+      await expect(tc.emitLiquidationUnpaused(ZeroHash)).to.emit(
+        termEventEmitter,
+        "LiquidationsUnpaused",
+      );
     });
 
     it("servicer events emit successfully", async () => {
@@ -845,12 +932,25 @@ describe("TermEventEmitter", () => {
 
       await expect(
         tc.emitTermRepoServicerInitialized(
-          ZeroHash, ZeroAddress, ZeroAddress, 0, 0, 0, 0, ZeroAddress, "0.1.0",
+          ZeroHash,
+          ZeroAddress,
+          ZeroAddress,
+          0,
+          0,
+          0,
+          0,
+          ZeroAddress,
+          "0.1.0",
         ),
       ).to.emit(termEventEmitter, "TermRepoServicerInitialized");
 
       await expect(
-        tc.emitReopeningOfferLockerPaired(ZeroHash, ZeroAddress, ZeroAddress, ZeroAddress),
+        tc.emitReopeningOfferLockerPaired(
+          ZeroHash,
+          ZeroAddress,
+          ZeroAddress,
+          ZeroAddress,
+        ),
       ).to.emit(termEventEmitter, "ReopeningOfferLockerPaired");
 
       await expect(
@@ -861,14 +961,18 @@ describe("TermEventEmitter", () => {
         tc.emitOfferUnlockedByServicer(ZeroHash, ZeroAddress, 0),
       ).to.emit(termEventEmitter, "OfferUnlockedByServicer");
 
-      await expect(tc.emitOfferFulfilled(ZeroHash, ZeroAddress, 0, 0, 0))
-        .to.emit(termEventEmitter, "OfferFulfilled");
+      await expect(
+        tc.emitOfferFulfilled(ZeroHash, ZeroAddress, 0, 0, 0),
+      ).to.emit(termEventEmitter, "OfferFulfilled");
 
-      await expect(tc.emitTermRepoTokensRedeemed(ZeroHash, ZeroAddress, 0, 0))
-        .to.emit(termEventEmitter, "TermRepoTokensRedeemed");
+      await expect(
+        tc.emitTermRepoTokensRedeemed(ZeroHash, ZeroAddress, 0, 0),
+      ).to.emit(termEventEmitter, "TermRepoTokensRedeemed");
 
-      await expect(tc.emitBidFulfilled(ZeroHash, ZeroAddress, 0, 0, 0))
-        .to.emit(termEventEmitter, "BidFulfilled");
+      await expect(tc.emitBidFulfilled(ZeroHash, ZeroAddress, 0, 0, 0)).to.emit(
+        termEventEmitter,
+        "BidFulfilled",
+      );
 
       await expect(
         tc.emitExposureOpenedOnRolloverNew(ZeroHash, ZeroAddress, 0, 0, 0),
@@ -886,11 +990,14 @@ describe("TermEventEmitter", () => {
         tc.emitMintExposureAccessGranted(ZeroHash, ZeroAddress),
       ).to.emit(termEventEmitter, "MintExposureAccessGranted");
 
-      await expect(tc.emitMintExposure(ZeroHash, ZeroAddress, 0, 0, 0))
-        .to.emit(termEventEmitter, "TermRepoTokenMint");
+      await expect(tc.emitMintExposure(ZeroHash, ZeroAddress, 0, 0, 0)).to.emit(
+        termEventEmitter,
+        "TermRepoTokenMint",
+      );
 
-      await expect(tc.emitBurnCollapseExposure(ZeroHash, ZeroAddress, 0))
-        .to.emit(termEventEmitter, "BurnCollapseExposure");
+      await expect(
+        tc.emitBurnCollapseExposure(ZeroHash, ZeroAddress, 0),
+      ).to.emit(termEventEmitter, "BurnCollapseExposure");
     });
 
     it("rollover manager events emit successfully", async () => {
@@ -900,52 +1007,81 @@ describe("TermEventEmitter", () => {
         tc.emitTermRepoRolloverManagerInitialized(ZeroHash, ZeroAddress),
       ).to.emit(termEventEmitter, "TermRepoRolloverManagerInitialized");
 
-      await expect(tc.emitRolloverTermApproved(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "RolloverTermApproved");
-
-      await expect(tc.emitRolloverTermApprovalRevoked(ZeroHash, ZeroHash))
-        .to.emit(termEventEmitter, "RolloverTermApprovalRevoked");
+      await expect(tc.emitRolloverTermApproved(ZeroHash, ZeroHash)).to.emit(
+        termEventEmitter,
+        "RolloverTermApproved",
+      );
 
       await expect(
-        tc.emitRolloverElection(ZeroHash, ZeroHash, ZeroAddress, ZeroAddress, 0, ZeroHash),
+        tc.emitRolloverTermApprovalRevoked(ZeroHash, ZeroHash),
+      ).to.emit(termEventEmitter, "RolloverTermApprovalRevoked");
+
+      await expect(
+        tc.emitRolloverElection(
+          ZeroHash,
+          ZeroHash,
+          ZeroAddress,
+          ZeroAddress,
+          0,
+          ZeroHash,
+        ),
       ).to.emit(termEventEmitter, "RolloverElection");
 
-      await expect(tc.emitRolloverCancellation(ZeroHash, ZeroAddress))
-        .to.emit(termEventEmitter, "RolloverCancellation");
+      await expect(tc.emitRolloverCancellation(ZeroHash, ZeroAddress)).to.emit(
+        termEventEmitter,
+        "RolloverCancellation",
+      );
 
-      await expect(tc.emitRolloverProcessed(ZeroHash, ZeroAddress))
-        .to.emit(termEventEmitter, "RolloverProcessed");
+      await expect(tc.emitRolloverProcessed(ZeroHash, ZeroAddress)).to.emit(
+        termEventEmitter,
+        "RolloverProcessed",
+      );
     });
 
     it("locker and token events emit successfully", async () => {
       const tc = termEventEmitter.connect(wallets[6]);
 
-      await expect(tc.emitTermRepoLockerInitialized(ZeroHash, ZeroAddress))
-        .to.emit(termEventEmitter, "TermRepoLockerInitialized");
+      await expect(
+        tc.emitTermRepoLockerInitialized(ZeroHash, ZeroAddress),
+      ).to.emit(termEventEmitter, "TermRepoLockerInitialized");
 
-      await expect(tc.emitTermRepoLockerTransfersPaused(ZeroHash))
-        .to.emit(termEventEmitter, "TermRepoLockerTransfersPaused");
+      await expect(tc.emitTermRepoLockerTransfersPaused(ZeroHash)).to.emit(
+        termEventEmitter,
+        "TermRepoLockerTransfersPaused",
+      );
 
-      await expect(tc.emitTermRepoLockerTransfersUnpaused(ZeroHash))
-        .to.emit(termEventEmitter, "TermRepoLockerTransfersUnpaused");
+      await expect(tc.emitTermRepoLockerTransfersUnpaused(ZeroHash)).to.emit(
+        termEventEmitter,
+        "TermRepoLockerTransfersUnpaused",
+      );
 
-      await expect(tc.emitTermRepoTokenInitialized(ZeroHash, ZeroAddress, 0))
-        .to.emit(termEventEmitter, "TermRepoTokenInitialized");
+      await expect(
+        tc.emitTermRepoTokenInitialized(ZeroHash, ZeroAddress, 0),
+      ).to.emit(termEventEmitter, "TermRepoTokenInitialized");
 
-      await expect(tc.emitTermRepoTokenMintingPaused(ZeroHash))
-        .to.emit(termEventEmitter, "TermRepoTokenMintingPaused");
+      await expect(tc.emitTermRepoTokenMintingPaused(ZeroHash)).to.emit(
+        termEventEmitter,
+        "TermRepoTokenMintingPaused",
+      );
 
-      await expect(tc.emitTermRepoTokenMintingUnpaused(ZeroHash))
-        .to.emit(termEventEmitter, "TermRepoTokenMintingUnpaused");
+      await expect(tc.emitTermRepoTokenMintingUnpaused(ZeroHash)).to.emit(
+        termEventEmitter,
+        "TermRepoTokenMintingUnpaused",
+      );
 
-      await expect(tc.emitTermRepoTokenBurningPaused(ZeroHash))
-        .to.emit(termEventEmitter, "TermRepoTokenBurningPaused");
+      await expect(tc.emitTermRepoTokenBurningPaused(ZeroHash)).to.emit(
+        termEventEmitter,
+        "TermRepoTokenBurningPaused",
+      );
 
-      await expect(tc.emitTermRepoTokenBurningUnpaused(ZeroHash))
-        .to.emit(termEventEmitter, "TermRepoTokenBurningUnpaused");
+      await expect(tc.emitTermRepoTokenBurningUnpaused(ZeroHash)).to.emit(
+        termEventEmitter,
+        "TermRepoTokenBurningUnpaused",
+      );
 
-      await expect(tc.emitTermContractUpgraded(ZeroAddress, ZeroAddress))
-        .to.emit(termEventEmitter, "TermContractUpgraded");
+      await expect(
+        tc.emitTermContractUpgraded(ZeroAddress, ZeroAddress),
+      ).to.emit(termEventEmitter, "TermContractUpgraded");
     });
 
     it("intent and swap events emit successfully", async () => {
@@ -953,13 +1089,28 @@ describe("TermEventEmitter", () => {
 
       await expect(
         tc.emitIntentFilled(
-          ZeroHash, ZeroHash, ZeroAddress, ZeroAddress, ZeroAddress,
-          ZeroAddress, ZeroAddress, 0, 0, 0, 0, ZeroAddress, 0, 0, 0,
+          ZeroHash,
+          ZeroHash,
+          ZeroAddress,
+          ZeroAddress,
+          ZeroAddress,
+          ZeroAddress,
+          ZeroAddress,
+          0,
+          0,
+          0,
+          0,
+          ZeroAddress,
+          0,
+          0,
+          0,
         ),
       ).to.emit(termEventEmitter, "IntentFilled");
 
-      await expect(tc.emitIntentCancelled(ZeroHash))
-        .to.emit(termEventEmitter, "IntentCancelled");
+      await expect(tc.emitIntentCancelled(ZeroHash)).to.emit(
+        termEventEmitter,
+        "IntentCancelled",
+      );
 
       await expect(
         tc.emitRepoTokenSwapFilled(ZeroHash, {
@@ -982,13 +1133,22 @@ describe("TermEventEmitter", () => {
       ).to.emit(termEventEmitter, "RepoTokenSwapFilled");
 
       await expect(
-        tc.emitLimitOrderTokenPairMinSaltValue(ZeroAddress, ZeroAddress, ZeroAddress, 0),
+        tc.emitLimitOrderTokenPairMinSaltValue(
+          ZeroAddress,
+          ZeroAddress,
+          ZeroAddress,
+          0,
+        ),
       ).to.emit(termEventEmitter, "LimitOrderTokenPairMinSalt");
 
       await expect(
-        tc.emitSwapOrderTokenPairMinSaltValue(ZeroAddress, ZeroAddress, ZeroAddress, 0),
+        tc.emitSwapOrderTokenPairMinSaltValue(
+          ZeroAddress,
+          ZeroAddress,
+          ZeroAddress,
+          0,
+        ),
       ).to.emit(termEventEmitter, "SwapOrderTokenPairMinSalt");
     });
   });
 });
-/* eslint-enable camelcase */

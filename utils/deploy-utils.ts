@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import {
   BaseContract,
   Contract,
@@ -529,43 +528,47 @@ export async function deployMaturityPeriod(
   } else {
     const TermDiamondFactoryFactory = await ethers.getContractFactory(
       "TermDiamondFactory",
-      managedSigner
+      managedSigner,
     );
     termDiamondFactory = (await TermDiamondFactoryFactory.deploy(
       adminWallet,
-      devopsMultisig
+      devopsMultisig,
     )) as unknown as TermDiamondFactory;
     await termDiamondFactory.waitForDeployment();
   }
-  
 
-  // Deploy TermDiamond 
+  // Deploy TermDiamond
   let termDiamond: TermDiamond;
   if (termDiamondAddress) {
     termDiamond = (await ethers.getContractAt(
       "TermDiamond",
       termDiamondAddress,
-      managedSigner
+      managedSigner,
     )) as unknown as TermDiamond;
   } else {
-    
-    const termDiamondTx = (await termDiamondFactory.deployDiamond());
+    const termDiamondTx = await termDiamondFactory.deployDiamond();
     const receipt = await termDiamondTx.wait();
 
     // Read diamond address from DiamondDeployed event log
     const diamondDeployedEvent = receipt?.logs.find(
-      log => log.topics[0] === termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash
+      (log) =>
+        log.topics[0] ===
+        termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash,
     );
 
     if (!diamondDeployedEvent) {
       throw new Error("DiamondDeployed event not found");
     }
 
-    const decodedEvent = termDiamondFactory.interface.parseLog(diamondDeployedEvent);
+    const decodedEvent =
+      termDiamondFactory.interface.parseLog(diamondDeployedEvent);
     const diamondAddress = decodedEvent?.args.diamond;
     const diamondCutFacetAddr = decodedEvent?.args.diamondCutFacet;
 
-    termDiamond = await ethers.getContractAt("TermDiamond", diamondAddress) as TermDiamond;
+    termDiamond = (await ethers.getContractAt(
+      "TermDiamond",
+      diamondAddress,
+    )) as TermDiamond;
   }
 
   const termRepoServicer = termRepoServicerAddress
@@ -673,7 +676,9 @@ export async function deployMaturityPeriod(
             initializerAddressDefined,
             {
               redemptionTimestamp:
-                Number(maturityTimestamp) + Number(repurchaseWindow) + Number(redemptionBuffer),
+                Number(maturityTimestamp) +
+                Number(repurchaseWindow) +
+                Number(redemptionBuffer),
               termRepoServicer: await termRepoServicer.getAddress(),
               termRepoCollateralManager:
                 await termRepoCollateralManager.getAddress(),
@@ -693,7 +698,9 @@ export async function deployMaturityPeriod(
             initializerAddressDefined,
             {
               redemptionTimestamp:
-                Number(maturityTimestamp) + Number(repurchaseWindow) + Number(redemptionBuffer),
+                Number(maturityTimestamp) +
+                Number(repurchaseWindow) +
+                Number(redemptionBuffer),
               termRepoServicer: await termRepoServicer.getAddress(),
               termRepoCollateralManager:
                 await termRepoCollateralManager.getAddress(),
@@ -896,7 +903,7 @@ export async function deployMaturityPeriod(
           await termController.getAddress(),
           await eventEmitter.getAddress(),
           await oracle.getAddress(),
-          await termDiamond.getAddress()
+          await termDiamond.getAddress(),
         ),
       );
       console.log("Pairing term contracts using TermInitializer...");
@@ -1133,7 +1140,7 @@ export async function deployAdditionalAuction(
         await termController.getAddress(),
         await eventEmitter.getAddress(),
         await oracle.getAddress(),
-        termDiamond
+        termDiamond,
       ),
     );
     console.log("Pairing term contracts using TermInitializer...");

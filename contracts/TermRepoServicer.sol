@@ -51,7 +51,6 @@ contract TermRepoServicer is
     bytes32 public constant INITIALIZER_ROLE = keccak256("INITIALIZER_ROLE");
     bytes32 public constant DIAMOND_ROLE = keccak256("DIAMOND_ROLE");
 
-
     // ========================================================================
     // = State Variables  =====================================================
     // ========================================================================
@@ -156,11 +155,11 @@ contract TermRepoServicer is
 
         require(purchaseToken_ != address(0), "Zero address purchase token");
         purchaseToken = purchaseToken_;
-        IERC20Metadata purchaseTokenInstance = IERC20Metadata(
-                purchaseToken_
-            );
+        IERC20Metadata purchaseTokenInstance = IERC20Metadata(purchaseToken_);
         uint8 purchaseTokenDecimals = purchaseTokenInstance.decimals();
-        termRepoBalancedThreshold = 10 ** (purchaseTokenDecimals / 4 < 2 ? 2 : purchaseTokenDecimals / 4);
+        termRepoBalancedThreshold =
+            10 **
+                (purchaseTokenDecimals / 4 < 2 ? 2 : purchaseTokenDecimals / 4);
 
         termController = termController_;
         emitter = emitter_;
@@ -181,7 +180,7 @@ contract TermRepoServicer is
         address devopsMultisig_,
         address deployerWallet_,
         string calldata version_
-    )  external onlyRole(INITIALIZER_ROLE) notTermContractPaired {
+    ) external onlyRole(INITIALIZER_ROLE) notTermContractPaired {
         require(deployerWallet_ != address(0), "Zero address deployer wallet");
         termRepoLocker = ITermRepoLocker(termRepoLocker_);
         termRepoCollateralManager = ITermRepoCollateralManager(
@@ -223,10 +222,12 @@ contract TermRepoServicer is
     /// @notice Allows DIAMOND_ROLE to submit repurchase payment on behalf of a borrower
     /// @param borrower The address of the borrower making the repurchase payment
     /// @param amount The amount of purchase token to submit for repurchase
-    function submitRepurchasePayment(address borrower, uint256 amount) external onlyRole(DIAMOND_ROLE) {
+    function submitRepurchasePayment(
+        address borrower,
+        uint256 amount
+    ) external onlyRole(DIAMOND_ROLE) {
         _submitRepurchasePaymentInternal(borrower, amount);
     }
-
 
     /// @param amountToBurn The amount of TermRepoTokens to burn
     function burnCollapseExposure(uint256 amountToBurn) external {
@@ -236,10 +237,12 @@ contract TermRepoServicer is
     /// @notice Allows DIAMOND_ROLE to burn and collapse exposure on behalf of a borrower
     /// @param borrower The address of the borrower whose exposure is being collapsed
     /// @param amountToBurn The amount of TermRepoTokens to burn
-    function burnCollapseExposure(address borrower, uint256 amountToBurn) external onlyRole(DIAMOND_ROLE) {
+    function burnCollapseExposure(
+        address borrower,
+        uint256 amountToBurn
+    ) external onlyRole(DIAMOND_ROLE) {
         _burnCollapseExposureInternal(borrower, amountToBurn);
     }
-
 
     /// @param borrower The address of the borrower to query
     /// @return The total repurchase price due at maturity for a given borrower
@@ -259,15 +262,29 @@ contract TermRepoServicer is
         if (!termController.verifyMintExposureAccess(msg.sender)) {
             revert NoMintOpenExposureAccess();
         }
-        _mintOpenExposureInternal(msg.sender, msg.sender, amount, collateralAmounts);
+        _mintOpenExposureInternal(
+            msg.sender,
+            msg.sender,
+            amount,
+            collateralAmounts
+        );
     }
 
     /// @dev This method allows DIAMOND_ROLE to open repurchase price exposure against a TermRepoToken mint on behalf of a borrower outside of a Term Auction to create new supply
     /// @param borrower The address of the borrower for whom exposure is being minted
     /// @param amount The amount of Term Repo Tokens to mint
     /// @param collateralAmounts An array containing an amount of collateral token for each token in collateral basket
-    function mintOpenExposure(address borrower, uint256 amount, uint256[] calldata collateralAmounts) external onlyRole(DIAMOND_ROLE) {
-        _mintOpenExposureInternal(borrower, msg.sender, amount, collateralAmounts);
+    function mintOpenExposure(
+        address borrower,
+        uint256 amount,
+        uint256[] calldata collateralAmounts
+    ) external onlyRole(DIAMOND_ROLE) {
+        _mintOpenExposureInternal(
+            borrower,
+            msg.sender,
+            amount,
+            collateralAmounts
+        );
     }
 
     /// @notice Mint open exposure for intent-based order settlement (DIAMOND_ROLE)
@@ -287,7 +304,7 @@ contract TermRepoServicer is
         uint256 offerRate,
         bool isRoutedCollateral
     ) external onlyRole(DIAMOND_ROLE) returns (uint256) {
-         // solhint-disable-next-line not-rely-on-time
+        // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > maturityTimestamp) {
             revert AfterMaturity();
         }
@@ -304,16 +321,13 @@ contract TermRepoServicer is
         // Calculate repo tokens to mint based on offer rate
         Exp memory proRate = div_(
             // solhint-disable-next-line not-rely-on-time
-            Exp({mantissa: (maturityTimestamp - block.timestamp)}),
+            Exp({mantissa: (redemptionTimestamp - block.timestamp)}),
             Exp({mantissa: (YEAR_SECONDS)})
         );
 
         Exp memory repurchaseFactor = add_(
             Exp({mantissa: expScale}),
-            mul_(
-                proRate,
-                Exp({mantissa: offerRate})
-            )
+            mul_(proRate, Exp({mantissa: offerRate}))
         );
 
         uint256 amountOfRepoTokenToMint = truncate(
@@ -328,9 +342,19 @@ contract TermRepoServicer is
 
         uint256 maxMintValue;
         if (isRoutedCollateral) {
-            maxMintValue = _handleCollateral(borrower, msg.sender, collateralAmounts);
+            maxMintValue = _handleCollateral(
+                borrower,
+                msg.sender,
+                amountOfRepoTokenToMint,
+                collateralAmounts
+            );
         } else {
-            maxMintValue = _handleCollateral(borrower, borrower, collateralAmounts);
+            maxMintValue = _handleCollateral(
+                borrower,
+                borrower,
+                amountOfRepoTokenToMint,
+                collateralAmounts
+            );
         }
         if (amountOfRepoTokenToMint > maxMintValue) {
             revert InsufficientCollateral();
@@ -341,7 +365,7 @@ contract TermRepoServicer is
             lender,
             amountOfRepoTokenToMint
         );
-        
+
         termRepoToken.decrementMintExposureCap(amountOfRepoTokenToMint);
 
         // slither-disable-start reentrancy-benign
@@ -362,7 +386,6 @@ contract TermRepoServicer is
 
         return amountOfRepoTokenToMint;
     }
-
 
     /// @param redeemer The address of redeemer
     /// @param amountToRedeem The amount of TermRepoTokens to redeem
@@ -694,7 +717,10 @@ contract TermRepoServicer is
     // = Internal Functions  ==================================================
     // ========================================================================
 
-    function _submitRepurchasePaymentInternal(address borrower, uint256 amount) internal {
+    function _submitRepurchasePaymentInternal(
+        address borrower,
+        uint256 amount
+    ) internal {
         if (amount == 0) {
             revert InvalidParameters("zero amount");
         }
@@ -727,18 +753,19 @@ contract TermRepoServicer is
         emitter.emitRepurchasePaymentSubmitted(termRepoId, borrower, amount);
     }
 
-    function _burnCollapseExposureInternal (address borrower, uint256 amountToBurn) internal {
+    function _burnCollapseExposureInternal(
+        address borrower,
+        uint256 amountToBurn
+    ) internal {
         if (block.timestamp >= endOfRepurchaseWindow) {
             revert AfterRepurchaseWindow();
         }
-        
+
         if (repurchaseExposureLedger[borrower] == 0) {
             revert ZeroBorrowerRepurchaseObligation();
         }
 
-        IERC20Metadata purchaseTokenInstance = IERC20Metadata(
-                purchaseToken
-            );
+        IERC20Metadata purchaseTokenInstance = IERC20Metadata(purchaseToken);
         uint256 purchaseTokenDecimals = uint256(
             purchaseTokenInstance.decimals()
         );
@@ -788,12 +815,19 @@ contract TermRepoServicer is
             );
 
             if (repurchaseExposureLedger[borrower] == 0) {
-                termRepoCollateralManager.unlockCollateralOnRepurchase(borrower);
+                termRepoCollateralManager.unlockCollateralOnRepurchase(
+                    borrower
+                );
             }
         }
     }
 
-    function _mintOpenExposureInternal(address borrower, address sender, uint256 amount, uint256[] calldata collateralAmounts) internal {
+    function _mintOpenExposureInternal(
+        address borrower,
+        address sender,
+        uint256 amount,
+        uint256[] calldata collateralAmounts
+    ) internal {
         // solhint-disable-next-line not-rely-on-time
         if (block.timestamp > maturityTimestamp) {
             revert AfterMaturity();
@@ -808,7 +842,12 @@ contract TermRepoServicer is
             );
         }
 
-        uint256 maxMintValue = _handleCollateral(borrower, sender, collateralAmounts);
+        uint256 maxMintValue = _handleCollateral(
+            borrower,
+            sender,
+            amount,
+            collateralAmounts
+        );
         if (amount > maxMintValue) {
             revert InsufficientCollateral();
         }
@@ -860,10 +899,14 @@ contract TermRepoServicer is
     }
 
     function _handleCollateral(
-        address borrower, 
+        address borrower,
         address sender,
+        uint256 repoTokenAmount,
         uint256[] calldata collateralAmounts
     ) private returns (uint256 maxMintValue) {
+        if (repoTokenAmount == 0) {
+            revert ZeroMintAmount();
+        }
         for (uint256 i = 0; i < collateralAmounts.length; ++i) {
             termRepoCollateralManager.mintOpenExposureLockCollateral(
                 borrower,
@@ -887,26 +930,32 @@ contract TermRepoServicer is
     /// @notice Truncation is by 4 decimal places due to the assumption that number of participants < 10000
     function _isTermRepoBalanced() internal view returns (bool) {
         if (shortfallHaircutMantissa == 0) {
-            uint256 totalLiquidity = totalOutstandingRepurchaseExposure + totalRepurchaseCollected;
+            uint256 totalLiquidity = totalOutstandingRepurchaseExposure +
+                totalRepurchaseCollected;
             uint256 totalRedemptionValue = termRepoToken.totalRedemptionValue();
             if (totalLiquidity >= totalRedemptionValue) {
-                return totalLiquidity - totalRedemptionValue <= termRepoBalancedThreshold;
+                return
+                    totalLiquidity - totalRedemptionValue <=
+                    termRepoBalancedThreshold;
             } else {
-                return totalRedemptionValue - totalLiquidity <= termRepoBalancedThreshold;
+                return
+                    totalRedemptionValue - totalLiquidity <=
+                    termRepoBalancedThreshold;
             }
-      
-        }
-        else {
+        } else {
             uint256 haircutRedemptionValue = mul_ScalarTruncate(
                 Exp({mantissa: shortfallHaircutMantissa}),
                 termRepoToken.totalRedemptionValue()
             );
             if (totalRepurchaseCollected >= haircutRedemptionValue) {
-                return totalRepurchaseCollected - haircutRedemptionValue <= termRepoBalancedThreshold;
+                return
+                    totalRepurchaseCollected - haircutRedemptionValue <=
+                    termRepoBalancedThreshold;
             } else {
-                return haircutRedemptionValue - totalRepurchaseCollected <= termRepoBalancedThreshold;
+                return
+                    haircutRedemptionValue - totalRepurchaseCollected <=
+                    termRepoBalancedThreshold;
             }
-
         }
     }
 

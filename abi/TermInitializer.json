@@ -459,6 +459,81 @@
   {
     "inputs": [
       {
+        "components": [
+          {
+            "internalType": "contract TermRepoLocker",
+            "name": "termRepoLocker",
+            "type": "address"
+          },
+          {
+            "internalType": "contract TermRepoServicer",
+            "name": "termRepoServicer",
+            "type": "address"
+          },
+          {
+            "internalType": "contract TermRepoCollateralManager",
+            "name": "termRepoCollateralManager",
+            "type": "address"
+          },
+          {
+            "internalType": "contract TermRepoRolloverManager",
+            "name": "rolloverManager",
+            "type": "address"
+          },
+          {
+            "internalType": "contract TermRepoToken",
+            "name": "termRepoToken",
+            "type": "address"
+          },
+          {
+            "internalType": "contract TermAuctionOfferLocker",
+            "name": "termAuctionOfferLocker",
+            "type": "address"
+          },
+          {
+            "internalType": "contract TermAuctionBidLocker",
+            "name": "termAuctionBidLocker",
+            "type": "address"
+          },
+          {
+            "internalType": "contract TermAuction",
+            "name": "auction",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct TermContractGroup",
+        "name": "termContractGroup",
+        "type": "tuple"
+      },
+      {
+        "internalType": "address",
+        "name": "devOpsMultiSig",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "adminWallet",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "deployerWallet",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "termVersion",
+        "type": "string"
+      }
+    ],
+    "name": "setupTermWithoutAuction",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "bytes4",
         "name": "interfaceId",
         "type": "bytes4"

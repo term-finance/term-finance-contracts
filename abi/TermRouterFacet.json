@@ -109,6 +109,11 @@
     "type": "error"
   },
   {
+    "inputs": [],
+    "name": "ZeroMintAmount",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",

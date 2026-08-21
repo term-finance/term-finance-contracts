@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
@@ -83,7 +82,6 @@ describe("TermRepoRolloverIntegration", () => {
 
     wallets = signers.splice(1, signers.length);
     adminWallet = signers[0];
-
 
     const termEventEmitterFactory =
       await ethers.getContractFactory("TermEventEmitter");
@@ -1269,7 +1267,6 @@ describe("TermRepoRolloverIntegration", () => {
       signer,
     )) as unknown as TestToken;
 
-    // eslint-disable-next-line no-unused-vars
     const ctTp1BalanceBefore = await collateralToken.balanceOf(
       await maturityPeriod1.termRepoLocker.getAddress(),
     );
@@ -1286,7 +1283,6 @@ describe("TermRepoRolloverIntegration", () => {
       signer,
     )) as unknown as TermRepoCollateralManager;
 
-    // eslint-disable-next-line no-unused-vars
     const collateral1Before =
       await maturity1CollateralManager.getCollateralBalance(
         wallets[1].address,
@@ -2344,4 +2340,3 @@ describe("TermRepoRolloverIntegration", () => {
     ]);
   });
 });
-/* eslint-enable camelcase */
