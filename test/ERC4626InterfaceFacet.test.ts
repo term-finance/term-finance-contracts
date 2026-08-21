@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
@@ -13,8 +12,7 @@ import {
   TestMockVault,
 } from "../typechain-types";
 
-const PERMIT2_CANONICAL_ADDRESS =
-  "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+const PERMIT2_CANONICAL_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 
 describe("ERC4626InterfaceFacet Tests", () => {
   let erc4626InterfaceFacet: TestERC4626InterfaceFacetHelper;
@@ -36,28 +34,38 @@ describe("ERC4626InterfaceFacet Tests", () => {
     await erc4626InterfaceFacet.waitForDeployment();
 
     // Deploy mock term controller
-    const MockControllerFactory = await ethers.getContractFactory("TestMockTermController");
-    mockController = (await MockControllerFactory.deploy()) as unknown as TestMockTermController;
+    const MockControllerFactory = await ethers.getContractFactory(
+      "TestMockTermController",
+    );
+    mockController =
+      (await MockControllerFactory.deploy()) as unknown as TestMockTermController;
     await mockController.waitForDeployment();
 
     // Add mock controller to approved list
-    await erc4626InterfaceFacet.addApprovedTermController(await mockController.getAddress());
+    await erc4626InterfaceFacet.addApprovedTermController(
+      await mockController.getAddress(),
+    );
 
     // Deploy real test token as asset
     const TestTokenFactory = await ethers.getContractFactory("TestToken");
 
-    asset = (await upgrades.deployProxy(
-      TestTokenFactory,
-      ["Asset Token", "ASSET", 18, [wallet1.address], [ethers.parseEther("10000")]],
-    )) as unknown as TestToken;
+    asset = (await upgrades.deployProxy(TestTokenFactory, [
+      "Asset Token",
+      "ASSET",
+      18,
+      [wallet1.address],
+      [ethers.parseEther("10000")],
+    ])) as unknown as TestToken;
     await asset.waitForDeployment();
 
     // Deploy mock vault
-    const TestMockVaultFactory = await ethers.getContractFactory("TestMockVault");
-    mockVault = (await upgrades.deployProxy(
-      TestMockVaultFactory,
-      [await asset.getAddress(), "Vault Shares", "vSHARE"],
-    )) as unknown as TestMockVault;
+    const TestMockVaultFactory =
+      await ethers.getContractFactory("TestMockVault");
+    mockVault = (await upgrades.deployProxy(TestMockVaultFactory, [
+      await asset.getAddress(),
+      "Vault Shares",
+      "vSHARE",
+    ])) as unknown as TestMockVault;
     await mockVault.waitForDeployment();
 
     // Approve mock vault in controller
@@ -77,11 +85,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
       expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
       // Execute deposit (3-arg: vault, assets, usePermit2) - shares go to msg.sender (wallet1)
-      const tx = await erc4626InterfaceFacet.connect(wallet1).depositToVault(
-        await mockVault.getAddress(),
-        assetsAmount,
-        false
-      );
+      const tx = await erc4626InterfaceFacet
+        .connect(wallet1)
+        .depositToVault(await mockVault.getAddress(), assetsAmount, false);
 
       await expect(tx).to.not.be.reverted;
 
@@ -91,7 +97,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
 
       //Verify assets were taken from depositor
       const depositorAssetBalance = await asset.balanceOf(wallet1.address);
-      expect(depositorAssetBalance).to.equal(ethers.parseEther("10000") - assetsAmount);
+      expect(depositorAssetBalance).to.equal(
+        ethers.parseEther("10000") - assetsAmount,
+      );
 
       expect(await asset.balanceOf(facetAddr)).to.equal(0);
       expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
@@ -101,53 +109,70 @@ describe("ERC4626InterfaceFacet Tests", () => {
       const assetsAmount = ethers.parseEther("100");
 
       // Deploy a malicious vault that doesn't mint shares
-      const MaliciousVaultFactory = await ethers.getContractFactory("TestMaliciousVault");
-      const maliciousVault = await upgrades.deployProxy(
-        MaliciousVaultFactory,
-        [await asset.getAddress(), "Malicious Vault", "mVAULT"],
-      );
+      const MaliciousVaultFactory =
+        await ethers.getContractFactory("TestMaliciousVault");
+      const maliciousVault = await upgrades.deployProxy(MaliciousVaultFactory, [
+        await asset.getAddress(),
+        "Malicious Vault",
+        "mVAULT",
+      ]);
       await maliciousVault.waitForDeployment();
 
       // Approve malicious vault in controller
-      await mockController.setVaultApproval(await maliciousVault.getAddress(), true);
+      await mockController.setVaultApproval(
+        await maliciousVault.getAddress(),
+        true,
+      );
 
       // Approve facet to spend assets
-      await asset.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+      await asset
+        .connect(wallet1)
+        .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
 
       // Execute - should revert because no shares are received
       await expect(
-        erc4626InterfaceFacet.connect(wallet1).depositToVault(
-          await maliciousVault.getAddress(),
-          assetsAmount,
-          false
-        ),
-      ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "NoSharesReceived");
+        erc4626InterfaceFacet
+          .connect(wallet1)
+          .depositToVault(
+            await maliciousVault.getAddress(),
+            assetsAmount,
+            false,
+          ),
+      ).to.be.revertedWithCustomError(
+        erc4626InterfaceFacet,
+        "NoSharesReceived",
+      );
     });
 
     it("should revert if shares mismatch", async () => {
       const assetsAmount = ethers.parseEther("100");
 
       // Deploy a vault that lies about shares minted
-      const LyingVaultFactory = await ethers.getContractFactory("TestLyingVault");
-      const lyingVault = await upgrades.deployProxy(
-        LyingVaultFactory,
-        [await asset.getAddress(), "Lying Vault", "lVAULT"],
-      );
+      const LyingVaultFactory =
+        await ethers.getContractFactory("TestLyingVault");
+      const lyingVault = await upgrades.deployProxy(LyingVaultFactory, [
+        await asset.getAddress(),
+        "Lying Vault",
+        "lVAULT",
+      ]);
       await lyingVault.waitForDeployment();
 
       // Approve lying vault in controller
-      await mockController.setVaultApproval(await lyingVault.getAddress(), true);
+      await mockController.setVaultApproval(
+        await lyingVault.getAddress(),
+        true,
+      );
 
       // Approve facet to spend assets
-      await asset.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+      await asset
+        .connect(wallet1)
+        .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
 
       // Execute - should revert because shares mismatch
       await expect(
-        erc4626InterfaceFacet.connect(wallet1).depositToVault(
-          await lyingVault.getAddress(),
-          assetsAmount,
-          false
-        ),
+        erc4626InterfaceFacet
+          .connect(wallet1)
+          .depositToVault(await lyingVault.getAddress(), assetsAmount, false),
       ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "SharesMismatch");
     });
 
@@ -157,8 +182,12 @@ describe("ERC4626InterfaceFacet Tests", () => {
 
       // First, mint some initial shares to wallet1 (the caller/receiver)
       // Need to approve vault to spend assets for the mint
-      await asset.connect(wallet1).approve(await mockVault.getAddress(), ethers.parseEther("50"));
-      await mockVault.connect(wallet1).mint(ethers.parseEther("50"), wallet1.address);
+      await asset
+        .connect(wallet1)
+        .approve(await mockVault.getAddress(), ethers.parseEther("50"));
+      await mockVault
+        .connect(wallet1)
+        .mint(ethers.parseEther("50"), wallet1.address);
 
       // Approve facet to spend assets
       await asset.connect(wallet1).approve(facetAddr, assetsAmount);
@@ -167,11 +196,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
       expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
       // Execute deposit
-      const tx = await erc4626InterfaceFacet.connect(wallet1).depositToVault(
-        await mockVault.getAddress(),
-        assetsAmount,
-        false
-      );
+      const tx = await erc4626InterfaceFacet
+        .connect(wallet1)
+        .depositToVault(await mockVault.getAddress(), assetsAmount, false);
 
       await expect(tx).to.not.be.reverted;
 
@@ -181,7 +208,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
 
       //Verify assets were taken from depositor
       const depositorAssetBalance = await asset.balanceOf(wallet1.address);
-      expect(depositorAssetBalance).to.equal(ethers.parseEther("10000") - ethers.parseEther("50") - (assetsAmount));
+      expect(depositorAssetBalance).to.equal(
+        ethers.parseEther("10000") - ethers.parseEther("50") - assetsAmount,
+      );
 
       expect(await asset.balanceOf(facetAddr)).to.equal(0);
       expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
@@ -193,7 +222,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
       // Setup: Deposit some assets first so we have shares to withdraw
       // Use vault directly to avoid any facet-related issues
       const depositAmount = ethers.parseEther("200");
-      await asset.connect(wallet1).approve(await mockVault.getAddress(), depositAmount);
+      await asset
+        .connect(wallet1)
+        .approve(await mockVault.getAddress(), depositAmount);
       await mockVault.connect(wallet1).deposit(depositAmount, wallet1.address);
     });
 
@@ -211,11 +242,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
       expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
       // Execute withdrawal (3-arg: vault, assets, usePermit2) - assets go to msg.sender (wallet1)
-      const tx = await erc4626InterfaceFacet.connect(wallet1).withdrawFromVault(
-        await mockVault.getAddress(),
-        assetsAmount,
-        false
-      );
+      const tx = await erc4626InterfaceFacet
+        .connect(wallet1)
+        .withdrawFromVault(await mockVault.getAddress(), assetsAmount, false);
 
       await expect(tx).to.not.be.reverted;
 
@@ -231,61 +260,88 @@ describe("ERC4626InterfaceFacet Tests", () => {
       const assetsAmount = ethers.parseEther("100");
 
       // Deploy a malicious vault that doesn't send assets
-      const MaliciousVaultFactory = await ethers.getContractFactory("TestMaliciousVault");
-      const maliciousVault = await upgrades.deployProxy(
-        MaliciousVaultFactory,
-        [await asset.getAddress(), "Malicious Vault", "mVAULT"],
-      );
+      const MaliciousVaultFactory =
+        await ethers.getContractFactory("TestMaliciousVault");
+      const maliciousVault = await upgrades.deployProxy(MaliciousVaultFactory, [
+        await asset.getAddress(),
+        "Malicious Vault",
+        "mVAULT",
+      ]);
       await maliciousVault.waitForDeployment();
 
       // Approve malicious vault in controller
-      await mockController.setVaultApproval(await maliciousVault.getAddress(), true);
+      await mockController.setVaultApproval(
+        await maliciousVault.getAddress(),
+        true,
+      );
 
       // Mint some shares first
-      await asset.connect(wallet1).approve(await maliciousVault.getAddress(), ethers.parseEther("200"));
-      await maliciousVault.connect(wallet1).mint(ethers.parseEther("200"), wallet1.address);
+      await asset
+        .connect(wallet1)
+        .approve(await maliciousVault.getAddress(), ethers.parseEther("200"));
+      await maliciousVault
+        .connect(wallet1)
+        .mint(ethers.parseEther("200"), wallet1.address);
 
       const sharesToBurn = await maliciousVault.previewWithdraw(assetsAmount);
-      await maliciousVault.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), sharesToBurn);
+      await maliciousVault
+        .connect(wallet1)
+        .approve(await erc4626InterfaceFacet.getAddress(), sharesToBurn);
 
       // Execute - should revert because no assets are received
       await expect(
-        erc4626InterfaceFacet.connect(wallet1).withdrawFromVault(
-          await maliciousVault.getAddress(),
-          assetsAmount,
-          false
-        ),
-      ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "NoAssetsReceived");
+        erc4626InterfaceFacet
+          .connect(wallet1)
+          .withdrawFromVault(
+            await maliciousVault.getAddress(),
+            assetsAmount,
+            false,
+          ),
+      ).to.be.revertedWithCustomError(
+        erc4626InterfaceFacet,
+        "NoAssetsReceived",
+      );
     });
 
     it("should revert if assets mismatch", async () => {
       const requestedAssets = ethers.parseEther("100");
 
       // Deploy a vault that sends wrong amount of assets
-      const LyingVaultFactory = await ethers.getContractFactory("TestLyingVault");
-      const lyingVault = await upgrades.deployProxy(
-        LyingVaultFactory,
-        [await asset.getAddress(), "Lying Vault", "lVAULT"],
-      );
+      const LyingVaultFactory =
+        await ethers.getContractFactory("TestLyingVault");
+      const lyingVault = await upgrades.deployProxy(LyingVaultFactory, [
+        await asset.getAddress(),
+        "Lying Vault",
+        "lVAULT",
+      ]);
       await lyingVault.waitForDeployment();
 
       // Approve lying vault in controller
-      await mockController.setVaultApproval(await lyingVault.getAddress(), true);
+      await mockController.setVaultApproval(
+        await lyingVault.getAddress(),
+        true,
+      );
 
       // Setup initial deposit
-      await asset.connect(wallet1).approve(await lyingVault.getAddress(), ethers.parseEther("300"));
+      await asset
+        .connect(wallet1)
+        .approve(await lyingVault.getAddress(), ethers.parseEther("300"));
       await lyingVault.deposit(ethers.parseEther("300"), wallet1.address);
 
       const sharesToBurn = await lyingVault.previewWithdraw(requestedAssets);
-      await lyingVault.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), sharesToBurn);
+      await lyingVault
+        .connect(wallet1)
+        .approve(await erc4626InterfaceFacet.getAddress(), sharesToBurn);
 
       // Execute - should revert because assets mismatch
       await expect(
-        erc4626InterfaceFacet.connect(wallet1).withdrawFromVault(
-          await lyingVault.getAddress(),
-          requestedAssets,
-          false
-        ),
+        erc4626InterfaceFacet
+          .connect(wallet1)
+          .withdrawFromVault(
+            await lyingVault.getAddress(),
+            requestedAssets,
+            false,
+          ),
       ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "AssetsMismatch");
     });
 
@@ -294,7 +350,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
 
       // This test verifies internal consistency - shares burned must match expected
       // Deploy a special vault for this test
-      const InconsistentVaultFactory = await ethers.getContractFactory("TestInconsistentVault");
+      const InconsistentVaultFactory = await ethers.getContractFactory(
+        "TestInconsistentVault",
+      );
       const inconsistentVault = await upgrades.deployProxy(
         InconsistentVaultFactory,
         [await asset.getAddress(), "Inconsistent Vault", "iVAULT"],
@@ -302,22 +360,38 @@ describe("ERC4626InterfaceFacet Tests", () => {
       await inconsistentVault.waitForDeployment();
 
       // Approve inconsistent vault in controller
-      await mockController.setVaultApproval(await inconsistentVault.getAddress(), true);
+      await mockController.setVaultApproval(
+        await inconsistentVault.getAddress(),
+        true,
+      );
 
       // Setup initial deposit
-      await asset.connect(wallet1).approve(await inconsistentVault.getAddress(), ethers.parseEther("300"));
-      await inconsistentVault.deposit(ethers.parseEther("300"), wallet1.address);
+      await asset
+        .connect(wallet1)
+        .approve(
+          await inconsistentVault.getAddress(),
+          ethers.parseEther("300"),
+        );
+      await inconsistentVault.deposit(
+        ethers.parseEther("300"),
+        wallet1.address,
+      );
 
-      const sharesToBurn = await inconsistentVault.previewWithdraw(assetsAmount);
-      await inconsistentVault.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), sharesToBurn);
+      const sharesToBurn =
+        await inconsistentVault.previewWithdraw(assetsAmount);
+      await inconsistentVault
+        .connect(wallet1)
+        .approve(await erc4626InterfaceFacet.getAddress(), sharesToBurn);
 
       // Execute - should revert because shares mismatch
       await expect(
-        erc4626InterfaceFacet.connect(wallet1).withdrawFromVault(
-          await inconsistentVault.getAddress(),
-          assetsAmount,
-          false
-        ),
+        erc4626InterfaceFacet
+          .connect(wallet1)
+          .withdrawFromVault(
+            await inconsistentVault.getAddress(),
+            assetsAmount,
+            false,
+          ),
       ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "SharesMismatch");
     });
 
@@ -335,11 +409,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
       expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
       // Execute withdrawal
-      const tx = await erc4626InterfaceFacet.connect(wallet1).withdrawFromVault(
-        await mockVault.getAddress(),
-        assetsAmount,
-        false
-      );
+      const tx = await erc4626InterfaceFacet
+        .connect(wallet1)
+        .withdrawFromVault(await mockVault.getAddress(), assetsAmount, false);
 
       await expect(tx).to.not.be.reverted;
 
@@ -356,7 +428,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
     beforeEach(async () => {
       // Setup: Deposit some assets first so we have shares to redeem
       const depositAmount = ethers.parseEther("300");
-      await asset.connect(wallet1).approve(await mockVault.getAddress(), depositAmount);
+      await asset
+        .connect(wallet1)
+        .approve(await mockVault.getAddress(), depositAmount);
       await mockVault.connect(wallet1).deposit(depositAmount, wallet1.address);
     });
 
@@ -376,21 +450,23 @@ describe("ERC4626InterfaceFacet Tests", () => {
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
         // Execute redemption (3-arg: vault, shares, usePermit2) - assets go to msg.sender (wallet1)
-        const tx = await erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-          await mockVault.getAddress(),
-          sharesToRedeem,
-          false
-        );
+        const tx = await erc4626InterfaceFacet
+          .connect(wallet1)
+          .redeemFromVault(await mockVault.getAddress(), sharesToRedeem, false);
 
         await expect(tx).to.not.be.reverted;
 
         // Verify assets were sent to caller (msg.sender = wallet1)
         const finalAssetBalance = await asset.balanceOf(wallet1.address);
-        expect(finalAssetBalance - initialAssetBalance).to.equal(expectedAssets);
+        expect(finalAssetBalance - initialAssetBalance).to.equal(
+          expectedAssets,
+        );
 
         // Verify shares were burned from wallet1
         const finalShareBalance = await mockVault.balanceOf(wallet1.address);
-        expect(initialShareBalance - finalShareBalance).to.equal(sharesToRedeem);
+        expect(initialShareBalance - finalShareBalance).to.equal(
+          sharesToRedeem,
+        );
 
         expect(await asset.balanceOf(facetAddr)).to.equal(0);
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
@@ -410,11 +486,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
         // Execute redemption
-        const tx = await erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-          await mockVault.getAddress(),
-          sharesToRedeem,
-          false
-        );
+        const tx = await erc4626InterfaceFacet
+          .connect(wallet1)
+          .redeemFromVault(await mockVault.getAddress(), sharesToRedeem, false);
 
         await expect(tx).to.not.be.reverted;
 
@@ -443,17 +517,17 @@ describe("ERC4626InterfaceFacet Tests", () => {
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
         // Execute redemption
-        const tx = await erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-          await mockVault.getAddress(),
-          sharesToRedeem,
-          false
-        );
+        const tx = await erc4626InterfaceFacet
+          .connect(wallet1)
+          .redeemFromVault(await mockVault.getAddress(), sharesToRedeem, false);
 
         await expect(tx).to.not.be.reverted;
 
         // Verify correct assets received based on exchange rate
         const finalAssetBalance = await asset.balanceOf(wallet1.address);
-        expect(finalAssetBalance - initialAssetBalance).to.equal(expectedAssets);
+        expect(finalAssetBalance - initialAssetBalance).to.equal(
+          expectedAssets,
+        );
 
         expect(await asset.balanceOf(facetAddr)).to.equal(0);
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
@@ -474,11 +548,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
         // Execute redemption with self as receiver (3-arg always sends to msg.sender)
-        const tx = await erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-          await mockVault.getAddress(),
-          sharesToRedeem,
-          false
-        );
+        const tx = await erc4626InterfaceFacet
+          .connect(wallet1)
+          .redeemFromVault(await mockVault.getAddress(), sharesToRedeem, false);
 
         await expect(tx).to.not.be.reverted;
 
@@ -486,8 +558,12 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const finalAssetBalance = await asset.balanceOf(wallet1.address);
         const finalShareBalance = await mockVault.balanceOf(wallet1.address);
 
-        expect(finalAssetBalance - initialAssetBalance).to.equal(expectedAssets);
-        expect(initialShareBalance - finalShareBalance).to.equal(sharesToRedeem);
+        expect(finalAssetBalance - initialAssetBalance).to.equal(
+          expectedAssets,
+        );
+        expect(initialShareBalance - finalShareBalance).to.equal(
+          sharesToRedeem,
+        );
 
         expect(await asset.balanceOf(facetAddr)).to.equal(0);
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
@@ -499,7 +575,8 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const sharesToRedeem = ethers.parseEther("100");
 
         // Deploy a malicious vault that doesn't send assets
-        const MaliciousVaultFactory = await ethers.getContractFactory("TestMaliciousVault");
+        const MaliciousVaultFactory =
+          await ethers.getContractFactory("TestMaliciousVault");
         const maliciousVault = await upgrades.deployProxy(
           MaliciousVaultFactory,
           [await asset.getAddress(), "Malicious Vault", "mVAULT"],
@@ -507,59 +584,89 @@ describe("ERC4626InterfaceFacet Tests", () => {
         await maliciousVault.waitForDeployment();
 
         // Approve malicious vault in controller
-        await mockController.setVaultApproval(await maliciousVault.getAddress(), true);
+        await mockController.setVaultApproval(
+          await maliciousVault.getAddress(),
+          true,
+        );
 
         // Setup shares in malicious vault
-        await asset.connect(wallet1).approve(await maliciousVault.getAddress(), ethers.parseEther("200"));
-        await maliciousVault.connect(wallet1).mint(ethers.parseEther("200"), wallet1.address);
+        await asset
+          .connect(wallet1)
+          .approve(await maliciousVault.getAddress(), ethers.parseEther("200"));
+        await maliciousVault
+          .connect(wallet1)
+          .mint(ethers.parseEther("200"), wallet1.address);
 
-        await maliciousVault.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), sharesToRedeem);
+        await maliciousVault
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), sharesToRedeem);
 
         // Execute - should revert because no assets are received
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-            await maliciousVault.getAddress(),
-            sharesToRedeem,
-            false
-          ),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "NoAssetsReceived");
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .redeemFromVault(
+              await maliciousVault.getAddress(),
+              sharesToRedeem,
+              false,
+            ),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "NoAssetsReceived",
+        );
       });
 
       it("should revert if assets mismatch", async () => {
         const sharesToRedeem = ethers.parseEther("100");
 
         // Deploy a vault that lies about assets sent
-        const LyingVaultFactory = await ethers.getContractFactory("TestLyingVault");
-        const lyingVault = await upgrades.deployProxy(
-          LyingVaultFactory,
-          [await asset.getAddress(), "Lying Vault", "lVAULT"],
-        );
+        const LyingVaultFactory =
+          await ethers.getContractFactory("TestLyingVault");
+        const lyingVault = await upgrades.deployProxy(LyingVaultFactory, [
+          await asset.getAddress(),
+          "Lying Vault",
+          "lVAULT",
+        ]);
         await lyingVault.waitForDeployment();
 
         // Approve lying vault in controller
-        await mockController.setVaultApproval(await lyingVault.getAddress(), true);
+        await mockController.setVaultApproval(
+          await lyingVault.getAddress(),
+          true,
+        );
 
         // Setup shares in lying vault
-        await asset.connect(wallet1).approve(await lyingVault.getAddress(), ethers.parseEther("300"));
+        await asset
+          .connect(wallet1)
+          .approve(await lyingVault.getAddress(), ethers.parseEther("300"));
         await lyingVault.deposit(ethers.parseEther("300"), wallet1.address);
 
-        await lyingVault.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), sharesToRedeem);
+        await lyingVault
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), sharesToRedeem);
 
         // Execute - should revert because assets mismatch
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-            await lyingVault.getAddress(),
-            sharesToRedeem,
-            false
-          ),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "AssetsMismatch");
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .redeemFromVault(
+              await lyingVault.getAddress(),
+              sharesToRedeem,
+              false,
+            ),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "AssetsMismatch",
+        );
       });
 
       it("should revert if shares mismatch", async () => {
         const sharesToRedeem = ethers.parseEther("50");
 
         // Deploy a vault with inconsistent share burning (burns more than requested)
-        const InconsistentVaultFactory = await ethers.getContractFactory("TestInconsistentVault");
+        const InconsistentVaultFactory = await ethers.getContractFactory(
+          "TestInconsistentVault",
+        );
         const inconsistentVault = await upgrades.deployProxy(
           InconsistentVaultFactory,
           [await asset.getAddress(), "Inconsistent Vault", "iVAULT"],
@@ -567,12 +674,17 @@ describe("ERC4626InterfaceFacet Tests", () => {
         await inconsistentVault.waitForDeployment();
 
         // Approve inconsistent vault in controller
-        await mockController.setVaultApproval(await inconsistentVault.getAddress(), true);
+        await mockController.setVaultApproval(
+          await inconsistentVault.getAddress(),
+          true,
+        );
 
         // Give user lots of shares so vault can burn 110% without hitting balance limits
         // The vault will burn 110% of sharesToRedeem (55 ether), so we need at least that many shares
         const depositAmount = ethers.parseEther("1000"); // Give user 1000 shares to be safe
-        await asset.connect(wallet1).approve(await inconsistentVault.getAddress(), depositAmount);
+        await asset
+          .connect(wallet1)
+          .approve(await inconsistentVault.getAddress(), depositAmount);
         await inconsistentVault.deposit(depositAmount, wallet1.address);
 
         // Debug: Check how many shares wallet1 actually has
@@ -581,15 +693,19 @@ describe("ERC4626InterfaceFacet Tests", () => {
 
         // The vault will burn 55 shares (110% of 50) due to its malicious behavior
         // We need to approve the facet for 55 shares, not just 50
-        await inconsistentVault.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), depositAmount);
+        await inconsistentVault
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), depositAmount);
 
         // Execute - should revert with SharesMismatch because vault burns 55 shares but we requested 50
         try {
-          await erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-            await inconsistentVault.getAddress(),
-            sharesToRedeem,
-            false
-          );
+          await erc4626InterfaceFacet
+            .connect(wallet1)
+            .redeemFromVault(
+              await inconsistentVault.getAddress(),
+              sharesToRedeem,
+              false,
+            );
           expect.fail("Expected SharesMismatch revert");
         } catch (error: any) {
           console.log("Actual error:", error.message);
@@ -602,15 +718,22 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const sharesToRedeem = ethers.parseEther("100");
 
         // Don't approve or approve insufficient amount
-        await mockVault.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), ethers.parseEther("50"));
+        await mockVault
+          .connect(wallet1)
+          .approve(
+            await erc4626InterfaceFacet.getAddress(),
+            ethers.parseEther("50"),
+          );
 
         // Execute - should revert due to insufficient allowance
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-            await mockVault.getAddress(),
-            sharesToRedeem,
-            false
-          ),
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .redeemFromVault(
+              await mockVault.getAddress(),
+              sharesToRedeem,
+              false,
+            ),
         ).to.be.reverted; // Will revert with ERC20 insufficient allowance
       });
 
@@ -618,15 +741,19 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const sharesToRedeem = ethers.parseEther("500"); // More than the 300 deposited
 
         // Approve more than balance
-        await mockVault.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), sharesToRedeem);
+        await mockVault
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), sharesToRedeem);
 
         // Execute - should revert due to insufficient balance
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-            await mockVault.getAddress(),
-            sharesToRedeem,
-            false
-          ),
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .redeemFromVault(
+              await mockVault.getAddress(),
+              sharesToRedeem,
+              false,
+            ),
         ).to.be.reverted; // Will revert with ERC20 transfer amount exceeds balance
       });
     });
@@ -636,17 +763,26 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const sharesToRedeem = 0n;
 
         // Approve facet (even for zero, for consistency)
-        await mockVault.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), 1);
+        await mockVault
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), 1);
 
         const initialAssetBalance = await asset.balanceOf(wallet1.address);
         const initialShareBalance = await mockVault.balanceOf(wallet1.address);
 
         // Execute redemption - should revert with NoAssetsReceived for zero shares
-        await expect(erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-          await mockVault.getAddress(),
-          sharesToRedeem,
-          false
-        )).to.be.revertedWithCustomError(erc4626InterfaceFacet, "NoAssetsReceived");
+        await expect(
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .redeemFromVault(
+              await mockVault.getAddress(),
+              sharesToRedeem,
+              false,
+            ),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "NoAssetsReceived",
+        );
 
         // Verify no change in balances
         const finalAssetBalance = await asset.balanceOf(wallet1.address);
@@ -671,11 +807,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
         // Execute redemption
-        const tx = await erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-          await mockVault.getAddress(),
-          sharesToRedeem,
-          false
-        );
+        const tx = await erc4626InterfaceFacet
+          .connect(wallet1)
+          .redeemFromVault(await mockVault.getAddress(), sharesToRedeem, false);
 
         await expect(tx).to.not.be.reverted;
 
@@ -683,7 +817,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const finalAssetBalance = await asset.balanceOf(wallet1.address);
         const finalShareBalance = await mockVault.balanceOf(wallet1.address);
 
-        expect(finalAssetBalance - initialAssetBalance).to.equal(expectedAssets);
+        expect(finalAssetBalance - initialAssetBalance).to.equal(
+          expectedAssets,
+        );
         expect(finalShareBalance).to.equal(0);
 
         expect(await asset.balanceOf(facetAddr)).to.equal(0);
@@ -698,10 +834,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const facetAddr = await erc4626InterfaceFacet.getAddress();
 
         // Approve for both redemptions
-        await mockVault.connect(wallet1).approve(
-          facetAddr,
-          firstRedemption + secondRedemption
-        );
+        await mockVault
+          .connect(wallet1)
+          .approve(facetAddr, firstRedemption + secondRedemption);
 
         const initialAssetBalance = await asset.balanceOf(wallet1.address);
         const initialShareBalance = await mockVault.balanceOf(wallet1.address);
@@ -710,11 +845,13 @@ describe("ERC4626InterfaceFacet Tests", () => {
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
         // First redemption
-        await erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-          await mockVault.getAddress(),
-          firstRedemption,
-          false
-        );
+        await erc4626InterfaceFacet
+          .connect(wallet1)
+          .redeemFromVault(
+            await mockVault.getAddress(),
+            firstRedemption,
+            false,
+          );
 
         expect(await asset.balanceOf(facetAddr)).to.equal(0);
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
@@ -727,18 +864,24 @@ describe("ERC4626InterfaceFacet Tests", () => {
         expect(initialShareBalance - midShareBalance).to.equal(firstRedemption);
 
         // Second redemption
-        await erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-          await mockVault.getAddress(),
-          secondRedemption,
-          false
-        );
+        await erc4626InterfaceFacet
+          .connect(wallet1)
+          .redeemFromVault(
+            await mockVault.getAddress(),
+            secondRedemption,
+            false,
+          );
 
         const finalAssetBalance = await asset.balanceOf(wallet1.address);
         const finalShareBalance = await mockVault.balanceOf(wallet1.address);
 
         // Verify total redemptions
-        expect(finalAssetBalance - initialAssetBalance).to.equal(firstRedemption + secondRedemption);
-        expect(initialShareBalance - finalShareBalance).to.equal(firstRedemption + secondRedemption);
+        expect(finalAssetBalance - initialAssetBalance).to.equal(
+          firstRedemption + secondRedemption,
+        );
+        expect(initialShareBalance - finalShareBalance).to.equal(
+          firstRedemption + secondRedemption,
+        );
 
         expect(await asset.balanceOf(facetAddr)).to.equal(0);
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
@@ -746,8 +889,12 @@ describe("ERC4626InterfaceFacet Tests", () => {
 
       it("should handle cross-user redemptions", async () => {
         // Give wallet2 some shares by depositing for them
-        await asset.connect(wallet1).approve(await mockVault.getAddress(), ethers.parseEther("100"));
-        await mockVault.connect(wallet1).deposit(ethers.parseEther("100"), wallet2.address);
+        await asset
+          .connect(wallet1)
+          .approve(await mockVault.getAddress(), ethers.parseEther("100"));
+        await mockVault
+          .connect(wallet1)
+          .deposit(ethers.parseEther("100"), wallet2.address);
 
         const sharesToRedeem = ethers.parseEther("60");
         const facetAddr = await erc4626InterfaceFacet.getAddress();
@@ -761,18 +908,20 @@ describe("ERC4626InterfaceFacet Tests", () => {
         expect(await asset.balanceOf(facetAddr)).to.equal(0);
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
-        await erc4626InterfaceFacet.connect(wallet2).redeemFromVault(
-          await mockVault.getAddress(),
-          sharesToRedeem,
-          false
-        );
+        await erc4626InterfaceFacet
+          .connect(wallet2)
+          .redeemFromVault(await mockVault.getAddress(), sharesToRedeem, false);
 
         const finalAssetBalance = await asset.balanceOf(wallet2.address);
         const finalWallet2Shares = await mockVault.balanceOf(wallet2.address);
 
         // Verify cross-user redemption worked
-        expect(finalAssetBalance - initialAssetBalance).to.equal(sharesToRedeem);
-        expect(initialWallet2Shares - finalWallet2Shares).to.equal(sharesToRedeem);
+        expect(finalAssetBalance - initialAssetBalance).to.equal(
+          sharesToRedeem,
+        );
+        expect(initialWallet2Shares - finalWallet2Shares).to.equal(
+          sharesToRedeem,
+        );
 
         expect(await asset.balanceOf(facetAddr)).to.equal(0);
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
@@ -793,11 +942,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
         expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
         // Execute redemption
-        const tx = await erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-          await mockVault.getAddress(),
-          smallShares,
-          false
-        );
+        const tx = await erc4626InterfaceFacet
+          .connect(wallet1)
+          .redeemFromVault(await mockVault.getAddress(), smallShares, false);
 
         await expect(tx).to.not.be.reverted;
 
@@ -819,41 +966,57 @@ describe("ERC4626InterfaceFacet Tests", () => {
 
     beforeEach(async () => {
       // Deploy a vault that is NOT approved in the controller
-      const TestMockVaultFactory = await ethers.getContractFactory("TestMockVault");
-      unapprovedVault = (await upgrades.deployProxy(
-        TestMockVaultFactory,
-        [await asset.getAddress(), "Unapproved Vault", "uVAULT"],
-      )) as unknown as TestMockVault;
+      const TestMockVaultFactory =
+        await ethers.getContractFactory("TestMockVault");
+      unapprovedVault = (await upgrades.deployProxy(TestMockVaultFactory, [
+        await asset.getAddress(),
+        "Unapproved Vault",
+        "uVAULT",
+      ])) as unknown as TestMockVault;
       await unapprovedVault.waitForDeployment();
     });
 
     describe("approvedERC4626VaultOnly modifier", () => {
       it("should revert with UnapprovedVault when vault is not term-approved and not user-approved", async () => {
         const assetsAmount = ethers.parseEther("100");
-        await asset.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+        await asset
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
 
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).depositToVault(
-            await unapprovedVault.getAddress(),
-            assetsAmount,
-            false
-          ),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "UnapprovedVault");
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .depositToVault(
+              await unapprovedVault.getAddress(),
+              assetsAmount,
+              false,
+            ),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "UnapprovedVault",
+        );
       });
 
       it("should allow deposit when vault is term-approved via controller", async () => {
         const assetsAmount = ethers.parseEther("100");
 
         // Approve vault via mock controller
-        await mockController.setVaultApproval(await unapprovedVault.getAddress(), true);
-
-        await asset.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
-
-        const tx = await erc4626InterfaceFacet.connect(wallet1).depositToVault(
+        await mockController.setVaultApproval(
           await unapprovedVault.getAddress(),
-          assetsAmount,
-          false
+          true,
         );
+
+        await asset
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+
+        const tx = await erc4626InterfaceFacet
+          .connect(wallet1)
+          .depositToVault(
+            await unapprovedVault.getAddress(),
+            assetsAmount,
+            false,
+          );
         await expect(tx).to.not.be.reverted;
       });
 
@@ -864,16 +1027,20 @@ describe("ERC4626InterfaceFacet Tests", () => {
         await erc4626InterfaceFacet.setUserApprovedVault(
           wallet1.address,
           await unapprovedVault.getAddress(),
-          true
+          true,
         );
 
-        await asset.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+        await asset
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
 
-        const tx = await erc4626InterfaceFacet.connect(wallet1).depositToVault(
-          await unapprovedVault.getAddress(),
-          assetsAmount,
-          false
-        );
+        const tx = await erc4626InterfaceFacet
+          .connect(wallet1)
+          .depositToVault(
+            await unapprovedVault.getAddress(),
+            assetsAmount,
+            false,
+          );
         await expect(tx).to.not.be.reverted;
       });
 
@@ -881,56 +1048,82 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const assetsAmount = ethers.parseEther("100");
 
         // Both approvals
-        await mockController.setVaultApproval(await unapprovedVault.getAddress(), true);
+        await mockController.setVaultApproval(
+          await unapprovedVault.getAddress(),
+          true,
+        );
         await erc4626InterfaceFacet.setUserApprovedVault(
           wallet1.address,
           await unapprovedVault.getAddress(),
-          true
+          true,
         );
 
-        await asset.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+        await asset
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
 
-        const tx = await erc4626InterfaceFacet.connect(wallet1).depositToVault(
-          await unapprovedVault.getAddress(),
-          assetsAmount,
-          false
-        );
+        const tx = await erc4626InterfaceFacet
+          .connect(wallet1)
+          .depositToVault(
+            await unapprovedVault.getAddress(),
+            assetsAmount,
+            false,
+          );
         await expect(tx).to.not.be.reverted;
       });
 
       it("should revert when term controller exists but does not approve the vault", async () => {
         const assetsAmount = ethers.parseEther("100");
         // Controller exists (added in top-level beforeEach) but vault is not approved in it
-        await asset.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+        await asset
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
 
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).depositToVault(
-            await unapprovedVault.getAddress(),
-            assetsAmount,
-            false
-          ),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "UnapprovedVault");
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .depositToVault(
+              await unapprovedVault.getAddress(),
+              assetsAmount,
+              false,
+            ),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "UnapprovedVault",
+        );
       });
 
       it("should allow deposit when one of multiple controllers approves the vault", async () => {
         const assetsAmount = ethers.parseEther("100");
 
         // Deploy a second controller that approves the vault
-        const MockControllerFactory = await ethers.getContractFactory("TestMockTermController");
-        const secondController = (await MockControllerFactory.deploy()) as unknown as TestMockTermController;
+        const MockControllerFactory = await ethers.getContractFactory(
+          "TestMockTermController",
+        );
+        const secondController =
+          (await MockControllerFactory.deploy()) as unknown as TestMockTermController;
         await secondController.waitForDeployment();
-        await erc4626InterfaceFacet.addApprovedTermController(await secondController.getAddress());
+        await erc4626InterfaceFacet.addApprovedTermController(
+          await secondController.getAddress(),
+        );
 
         // Only second controller approves (first controller does not)
-        await secondController.setVaultApproval(await unapprovedVault.getAddress(), true);
-
-        await asset.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
-
-        const tx = await erc4626InterfaceFacet.connect(wallet1).depositToVault(
+        await secondController.setVaultApproval(
           await unapprovedVault.getAddress(),
-          assetsAmount,
-          false
+          true,
         );
+
+        await asset
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+
+        const tx = await erc4626InterfaceFacet
+          .connect(wallet1)
+          .depositToVault(
+            await unapprovedVault.getAddress(),
+            assetsAmount,
+            false,
+          );
         await expect(tx).to.not.be.reverted;
       });
 
@@ -938,20 +1131,32 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const assetsAmount = ethers.parseEther("100");
 
         // Deploy a second controller (neither approves the vault)
-        const MockControllerFactory = await ethers.getContractFactory("TestMockTermController");
-        const secondController = (await MockControllerFactory.deploy()) as unknown as TestMockTermController;
+        const MockControllerFactory = await ethers.getContractFactory(
+          "TestMockTermController",
+        );
+        const secondController =
+          (await MockControllerFactory.deploy()) as unknown as TestMockTermController;
         await secondController.waitForDeployment();
-        await erc4626InterfaceFacet.addApprovedTermController(await secondController.getAddress());
+        await erc4626InterfaceFacet.addApprovedTermController(
+          await secondController.getAddress(),
+        );
 
-        await asset.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+        await asset
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
 
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).depositToVault(
-            await unapprovedVault.getAddress(),
-            assetsAmount,
-            false
-          ),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "UnapprovedVault");
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .depositToVault(
+              await unapprovedVault.getAddress(),
+              assetsAmount,
+              false,
+            ),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "UnapprovedVault",
+        );
       });
 
       it("should revert when no term controllers are registered and no user approval", async () => {
@@ -960,15 +1165,22 @@ describe("ERC4626InterfaceFacet Tests", () => {
         // Remove all controllers
         await erc4626InterfaceFacet.removeAllTermControllers();
 
-        await asset.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+        await asset
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
 
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).depositToVault(
-            await unapprovedVault.getAddress(),
-            assetsAmount,
-            false
-          ),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "UnapprovedVault");
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .depositToVault(
+              await unapprovedVault.getAddress(),
+              assetsAmount,
+              false,
+            ),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "UnapprovedVault",
+        );
       });
 
       it("should check user-specific approval (different user not approved)", async () => {
@@ -978,102 +1190,162 @@ describe("ERC4626InterfaceFacet Tests", () => {
         await erc4626InterfaceFacet.setUserApprovedVault(
           wallet1.address,
           await unapprovedVault.getAddress(),
-          true
+          true,
         );
 
         // Fund wallet2
         await asset.connect(wallet1).transfer(wallet2.address, assetsAmount);
-        await asset.connect(wallet2).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+        await asset
+          .connect(wallet2)
+          .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
 
         // wallet2 should be rejected (user-specific approval only covers wallet1)
         await expect(
-          erc4626InterfaceFacet.connect(wallet2).depositToVault(
-            await unapprovedVault.getAddress(),
-            assetsAmount,
-            false
-          ),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "UnapprovedVault");
+          erc4626InterfaceFacet
+            .connect(wallet2)
+            .depositToVault(
+              await unapprovedVault.getAddress(),
+              assetsAmount,
+              false,
+            ),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "UnapprovedVault",
+        );
       });
 
       it("should apply approval check to withdrawFromVault", async () => {
         // Deposit directly to vault first
         const depositAmount = ethers.parseEther("100");
-        await asset.connect(wallet1).approve(await unapprovedVault.getAddress(), depositAmount);
-        await unapprovedVault.connect(wallet1).deposit(depositAmount, wallet1.address);
+        await asset
+          .connect(wallet1)
+          .approve(await unapprovedVault.getAddress(), depositAmount);
+        await unapprovedVault
+          .connect(wallet1)
+          .deposit(depositAmount, wallet1.address);
 
-        const sharesToBurn = await unapprovedVault.previewWithdraw(depositAmount);
-        await unapprovedVault.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), sharesToBurn);
+        const sharesToBurn =
+          await unapprovedVault.previewWithdraw(depositAmount);
+        await unapprovedVault
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), sharesToBurn);
 
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).withdrawFromVault(
-            await unapprovedVault.getAddress(),
-            depositAmount,
-            false
-          ),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "UnapprovedVault");
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .withdrawFromVault(
+              await unapprovedVault.getAddress(),
+              depositAmount,
+              false,
+            ),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "UnapprovedVault",
+        );
       });
 
       it("should apply approval check to redeemFromVault", async () => {
         // Deposit directly to vault first
         const depositAmount = ethers.parseEther("100");
-        await asset.connect(wallet1).approve(await unapprovedVault.getAddress(), depositAmount);
-        await unapprovedVault.connect(wallet1).deposit(depositAmount, wallet1.address);
+        await asset
+          .connect(wallet1)
+          .approve(await unapprovedVault.getAddress(), depositAmount);
+        await unapprovedVault
+          .connect(wallet1)
+          .deposit(depositAmount, wallet1.address);
 
-        await unapprovedVault.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), depositAmount);
+        await unapprovedVault
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), depositAmount);
 
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).redeemFromVault(
-            await unapprovedVault.getAddress(),
-            depositAmount,
-            false
-          ),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "UnapprovedVault");
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .redeemFromVault(
+              await unapprovedVault.getAddress(),
+              depositAmount,
+              false,
+            ),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "UnapprovedVault",
+        );
       });
     });
 
     describe("userRevokeVault", () => {
       it("should revert when revoking a vault that was never approved", async () => {
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).userRevokeVault(
-            await unapprovedVault.getAddress()
-          ),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "VaultNotApproved");
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .userRevokeVault(await unapprovedVault.getAddress()),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "VaultNotApproved",
+        );
       });
 
       it("should successfully revoke a user-approved vault", async () => {
         const vaultAddress = await unapprovedVault.getAddress();
 
         // Set user approval via helper
-        await erc4626InterfaceFacet.setUserApprovedVault(wallet1.address, vaultAddress, true);
+        await erc4626InterfaceFacet.setUserApprovedVault(
+          wallet1.address,
+          vaultAddress,
+          true,
+        );
 
         // Revoke
-        await erc4626InterfaceFacet.connect(wallet1).userRevokeVault(vaultAddress);
+        await erc4626InterfaceFacet
+          .connect(wallet1)
+          .userRevokeVault(vaultAddress);
 
         // Now deposit should revert (no term approval either)
         const assetsAmount = ethers.parseEther("100");
-        await asset.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+        await asset
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
 
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).depositToVault(vaultAddress, assetsAmount, false),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "UnapprovedVault");
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .depositToVault(vaultAddress, assetsAmount, false),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "UnapprovedVault",
+        );
       });
 
       it("should only revoke for the calling user", async () => {
         const vaultAddress = await unapprovedVault.getAddress();
 
         // Both users approve vault
-        await erc4626InterfaceFacet.setUserApprovedVault(wallet1.address, vaultAddress, true);
-        await erc4626InterfaceFacet.setUserApprovedVault(wallet2.address, vaultAddress, true);
+        await erc4626InterfaceFacet.setUserApprovedVault(
+          wallet1.address,
+          vaultAddress,
+          true,
+        );
+        await erc4626InterfaceFacet.setUserApprovedVault(
+          wallet2.address,
+          vaultAddress,
+          true,
+        );
 
         // wallet1 revokes
-        await erc4626InterfaceFacet.connect(wallet1).userRevokeVault(vaultAddress);
+        await erc4626InterfaceFacet
+          .connect(wallet1)
+          .userRevokeVault(vaultAddress);
 
         // wallet2 should still be able to deposit
         const assetsAmount = ethers.parseEther("100");
         await asset.connect(wallet1).transfer(wallet2.address, assetsAmount);
-        await asset.connect(wallet2).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+        await asset
+          .connect(wallet2)
+          .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
 
-        const tx = await erc4626InterfaceFacet.connect(wallet2).depositToVault(vaultAddress, assetsAmount, false);
+        const tx = await erc4626InterfaceFacet
+          .connect(wallet2)
+          .depositToVault(vaultAddress, assetsAmount, false);
         await expect(tx).to.not.be.reverted;
       });
     });
@@ -1081,7 +1353,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
     describe("userApproveVault", () => {
       let domainSeparator: string;
       const VAULT_APPROVAL_TYPEHASH = ethers.keccak256(
-        ethers.toUtf8Bytes("VaultApproval(address vault,address user,uint256 deadline)")
+        ethers.toUtf8Bytes(
+          "VaultApproval(address vault,address user,uint256 deadline)",
+        ),
       );
 
       beforeEach(async () => {
@@ -1093,13 +1367,17 @@ describe("ERC4626InterfaceFacet Tests", () => {
           ethers.AbiCoder.defaultAbiCoder().encode(
             ["bytes32", "bytes32", "bytes32", "uint256", "address"],
             [
-              ethers.keccak256(ethers.toUtf8Bytes("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")),
+              ethers.keccak256(
+                ethers.toUtf8Bytes(
+                  "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
+                ),
+              ),
               ethers.keccak256(ethers.toUtf8Bytes("TermFinance")),
               ethers.keccak256(ethers.toUtf8Bytes("1")),
               chainId,
               facetAddress,
-            ]
-          )
+            ],
+          ),
         );
         await erc4626InterfaceFacet.setEip712DomainSeparator(domainSeparator);
       });
@@ -1107,7 +1385,7 @@ describe("ERC4626InterfaceFacet Tests", () => {
       async function signVaultApproval(
         signer: SignerWithAddress,
         vault: string,
-        deadline: number
+        deadline: number,
       ): Promise<string> {
         const domain = {
           name: "TermFinance",
@@ -1134,7 +1412,7 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const sig = ethers.Signature.from(signature);
         return ethers.AbiCoder.defaultAbiCoder().encode(
           ["uint8", "bytes32", "bytes32"],
-          [sig.v, sig.r, sig.s]
+          [sig.v, sig.r, sig.s],
         );
       }
 
@@ -1142,15 +1420,25 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const vaultAddress = await unapprovedVault.getAddress();
         const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
 
-        const sigData = await signVaultApproval(wallet1, vaultAddress, deadline);
+        const sigData = await signVaultApproval(
+          wallet1,
+          vaultAddress,
+          deadline,
+        );
 
-        await erc4626InterfaceFacet.connect(wallet1).userApproveVault(vaultAddress, deadline, sigData);
+        await erc4626InterfaceFacet
+          .connect(wallet1)
+          .userApproveVault(vaultAddress, deadline, sigData);
 
         // Now deposit should work (user-approved)
         const assetsAmount = ethers.parseEther("100");
-        await asset.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+        await asset
+          .connect(wallet1)
+          .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
 
-        const tx = await erc4626InterfaceFacet.connect(wallet1).depositToVault(vaultAddress, assetsAmount, false);
+        const tx = await erc4626InterfaceFacet
+          .connect(wallet1)
+          .depositToVault(vaultAddress, assetsAmount, false);
         await expect(tx).to.not.be.reverted;
       });
 
@@ -1158,11 +1446,20 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const vaultAddress = await unapprovedVault.getAddress();
         const deadline = 1; // Already expired (timestamp 1)
 
-        const sigData = await signVaultApproval(wallet1, vaultAddress, deadline);
+        const sigData = await signVaultApproval(
+          wallet1,
+          vaultAddress,
+          deadline,
+        );
 
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).userApproveVault(vaultAddress, deadline, sigData),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "ExpiredSignature");
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .userApproveVault(vaultAddress, deadline, sigData),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "ExpiredSignature",
+        );
       });
 
       it("should revert with VaultAlreadyApproved when vault is already approved", async () => {
@@ -1170,13 +1467,26 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const deadline = Math.floor(Date.now() / 1000) + 3600;
 
         // Set user approval via helper
-        await erc4626InterfaceFacet.setUserApprovedVault(wallet1.address, vaultAddress, true);
+        await erc4626InterfaceFacet.setUserApprovedVault(
+          wallet1.address,
+          vaultAddress,
+          true,
+        );
 
-        const sigData = await signVaultApproval(wallet1, vaultAddress, deadline);
+        const sigData = await signVaultApproval(
+          wallet1,
+          vaultAddress,
+          deadline,
+        );
 
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).userApproveVault(vaultAddress, deadline, sigData),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "VaultAlreadyApproved");
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .userApproveVault(vaultAddress, deadline, sigData),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "VaultAlreadyApproved",
+        );
       });
 
       it("should revert with InvalidSignature when signer does not match caller", async () => {
@@ -1184,11 +1494,20 @@ describe("ERC4626InterfaceFacet Tests", () => {
         const deadline = Math.floor(Date.now() / 1000) + 3600;
 
         // wallet2 signs but wallet1 calls
-        const sigData = await signVaultApproval(wallet2, vaultAddress, deadline);
+        const sigData = await signVaultApproval(
+          wallet2,
+          vaultAddress,
+          deadline,
+        );
 
         await expect(
-          erc4626InterfaceFacet.connect(wallet1).userApproveVault(vaultAddress, deadline, sigData),
-        ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "InvalidSignature");
+          erc4626InterfaceFacet
+            .connect(wallet1)
+            .userApproveVault(vaultAddress, deadline, sigData),
+        ).to.be.revertedWithCustomError(
+          erc4626InterfaceFacet,
+          "InvalidSignature",
+        );
       });
     });
   });
@@ -1206,12 +1525,12 @@ describe("ERC4626InterfaceFacet Tests", () => {
         wallet1.address,
         amount,
         false,
-        "0x"
+        "0x",
       );
 
       const expected = erc4626InterfaceFacet.interface.encodeFunctionData(
         "withdrawFromVault(address,uint256,address,bool,bool)",
-        [vaultAddr, amount, wallet1.address, false, false]
+        [vaultAddr, amount, wallet1.address, false, false],
       );
       expect(calldata).to.equal(expected);
     });
@@ -1227,16 +1546,21 @@ describe("ERC4626InterfaceFacet Tests", () => {
           wallet1.address,
           ethers.parseEther("100"),
           true,
-          "0x"
-        )
-      ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "UnsupportedSelector");
+          "0x",
+        ),
+      ).to.be.revertedWithCustomError(
+        erc4626InterfaceFacet,
+        "UnsupportedSelector",
+      );
     });
   });
 
   describe("5-arg withdrawFromVault", () => {
     beforeEach(async () => {
       const depositAmount = ethers.parseEther("500");
-      await asset.connect(wallet1).approve(await mockVault.getAddress(), depositAmount);
+      await asset
+        .connect(wallet1)
+        .approve(await mockVault.getAddress(), depositAmount);
       await mockVault.connect(wallet1).deposit(depositAmount, wallet1.address);
     });
 
@@ -1244,17 +1568,17 @@ describe("ERC4626InterfaceFacet Tests", () => {
       const assetsAmount = ethers.parseEther("100");
       const sharesToBurn = await mockVault.previewWithdraw(assetsAmount);
 
-      await mockVault.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), sharesToBurn);
+      await mockVault
+        .connect(wallet1)
+        .approve(await erc4626InterfaceFacet.getAddress(), sharesToBurn);
 
       const initialBalance = await asset.balanceOf(wallet1.address);
 
-      await erc4626InterfaceFacet.connect(wallet1)["withdrawFromVault(address,uint256,address,bool,bool)"](
-        await mockVault.getAddress(),
-        assetsAmount,
-        wallet1.address,
-        false,
-        true
-      );
+      await erc4626InterfaceFacet
+        .connect(wallet1)
+        [
+          "withdrawFromVault(address,uint256,address,bool,bool)"
+        ](await mockVault.getAddress(), assetsAmount, wallet1.address, false, true);
 
       const finalBalance = await asset.balanceOf(wallet1.address);
       expect(finalBalance - initialBalance).to.equal(assetsAmount);
@@ -1273,11 +1597,13 @@ describe("ERC4626InterfaceFacet Tests", () => {
         assetsAmount,
         wallet1.address,
         false,
-        false
+        false,
       );
 
       // Assets should be at the facet contract
-      const contractBalance = await erc4626InterfaceFacet.getAssetBalance(await asset.getAddress());
+      const contractBalance = await erc4626InterfaceFacet.getAssetBalance(
+        await asset.getAddress(),
+      );
       expect(contractBalance).to.equal(assetsAmount);
     });
 
@@ -1285,13 +1611,11 @@ describe("ERC4626InterfaceFacet Tests", () => {
       const assetsAmount = ethers.parseEther("100");
 
       await expect(
-        erc4626InterfaceFacet.connect(wallet2)["withdrawFromVault(address,uint256,address,bool,bool)"](
-          await mockVault.getAddress(),
-          assetsAmount,
-          wallet1.address,
-          false,
-          true
-        )
+        erc4626InterfaceFacet
+          .connect(wallet2)
+          [
+            "withdrawFromVault(address,uint256,address,bool,bool)"
+          ](await mockVault.getAddress(), assetsAmount, wallet1.address, false, true),
       ).to.be.revertedWith("Unauthorized caller");
     });
   });
@@ -1301,10 +1625,13 @@ describe("ERC4626InterfaceFacet Tests", () => {
 
     before(async () => {
       // Deploy a temporary TestMockPermit2 to get its runtime bytecode
-      const MockPermit2Factory = await ethers.getContractFactory("TestMockPermit2");
+      const MockPermit2Factory =
+        await ethers.getContractFactory("TestMockPermit2");
       const tempMockPermit2 = await MockPermit2Factory.deploy();
       await tempMockPermit2.waitForDeployment();
-      const runtimeCode = await ethers.provider.getCode(await tempMockPermit2.getAddress());
+      const runtimeCode = await ethers.provider.getCode(
+        await tempMockPermit2.getAddress(),
+      );
 
       // Plant mock bytecode at the canonical Permit2 address
       await ethers.provider.send("hardhat_setCode", [
@@ -1325,22 +1652,28 @@ describe("ERC4626InterfaceFacet Tests", () => {
       // For Permit2 path: user approves Permit2, and Permit2 does the transferFrom
       // The mock Permit2 will call token.transferFrom(from, to, amount)
       // So user needs to approve the Permit2 canonical address
-      await asset.connect(wallet1).approve(PERMIT2_CANONICAL_ADDRESS, assetsAmount);
+      await asset
+        .connect(wallet1)
+        .approve(PERMIT2_CANONICAL_ADDRESS, assetsAmount);
 
       expect(await asset.balanceOf(facetAddr)).to.equal(0);
       expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
-      await erc4626InterfaceFacet.connect(wallet1)["depositToVault(address,uint256,bool)"](
-        await mockVault.getAddress(),
-        assetsAmount,
-        true // usePermit2
-      );
+      await erc4626InterfaceFacet
+        .connect(wallet1)
+        ["depositToVault(address,uint256,bool)"](
+          await mockVault.getAddress(),
+          assetsAmount,
+          true, // usePermit2
+        );
 
       // Verify the Permit2 mock recorded the transferFrom call
       expect(await mockPermit2.lastTransferFrom()).to.equal(wallet1.address);
       expect(await mockPermit2.lastTransferTo()).to.equal(facetAddr);
       expect(await mockPermit2.lastTransferAmount()).to.equal(assetsAmount);
-      expect(await mockPermit2.lastTransferToken()).to.equal(await asset.getAddress());
+      expect(await mockPermit2.lastTransferToken()).to.equal(
+        await asset.getAddress(),
+      );
 
       // Verify shares were minted
       const shares = await mockVault.balanceOf(wallet1.address);
@@ -1353,7 +1686,9 @@ describe("ERC4626InterfaceFacet Tests", () => {
     it("should use Permit2 for withdrawFromVault with usePermit2=true", async () => {
       // First deposit to get shares
       const depositAmount = ethers.parseEther("200");
-      await asset.connect(wallet1).approve(await mockVault.getAddress(), depositAmount);
+      await asset
+        .connect(wallet1)
+        .approve(await mockVault.getAddress(), depositAmount);
       await mockVault.connect(wallet1).deposit(depositAmount, wallet1.address);
 
       const assetsToWithdraw = ethers.parseEther("100");
@@ -1361,23 +1696,29 @@ describe("ERC4626InterfaceFacet Tests", () => {
       const facetAddr = await erc4626InterfaceFacet.getAddress();
 
       // User approves Permit2 for vault shares
-      await mockVault.connect(wallet1).approve(PERMIT2_CANONICAL_ADDRESS, sharesToBurn);
+      await mockVault
+        .connect(wallet1)
+        .approve(PERMIT2_CANONICAL_ADDRESS, sharesToBurn);
 
       const initialBalance = await asset.balanceOf(wallet1.address);
 
       expect(await asset.balanceOf(facetAddr)).to.equal(0);
       expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
-      await erc4626InterfaceFacet.connect(wallet1)["withdrawFromVault(address,uint256,bool)"](
-        await mockVault.getAddress(),
-        assetsToWithdraw,
-        true // usePermit2
-      );
+      await erc4626InterfaceFacet
+        .connect(wallet1)
+        ["withdrawFromVault(address,uint256,bool)"](
+          await mockVault.getAddress(),
+          assetsToWithdraw,
+          true, // usePermit2
+        );
 
       // Verify Permit2 was used for share transfer
       expect(await mockPermit2.lastTransferFrom()).to.equal(wallet1.address);
       expect(await mockPermit2.lastTransferTo()).to.equal(facetAddr);
-      expect(await mockPermit2.lastTransferToken()).to.equal(await mockVault.getAddress());
+      expect(await mockPermit2.lastTransferToken()).to.equal(
+        await mockVault.getAddress(),
+      );
 
       // Verify assets were received
       const finalBalance = await asset.balanceOf(wallet1.address);
@@ -1390,30 +1731,38 @@ describe("ERC4626InterfaceFacet Tests", () => {
     it("should use Permit2 for redeemFromVault with usePermit2=true", async () => {
       // First deposit to get shares
       const depositAmount = ethers.parseEther("200");
-      await asset.connect(wallet1).approve(await mockVault.getAddress(), depositAmount);
+      await asset
+        .connect(wallet1)
+        .approve(await mockVault.getAddress(), depositAmount);
       await mockVault.connect(wallet1).deposit(depositAmount, wallet1.address);
 
       const sharesToRedeem = ethers.parseEther("100");
       const facetAddr = await erc4626InterfaceFacet.getAddress();
 
       // User approves Permit2 for vault shares
-      await mockVault.connect(wallet1).approve(PERMIT2_CANONICAL_ADDRESS, sharesToRedeem);
+      await mockVault
+        .connect(wallet1)
+        .approve(PERMIT2_CANONICAL_ADDRESS, sharesToRedeem);
 
       const initialBalance = await asset.balanceOf(wallet1.address);
 
       expect(await asset.balanceOf(facetAddr)).to.equal(0);
       expect(await mockVault.balanceOf(facetAddr)).to.equal(0);
 
-      await erc4626InterfaceFacet.connect(wallet1)["redeemFromVault(address,uint256,bool)"](
-        await mockVault.getAddress(),
-        sharesToRedeem,
-        true // usePermit2
-      );
+      await erc4626InterfaceFacet
+        .connect(wallet1)
+        ["redeemFromVault(address,uint256,bool)"](
+          await mockVault.getAddress(),
+          sharesToRedeem,
+          true, // usePermit2
+        );
 
       // Verify Permit2 was used for share transfer
       expect(await mockPermit2.lastTransferFrom()).to.equal(wallet1.address);
       expect(await mockPermit2.lastTransferTo()).to.equal(facetAddr);
-      expect(await mockPermit2.lastTransferToken()).to.equal(await mockVault.getAddress());
+      expect(await mockPermit2.lastTransferToken()).to.equal(
+        await mockVault.getAddress(),
+      );
 
       // Verify assets were received
       const finalBalance = await asset.balanceOf(wallet1.address);
@@ -1429,60 +1778,79 @@ describe("ERC4626InterfaceFacet Tests", () => {
       const assetsAmount = ethers.parseEther("100");
 
       // Deploy a vault that only consumes 90% of assets
-      const PartialConsumeVaultFactory = await ethers.getContractFactory("TestPartialConsumeVault");
+      const PartialConsumeVaultFactory = await ethers.getContractFactory(
+        "TestPartialConsumeVault",
+      );
       const partialVault = await upgrades.deployProxy(
         PartialConsumeVaultFactory,
         [await asset.getAddress(), "Partial Vault", "pVAULT"],
       );
       await partialVault.waitForDeployment();
 
-      await mockController.setVaultApproval(await partialVault.getAddress(), true);
-      await asset.connect(wallet1).approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
+      await mockController.setVaultApproval(
+        await partialVault.getAddress(),
+        true,
+      );
+      await asset
+        .connect(wallet1)
+        .approve(await erc4626InterfaceFacet.getAddress(), assetsAmount);
 
       await expect(
-        erc4626InterfaceFacet.connect(wallet1)["depositToVault(address,uint256,bool)"](
-          await partialVault.getAddress(),
-          assetsAmount,
-          false
-        )
+        erc4626InterfaceFacet
+          .connect(wallet1)
+          [
+            "depositToVault(address,uint256,bool)"
+          ](await partialVault.getAddress(), assetsAmount, false),
       ).to.be.revertedWithCustomError(erc4626InterfaceFacet, "AssetsMismatch");
     });
 
     it("should refund excess shares when actualSharesBurned < sharesToRedeem in withdraw", async () => {
       // Deploy a vault where previewWithdraw overestimates shares needed
-      const RefundVaultFactory = await ethers.getContractFactory("TestRefundVault");
-      const refundVault = await upgrades.deployProxy(
-        RefundVaultFactory,
-        [await asset.getAddress(), "Refund Vault", "rVAULT"],
-      );
+      const RefundVaultFactory =
+        await ethers.getContractFactory("TestRefundVault");
+      const refundVault = await upgrades.deployProxy(RefundVaultFactory, [
+        await asset.getAddress(),
+        "Refund Vault",
+        "rVAULT",
+      ]);
       await refundVault.waitForDeployment();
 
-      await mockController.setVaultApproval(await refundVault.getAddress(), true);
+      await mockController.setVaultApproval(
+        await refundVault.getAddress(),
+        true,
+      );
 
       // Deposit to get shares
       const depositAmount = ethers.parseEther("500");
-      await asset.connect(wallet1).approve(await refundVault.getAddress(), depositAmount);
-      await (refundVault as any).connect(wallet1).deposit(depositAmount, wallet1.address);
+      await asset
+        .connect(wallet1)
+        .approve(await refundVault.getAddress(), depositAmount);
+      await (refundVault as any)
+        .connect(wallet1)
+        .deposit(depositAmount, wallet1.address);
 
       const assetsToWithdraw = ethers.parseEther("100");
       // previewWithdraw returns 120 shares for 100 assets
-      const sharesToBurn = await (refundVault as any).previewWithdraw(assetsToWithdraw);
+      const sharesToBurn = await (refundVault as any).previewWithdraw(
+        assetsToWithdraw,
+      );
       expect(sharesToBurn).to.equal(ethers.parseEther("120"));
 
       // Approve facet for the full 120 shares
-      await (refundVault as any).connect(wallet1).approve(
-        await erc4626InterfaceFacet.getAddress(),
-        sharesToBurn
-      );
+      await (refundVault as any)
+        .connect(wallet1)
+        .approve(await erc4626InterfaceFacet.getAddress(), sharesToBurn);
 
-      const initialShares = await (refundVault as any).balanceOf(wallet1.address);
+      const initialShares = await (refundVault as any).balanceOf(
+        wallet1.address,
+      );
       const initialAssets = await asset.balanceOf(wallet1.address);
 
-      await erc4626InterfaceFacet.connect(wallet1)["withdrawFromVault(address,uint256,bool)"](
-        await refundVault.getAddress(),
-        assetsToWithdraw,
-        false
-      );
+      await erc4626InterfaceFacet
+        .connect(wallet1)
+        [
+          "withdrawFromVault(address,uint256,bool)"
+        ](await refundVault.getAddress(), assetsToWithdraw, false);
 
       const finalShares = await (refundVault as any).balanceOf(wallet1.address);
       const finalAssets = await asset.balanceOf(wallet1.address);

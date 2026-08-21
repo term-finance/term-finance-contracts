@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
@@ -50,7 +49,6 @@ function expectbigintEq(
   expected: BigNumberish,
   message: string = `Expected ${expected.toString()} but was ${actual.toString()}`,
 ): void {
-  // eslint-disable-next-line no-unused-expressions
   expect(actual === BigInt(expected), message).to.be.true;
 }
 
@@ -1409,4 +1407,3 @@ describe("TermAuctionIntegration", () => {
     ]);
   });
 });
-/* eslint-enable camelcase */

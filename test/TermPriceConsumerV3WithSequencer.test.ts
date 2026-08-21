@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
@@ -416,9 +415,9 @@ describe("TermPriceConsumerV3WithSequencer", () => {
       await expect(
         termOracle.connect(wallet2).upgrade(wallet1.address),
       ).to.be.revertedWithCustomError(
-      termOracle,
-      "AccessControlUnauthorizedAccount",
-    );
+        termOracle,
+        "AccessControlUnauthorizedAccount",
+      );
     });
   });
 
@@ -463,50 +462,48 @@ describe("TermPriceConsumerV3WithSequencer", () => {
   });
 
   it("usdValueOfTokens is callable by new bidlocker after reopening", async () => {
-      const blockNumber = await ethers.provider.getBlockNumber();
-      const block = await ethers.provider.getBlock(blockNumber);
-      const timestamp = BigInt(block!.timestamp);
-      
-      // Ensure we set a reasonable startedAt time that won't cause underflow
-      const gracePeriod = 3600n; // 1 hour
-      const buffer = 200n;
-      const minTimestamp = gracePeriod + buffer + 1n; // Minimum safe timestamp
-      
-      // Use the larger of the calculated time or a safe minimum
-      const startedAtTime = timestamp > minTimestamp 
-        ? timestamp - gracePeriod - buffer 
-        : 1n; // Use 1 as a safe fallback
-      
-      // Set timestamps for both sequencer and collateral feeds
-      await mockSequencerFeed.setStartedAt(startedAtTime);
-      await mockSequencerFeed.setUpdatedAt(timestamp);
-      await mockCollateralFeed.setStartedAt(startedAtTime);
-      await mockCollateralFeed.setUpdatedAt(timestamp);
-      
-      expect(
-        await termOracle
-          .connect(newBidLocker)
-          .usdValueOfTokens(
-            await testCollateralToken.getAddress(),
-            "1000000000000000000",
-          ),
-      ).to.deep.equal([1n]);
-    });
-  it("usdValueOfTokens reverts if price feed doesn't exist for token", async () => {
     const blockNumber = await ethers.provider.getBlockNumber();
     const block = await ethers.provider.getBlock(blockNumber);
     const timestamp = BigInt(block!.timestamp);
-    
+
     // Ensure we set a reasonable startedAt time that won't cause underflow
     const gracePeriod = 3600n; // 1 hour
     const buffer = 200n;
     const minTimestamp = gracePeriod + buffer + 1n; // Minimum safe timestamp
-    
+
     // Use the larger of the calculated time or a safe minimum
-    const startedAtTime = timestamp > minTimestamp 
-      ? timestamp - gracePeriod - buffer 
-      : 1n; // Use 1 as a safe fallback
-    
+    const startedAtTime =
+      timestamp > minTimestamp ? timestamp - gracePeriod - buffer : 1n; // Use 1 as a safe fallback
+
+    // Set timestamps for both sequencer and collateral feeds
+    await mockSequencerFeed.setStartedAt(startedAtTime);
+    await mockSequencerFeed.setUpdatedAt(timestamp);
+    await mockCollateralFeed.setStartedAt(startedAtTime);
+    await mockCollateralFeed.setUpdatedAt(timestamp);
+
+    expect(
+      await termOracle
+        .connect(newBidLocker)
+        .usdValueOfTokens(
+          await testCollateralToken.getAddress(),
+          "1000000000000000000",
+        ),
+    ).to.deep.equal([1n]);
+  });
+  it("usdValueOfTokens reverts if price feed doesn't exist for token", async () => {
+    const blockNumber = await ethers.provider.getBlockNumber();
+    const block = await ethers.provider.getBlock(blockNumber);
+    const timestamp = BigInt(block!.timestamp);
+
+    // Ensure we set a reasonable startedAt time that won't cause underflow
+    const gracePeriod = 3600n; // 1 hour
+    const buffer = 200n;
+    const minTimestamp = gracePeriod + buffer + 1n; // Minimum safe timestamp
+
+    // Use the larger of the calculated time or a safe minimum
+    const startedAtTime =
+      timestamp > minTimestamp ? timestamp - gracePeriod - buffer : 1n; // Use 1 as a safe fallback
+
     // Set timestamps for both sequencer and collateral feeds
     await mockSequencerFeed.setStartedAt(startedAtTime);
     await mockSequencerFeed.setUpdatedAt(timestamp);
@@ -779,4 +776,3 @@ describe("TermPriceConsumerV3WithSequencer", () => {
     expect(await termOracle.version()).to.eq(expectedVersion);
   });
 });
-/* eslint-enable camelcase */

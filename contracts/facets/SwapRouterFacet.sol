@@ -23,11 +23,16 @@ import {TermMultiContextAuth} from "./base/TermMultiContextAuth.sol";
 /// @notice Provides token swap functionality through Pendle protocol
 /// @dev Handles swaps involving Pendle Principal Tokens (PT) and regular tokens via Pendle router and aggregator
 /// @dev Supports pre-expiry and post-expiry PT operations
-contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContextAuth, Versionable {
+contract SwapRouterFacet is
+    ReentrancyGuard,
+    TermFlashHookFacet,
+    TermMultiContextAuth,
+    Versionable
+{
     using SafeERC20 for ERC20;
     using SafeCast for uint256;
 
-     // ========================================================================
+    // ========================================================================
 
     // ========================================================================
     // = Errors  ==============================================================
@@ -77,12 +82,25 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
     /// @param amountIn Amount of input tokens to swap
     /// @param usePermit2 Whether to use Permit2 for token transfer approval
     /// @param data Swap routing data containing swap parameters and token type flags
-    function swap(address tokenIn, uint256 amountIn, bool usePermit2, SwapRouterData calldata data) external nonReentrant {
-        if (usePermit2){
-            Permit2Lib.PERMIT2.transferFrom(msg.sender, address(this), amountIn.toUint160(), tokenIn);
-
+    function swap(
+        address tokenIn,
+        uint256 amountIn,
+        bool usePermit2,
+        SwapRouterData calldata data
+    ) external nonReentrant {
+        if (usePermit2) {
+            Permit2Lib.PERMIT2.transferFrom(
+                msg.sender,
+                address(this),
+                amountIn.toUint160(),
+                tokenIn
+            );
         } else {
-            ERC20(tokenIn).safeTransferFrom(msg.sender, address(this), amountIn);
+            ERC20(tokenIn).safeTransferFrom(
+                msg.sender,
+                address(this),
+                amountIn
+            );
         }
         _swapInternal(tokenIn, amountIn, msg.sender, data);
     }
@@ -99,7 +117,10 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
     ) external nonReentrant onlyFlashLoanContext(input.user) {
         address tokenIn = input.inputToken;
         uint256 amountIn = input.maxInputAmount;
-        SwapRouterData memory data = abi.decode(input.additionalCalldata, (SwapRouterData));
+        SwapRouterData memory data = abi.decode(
+            input.additionalCalldata,
+            (SwapRouterData)
+        );
         _swapInternal(tokenIn, amountIn, address(this), data);
     }
 
@@ -116,7 +137,6 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
     function previewSwap(
         ActionHookInput calldata actionHookInput
     ) external view returns (PreviewAction memory) {
-
         if (actionHookInput.inputToken == actionHookInput.outputToken) {
             revert InputOutputTokenCollision();
         }
@@ -135,18 +155,29 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
     // = Internal Functions  ==================================================
     // ========================================================================
 
-    function _swapInternal(address tokenIn, uint256 amountIn, address receiver, SwapRouterData memory data) internal {
-        if (data.isTokenInPendlePT && data.isTokenOutPendlePT){
+    function _swapInternal(
+        address tokenIn,
+        uint256 amountIn,
+        address receiver,
+        SwapRouterData memory data
+    ) internal {
+        if (data.isTokenInPendlePT && data.isTokenOutPendlePT) {
             revert BothTokensCannotBePendlePT();
         }
-        if(data.isTokenInPendlePT){
-            ERC20(tokenIn).forceApprove(
-                address(pendleRouter),
-                amountIn
-            );
+        if (data.isTokenInPendlePT) {
+            ERC20(tokenIn).forceApprove(address(pendleRouter), amountIn);
             uint256 expiry = IPPrincipalToken(tokenIn).expiry();
             if (block.timestamp >= expiry) {
-                (, address market, uint256 netPtIn, uint256 netLpIn, TokenOutput memory output) = abi.decode(data.swapData, (address, address, uint256, uint256, TokenOutput));
+                (
+                    ,
+                    address market,
+                    uint256 netPtIn,
+                    uint256 netLpIn,
+                    TokenOutput memory output
+                ) = abi.decode(
+                        data.swapData,
+                        (address, address, uint256, uint256, TokenOutput)
+                    );
                 if (netPtIn != amountIn) revert InputAmountMismatch();
                 IPActionMiscV3(pendleRouter).exitPostExpToToken(
                     receiver,
@@ -155,10 +186,17 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
                     netLpIn,
                     output
                 );
-
-            }
-            else {
-                (, address market, uint256 exactPtIn, TokenOutput memory output, LimitOrderData memory limit) = abi.decode(data.swapData, (address, address, uint256, TokenOutput, LimitOrderData));
+            } else {
+                (
+                    ,
+                    address market,
+                    uint256 exactPtIn,
+                    TokenOutput memory output,
+                    LimitOrderData memory limit
+                ) = abi.decode(
+                        data.swapData,
+                        (address, address, uint256, TokenOutput, LimitOrderData)
+                    );
                 if (exactPtIn != amountIn) revert InputAmountMismatch();
                 IPActionSwapPTV3(pendleRouter).swapExactPtForToken(
                     receiver,
@@ -168,16 +206,27 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
                     limit
                 );
             }
-            ERC20(tokenIn).forceApprove(
-                address(pendleRouter),
-                0
-            );
-        } else if (data.isTokenOutPendlePT){
-            ERC20(tokenIn).forceApprove(
-                address(pendleRouter),
-                amountIn
-            );
-            (, address market, uint256 minPtOut, ApproxParams memory guessPtOut, TokenInput memory input, LimitOrderData memory limit) = abi.decode(data.swapData, (address, address, uint256, ApproxParams, TokenInput, LimitOrderData));
+            ERC20(tokenIn).forceApprove(address(pendleRouter), 0);
+        } else if (data.isTokenOutPendlePT) {
+            ERC20(tokenIn).forceApprove(address(pendleRouter), amountIn);
+            (
+                ,
+                address market,
+                uint256 minPtOut,
+                ApproxParams memory guessPtOut,
+                TokenInput memory input,
+                LimitOrderData memory limit
+            ) = abi.decode(
+                    data.swapData,
+                    (
+                        address,
+                        address,
+                        uint256,
+                        ApproxParams,
+                        TokenInput,
+                        LimitOrderData
+                    )
+                );
             if (input.netTokenIn != amountIn) {
                 revert InputAmountMismatch();
             }
@@ -189,10 +238,7 @@ contract SwapRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
                 input,
                 limit
             );
-            ERC20(tokenIn).forceApprove(
-                address(pendleRouter),
-                0
-            );
+            ERC20(tokenIn).forceApprove(address(pendleRouter), 0);
         } else {
             ERC20(tokenIn).safeTransfer(pendleSwap, amountIn);
             SwapData memory swapData = abi.decode(data.swapData, (SwapData));

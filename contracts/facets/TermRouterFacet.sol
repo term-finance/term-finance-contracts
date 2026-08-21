@@ -28,14 +28,20 @@ import {LibTermStorage, TermStorage} from "../libraries/LibTermStorage.sol";
 
 error InputOutputTokenCollision();
 
-/// @author TermLabs  
+/// @author TermLabs
 /// @title Term Router Facet
 /// @notice This facet provides centralized access to all DIAMOND_ROLE functions across Term contracts
 /// @dev This facet aggregates settlement operations from TermRepoServicer, TermRepoCollateralManager, and TermRepoRolloverManager
-contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContextAuth, ExponentialNoError, Versionable {
+contract TermRouterFacet is
+    ReentrancyGuard,
+    TermFlashHookFacet,
+    TermMultiContextAuth,
+    ExponentialNoError,
+    Versionable
+{
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
-    
+
     // ========================================================================
     // = Custom Errors  =======================================================
     // ========================================================================
@@ -47,13 +53,16 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
     error InvalidRepoId();
     error InvalidTermController();
     error PurchaseTokenMismatch();
+    error ZeroMintAmount();
 
     // ========================================================================
     // = Deploy ===============================================================
     // ========================================================================
-    
+
     constructor() {
-        previewMapping[this.submitRepurchasePaymentHook.selector] = this.previewSubmitRepurchasePayment.selector;
+        previewMapping[this.submitRepurchasePaymentHook.selector] = this
+            .previewSubmitRepurchasePayment
+            .selector;
     }
 
     // ========================================================================
@@ -71,34 +80,52 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         TermAuctionBidSubmission[] calldata bidSubmissions,
         bool usePermit2
     ) external nonReentrant {
-        ITermAuctionBidLocker _termAuctionBidLocker = ITermAuctionBidLocker(termAuctionBidLocker);
+        ITermAuctionBidLocker _termAuctionBidLocker = ITermAuctionBidLocker(
+            termAuctionBidLocker
+        );
         _validateAuctionBidLocker(_termAuctionBidLocker);
 
-
-        ITermRepoLocker termRepoLocker = _termAuctionBidLocker.termRepoServicer().termRepoLocker();
+        ITermRepoLocker termRepoLocker = _termAuctionBidLocker
+            .termRepoServicer()
+            .termRepoLocker();
         TermAuctionBid memory existingBid;
         uint256 collateralRequired;
 
         // Track cumulative amounts for each collateral token position
-        uint256 numCollateralTokens = bidSubmissions.length > 0 ? bidSubmissions[0].collateralTokens.length : 0;
+        uint256 numCollateralTokens = bidSubmissions.length > 0
+            ? bidSubmissions[0].collateralTokens.length
+            : 0;
         uint256[] memory totalAmounts = new uint256[](numCollateralTokens);
 
         if (usePermit2) {
             uint8 i;
             uint8 j;
             for (i = 0; i < bidSubmissions.length; ++i) {
-                existingBid = _termAuctionBidLocker.lockedBid(bidSubmissions[i].id);
+                existingBid = _termAuctionBidLocker.lockedBid(
+                    bidSubmissions[i].id
+                );
                 bool bidExists = existingBid.amount != 0;
-                for (j = 0; j < bidSubmissions[i].collateralTokens.length; ++j) {
+                for (
+                    j = 0;
+                    j < bidSubmissions[i].collateralTokens.length;
+                    ++j
+                ) {
                     if (bidExists) {
-                        if (existingBid.collateralAmounts[j] == 0 && bidSubmissions[i].collateralAmounts[j] == 0) {
+                        if (
+                            existingBid.collateralAmounts[j] == 0 &&
+                            bidSubmissions[i].collateralAmounts[j] == 0
+                        ) {
                             continue;
                         }
-                        collateralRequired = bidSubmissions[i].collateralAmounts[j] > existingBid.collateralAmounts[j]
-                            ? bidSubmissions[i].collateralAmounts[j] - existingBid.collateralAmounts[j]
+                        collateralRequired = bidSubmissions[i]
+                            .collateralAmounts[j] >
+                            existingBid.collateralAmounts[j]
+                            ? bidSubmissions[i].collateralAmounts[j] -
+                                existingBid.collateralAmounts[j]
                             : 0;
                     } else {
-                        collateralRequired = bidSubmissions[i].collateralAmounts[j];
+                        collateralRequired = bidSubmissions[i]
+                            .collateralAmounts[j];
                     }
                     if (collateralRequired == 0) {
                         continue;
@@ -117,27 +144,41 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
             uint8 i;
             uint8 j;
             for (i = 0; i < bidSubmissions.length; ++i) {
-                existingBid = _termAuctionBidLocker.lockedBid(bidSubmissions[i].id);
+                existingBid = _termAuctionBidLocker.lockedBid(
+                    bidSubmissions[i].id
+                );
                 bool bidExists = existingBid.amount != 0;
-                for (j = 0; j < bidSubmissions[i].collateralTokens.length; ++j) {
+                for (
+                    j = 0;
+                    j < bidSubmissions[i].collateralTokens.length;
+                    ++j
+                ) {
                     if (bidExists) {
-                        if (existingBid.collateralAmounts[j] == 0 && bidSubmissions[i].collateralAmounts[j] == 0) {
+                        if (
+                            existingBid.collateralAmounts[j] == 0 &&
+                            bidSubmissions[i].collateralAmounts[j] == 0
+                        ) {
                             continue;
                         }
-                        collateralRequired = bidSubmissions[i].collateralAmounts[j] > existingBid.collateralAmounts[j]
-                            ? bidSubmissions[i].collateralAmounts[j] - existingBid.collateralAmounts[j]
+                        collateralRequired = bidSubmissions[i]
+                            .collateralAmounts[j] >
+                            existingBid.collateralAmounts[j]
+                            ? bidSubmissions[i].collateralAmounts[j] -
+                                existingBid.collateralAmounts[j]
                             : 0;
                     } else {
-                        collateralRequired = bidSubmissions[i].collateralAmounts[j];
+                        collateralRequired = bidSubmissions[i]
+                            .collateralAmounts[j];
                     }
                     if (collateralRequired == 0) {
                         continue;
                     }
-                    IERC20(bidSubmissions[i].collateralTokens[j]).safeTransferFrom(
-                        msg.sender,
-                        address(this),
-                        collateralRequired
-                    );
+                    IERC20(bidSubmissions[i].collateralTokens[j])
+                        .safeTransferFrom(
+                            msg.sender,
+                            address(this),
+                            collateralRequired
+                        );
                     // Accumulate the total for this collateral token position
                     totalAmounts[j] += collateralRequired;
                 }
@@ -150,25 +191,33 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         if (bidSubmissions.length > 0) {
             for (j = 0; j < numCollateralTokens; ++j) {
                 if (totalAmounts[j] > 0) {
-                    IERC20(bidSubmissions[0].collateralTokens[j]).forceApprove(address(termRepoLocker), totalAmounts[j]);
+                    IERC20(bidSubmissions[0].collateralTokens[j]).forceApprove(
+                        address(termRepoLocker),
+                        totalAmounts[j]
+                    );
                 }
             }
         }
 
-        _termAuctionBidLocker.lockBidsWithReferral(msg.sender, bidSubmissions, address(0));
+        _termAuctionBidLocker.lockBidsWithReferral(
+            msg.sender,
+            bidSubmissions,
+            address(0)
+        );
 
         // Revoke the approval for each collateral token after locking bids
         if (bidSubmissions.length > 0) {
             for (j = 0; j < numCollateralTokens; ++j) {
                 if (totalAmounts[j] > 0) {
-                    IERC20(bidSubmissions[0].collateralTokens[j]).forceApprove(address(termRepoLocker), 0);
+                    IERC20(bidSubmissions[0].collateralTokens[j]).forceApprove(
+                        address(termRepoLocker),
+                        0
+                    );
                 }
             }
         }
-
-        
     }
-      /// @notice Locks bid submissions with collateral transfer and approval
+    /// @notice Locks bid submissions with collateral transfer and approval
     /// @dev Transfers collateral tokens from bidder and approves TermRepoLocker before locking bids
     /// @param termAuctionBidLocker Address of the TermAuctionBidLocker contract
     /// @param bidSubmissions Array of bid submissions to lock
@@ -180,34 +229,52 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         address referralAddress,
         bool usePermit2
     ) external nonReentrant {
-        ITermAuctionBidLocker _termAuctionBidLocker = ITermAuctionBidLocker(termAuctionBidLocker);
+        ITermAuctionBidLocker _termAuctionBidLocker = ITermAuctionBidLocker(
+            termAuctionBidLocker
+        );
         _validateAuctionBidLocker(_termAuctionBidLocker);
 
-
-        ITermRepoLocker termRepoLocker = _termAuctionBidLocker.termRepoServicer().termRepoLocker();
+        ITermRepoLocker termRepoLocker = _termAuctionBidLocker
+            .termRepoServicer()
+            .termRepoLocker();
         TermAuctionBid memory existingBid;
         uint256 collateralRequired;
 
         // Track cumulative amounts for each collateral token position
-        uint256 numCollateralTokens = bidSubmissions.length > 0 ? bidSubmissions[0].collateralTokens.length : 0;
+        uint256 numCollateralTokens = bidSubmissions.length > 0
+            ? bidSubmissions[0].collateralTokens.length
+            : 0;
         uint256[] memory totalAmounts = new uint256[](numCollateralTokens);
 
         if (usePermit2) {
             uint8 i;
             uint8 j;
             for (i = 0; i < bidSubmissions.length; ++i) {
-                existingBid = _termAuctionBidLocker.lockedBid(bidSubmissions[i].id);
+                existingBid = _termAuctionBidLocker.lockedBid(
+                    bidSubmissions[i].id
+                );
                 bool bidExists = existingBid.amount != 0;
-                for (j = 0; j < bidSubmissions[i].collateralTokens.length; ++j) {
+                for (
+                    j = 0;
+                    j < bidSubmissions[i].collateralTokens.length;
+                    ++j
+                ) {
                     if (bidExists) {
-                        if (existingBid.collateralAmounts[j] == 0 && bidSubmissions[i].collateralAmounts[j] == 0) {
+                        if (
+                            existingBid.collateralAmounts[j] == 0 &&
+                            bidSubmissions[i].collateralAmounts[j] == 0
+                        ) {
                             continue;
                         }
-                        collateralRequired = bidSubmissions[i].collateralAmounts[j] > existingBid.collateralAmounts[j]
-                            ? bidSubmissions[i].collateralAmounts[j] - existingBid.collateralAmounts[j]
+                        collateralRequired = bidSubmissions[i]
+                            .collateralAmounts[j] >
+                            existingBid.collateralAmounts[j]
+                            ? bidSubmissions[i].collateralAmounts[j] -
+                                existingBid.collateralAmounts[j]
                             : 0;
                     } else {
-                        collateralRequired = bidSubmissions[i].collateralAmounts[j];
+                        collateralRequired = bidSubmissions[i]
+                            .collateralAmounts[j];
                     }
                     if (collateralRequired == 0) {
                         continue;
@@ -226,27 +293,41 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
             uint8 i;
             uint8 j;
             for (i = 0; i < bidSubmissions.length; ++i) {
-                existingBid = _termAuctionBidLocker.lockedBid(bidSubmissions[i].id);
+                existingBid = _termAuctionBidLocker.lockedBid(
+                    bidSubmissions[i].id
+                );
                 bool bidExists = existingBid.amount != 0;
-                for (j = 0; j < bidSubmissions[i].collateralTokens.length; ++j) {
+                for (
+                    j = 0;
+                    j < bidSubmissions[i].collateralTokens.length;
+                    ++j
+                ) {
                     if (bidExists) {
-                        if (existingBid.collateralAmounts[j] == 0 && bidSubmissions[i].collateralAmounts[j] == 0) {
+                        if (
+                            existingBid.collateralAmounts[j] == 0 &&
+                            bidSubmissions[i].collateralAmounts[j] == 0
+                        ) {
                             continue;
                         }
-                        collateralRequired = bidSubmissions[i].collateralAmounts[j] > existingBid.collateralAmounts[j]
-                            ? bidSubmissions[i].collateralAmounts[j] - existingBid.collateralAmounts[j]
+                        collateralRequired = bidSubmissions[i]
+                            .collateralAmounts[j] >
+                            existingBid.collateralAmounts[j]
+                            ? bidSubmissions[i].collateralAmounts[j] -
+                                existingBid.collateralAmounts[j]
                             : 0;
                     } else {
-                        collateralRequired = bidSubmissions[i].collateralAmounts[j];
+                        collateralRequired = bidSubmissions[i]
+                            .collateralAmounts[j];
                     }
                     if (collateralRequired == 0) {
                         continue;
                     }
-                    IERC20(bidSubmissions[i].collateralTokens[j]).safeTransferFrom(
-                        msg.sender,
-                        address(this),
-                        collateralRequired
-                    );
+                    IERC20(bidSubmissions[i].collateralTokens[j])
+                        .safeTransferFrom(
+                            msg.sender,
+                            address(this),
+                            collateralRequired
+                        );
                     // Accumulate the total for this collateral token position
                     totalAmounts[j] += collateralRequired;
                 }
@@ -259,18 +340,28 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         if (bidSubmissions.length > 0) {
             for (j = 0; j < numCollateralTokens; ++j) {
                 if (totalAmounts[j] > 0) {
-                    IERC20(bidSubmissions[0].collateralTokens[j]).forceApprove(address(termRepoLocker), totalAmounts[j]);
+                    IERC20(bidSubmissions[0].collateralTokens[j]).forceApprove(
+                        address(termRepoLocker),
+                        totalAmounts[j]
+                    );
                 }
             }
         }
 
-        _termAuctionBidLocker.lockBidsWithReferral(msg.sender, bidSubmissions, referralAddress);
+        _termAuctionBidLocker.lockBidsWithReferral(
+            msg.sender,
+            bidSubmissions,
+            referralAddress
+        );
 
         // Revoke the approval for each collateral token after locking bids
         if (bidSubmissions.length > 0) {
             for (j = 0; j < numCollateralTokens; ++j) {
                 if (totalAmounts[j] > 0) {
-                    IERC20(bidSubmissions[0].collateralTokens[j]).forceApprove(address(termRepoLocker), 0);
+                    IERC20(bidSubmissions[0].collateralTokens[j]).forceApprove(
+                        address(termRepoLocker),
+                        0
+                    );
                 }
             }
         }
@@ -284,7 +375,9 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         address termAuctionBidLocker,
         bytes32[] calldata bidIds
     ) external nonReentrant {
-        ITermAuctionBidLocker _termAuctionBidLocker = ITermAuctionBidLocker(termAuctionBidLocker);
+        ITermAuctionBidLocker _termAuctionBidLocker = ITermAuctionBidLocker(
+            termAuctionBidLocker
+        );
         _validateAuctionBidLocker(_termAuctionBidLocker);
         _termAuctionBidLocker.unlockBids(msg.sender, bidIds);
     }
@@ -303,22 +396,33 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         TermAuctionOfferSubmission[] calldata offerSubmissions,
         bool usePermit2
     ) external nonReentrant {
-        ITermAuctionOfferLocker _termAuctionOfferLocker = ITermAuctionOfferLocker(termAuctionOfferLocker);
+        ITermAuctionOfferLocker _termAuctionOfferLocker = ITermAuctionOfferLocker(
+                termAuctionOfferLocker
+            );
         _validateAuctionOfferLocker(_termAuctionOfferLocker);
 
-        ITermRepoLocker termRepoLocker = _termAuctionOfferLocker.termRepoServicer().termRepoLocker();
+        ITermRepoLocker termRepoLocker = _termAuctionOfferLocker
+            .termRepoServicer()
+            .termRepoLocker();
         TermAuctionOffer memory existingOffer;
         uint256 requiredPurchaseTokens;
         uint256 totalPurchaseTokensRequired = 0;
-        address purchaseToken = offerSubmissions.length > 0 ? offerSubmissions[0].purchaseToken : address(0);
+        address purchaseToken = offerSubmissions.length > 0
+            ? offerSubmissions[0].purchaseToken
+            : address(0);
 
         if (usePermit2) {
             for (uint8 i = 0; i < offerSubmissions.length; ++i) {
-                existingOffer = _termAuctionOfferLocker.lockedOffer(offerSubmissions[i].id);
-                if (existingOffer.amount == 0 && offerSubmissions[i].amount == 0) {
+                existingOffer = _termAuctionOfferLocker.lockedOffer(
+                    offerSubmissions[i].id
+                );
+                if (
+                    existingOffer.amount == 0 && offerSubmissions[i].amount == 0
+                ) {
                     continue;
                 }
-                requiredPurchaseTokens = offerSubmissions[i].amount > existingOffer.amount
+                requiredPurchaseTokens = offerSubmissions[i].amount >
+                    existingOffer.amount
                     ? offerSubmissions[i].amount - existingOffer.amount
                     : 0;
                 if (requiredPurchaseTokens > 0) {
@@ -334,12 +438,17 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
             }
         } else {
             for (uint8 i = 0; i < offerSubmissions.length; ++i) {
-                existingOffer = _termAuctionOfferLocker.lockedOffer(offerSubmissions[i].id);
+                existingOffer = _termAuctionOfferLocker.lockedOffer(
+                    offerSubmissions[i].id
+                );
 
-                if (existingOffer.amount == 0 && offerSubmissions[i].amount == 0) {
+                if (
+                    existingOffer.amount == 0 && offerSubmissions[i].amount == 0
+                ) {
                     continue;
                 }
-                requiredPurchaseTokens = offerSubmissions[i].amount > existingOffer.amount
+                requiredPurchaseTokens = offerSubmissions[i].amount >
+                    existingOffer.amount
                     ? offerSubmissions[i].amount - existingOffer.amount
                     : 0;
                 if (requiredPurchaseTokens > 0) {
@@ -356,10 +465,17 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
 
         // Approve the total amount of purchase tokens
         if (totalPurchaseTokensRequired > 0 && purchaseToken != address(0)) {
-            IERC20(purchaseToken).forceApprove(address(termRepoLocker), totalPurchaseTokensRequired);
+            IERC20(purchaseToken).forceApprove(
+                address(termRepoLocker),
+                totalPurchaseTokensRequired
+            );
         }
 
-        _termAuctionOfferLocker.lockOffersWithReferral(msg.sender, offerSubmissions, address(0));
+        _termAuctionOfferLocker.lockOffersWithReferral(
+            msg.sender,
+            offerSubmissions,
+            address(0)
+        );
 
         // Revoke the purchase token approval after locking offers
         if (totalPurchaseTokensRequired > 0 && purchaseToken != address(0)) {
@@ -367,7 +483,7 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         }
     }
 
-      /// @notice Locks offer submissions with purchase token transfer and approval
+    /// @notice Locks offer submissions with purchase token transfer and approval
     /// @dev Transfers purchase tokens from offerer and approves TermRepoLocker before locking offers
     /// @param termAuctionOfferLocker Address of the TermAuctionOfferLocker contract
     /// @param offerSubmissions Array of offer submissions to lock
@@ -379,22 +495,33 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         address referralAddress,
         bool usePermit2
     ) external nonReentrant {
-        ITermAuctionOfferLocker _termAuctionOfferLocker = ITermAuctionOfferLocker(termAuctionOfferLocker);
+        ITermAuctionOfferLocker _termAuctionOfferLocker = ITermAuctionOfferLocker(
+                termAuctionOfferLocker
+            );
         _validateAuctionOfferLocker(_termAuctionOfferLocker);
 
-        ITermRepoLocker termRepoLocker = _termAuctionOfferLocker.termRepoServicer().termRepoLocker();
+        ITermRepoLocker termRepoLocker = _termAuctionOfferLocker
+            .termRepoServicer()
+            .termRepoLocker();
         TermAuctionOffer memory existingOffer;
         uint256 requiredPurchaseTokens;
         uint256 totalPurchaseTokensRequired = 0;
-        address purchaseToken = offerSubmissions.length > 0 ? offerSubmissions[0].purchaseToken : address(0);
+        address purchaseToken = offerSubmissions.length > 0
+            ? offerSubmissions[0].purchaseToken
+            : address(0);
 
         if (usePermit2) {
             for (uint8 i = 0; i < offerSubmissions.length; ++i) {
-                existingOffer = _termAuctionOfferLocker.lockedOffer(offerSubmissions[i].id);
-                if (existingOffer.amount == 0 && offerSubmissions[i].amount == 0) {
+                existingOffer = _termAuctionOfferLocker.lockedOffer(
+                    offerSubmissions[i].id
+                );
+                if (
+                    existingOffer.amount == 0 && offerSubmissions[i].amount == 0
+                ) {
                     continue;
                 }
-                requiredPurchaseTokens = offerSubmissions[i].amount > existingOffer.amount
+                requiredPurchaseTokens = offerSubmissions[i].amount >
+                    existingOffer.amount
                     ? offerSubmissions[i].amount - existingOffer.amount
                     : 0;
                 if (requiredPurchaseTokens > 0) {
@@ -410,12 +537,17 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
             }
         } else {
             for (uint8 i = 0; i < offerSubmissions.length; ++i) {
-                existingOffer = _termAuctionOfferLocker.lockedOffer(offerSubmissions[i].id);
+                existingOffer = _termAuctionOfferLocker.lockedOffer(
+                    offerSubmissions[i].id
+                );
 
-                if (existingOffer.amount == 0 && offerSubmissions[i].amount == 0) {
+                if (
+                    existingOffer.amount == 0 && offerSubmissions[i].amount == 0
+                ) {
                     continue;
                 }
-                requiredPurchaseTokens = offerSubmissions[i].amount > existingOffer.amount
+                requiredPurchaseTokens = offerSubmissions[i].amount >
+                    existingOffer.amount
                     ? offerSubmissions[i].amount - existingOffer.amount
                     : 0;
                 if (requiredPurchaseTokens > 0) {
@@ -432,10 +564,17 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
 
         // Approve the total amount of purchase tokens
         if (totalPurchaseTokensRequired > 0 && purchaseToken != address(0)) {
-            IERC20(purchaseToken).forceApprove(address(termRepoLocker), totalPurchaseTokensRequired);
+            IERC20(purchaseToken).forceApprove(
+                address(termRepoLocker),
+                totalPurchaseTokensRequired
+            );
         }
 
-        _termAuctionOfferLocker.lockOffersWithReferral(msg.sender, offerSubmissions, referralAddress);
+        _termAuctionOfferLocker.lockOffersWithReferral(
+            msg.sender,
+            offerSubmissions,
+            referralAddress
+        );
 
         // Revoke the purchase token approval after locking offers
         if (totalPurchaseTokensRequired > 0 && purchaseToken != address(0)) {
@@ -451,7 +590,9 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         address termAuctionOfferLocker,
         bytes32[] calldata offerIds
     ) external nonReentrant {
-        ITermAuctionOfferLocker _termAuctionOfferLocker = ITermAuctionOfferLocker(termAuctionOfferLocker);
+        ITermAuctionOfferLocker _termAuctionOfferLocker = ITermAuctionOfferLocker(
+                termAuctionOfferLocker
+            );
         _validateAuctionOfferLocker(_termAuctionOfferLocker);
         _termAuctionOfferLocker.unlockOffers(msg.sender, offerIds);
     }
@@ -469,7 +610,9 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         uint256 amount,
         bool usePermit2
     ) external nonReentrant {
-        ITermRepoServicer _termRepoServicer = ITermRepoServicer(termRepoServicer);
+        ITermRepoServicer _termRepoServicer = ITermRepoServicer(
+            termRepoServicer
+        );
         _validateRepoServicer(_termRepoServicer);
 
         ITermRepoLocker termRepoLocker = _termRepoServicer.termRepoLocker();
@@ -484,7 +627,11 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
                 address(purchaseToken)
             );
         } else {
-            IERC20(purchaseToken).safeTransferFrom(msg.sender, address(this), amount);
+            IERC20(purchaseToken).safeTransferFrom(
+                msg.sender,
+                address(this),
+                amount
+            );
         }
         IERC20(purchaseToken).forceApprove(address(termRepoLocker), amount);
 
@@ -501,7 +648,10 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         uint256 amountToBurn
     ) external nonReentrant {
         _validateRepoServicer(ITermRepoServicer(termRepoServicer));
-        ITermRepoServicer(termRepoServicer).burnCollapseExposure(msg.sender, amountToBurn);
+        ITermRepoServicer(termRepoServicer).burnCollapseExposure(
+            msg.sender,
+            amountToBurn
+        );
     }
 
     /// @notice Mint open exposure for settlement
@@ -515,18 +665,23 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         uint256[] calldata collateralAmounts,
         bool usePermit2
     ) external nonReentrant {
-        ITermRepoServicer _termRepoServicer = ITermRepoServicer(termRepoServicer);
+        if (repoTokenAmount == 0) {
+            revert ZeroMintAmount();
+        }
+        ITermRepoServicer _termRepoServicer = ITermRepoServicer(
+            termRepoServicer
+        );
         _validateRepoServicer(_termRepoServicer);
 
         ITermRepoLocker termRepoLocker = _termRepoServicer.termRepoLocker();
 
         // @dev Transfer collateral tokens from msg.sender to this contract
         ITermRepoCollateralManager termRepoCollateralManager = ITermRepoCollateralManager(
-            _termRepoServicer.termRepoCollateralManager()
-        );
+                _termRepoServicer.termRepoCollateralManager()
+            );
         address collateralToken;
         uint256 amount;
-        for (uint256 index = 0; index < collateralAmounts.length; ++index){
+        for (uint256 index = 0; index < collateralAmounts.length; ++index) {
             collateralToken = termRepoCollateralManager.collateralTokens(index);
             amount = collateralAmounts[index];
 
@@ -538,27 +693,37 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
                     collateralToken
                 );
             } else {
-                IERC20(collateralToken).safeTransferFrom(msg.sender, address(this), amount);
+                IERC20(collateralToken).safeTransferFrom(
+                    msg.sender,
+                    address(this),
+                    amount
+                );
             }
-            
-            IERC20(collateralToken).forceApprove(address(termRepoLocker), amount);
+
+            IERC20(collateralToken).forceApprove(
+                address(termRepoLocker),
+                amount
+            );
         }
-      
+
         _termRepoServicer.mintOpenExposure(
-            msg.sender, 
-            repoTokenAmount, 
+            msg.sender,
+            repoTokenAmount,
             collateralAmounts
         );
 
         // Revoke approvals after minting
-        for (uint256 index = 0; index < collateralAmounts.length; ++index){
+        for (uint256 index = 0; index < collateralAmounts.length; ++index) {
             collateralToken = termRepoCollateralManager.collateralTokens(index);
             IERC20(collateralToken).forceApprove(address(termRepoLocker), 0);
         }
 
         Exp memory proRate = div_(
             // solhint-disable-next-line not-rely-on-time
-            Exp({mantissa: (_termRepoServicer.redemptionTimestamp() - block.timestamp)}),
+            Exp({
+                mantissa: (_termRepoServicer.redemptionTimestamp() -
+                    block.timestamp)
+            }),
             Exp({mantissa: (360 days)})
         );
 
@@ -572,8 +737,11 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
             repoTokenAmount
         );
         uint256 minterTokens = repoTokenAmount - protocolMintTokens;
-        
-        IERC20(address(_termRepoServicer.termRepoToken())).safeTransfer(msg.sender, minterTokens);
+
+        IERC20(address(_termRepoServicer.termRepoToken())).safeTransfer(
+            msg.sender,
+            minterTokens
+        );
     }
 
     // @notice Redeem Term Repo Tokens on behalf of a redeemer
@@ -586,7 +754,10 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         uint256 amountToRedeem
     ) external nonReentrant {
         _validateRepoServicer(ITermRepoServicer(termRepoServicer));
-        ITermRepoServicer(termRepoServicer).redeemTermRepoTokens(redeemer, amountToRedeem);
+        ITermRepoServicer(termRepoServicer).redeemTermRepoTokens(
+            redeemer,
+            amountToRedeem
+        );
     }
 
     // ========================================================================
@@ -603,11 +774,12 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         uint256 amount,
         bool usePermit2
     ) external nonReentrant {
-        ITermRepoCollateralManager collateralManager = ITermRepoCollateralManager(termRepoCollateralManager);
+        ITermRepoCollateralManager collateralManager = ITermRepoCollateralManager(
+                termRepoCollateralManager
+            );
         _validateCollateralManager(collateralManager);
         ITermRepoLocker termRepoLocker = collateralManager.termRepoLocker();
 
-        
         // @dev Transfer collateral tokens from msg.sender to this contract
         if (usePermit2) {
             Permit2Lib.PERMIT2.transferFrom(
@@ -617,11 +789,16 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
                 collateralToken
             );
         } else {
-            IERC20(collateralToken).safeTransferFrom(msg.sender, address(this), amount);
+            IERC20(collateralToken).safeTransferFrom(
+                msg.sender,
+                address(this),
+                amount
+            );
         }
         IERC20(collateralToken).forceApprove(address(termRepoLocker), amount);
-        
-        ITermRepoCollateralManager(termRepoCollateralManager).externalLockCollateral(msg.sender, collateralToken, amount);
+
+        ITermRepoCollateralManager(termRepoCollateralManager)
+            .externalLockCollateral(msg.sender, collateralToken, amount);
 
         IERC20(collateralToken).forceApprove(address(termRepoLocker), 0);
     }
@@ -635,8 +812,11 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         address collateralToken,
         uint256 amount
     ) external nonReentrant {
-        _validateCollateralManager(ITermRepoCollateralManager(termRepoCollateralManager));
-        ITermRepoCollateralManager(termRepoCollateralManager).externalUnlockCollateral(msg.sender, collateralToken, amount);
+        _validateCollateralManager(
+            ITermRepoCollateralManager(termRepoCollateralManager)
+        );
+        ITermRepoCollateralManager(termRepoCollateralManager)
+            .externalUnlockCollateral(msg.sender, collateralToken, amount);
     }
 
     // ========================================================================
@@ -648,10 +828,16 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
     /// @param termRepoRolloverElectionSubmission A struct containing borrower rollover instructions
     function electRollover(
         address termRepoRolloverManager,
-        TermRepoRolloverElectionSubmission calldata termRepoRolloverElectionSubmission
+        TermRepoRolloverElectionSubmission
+            calldata termRepoRolloverElectionSubmission
     ) external nonReentrant {
-        _validateRolloverManager(ITermRepoRolloverManager(termRepoRolloverManager));
-        ITermRepoRolloverManager(termRepoRolloverManager).electRollover(msg.sender, termRepoRolloverElectionSubmission);
+        _validateRolloverManager(
+            ITermRepoRolloverManager(termRepoRolloverManager)
+        );
+        ITermRepoRolloverManager(termRepoRolloverManager).electRollover(
+            msg.sender,
+            termRepoRolloverElectionSubmission
+        );
     }
 
     /// @notice Cancel rollover on behalf of a borrower
@@ -659,8 +845,12 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
     function cancelRollover(
         address termRepoRolloverManager
     ) external nonReentrant {
-        _validateRolloverManager(ITermRepoRolloverManager(termRepoRolloverManager));
-        ITermRepoRolloverManager(termRepoRolloverManager).cancelRollover(msg.sender);
+        _validateRolloverManager(
+            ITermRepoRolloverManager(termRepoRolloverManager)
+        );
+        ITermRepoRolloverManager(termRepoRolloverManager).cancelRollover(
+            msg.sender
+        );
     }
 
     // ========================================================================
@@ -703,17 +893,29 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
 
         ITermRepoServicer repoServicer = ITermRepoServicer(input.targetAddress);
         _validateRepoServicer(repoServicer);
-        _validateCollateralAmount(repoServicer, borrower, collateralToken, collateralAmount);
+        _validateCollateralAmount(
+            repoServicer,
+            borrower,
+            collateralToken,
+            collateralAmount
+        );
         if (repoServicer.purchaseToken() != purchaseToken) {
             revert PurchaseTokenMismatch();
         }
 
         ITermRepoLocker termRepoLocker = repoServicer.termRepoLocker();
-        IERC20(purchaseToken).forceApprove(address(termRepoLocker), repaymentAmount);
+        IERC20(purchaseToken).forceApprove(
+            address(termRepoLocker),
+            repaymentAmount
+        );
 
         repoServicer.submitRepurchasePayment(borrower, repaymentAmount);
-        ITermRepoCollateralManager collateralManager = repoServicer.termRepoCollateralManager();
-        if (collateralManager.getCollateralBalance(borrower, collateralToken) > 0) {
+        ITermRepoCollateralManager collateralManager = repoServicer
+            .termRepoCollateralManager();
+        if (
+            collateralManager.getCollateralBalance(borrower, collateralToken) >
+            0
+        ) {
             revert CollateralTransferFailed();
         }
 
@@ -727,7 +929,11 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
                 address(collateralToken)
             );
         } else {
-            IERC20(collateralToken).safeTransferFrom(borrower, address(this), collateralAmount);
+            IERC20(collateralToken).safeTransferFrom(
+                borrower,
+                address(this),
+                collateralAmount
+            );
         }
     }
 
@@ -757,82 +963,115 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         address termRepoServicer = actionHookInput.targetAddress;
         address borrower = actionHookInput.user;
 
-        ITermRepoServicer _termRepoServicer = ITermRepoServicer(termRepoServicer);
+        ITermRepoServicer _termRepoServicer = ITermRepoServicer(
+            termRepoServicer
+        );
         address purchaseToken = _termRepoServicer.purchaseToken();
-        uint256 repurchaseObligation = _termRepoServicer.getBorrowerRepurchaseObligation(borrower);
+        uint256 repurchaseObligation = _termRepoServicer
+            .getBorrowerRepurchaseObligation(borrower);
 
-        _validateCollateralToken(_termRepoServicer, actionHookInput.outputToken);
+        _validateCollateralToken(
+            _termRepoServicer,
+            actionHookInput.outputToken
+        );
         address collateralToken = actionHookInput.outputToken;
 
         if (purchaseToken == collateralToken) {
             revert InputOutputTokenCollision();
         }
-        
-        return PreviewAction({
-            expectedInputToken: purchaseToken,
-            expectedInputAmount: repurchaseObligation,
-            expectedOutputToken: collateralToken,
-            expectedOutputAmount: actionHookInput.minOutputAmount,
-            isDeterministic: true
-        });
+
+        return
+            PreviewAction({
+                expectedInputToken: purchaseToken,
+                expectedInputAmount: repurchaseObligation,
+                expectedOutputToken: collateralToken,
+                expectedOutputAmount: actionHookInput.minOutputAmount,
+                isDeterministic: true
+            });
     }
-    
+
     // ========================================================================
     // = Internal Validation Functions  ======================================
     // ========================================================================
 
-    function _validateAuctionBidLocker(ITermAuctionBidLocker auctionBidLocker) private view {
+    function _validateAuctionBidLocker(
+        ITermAuctionBidLocker auctionBidLocker
+    ) private view {
         TermStorage storage s = LibTermStorage.termStorage();
-        ITermController termController = auctionBidLocker.termAuction().controller();
+        ITermController termController = auctionBidLocker
+            .termAuction()
+            .controller();
         if (!s.approvedTermControllers[address(termController)]) {
             revert InvalidTermController();
         }
-        if (!termController.isTermDeployed(address(auctionBidLocker)) && !termController.isFactoryDeployed(address(auctionBidLocker))) {
+        if (
+            !termController.isTermDeployed(address(auctionBidLocker)) &&
+            !termController.isFactoryDeployed(address(auctionBidLocker))
+        ) {
             revert InvalidRepoId();
         }
     }
 
-    function _validateAuctionOfferLocker(ITermAuctionOfferLocker auctionOfferLocker) private view {
+    function _validateAuctionOfferLocker(
+        ITermAuctionOfferLocker auctionOfferLocker
+    ) private view {
         TermStorage storage s = LibTermStorage.termStorage();
-        ITermController termController = auctionOfferLocker.termAuction().controller();
+        ITermController termController = auctionOfferLocker
+            .termAuction()
+            .controller();
         if (!s.approvedTermControllers[address(termController)]) {
             revert InvalidTermController();
         }
-        if (!termController.isTermDeployed(address(auctionOfferLocker)) && !termController.isFactoryDeployed(address(auctionOfferLocker))) {
+        if (
+            !termController.isTermDeployed(address(auctionOfferLocker)) &&
+            !termController.isFactoryDeployed(address(auctionOfferLocker))
+        ) {
             revert InvalidRepoId();
         }
     }
-    
+
     function _validateRepoServicer(ITermRepoServicer servicer) private view {
         TermStorage storage s = LibTermStorage.termStorage();
         ITermController termController = servicer.termController();
         if (!s.approvedTermControllers[address(termController)]) {
             revert InvalidTermController();
         }
-        if (!termController.isTermDeployed(address(servicer)) && !termController.isFactoryDeployed(address(servicer))) {
+        if (
+            !termController.isTermDeployed(address(servicer)) &&
+            !termController.isFactoryDeployed(address(servicer))
+        ) {
             revert InvalidRepoId();
         }
     }
 
-    function _validateCollateralManager(ITermRepoCollateralManager collateralManager) private view {
+    function _validateCollateralManager(
+        ITermRepoCollateralManager collateralManager
+    ) private view {
         TermStorage storage s = LibTermStorage.termStorage();
         ITermController termController = collateralManager.termController();
         if (!s.approvedTermControllers[address(termController)]) {
             revert InvalidTermController();
         }
-        if (!termController.isTermDeployed(address(collateralManager)) && !termController.isFactoryDeployed(address(collateralManager))) {
+        if (
+            !termController.isTermDeployed(address(collateralManager)) &&
+            !termController.isFactoryDeployed(address(collateralManager))
+        ) {
             revert InvalidRepoId();
         }
-    
     }
 
-    function _validateRolloverManager(ITermRepoRolloverManager rolloverManager) private view {
+    function _validateRolloverManager(
+        ITermRepoRolloverManager rolloverManager
+    ) private view {
         TermStorage storage s = LibTermStorage.termStorage();
         ITermController termController = rolloverManager.termController();
         if (!s.approvedTermControllers[address(termController)]) {
             revert InvalidTermController();
         }
-        if (!termController.isTermDeployed(address(rolloverManager)) && !termController.isFactoryDeployed(address(rolloverManager))) {
+        if (
+            !termController.isTermDeployed(address(rolloverManager)) &&
+            !termController.isFactoryDeployed(address(rolloverManager))
+        ) {
             revert InvalidRepoId();
         }
     }
@@ -843,9 +1082,14 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         address collateralToken,
         uint256 collateralAmount
     ) private view {
-        uint256 borrowerCollateralBalance = repoServicer.termRepoCollateralManager().getCollateralBalance(borrower, collateralToken);
+        uint256 borrowerCollateralBalance = repoServicer
+            .termRepoCollateralManager()
+            .getCollateralBalance(borrower, collateralToken);
         if (collateralAmount > borrowerCollateralBalance) {
-            revert InsufficientCollateralAmount(collateralAmount, borrowerCollateralBalance);
+            revert InsufficientCollateralAmount(
+                collateralAmount,
+                borrowerCollateralBalance
+            );
         }
     }
 
@@ -853,7 +1097,11 @@ contract TermRouterFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContex
         ITermRepoServicer repoServicer,
         address collateralToken
     ) private view {
-        if (repoServicer.termRepoCollateralManager().maintenanceCollateralRatios(collateralToken) == 0) {
+        if (
+            repoServicer
+                .termRepoCollateralManager()
+                .maintenanceCollateralRatios(collateralToken) == 0
+        ) {
             revert InvalidCollateralToken();
         }
     }

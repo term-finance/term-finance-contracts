@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-expressions */
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
@@ -60,16 +58,22 @@ describe("TermRouterFacet Unit Tests", () => {
   let snapshotId: any;
 
   before(async () => {
-    [wallet1, wallet2, borrower, lender, devopsWallet] = await ethers.getSigners();
+    [wallet1, wallet2, borrower, lender, devopsWallet] =
+      await ethers.getSigners();
 
     // Deploy DiamondCutFacet first
-    const DiamondCutFacetFactory = await ethers.getContractFactory("DiamondCutFacet");
+    const DiamondCutFacetFactory =
+      await ethers.getContractFactory("DiamondCutFacet");
     const diamondCutFacet = await DiamondCutFacetFactory.deploy();
     await diamondCutFacet.waitForDeployment();
 
     // Deploy TermDiamond
-    const TermDiamondFactoryFactory = await ethers.getContractFactory("TermDiamondFactory");
-    const termDiamondFactory = await TermDiamondFactoryFactory.deploy(devopsWallet.address, devopsWallet.address);
+    const TermDiamondFactoryFactory =
+      await ethers.getContractFactory("TermDiamondFactory");
+    const termDiamondFactory = await TermDiamondFactoryFactory.deploy(
+      devopsWallet.address,
+      devopsWallet.address,
+    );
     await termDiamondFactory.waitForDeployment();
 
     const tx = await termDiamondFactory.deployDiamond();
@@ -77,30 +81,39 @@ describe("TermRouterFacet Unit Tests", () => {
 
     // Read diamond address from DiamondDeployed event log
     const diamondDeployedEvent = receipt?.logs.find(
-      log => log.topics[0] === termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash
+      (log) =>
+        log.topics[0] ===
+        termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash,
     );
 
     if (!diamondDeployedEvent) {
       throw new Error("DiamondDeployed event not found");
     }
 
-    const decodedEvent = termDiamondFactory.interface.parseLog(diamondDeployedEvent);
+    const decodedEvent =
+      termDiamondFactory.interface.parseLog(diamondDeployedEvent);
     const diamondAddress = decodedEvent?.args[0];
     const diamondCutFacetAddr = decodedEvent?.args[1];
     termDiamond = await ethers.getContractAt("TermDiamond", diamondAddress);
 
     // Deploy TermRouterFacet
-    const TermRouterFacetFactory = await ethers.getContractFactory("TermRouterFacet");
+    const TermRouterFacetFactory =
+      await ethers.getContractFactory("TermRouterFacet");
     const termRouterFacetImpl = await TermRouterFacetFactory.deploy();
     await termRouterFacetImpl.waitForDeployment();
 
     // Deploy TermControllerFacet
-    const TermControllerFacetFactory = await ethers.getContractFactory("TermControllerFacet");
+    const TermControllerFacetFactory = await ethers.getContractFactory(
+      "TermControllerFacet",
+    );
     const termControllerFacetImpl = await TermControllerFacetFactory.deploy();
     await termControllerFacetImpl.waitForDeployment();
 
     // Add both facets to diamond
-    const diamondCut = await ethers.getContractAt("DiamondCutFacet", await termDiamond.getAddress());
+    const diamondCut = await ethers.getContractAt(
+      "DiamondCutFacet",
+      await termDiamond.getAddress(),
+    );
 
     const routerSelectors = [
       "submitRepurchasePayment(address,uint256,bool)",
@@ -116,32 +129,42 @@ describe("TermRouterFacet Unit Tests", () => {
       "unlockBids(address,bytes32[])",
       "lockOffers(address,(bytes32,address,bytes32,uint256,address)[],bool)",
       "lockOffersWithReferral(address,(bytes32,address,bytes32,uint256,address)[],address,bool)",
-      "unlockOffers(address,bytes32[])"
-    ].map(sig => ethers.id(sig).slice(0, 10));
+      "unlockOffers(address,bytes32[])",
+    ].map((sig) => ethers.id(sig).slice(0, 10));
 
     const controllerSelectors = [
       "approveTermController(address)",
       "revokeTermController(address)",
       "approveFeeRecipient(address)",
-      "revokeFeeRecipient(address)"
-    ].map(sig => ethers.id(sig).slice(0, 10));
+      "revokeFeeRecipient(address)",
+    ].map((sig) => ethers.id(sig).slice(0, 10));
 
-    await diamondCut.connect(devopsWallet).diamondCut([
-      {
-        facetAddress: await termRouterFacetImpl.getAddress(),
-        action: 0, // Add
-        functionSelectors: routerSelectors
-      },
-      {
-        facetAddress: await termControllerFacetImpl.getAddress(),
-        action: 0, // Add
-        functionSelectors: controllerSelectors
-      }
-    ], ZeroAddress, "0x");
+    await diamondCut.connect(devopsWallet).diamondCut(
+      [
+        {
+          facetAddress: await termRouterFacetImpl.getAddress(),
+          action: 0, // Add
+          functionSelectors: routerSelectors,
+        },
+        {
+          facetAddress: await termControllerFacetImpl.getAddress(),
+          action: 0, // Add
+          functionSelectors: controllerSelectors,
+        },
+      ],
+      ZeroAddress,
+      "0x",
+    );
 
     // Set up facet interfaces
-    termRouterFacet = await ethers.getContractAt("TermRouterFacet", await termDiamond.getAddress());
-    termControllerFacet = await ethers.getContractAt("TermControllerFacet", await termDiamond.getAddress());
+    termRouterFacet = await ethers.getContractAt(
+      "TermRouterFacet",
+      await termDiamond.getAddress(),
+    );
+    termControllerFacet = await ethers.getContractAt(
+      "TermControllerFacet",
+      await termDiamond.getAddress(),
+    );
 
     // Deploy mock contracts
     mockTermController = await deployMock<ITermController>(
@@ -154,10 +177,11 @@ describe("TermRouterFacet Unit Tests", () => {
       wallet1,
     );
 
-    mockTermRepoCollateralManager = await deployMock<ITermRepoCollateralManager>(
-      TermRepoCollateralManager__factory.abi,
-      wallet1,
-    );
+    mockTermRepoCollateralManager =
+      await deployMock<ITermRepoCollateralManager>(
+        TermRepoCollateralManager__factory.abi,
+        wallet1,
+      );
 
     mockTermRepoLocker = await deployMock<ITermRepoLocker>(
       TermRepoLocker__factory.abi,
@@ -174,10 +198,7 @@ describe("TermRouterFacet Unit Tests", () => {
       wallet1,
     );
 
-    mockPurchaseToken = await deployMock<IERC20>(
-      IERC20__factory.abi,
-      wallet1,
-    );
+    mockPurchaseToken = await deployMock<IERC20>(IERC20__factory.abi, wallet1);
 
     mockCollateralToken = await deployMock<IERC20>(
       IERC20__factory.abi,
@@ -201,19 +222,21 @@ describe("TermRouterFacet Unit Tests", () => {
 
     // Setup mock interfaces - make isTermDeployed return true by default for all calls
     const termControllerInterface = TermController__factory.createInterface();
-      await mockTermController.setup({
+    await mockTermController.setup(
+      {
         abi: termControllerInterface.getFunction("isTermDeployed"),
         outputs: [true], // Return true for any input by default
         kind: "read",
       },
       {
-      abi: termControllerInterface.getFunction("isFactoryDeployed"),
-      outputs: [false], // Return true for any input by default
-      kind: "read",
-    }
+        abi: termControllerInterface.getFunction("isFactoryDeployed"),
+        outputs: [false], // Return true for any input by default
+        kind: "read",
+      },
     );
 
-    const termRepoServicerInterface = TermRepoServicer__factory.createInterface();
+    const termRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
     await mockTermRepoServicer.setup(
       {
         abi: termRepoServicerInterface.getFunction("termController"),
@@ -236,19 +259,27 @@ describe("TermRouterFacet Unit Tests", () => {
         kind: "read",
       },
       {
-        abi: termRepoServicerInterface.getFunction("submitRepurchasePayment(address,uint256)"),
+        abi: termRepoServicerInterface.getFunction(
+          "submitRepurchasePayment(address,uint256)",
+        ),
         kind: "write",
       },
       {
-        abi: termRepoServicerInterface.getFunction("burnCollapseExposure(address,uint256)"),
+        abi: termRepoServicerInterface.getFunction(
+          "burnCollapseExposure(address,uint256)",
+        ),
         kind: "write",
       },
       {
-        abi: termRepoServicerInterface.getFunction("mintOpenExposure(address,uint256,uint256[])"),
+        abi: termRepoServicerInterface.getFunction(
+          "mintOpenExposure(address,uint256,uint256[])",
+        ),
         kind: "write",
       },
       {
-        abi: termRepoServicerInterface.getFunction("redeemTermRepoTokens(address,uint256)"),
+        abi: termRepoServicerInterface.getFunction(
+          "redeemTermRepoTokens(address,uint256)",
+        ),
         kind: "write",
       },
       {
@@ -265,20 +296,19 @@ describe("TermRouterFacet Unit Tests", () => {
         abi: termRepoServicerInterface.getFunction("termRepoToken"),
         outputs: [await mockTermRepoToken.getAddress()],
         kind: "read",
-      }
+      },
     );
 
     // Setup mockTermRepoToken
     const termRepoTokenInterface = TermRepoToken__factory.createInterface();
-    await mockTermRepoToken.setup(
-      {
-        abi: termRepoTokenInterface.getFunction("transfer"),
-        outputs: [true],
-        kind: "read",
-      }
-    );
+    await mockTermRepoToken.setup({
+      abi: termRepoTokenInterface.getFunction("transfer"),
+      outputs: [true],
+      kind: "read",
+    });
 
-    const collateralManagerInterface = TermRepoCollateralManager__factory.createInterface();
+    const collateralManagerInterface =
+      TermRepoCollateralManager__factory.createInterface();
     await mockTermRepoCollateralManager.setup(
       {
         abi: collateralManagerInterface.getFunction("termController"),
@@ -303,16 +333,21 @@ describe("TermRouterFacet Unit Tests", () => {
         kind: "read",
       },
       {
-        abi: collateralManagerInterface.getFunction("externalLockCollateral(address,address,uint256)"),
+        abi: collateralManagerInterface.getFunction(
+          "externalLockCollateral(address,address,uint256)",
+        ),
         kind: "write",
       },
       {
-        abi: collateralManagerInterface.getFunction("externalUnlockCollateral(address,address,uint256)"),
+        abi: collateralManagerInterface.getFunction(
+          "externalUnlockCollateral(address,address,uint256)",
+        ),
         kind: "write",
-      }
+      },
     );
 
-    const rolloverManagerInterface = TermRepoRolloverManager__factory.createInterface();
+    const rolloverManagerInterface =
+      TermRepoRolloverManager__factory.createInterface();
     await mockTermRepoRolloverManager.setup(
       {
         abi: rolloverManagerInterface.getFunction("termController"),
@@ -320,13 +355,15 @@ describe("TermRouterFacet Unit Tests", () => {
         kind: "read",
       },
       {
-        abi: rolloverManagerInterface.getFunction("electRollover(address,(address,uint256,bytes32))"),
+        abi: rolloverManagerInterface.getFunction(
+          "electRollover(address,(address,uint256,bytes32))",
+        ),
         kind: "write",
       },
       {
         abi: rolloverManagerInterface.getFunction("cancelRollover(address)"),
         kind: "write",
-      }
+      },
     );
 
     const erc20Interface = IERC20__factory.createInterface();
@@ -345,7 +382,7 @@ describe("TermRouterFacet Unit Tests", () => {
         abi: erc20Interface.getFunction("balanceOf"),
         outputs: [0n],
         kind: "read",
-      }
+      },
     );
 
     await mockCollateralToken.setup(
@@ -363,7 +400,7 @@ describe("TermRouterFacet Unit Tests", () => {
         abi: erc20Interface.getFunction("balanceOf"),
         outputs: [0n],
         kind: "read",
-      }
+      },
     );
 
     // Setup auction mock interfaces with all required methods
@@ -375,76 +412,100 @@ describe("TermRouterFacet Unit Tests", () => {
 
     await mockTermAuctionBidLocker.setup(
       {
-        abi: ITermAuctionBidLocker__factory.createInterface().getFunction("termAuction"),
+        abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+          "termAuction",
+        ),
         outputs: [await mockTermAuction.getAddress()],
         kind: "read",
       },
       {
-        abi: ITermAuctionBidLocker__factory.createInterface().getFunction("termRepoServicer"),
+        abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+          "termRepoServicer",
+        ),
         outputs: [await mockTermRepoServicer.getAddress()],
         kind: "read",
       },
       {
-        abi: ITermAuctionBidLocker__factory.createInterface().getFunction("lockedBid"),
-        outputs: [{
-          id: ethers.ZeroHash,
-          bidder: ethers.ZeroAddress,
-          bidPriceRevealed: 0,
-          bidPriceHash: ethers.ZeroHash,
-          amount: 0,
-          collateralAmounts: [0],
-          purchaseToken: ethers.ZeroAddress,
-          collateralTokens: [ethers.ZeroAddress],
-          isRollover: false,
-          rolloverPairOffTermRepoServicer: ethers.ZeroAddress,
-          isRevealed: false
-        }],
+        abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+          "lockedBid",
+        ),
+        outputs: [
+          {
+            id: ethers.ZeroHash,
+            bidder: ethers.ZeroAddress,
+            bidPriceRevealed: 0,
+            bidPriceHash: ethers.ZeroHash,
+            amount: 0,
+            collateralAmounts: [0],
+            purchaseToken: ethers.ZeroAddress,
+            collateralTokens: [ethers.ZeroAddress],
+            isRollover: false,
+            rolloverPairOffTermRepoServicer: ethers.ZeroAddress,
+            isRevealed: false,
+          },
+        ],
         kind: "read",
       },
       {
-        abi: ITermAuctionBidLocker__factory.createInterface().getFunction("lockBidsWithReferral(address,(bytes32,address,bytes32,uint256,uint256[],address,address[])[],address)"),
+        abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+          "lockBidsWithReferral(address,(bytes32,address,bytes32,uint256,uint256[],address,address[])[],address)",
+        ),
         outputs: [[getBytesHash("bid-id-1")]],
         kind: "read",
       },
       {
-        abi: ITermAuctionBidLocker__factory.createInterface().getFunction("unlockBids(address,bytes32[])"),
+        abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+          "unlockBids(address,bytes32[])",
+        ),
         kind: "write",
-      }
+      },
     );
 
     await mockTermAuctionOfferLocker.setup(
       {
-        abi: ITermAuctionOfferLocker__factory.createInterface().getFunction("termAuction"),
+        abi: ITermAuctionOfferLocker__factory.createInterface().getFunction(
+          "termAuction",
+        ),
         outputs: [await mockTermAuction.getAddress()],
         kind: "read",
       },
       {
-        abi: ITermAuctionOfferLocker__factory.createInterface().getFunction("termRepoServicer"),
+        abi: ITermAuctionOfferLocker__factory.createInterface().getFunction(
+          "termRepoServicer",
+        ),
         outputs: [await mockTermRepoServicer.getAddress()],
         kind: "read",
       },
       {
-        abi: ITermAuctionOfferLocker__factory.createInterface().getFunction("lockedOffer"),
-        outputs: [{
-          id: ethers.ZeroHash,
-          offeror: ethers.ZeroAddress,
-          offerPriceRevealed: 0,
-          offerPriceHash: ethers.ZeroHash,
-          amount: 0,
-          purchaseToken: ethers.ZeroAddress,
-          isRevealed: false
-        }],
+        abi: ITermAuctionOfferLocker__factory.createInterface().getFunction(
+          "lockedOffer",
+        ),
+        outputs: [
+          {
+            id: ethers.ZeroHash,
+            offeror: ethers.ZeroAddress,
+            offerPriceRevealed: 0,
+            offerPriceHash: ethers.ZeroHash,
+            amount: 0,
+            purchaseToken: ethers.ZeroAddress,
+            isRevealed: false,
+          },
+        ],
         kind: "read",
       },
       {
-        abi: ITermAuctionOfferLocker__factory.createInterface().getFunction("lockOffersWithReferral(address,(bytes32,address,bytes32,uint256,address)[],address)"),
+        abi: ITermAuctionOfferLocker__factory.createInterface().getFunction(
+          "lockOffersWithReferral(address,(bytes32,address,bytes32,uint256,address)[],address)",
+        ),
         outputs: [[getBytesHash("bid-id-1")]],
-        kind: "read"
-        },
+        kind: "read",
+      },
       {
-        abi: ITermAuctionOfferLocker__factory.createInterface().getFunction("unlockOffers(address,bytes32[])"),
+        abi: ITermAuctionOfferLocker__factory.createInterface().getFunction(
+          "unlockOffers(address,bytes32[])",
+        ),
         kind: "write",
-      }
+      },
     );
   });
 
@@ -467,9 +528,9 @@ describe("TermRouterFacet Unit Tests", () => {
   // Helper function to approve term controller using TermControllerFacet
   async function approveTermControllerProper() {
     // Use the TermControllerFacet to properly approve the mock term controller
-    await termControllerFacet.connect(devopsWallet).approveTermController(
-      await mockTermController.getAddress()
-    );
+    await termControllerFacet
+      .connect(devopsWallet)
+      .approveTermController(await mockTermController.getAddress());
   }
 
   // Helper function to setup mocks for successful execution
@@ -522,29 +583,33 @@ describe("TermRouterFacet Unit Tests", () => {
   describe("TermControllerFacet Integration", () => {
     it("should successfully approve term controller", async () => {
       await expect(
-        termControllerFacet.connect(devopsWallet).approveTermController(
-          await mockTermController.getAddress()
-        )
+        termControllerFacet
+          .connect(devopsWallet)
+          .approveTermController(await mockTermController.getAddress()),
       ).to.not.be.reverted;
     });
 
     it("should verify controller approval state", async () => {
       // Before approval - should get InvalidTermController
       await expect(
-        termRouterFacet.connect(borrower).burnCollapseExposure(
-          await mockTermRepoServicer.getAddress(),
-          ethers.parseEther("50")
-        )
+        termRouterFacet
+          .connect(borrower)
+          .burnCollapseExposure(
+            await mockTermRepoServicer.getAddress(),
+            ethers.parseEther("50"),
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
 
       // After approval - should get past InvalidTermController check
-      await termControllerFacet.connect(devopsWallet).approveTermController(
-        await mockTermController.getAddress()
-      );
+      await termControllerFacet
+        .connect(devopsWallet)
+        .approveTermController(await mockTermController.getAddress());
 
       // Now it should fail at InvalidRepoId (if isTermDeployed = false) or proceed further
       await mockTermController.setup({
-        abi: TermController__factory.createInterface().getFunction("isTermDeployed"),
+        abi: TermController__factory.createInterface().getFunction(
+          "isTermDeployed",
+        ),
         inputs: [await mockTermRepoServicer.getAddress()],
         outputs: [false],
         kind: "read",
@@ -552,10 +617,12 @@ describe("TermRouterFacet Unit Tests", () => {
 
       // This should now give InvalidRepoId instead of InvalidTermController
       await expect(
-        termRouterFacet.connect(borrower).burnCollapseExposure(
-          await mockTermRepoServicer.getAddress(),
-          ethers.parseEther("50")
-        )
+        termRouterFacet
+          .connect(borrower)
+          .burnCollapseExposure(
+            await mockTermRepoServicer.getAddress(),
+            ethers.parseEther("50"),
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
   });
@@ -563,11 +630,13 @@ describe("TermRouterFacet Unit Tests", () => {
   describe("submitRepurchasePayment", () => {
     it("should revert with InvalidTermController when term controller is not approved", async () => {
       await expect(
-        termRouterFacet.connect(borrower).submitRepurchasePayment(
-          await mockTermRepoServicer.getAddress(),
-          ethers.parseEther("100"),
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .submitRepurchasePayment(
+            await mockTermRepoServicer.getAddress(),
+            ethers.parseEther("100"),
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -584,11 +653,13 @@ describe("TermRouterFacet Unit Tests", () => {
       });
 
       await expect(
-        termRouterFacet.connect(borrower).submitRepurchasePayment(
-          await mockTermRepoServicer.getAddress(),
-          ethers.parseEther("100"),
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .submitRepurchasePayment(
+            await mockTermRepoServicer.getAddress(),
+            ethers.parseEther("100"),
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
 
@@ -597,27 +668,30 @@ describe("TermRouterFacet Unit Tests", () => {
       const amount = ethers.parseEther("100");
 
       await expect(
-        termRouterFacet.connect(borrower).submitRepurchasePayment(
-          await mockTermRepoServicer.getAddress(),
-          amount,
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .submitRepurchasePayment(
+            await mockTermRepoServicer.getAddress(),
+            amount,
+            false,
+          ),
       ).to.not.be.reverted;
 
       // Transaction succeeded - this indicates all token operations and servicer calls worked
       // The mock library doesn't support parameter verification, but successful execution
       // confirms the correct contract interactions occurred
     });
-
   });
 
   describe("burnCollapseExposure", () => {
     it("should revert with InvalidTermController when term controller is not approved", async () => {
       await expect(
-        termRouterFacet.connect(borrower).burnCollapseExposure(
-          await mockTermRepoServicer.getAddress(),
-          ethers.parseEther("50")
-        )
+        termRouterFacet
+          .connect(borrower)
+          .burnCollapseExposure(
+            await mockTermRepoServicer.getAddress(),
+            ethers.parseEther("50"),
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -634,10 +708,12 @@ describe("TermRouterFacet Unit Tests", () => {
       });
 
       await expect(
-        termRouterFacet.connect(borrower).burnCollapseExposure(
-          await mockTermRepoServicer.getAddress(),
-          ethers.parseEther("50")
-        )
+        termRouterFacet
+          .connect(borrower)
+          .burnCollapseExposure(
+            await mockTermRepoServicer.getAddress(),
+            ethers.parseEther("50"),
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
 
@@ -646,26 +722,29 @@ describe("TermRouterFacet Unit Tests", () => {
       const amountToBurn = ethers.parseEther("50");
 
       await expect(
-        termRouterFacet.connect(borrower).burnCollapseExposure(
-          await mockTermRepoServicer.getAddress(),
-          amountToBurn
-        )
+        termRouterFacet
+          .connect(borrower)
+          .burnCollapseExposure(
+            await mockTermRepoServicer.getAddress(),
+            amountToBurn,
+          ),
       ).to.not.be.reverted;
 
       // Transaction succeeded - confirms servicer method was called correctly
     });
-
   });
 
   describe("mintOpenExposure", () => {
     it("should revert with InvalidTermController when term controller is not approved", async () => {
       await expect(
-        termRouterFacet.connect(borrower).mintOpenExposure(
-          await mockTermRepoServicer.getAddress(),
-          ethers.parseEther("100"),
-          [ethers.parseEther("150")],
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .mintOpenExposure(
+            await mockTermRepoServicer.getAddress(),
+            ethers.parseEther("100"),
+            [ethers.parseEther("150")],
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -682,13 +761,60 @@ describe("TermRouterFacet Unit Tests", () => {
       });
 
       await expect(
-        termRouterFacet.connect(borrower).mintOpenExposure(
-          await mockTermRepoServicer.getAddress(),
-          ethers.parseEther("100"),
-          [ethers.parseEther("150")],
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .mintOpenExposure(
+            await mockTermRepoServicer.getAddress(),
+            ethers.parseEther("100"),
+            [ethers.parseEther("150")],
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
+    });
+
+    it("should revert with ZeroMintAmount when repoTokenAmount is zero", async () => {
+      await setupSuccessfulMocks();
+
+      await expect(
+        termRouterFacet
+          .connect(borrower)
+          .mintOpenExposure(
+            await mockTermRepoServicer.getAddress(),
+            0,
+            [ethers.parseEther("150")],
+            false,
+          ),
+      ).to.be.revertedWithCustomError(termRouterFacet, "ZeroMintAmount");
+    });
+
+    it("should revert with ZeroMintAmount when repoTokenAmount is zero and usePermit2 is true", async () => {
+      await setupSuccessfulMocks();
+
+      await expect(
+        termRouterFacet
+          .connect(borrower)
+          .mintOpenExposure(
+            await mockTermRepoServicer.getAddress(),
+            0,
+            [ethers.parseEther("150")],
+            true,
+          ),
+      ).to.be.revertedWithCustomError(termRouterFacet, "ZeroMintAmount");
+    });
+
+    it("should revert with ZeroMintAmount before repo servicer validation runs", async () => {
+      // @dev No term controller approval here: the zero check precedes
+      // _validateRepoServicer, so ZeroMintAmount wins over InvalidTermController.
+      await expect(
+        termRouterFacet
+          .connect(borrower)
+          .mintOpenExposure(
+            await mockTermRepoServicer.getAddress(),
+            0,
+            [ethers.parseEther("150")],
+            false,
+          ),
+      ).to.be.revertedWithCustomError(termRouterFacet, "ZeroMintAmount");
     });
 
     it("should successfully mint open exposure when validation passes", async () => {
@@ -697,25 +823,28 @@ describe("TermRouterFacet Unit Tests", () => {
       const collateralAmounts = [ethers.parseEther("150")];
 
       await expect(
-        termRouterFacet.connect(borrower).mintOpenExposure(
-          await mockTermRepoServicer.getAddress(),
-          repoTokenAmount,
-          collateralAmounts,
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .mintOpenExposure(
+            await mockTermRepoServicer.getAddress(),
+            repoTokenAmount,
+            collateralAmounts,
+            false,
+          ),
       ).to.not.be.reverted;
     });
-
   });
 
   describe("redeemTermRepoTokens", () => {
     it("should revert with InvalidTermController when term controller is not approved", async () => {
       await expect(
-        termRouterFacet.connect(lender).redeemTermRepoTokens(
-          await mockTermRepoServicer.getAddress(),
-          lender.address,
-          ethers.parseEther("100")
-        )
+        termRouterFacet
+          .connect(lender)
+          .redeemTermRepoTokens(
+            await mockTermRepoServicer.getAddress(),
+            lender.address,
+            ethers.parseEther("100"),
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -732,11 +861,13 @@ describe("TermRouterFacet Unit Tests", () => {
       });
 
       await expect(
-        termRouterFacet.connect(lender).redeemTermRepoTokens(
-          await mockTermRepoServicer.getAddress(),
-          lender.address,
-          ethers.parseEther("100")
-        )
+        termRouterFacet
+          .connect(lender)
+          .redeemTermRepoTokens(
+            await mockTermRepoServicer.getAddress(),
+            lender.address,
+            ethers.parseEther("100"),
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
 
@@ -745,26 +876,28 @@ describe("TermRouterFacet Unit Tests", () => {
       const amountToRedeem = ethers.parseEther("100");
 
       await expect(
-        termRouterFacet.connect(lender).redeemTermRepoTokens(
-          await mockTermRepoServicer.getAddress(),
-          lender.address,
-          amountToRedeem
-        )
+        termRouterFacet
+          .connect(lender)
+          .redeemTermRepoTokens(
+            await mockTermRepoServicer.getAddress(),
+            lender.address,
+            amountToRedeem,
+          ),
       ).to.not.be.reverted;
-
     });
-
   });
 
   describe("externalLockCollateral", () => {
     it("should revert with InvalidTermController when term controller is not approved", async () => {
       await expect(
-        termRouterFacet.connect(borrower).externalLockCollateral(
-          await mockTermRepoCollateralManager.getAddress(),
-          await mockCollateralToken.getAddress(),
-          ethers.parseEther("100"),
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .externalLockCollateral(
+            await mockTermRepoCollateralManager.getAddress(),
+            await mockCollateralToken.getAddress(),
+            ethers.parseEther("100"),
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -781,12 +914,14 @@ describe("TermRouterFacet Unit Tests", () => {
       });
 
       await expect(
-        termRouterFacet.connect(borrower).externalLockCollateral(
-          await mockTermRepoCollateralManager.getAddress(),
-          await mockCollateralToken.getAddress(),
-          ethers.parseEther("100"),
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .externalLockCollateral(
+            await mockTermRepoCollateralManager.getAddress(),
+            await mockCollateralToken.getAddress(),
+            ethers.parseEther("100"),
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
 
@@ -796,26 +931,28 @@ describe("TermRouterFacet Unit Tests", () => {
       const collateralTokenAddress = await mockCollateralToken.getAddress();
 
       await expect(
-        termRouterFacet.connect(borrower).externalLockCollateral(
-          await mockTermRepoCollateralManager.getAddress(),
-          collateralTokenAddress,
-          amount,
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .externalLockCollateral(
+            await mockTermRepoCollateralManager.getAddress(),
+            collateralTokenAddress,
+            amount,
+            false,
+          ),
       ).to.not.be.reverted;
-
     });
-
   });
 
   describe("externalUnlockCollateral", () => {
     it("should revert with InvalidTermController when term controller is not approved", async () => {
       await expect(
-        termRouterFacet.connect(borrower).externalUnlockCollateral(
-          await mockTermRepoCollateralManager.getAddress(),
-          await mockCollateralToken.getAddress(),
-          ethers.parseEther("100")
-        )
+        termRouterFacet
+          .connect(borrower)
+          .externalUnlockCollateral(
+            await mockTermRepoCollateralManager.getAddress(),
+            await mockCollateralToken.getAddress(),
+            ethers.parseEther("100"),
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -832,11 +969,13 @@ describe("TermRouterFacet Unit Tests", () => {
       });
 
       await expect(
-        termRouterFacet.connect(borrower).externalUnlockCollateral(
-          await mockTermRepoCollateralManager.getAddress(),
-          await mockCollateralToken.getAddress(),
-          ethers.parseEther("100")
-        )
+        termRouterFacet
+          .connect(borrower)
+          .externalUnlockCollateral(
+            await mockTermRepoCollateralManager.getAddress(),
+            await mockCollateralToken.getAddress(),
+            ethers.parseEther("100"),
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
 
@@ -846,14 +985,15 @@ describe("TermRouterFacet Unit Tests", () => {
       const collateralTokenAddress = await mockCollateralToken.getAddress();
 
       await expect(
-        termRouterFacet.connect(borrower).externalUnlockCollateral(
-          await mockTermRepoCollateralManager.getAddress(),
-          collateralTokenAddress,
-          amount
-        )
+        termRouterFacet
+          .connect(borrower)
+          .externalUnlockCollateral(
+            await mockTermRepoCollateralManager.getAddress(),
+            collateralTokenAddress,
+            amount,
+          ),
       ).to.not.be.reverted;
     });
-
   });
 
   describe("electRollover", () => {
@@ -865,10 +1005,12 @@ describe("TermRouterFacet Unit Tests", () => {
       } as any;
 
       await expect(
-        termRouterFacet.connect(borrower).electRollover(
-          await mockTermRepoRolloverManager.getAddress(),
-          rolloverElection
-        )
+        termRouterFacet
+          .connect(borrower)
+          .electRollover(
+            await mockTermRepoRolloverManager.getAddress(),
+            rolloverElection,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -891,10 +1033,12 @@ describe("TermRouterFacet Unit Tests", () => {
       } as any;
 
       await expect(
-        termRouterFacet.connect(borrower).electRollover(
-          await mockTermRepoRolloverManager.getAddress(),
-          rolloverElection
-        )
+        termRouterFacet
+          .connect(borrower)
+          .electRollover(
+            await mockTermRepoRolloverManager.getAddress(),
+            rolloverElection,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
 
@@ -907,21 +1051,22 @@ describe("TermRouterFacet Unit Tests", () => {
       } as any;
 
       await expect(
-        termRouterFacet.connect(borrower).electRollover(
-          await mockTermRepoRolloverManager.getAddress(),
-          rolloverElection
-        )
+        termRouterFacet
+          .connect(borrower)
+          .electRollover(
+            await mockTermRepoRolloverManager.getAddress(),
+            rolloverElection,
+          ),
       ).to.not.be.reverted;
     });
-
   });
 
   describe("cancelRollover", () => {
     it("should revert with InvalidTermController when term controller is not approved", async () => {
       await expect(
-        termRouterFacet.connect(borrower).cancelRollover(
-          await mockTermRepoRolloverManager.getAddress()
-        )
+        termRouterFacet
+          .connect(borrower)
+          .cancelRollover(await mockTermRepoRolloverManager.getAddress()),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -938,9 +1083,9 @@ describe("TermRouterFacet Unit Tests", () => {
       });
 
       await expect(
-        termRouterFacet.connect(borrower).cancelRollover(
-          await mockTermRepoRolloverManager.getAddress()
-        )
+        termRouterFacet
+          .connect(borrower)
+          .cancelRollover(await mockTermRepoRolloverManager.getAddress()),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
 
@@ -948,14 +1093,13 @@ describe("TermRouterFacet Unit Tests", () => {
       await setupSuccessfulMocks();
 
       await expect(
-        termRouterFacet.connect(borrower).cancelRollover(
-          await mockTermRepoRolloverManager.getAddress()
-        )
+        termRouterFacet
+          .connect(borrower)
+          .cancelRollover(await mockTermRepoRolloverManager.getAddress()),
       ).to.not.be.reverted;
 
       // Transaction succeeded - confirms rollover manager method was called correctly
     });
-
   });
 
   describe("Function Signature and Access Control Verification", () => {
@@ -970,12 +1114,12 @@ describe("TermRouterFacet Unit Tests", () => {
         "externalLockCollateral",
         "externalUnlockCollateral",
         "electRollover",
-        "cancelRollover"
+        "cancelRollover",
       ];
 
       // All functions should be present on the contract
       for (const funcName of functions) {
-        expect(termRouterFacet[funcName]).to.be.a('function');
+        expect(termRouterFacet[funcName]).to.be.a("function");
       }
     });
 
@@ -985,46 +1129,77 @@ describe("TermRouterFacet Unit Tests", () => {
 
       // Test each function individually to verify they all check access control
       await expect(
-        termRouterFacet.connect(borrower).submitRepurchasePayment(
-          await mockTermRepoServicer.getAddress(), 100, false)
+        termRouterFacet
+          .connect(borrower)
+          .submitRepurchasePayment(
+            await mockTermRepoServicer.getAddress(),
+            100,
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
 
       await expect(
-        termRouterFacet.connect(borrower).burnCollapseExposure(
-          await mockTermRepoServicer.getAddress(), 100)
+        termRouterFacet
+          .connect(borrower)
+          .burnCollapseExposure(await mockTermRepoServicer.getAddress(), 100),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
 
       await expect(
-        termRouterFacet.connect(borrower).mintOpenExposure(
-          await mockTermRepoServicer.getAddress(), 100, [], false)
+        termRouterFacet
+          .connect(borrower)
+          .mintOpenExposure(
+            await mockTermRepoServicer.getAddress(),
+            100,
+            [],
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
 
       await expect(
-        termRouterFacet.connect(lender).redeemTermRepoTokens(
-          await mockTermRepoServicer.getAddress(), lender.address, 100)
+        termRouterFacet
+          .connect(lender)
+          .redeemTermRepoTokens(
+            await mockTermRepoServicer.getAddress(),
+            lender.address,
+            100,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
 
       await expect(
-        termRouterFacet.connect(borrower).externalLockCollateral(
-          await mockTermRepoCollateralManager.getAddress(),
-          await mockCollateralToken.getAddress(), 100, false)
+        termRouterFacet
+          .connect(borrower)
+          .externalLockCollateral(
+            await mockTermRepoCollateralManager.getAddress(),
+            await mockCollateralToken.getAddress(),
+            100,
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
 
       await expect(
-        termRouterFacet.connect(borrower).externalUnlockCollateral(
-          await mockTermRepoCollateralManager.getAddress(),
-          await mockCollateralToken.getAddress(), 100)
+        termRouterFacet
+          .connect(borrower)
+          .externalUnlockCollateral(
+            await mockTermRepoCollateralManager.getAddress(),
+            await mockCollateralToken.getAddress(),
+            100,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
 
       await expect(
-        termRouterFacet.connect(borrower).electRollover(
-          await mockTermRepoRolloverManager.getAddress(),
-          { rolloverAuctionBidLocker: ZeroAddress, rolloverAmount: 100, rolloverBidPriceHash: ethers.ZeroHash })
+        termRouterFacet
+          .connect(borrower)
+          .electRollover(await mockTermRepoRolloverManager.getAddress(), {
+            rolloverAuctionBidLocker: ZeroAddress,
+            rolloverAmount: 100,
+            rolloverBidPriceHash: ethers.ZeroHash,
+          }),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
 
       await expect(
-        termRouterFacet.connect(borrower).cancelRollover(
-          await mockTermRepoRolloverManager.getAddress())
+        termRouterFacet
+          .connect(borrower)
+          .cancelRollover(await mockTermRepoRolloverManager.getAddress()),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
   });
@@ -1032,126 +1207,222 @@ describe("TermRouterFacet Unit Tests", () => {
   describe("TermControllerFacet Direct Operations", () => {
     it("should revert when non-devops tries to approve term controller", async () => {
       await expect(
-        termControllerFacet.connect(wallet1).approveTermController(await mockTermController.getAddress())
-      ).to.be.revertedWithCustomError(termControllerFacet, "AccessControlUnauthorizedAccount");
+        termControllerFacet
+          .connect(wallet1)
+          .approveTermController(await mockTermController.getAddress()),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
-        termControllerFacet.connect(borrower).approveTermController(await mockTermController.getAddress())
-      ).to.be.revertedWithCustomError(termControllerFacet, "AccessControlUnauthorizedAccount");
+        termControllerFacet
+          .connect(borrower)
+          .approveTermController(await mockTermController.getAddress()),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "AccessControlUnauthorizedAccount",
+      );
     });
 
     it("should revert when non-devops tries to revoke term controller", async () => {
       // First approve with devops
-      await termControllerFacet.connect(devopsWallet).approveTermController(await mockTermController.getAddress());
+      await termControllerFacet
+        .connect(devopsWallet)
+        .approveTermController(await mockTermController.getAddress());
 
       // Then try to revoke with non-devops
       await expect(
-        termControllerFacet.connect(wallet1).revokeTermController(await mockTermController.getAddress())
-      ).to.be.revertedWithCustomError(termControllerFacet, "AccessControlUnauthorizedAccount");
+        termControllerFacet
+          .connect(wallet1)
+          .revokeTermController(await mockTermController.getAddress()),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
-        termControllerFacet.connect(borrower).revokeTermController(await mockTermController.getAddress())
-      ).to.be.revertedWithCustomError(termControllerFacet, "AccessControlUnauthorizedAccount");
+        termControllerFacet
+          .connect(borrower)
+          .revokeTermController(await mockTermController.getAddress()),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "AccessControlUnauthorizedAccount",
+      );
     });
 
     it("should revert when non-devops tries to approve fee recipient", async () => {
       await expect(
-        termControllerFacet.connect(wallet1).approveFeeRecipient(wallet2.address)
-      ).to.be.revertedWithCustomError(termControllerFacet, "AccessControlUnauthorizedAccount");
+        termControllerFacet
+          .connect(wallet1)
+          .approveFeeRecipient(wallet2.address),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
-        termControllerFacet.connect(borrower).approveFeeRecipient(wallet2.address)
-      ).to.be.revertedWithCustomError(termControllerFacet, "AccessControlUnauthorizedAccount");
+        termControllerFacet
+          .connect(borrower)
+          .approveFeeRecipient(wallet2.address),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "AccessControlUnauthorizedAccount",
+      );
     });
 
     it("should revert when non-devops tries to revoke fee recipient", async () => {
       // First approve with devops
-      await termControllerFacet.connect(devopsWallet).approveFeeRecipient(wallet2.address);
+      await termControllerFacet
+        .connect(devopsWallet)
+        .approveFeeRecipient(wallet2.address);
 
       // Then try to revoke with non-devops
       await expect(
-        termControllerFacet.connect(wallet1).revokeFeeRecipient(wallet2.address)
-      ).to.be.revertedWithCustomError(termControllerFacet, "AccessControlUnauthorizedAccount");
+        termControllerFacet
+          .connect(wallet1)
+          .revokeFeeRecipient(wallet2.address),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
-        termControllerFacet.connect(borrower).revokeFeeRecipient(wallet2.address)
-      ).to.be.revertedWithCustomError(termControllerFacet, "AccessControlUnauthorizedAccount");
+        termControllerFacet
+          .connect(borrower)
+          .revokeFeeRecipient(wallet2.address),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "AccessControlUnauthorizedAccount",
+      );
     });
 
     it("should revert with TermControllerAlreadyApproved for duplicate approval", async () => {
       // First approval should succeed
-      await termControllerFacet.connect(devopsWallet).approveTermController(await mockTermController.getAddress());
+      await termControllerFacet
+        .connect(devopsWallet)
+        .approveTermController(await mockTermController.getAddress());
 
       // Second approval should revert
       await expect(
-        termControllerFacet.connect(devopsWallet).approveTermController(await mockTermController.getAddress())
-      ).to.be.revertedWithCustomError(termControllerFacet, "TermControllerAlreadyApproved");
+        termControllerFacet
+          .connect(devopsWallet)
+          .approveTermController(await mockTermController.getAddress()),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "TermControllerAlreadyApproved",
+      );
     });
 
     it("should revert with FeeRecipientAlreadyApproved for duplicate approval", async () => {
       // First approval should succeed
-      await termControllerFacet.connect(devopsWallet).approveFeeRecipient(wallet2.address);
+      await termControllerFacet
+        .connect(devopsWallet)
+        .approveFeeRecipient(wallet2.address);
 
       // Second approval should revert
       await expect(
-        termControllerFacet.connect(devopsWallet).approveFeeRecipient(wallet2.address)
-      ).to.be.revertedWithCustomError(termControllerFacet, "FeeRecipientAlreadyApproved");
+        termControllerFacet
+          .connect(devopsWallet)
+          .approveFeeRecipient(wallet2.address),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "FeeRecipientAlreadyApproved",
+      );
     });
 
     it("should revert with InvalidTermController when revoking non-approved controller", async () => {
       // Try to revoke without first approving
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeTermController(await mockTermController.getAddress())
-      ).to.be.revertedWithCustomError(termControllerFacet, "InvalidTermController");
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeTermController(await mockTermController.getAddress()),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "InvalidTermController",
+      );
 
       // Try to revoke with a different address that was never approved
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeTermController(wallet2.address)
-      ).to.be.revertedWithCustomError(termControllerFacet, "InvalidTermController");
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeTermController(wallet2.address),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "InvalidTermController",
+      );
     });
 
     it("should revert with InvalidFeeRecipient when revoking non-approved recipient", async () => {
       // Try to revoke without first approving
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeFeeRecipient(wallet2.address)
-      ).to.be.revertedWithCustomError(termControllerFacet, "InvalidFeeRecipient");
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeFeeRecipient(wallet2.address),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "InvalidFeeRecipient",
+      );
 
       // Try to revoke with a different address that was never approved
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeFeeRecipient(borrower.address)
-      ).to.be.revertedWithCustomError(termControllerFacet, "InvalidFeeRecipient");
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeFeeRecipient(borrower.address),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "InvalidFeeRecipient",
+      );
     });
 
     it("should successfully revoke an approved term controller", async () => {
       // First approve
-      await termControllerFacet.connect(devopsWallet).approveTermController(await mockTermController.getAddress());
+      await termControllerFacet
+        .connect(devopsWallet)
+        .approveTermController(await mockTermController.getAddress());
 
       // Then revoke should succeed
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeTermController(await mockTermController.getAddress())
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeTermController(await mockTermController.getAddress()),
       ).to.not.be.reverted;
 
       // Further revocation should fail
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeTermController(await mockTermController.getAddress())
-      ).to.be.revertedWithCustomError(termControllerFacet, "InvalidTermController");
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeTermController(await mockTermController.getAddress()),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "InvalidTermController",
+      );
     });
 
     it("should successfully approve and revoke fee recipients", async () => {
       // Approve should succeed
       await expect(
-        termControllerFacet.connect(devopsWallet).approveFeeRecipient(wallet2.address)
+        termControllerFacet
+          .connect(devopsWallet)
+          .approveFeeRecipient(wallet2.address),
       ).to.not.be.reverted;
 
       // Revoke should succeed
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeFeeRecipient(wallet2.address)
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeFeeRecipient(wallet2.address),
       ).to.not.be.reverted;
 
       // Further revocation should fail
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeFeeRecipient(wallet2.address)
-      ).to.be.revertedWithCustomError(termControllerFacet, "InvalidFeeRecipient");
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeFeeRecipient(wallet2.address),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "InvalidFeeRecipient",
+      );
     });
   });
 
@@ -1161,16 +1432,18 @@ describe("TermRouterFacet Unit Tests", () => {
       await approveTermControllerProper();
 
       // Now revoke the controller without testing the router function first
-      await termControllerFacet.connect(devopsWallet).revokeTermController(
-        await mockTermController.getAddress()
-      );
+      await termControllerFacet
+        .connect(devopsWallet)
+        .revokeTermController(await mockTermController.getAddress());
 
       // Router functions should now fail with InvalidTermController
       await expect(
-        termRouterFacet.connect(borrower).burnCollapseExposure(
-          await mockTermRepoServicer.getAddress(),
-          ethers.parseEther("50")
-        )
+        termRouterFacet
+          .connect(borrower)
+          .burnCollapseExposure(
+            await mockTermRepoServicer.getAddress(),
+            ethers.parseEther("50"),
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -1179,24 +1452,26 @@ describe("TermRouterFacet Unit Tests", () => {
       await approveTermControllerProper();
 
       // Revoke it
-      await termControllerFacet.connect(devopsWallet).revokeTermController(
-        await mockTermController.getAddress()
-      );
+      await termControllerFacet
+        .connect(devopsWallet)
+        .revokeTermController(await mockTermController.getAddress());
 
       // Functions should fail
       await expect(
-        termRouterFacet.connect(borrower).submitRepurchasePayment(
-          await mockTermRepoServicer.getAddress(),
-          ethers.parseEther("100"),
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .submitRepurchasePayment(
+            await mockTermRepoServicer.getAddress(),
+            ethers.parseEther("100"),
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
 
       // Re-approve the controller
       await expect(
-        termControllerFacet.connect(devopsWallet).approveTermController(
-          await mockTermController.getAddress()
-        )
+        termControllerFacet
+          .connect(devopsWallet)
+          .approveTermController(await mockTermController.getAddress()),
       ).to.not.be.reverted;
 
       // After re-approval, the validation should pass (we're not testing full execution
@@ -1215,39 +1490,45 @@ describe("TermRouterFacet Unit Tests", () => {
       );
 
       // Approve first controller
-      await termControllerFacet.connect(devopsWallet).approveTermController(
-        await mockTermController.getAddress()
-      );
+      await termControllerFacet
+        .connect(devopsWallet)
+        .approveTermController(await mockTermController.getAddress());
 
       // Approve second controller
-      await termControllerFacet.connect(devopsWallet).approveTermController(
-        await secondMockController.getAddress()
-      );
+      await termControllerFacet
+        .connect(devopsWallet)
+        .approveTermController(await secondMockController.getAddress());
 
       // Revoke only the first controller
-      await termControllerFacet.connect(devopsWallet).revokeTermController(
-        await mockTermController.getAddress()
-      );
+      await termControllerFacet
+        .connect(devopsWallet)
+        .revokeTermController(await mockTermController.getAddress());
 
       // Should still be able to revoke the second controller
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeTermController(
-          await secondMockController.getAddress()
-        )
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeTermController(await secondMockController.getAddress()),
       ).to.not.be.reverted;
 
       // Both should now be invalid for revocation
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeTermController(
-          await mockTermController.getAddress()
-        )
-      ).to.be.revertedWithCustomError(termControllerFacet, "InvalidTermController");
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeTermController(await mockTermController.getAddress()),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "InvalidTermController",
+      );
 
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeTermController(
-          await secondMockController.getAddress()
-        )
-      ).to.be.revertedWithCustomError(termControllerFacet, "InvalidTermController");
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeTermController(await secondMockController.getAddress()),
+      ).to.be.revertedWithCustomError(
+        termControllerFacet,
+        "InvalidTermController",
+      );
     });
   });
 
@@ -1256,24 +1537,34 @@ describe("TermRouterFacet Unit Tests", () => {
       const testAddress = wallet2.address;
 
       // Approve as term controller
-      await termControllerFacet.connect(devopsWallet).approveTermController(testAddress);
+      await termControllerFacet
+        .connect(devopsWallet)
+        .approveTermController(testAddress);
 
       // Approve as fee recipient (same address, different mapping)
       await expect(
-        termControllerFacet.connect(devopsWallet).approveFeeRecipient(testAddress)
+        termControllerFacet
+          .connect(devopsWallet)
+          .approveFeeRecipient(testAddress),
       ).to.not.be.reverted;
 
       // Revoke term controller
-      await termControllerFacet.connect(devopsWallet).revokeTermController(testAddress);
+      await termControllerFacet
+        .connect(devopsWallet)
+        .revokeTermController(testAddress);
 
       // Should still be able to revoke fee recipient (independent state)
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeFeeRecipient(testAddress)
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeFeeRecipient(testAddress),
       ).to.not.be.reverted;
 
       // Re-approve as term controller should work (independent state)
       await expect(
-        termControllerFacet.connect(devopsWallet).approveTermController(testAddress)
+        termControllerFacet
+          .connect(devopsWallet)
+          .approveTermController(testAddress),
       ).to.not.be.reverted;
     });
 
@@ -1282,27 +1573,37 @@ describe("TermRouterFacet Unit Tests", () => {
 
       // Should be able to approve as both controller and fee recipient
       await expect(
-        termControllerFacet.connect(devopsWallet).approveTermController(testAddress)
+        termControllerFacet
+          .connect(devopsWallet)
+          .approveTermController(testAddress),
       ).to.not.be.reverted;
 
       await expect(
-        termControllerFacet.connect(devopsWallet).approveFeeRecipient(testAddress)
+        termControllerFacet
+          .connect(devopsWallet)
+          .approveFeeRecipient(testAddress),
       ).to.not.be.reverted;
 
       // Should be able to revoke from both roles independently
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeTermController(testAddress)
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeTermController(testAddress),
       ).to.not.be.reverted;
 
       // Fee recipient should still be valid
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeFeeRecipient(testAddress)
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeFeeRecipient(testAddress),
       ).to.not.be.reverted;
     });
 
     it("should document that fee recipients are not validated by router", async () => {
       // Approve a fee recipient
-      await termControllerFacet.connect(devopsWallet).approveFeeRecipient(wallet2.address);
+      await termControllerFacet
+        .connect(devopsWallet)
+        .approveFeeRecipient(wallet2.address);
 
       // Note: There are no router functions that validate fee recipients
       // This test documents that the fee recipient functionality exists but is unused
@@ -1321,42 +1622,54 @@ describe("TermRouterFacet Unit Tests", () => {
     it("should support zero address operations", async () => {
       // Test that zero address can be approved/revoked (contract doesn't prevent this)
       await expect(
-        termControllerFacet.connect(devopsWallet).approveFeeRecipient(ZeroAddress)
+        termControllerFacet
+          .connect(devopsWallet)
+          .approveFeeRecipient(ZeroAddress),
       ).to.not.be.reverted;
 
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeFeeRecipient(ZeroAddress)
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeFeeRecipient(ZeroAddress),
       ).to.not.be.reverted;
 
       // Same for term controllers
       await expect(
-        termControllerFacet.connect(devopsWallet).approveTermController(ZeroAddress)
+        termControllerFacet
+          .connect(devopsWallet)
+          .approveTermController(ZeroAddress),
       ).to.not.be.reverted;
 
       await expect(
-        termControllerFacet.connect(devopsWallet).revokeTermController(ZeroAddress)
+        termControllerFacet
+          .connect(devopsWallet)
+          .revokeTermController(ZeroAddress),
       ).to.not.be.reverted;
     });
   });
 
   describe("lockBids", () => {
     it("should revert with InvalidTermController when term controller is not approved", async () => {
-      const bidSubmissions = [{
-        id: ethers.ZeroHash,
-        bidder: borrower.address,
-        bidPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
-        amount: ethers.parseEther("100"),
-        collateralAmounts: [ethers.parseEther("100")],
-        purchaseToken: await mockPurchaseToken.getAddress(),
-        collateralTokens: [await mockCollateralToken.getAddress()]
-      }];
+      const bidSubmissions = [
+        {
+          id: ethers.ZeroHash,
+          bidder: borrower.address,
+          bidPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
+          amount: ethers.parseEther("100"),
+          collateralAmounts: [ethers.parseEther("100")],
+          purchaseToken: await mockPurchaseToken.getAddress(),
+          collateralTokens: [await mockCollateralToken.getAddress()],
+        },
+      ];
 
       await expect(
-        termRouterFacet.connect(borrower).lockBids(
-          await mockTermAuctionBidLocker.getAddress(),
-          bidSubmissions,
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .lockBids(
+            await mockTermAuctionBidLocker.getAddress(),
+            bidSubmissions,
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -1372,67 +1685,79 @@ describe("TermRouterFacet Unit Tests", () => {
         kind: "read",
       });
 
-      const bidSubmissions = [{
-        id: ethers.ZeroHash,
-        bidder: borrower.address,
-        bidPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
-        amount: ethers.parseEther("100"),
-        collateralAmounts: [ethers.parseEther("100")],
-        purchaseToken: await mockPurchaseToken.getAddress(),
-        collateralTokens: [await mockCollateralToken.getAddress()]
-      }];
+      const bidSubmissions = [
+        {
+          id: ethers.ZeroHash,
+          bidder: borrower.address,
+          bidPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
+          amount: ethers.parseEther("100"),
+          collateralAmounts: [ethers.parseEther("100")],
+          purchaseToken: await mockPurchaseToken.getAddress(),
+          collateralTokens: [await mockCollateralToken.getAddress()],
+        },
+      ];
 
       await expect(
-        termRouterFacet.connect(borrower).lockBids(
-          await mockTermAuctionBidLocker.getAddress(),
-          bidSubmissions,
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .lockBids(
+            await mockTermAuctionBidLocker.getAddress(),
+            bidSubmissions,
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
 
     it("should successfully lock bids when validation passes", async () => {
       await setupAuctionMocks();
 
-      const bidSubmissions = [{
-        id: getBytesHash("test-id-7"),
-        bidder: borrower.address,
-        bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-        amount: ethers.parseEther("100"),
-        collateralAmounts: [ethers.parseEther("100")],
-        purchaseToken: await mockPurchaseToken.getAddress(),
-        collateralTokens: [await mockCollateralToken.getAddress()]
-      }];
+      const bidSubmissions = [
+        {
+          id: getBytesHash("test-id-7"),
+          bidder: borrower.address,
+          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+          amount: ethers.parseEther("100"),
+          collateralAmounts: [ethers.parseEther("100")],
+          purchaseToken: await mockPurchaseToken.getAddress(),
+          collateralTokens: [await mockCollateralToken.getAddress()],
+        },
+      ];
 
       await expect(
-        termRouterFacet.connect(borrower).lockBids(
-          await mockTermAuctionBidLocker.getAddress(),
-          bidSubmissions,
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .lockBids(
+            await mockTermAuctionBidLocker.getAddress(),
+            bidSubmissions,
+            false,
+          ),
       ).to.not.be.reverted;
     });
   });
 
   describe("lockBidsWithReferral", () => {
     it("should revert with InvalidTermController when term controller is not approved", async () => {
-      const bidSubmissions = [{
-        id: ethers.ZeroHash,
-        bidder: borrower.address,
-        bidPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
-        amount: ethers.parseEther("100"),
-        collateralAmounts: [ethers.parseEther("100")],
-        purchaseToken: await mockPurchaseToken.getAddress(),
-        collateralTokens: [await mockCollateralToken.getAddress()]
-      }];
+      const bidSubmissions = [
+        {
+          id: ethers.ZeroHash,
+          bidder: borrower.address,
+          bidPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
+          amount: ethers.parseEther("100"),
+          collateralAmounts: [ethers.parseEther("100")],
+          purchaseToken: await mockPurchaseToken.getAddress(),
+          collateralTokens: [await mockCollateralToken.getAddress()],
+        },
+      ];
 
       await expect(
-        termRouterFacet.connect(borrower).lockBidsWithReferral(
-          await mockTermAuctionBidLocker.getAddress(),
-          bidSubmissions,
-          wallet2.address,
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .lockBidsWithReferral(
+            await mockTermAuctionBidLocker.getAddress(),
+            bidSubmissions,
+            wallet2.address,
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -1448,46 +1773,54 @@ describe("TermRouterFacet Unit Tests", () => {
         kind: "read",
       });
 
-      const bidSubmissions = [{
-        id: ethers.ZeroHash,
-        bidder: borrower.address,
-        bidPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
-        amount: ethers.parseEther("100"),
-        collateralAmounts: [ethers.parseEther("100")],
-        purchaseToken: await mockPurchaseToken.getAddress(),
-        collateralTokens: [await mockCollateralToken.getAddress()]
-      }];
+      const bidSubmissions = [
+        {
+          id: ethers.ZeroHash,
+          bidder: borrower.address,
+          bidPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
+          amount: ethers.parseEther("100"),
+          collateralAmounts: [ethers.parseEther("100")],
+          purchaseToken: await mockPurchaseToken.getAddress(),
+          collateralTokens: [await mockCollateralToken.getAddress()],
+        },
+      ];
 
       await expect(
-        termRouterFacet.connect(borrower).lockBidsWithReferral(
-          await mockTermAuctionBidLocker.getAddress(),
-          bidSubmissions,
-          wallet2.address,
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .lockBidsWithReferral(
+            await mockTermAuctionBidLocker.getAddress(),
+            bidSubmissions,
+            wallet2.address,
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
 
     it("should successfully lock bids with referral when validation passes", async () => {
       await setupAuctionMocks();
 
-      const bidSubmissions = [{
-        id: getBytesHash("test-id-7"),
-        bidder: borrower.address,
-        bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-        amount: ethers.parseEther("100"),
-        collateralAmounts: [ethers.parseEther("100")],
-        purchaseToken: await mockPurchaseToken.getAddress(),
-        collateralTokens: [await mockCollateralToken.getAddress()]
-      }];
+      const bidSubmissions = [
+        {
+          id: getBytesHash("test-id-7"),
+          bidder: borrower.address,
+          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+          amount: ethers.parseEther("100"),
+          collateralAmounts: [ethers.parseEther("100")],
+          purchaseToken: await mockPurchaseToken.getAddress(),
+          collateralTokens: [await mockCollateralToken.getAddress()],
+        },
+      ];
 
       await expect(
-        termRouterFacet.connect(borrower).lockBidsWithReferral(
-          await mockTermAuctionBidLocker.getAddress(),
-          bidSubmissions,
-          wallet2.address,
-          false
-        )
+        termRouterFacet
+          .connect(borrower)
+          .lockBidsWithReferral(
+            await mockTermAuctionBidLocker.getAddress(),
+            bidSubmissions,
+            wallet2.address,
+            false,
+          ),
       ).to.not.be.reverted;
     });
   });
@@ -1497,10 +1830,9 @@ describe("TermRouterFacet Unit Tests", () => {
       const bidIds = [ethers.keccak256(ethers.toUtf8Bytes("bid1"))];
 
       await expect(
-        termRouterFacet.connect(borrower).unlockBids(
-          await mockTermAuctionBidLocker.getAddress(),
-          bidIds
-        )
+        termRouterFacet
+          .connect(borrower)
+          .unlockBids(await mockTermAuctionBidLocker.getAddress(), bidIds),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -1519,10 +1851,9 @@ describe("TermRouterFacet Unit Tests", () => {
       const bidIds = [ethers.keccak256(ethers.toUtf8Bytes("bid1"))];
 
       await expect(
-        termRouterFacet.connect(borrower).unlockBids(
-          await mockTermAuctionBidLocker.getAddress(),
-          bidIds
-        )
+        termRouterFacet
+          .connect(borrower)
+          .unlockBids(await mockTermAuctionBidLocker.getAddress(), bidIds),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
 
@@ -1531,34 +1862,37 @@ describe("TermRouterFacet Unit Tests", () => {
 
       const bidIds = [
         ethers.keccak256(ethers.toUtf8Bytes("bid1")),
-        ethers.keccak256(ethers.toUtf8Bytes("bid2"))
+        ethers.keccak256(ethers.toUtf8Bytes("bid2")),
       ];
 
       await expect(
-        termRouterFacet.connect(borrower).unlockBids(
-          await mockTermAuctionBidLocker.getAddress(),
-          bidIds
-        )
+        termRouterFacet
+          .connect(borrower)
+          .unlockBids(await mockTermAuctionBidLocker.getAddress(), bidIds),
       ).to.not.be.reverted;
     });
   });
 
   describe("lockOffers", () => {
     it("should revert with InvalidTermController when term controller is not approved", async () => {
-      const offerSubmissions = [{
-        id: ethers.ZeroHash,
-        offeror: lender.address,
-        offerPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
-        amount: ethers.parseEther("100"),
-        purchaseToken: await mockPurchaseToken.getAddress()
-      }];
+      const offerSubmissions = [
+        {
+          id: ethers.ZeroHash,
+          offeror: lender.address,
+          offerPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
+          amount: ethers.parseEther("100"),
+          purchaseToken: await mockPurchaseToken.getAddress(),
+        },
+      ];
 
       await expect(
-        termRouterFacet.connect(lender).lockOffers(
-          await mockTermAuctionOfferLocker.getAddress(),
-          offerSubmissions,
-          false
-        )
+        termRouterFacet
+          .connect(lender)
+          .lockOffers(
+            await mockTermAuctionOfferLocker.getAddress(),
+            offerSubmissions,
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -1574,61 +1908,73 @@ describe("TermRouterFacet Unit Tests", () => {
         kind: "read",
       });
 
-      const offerSubmissions = [{
-        id: ethers.ZeroHash,
-        offeror: lender.address,
-        offerPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
-        amount: ethers.parseEther("100"),
-        purchaseToken: await mockPurchaseToken.getAddress()
-      }];
+      const offerSubmissions = [
+        {
+          id: ethers.ZeroHash,
+          offeror: lender.address,
+          offerPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
+          amount: ethers.parseEther("100"),
+          purchaseToken: await mockPurchaseToken.getAddress(),
+        },
+      ];
 
       await expect(
-        termRouterFacet.connect(lender).lockOffers(
-          await mockTermAuctionOfferLocker.getAddress(),
-          offerSubmissions,
-          false
-        )
+        termRouterFacet
+          .connect(lender)
+          .lockOffers(
+            await mockTermAuctionOfferLocker.getAddress(),
+            offerSubmissions,
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
 
     it("should successfully lock offers when validation passes", async () => {
       await setupAuctionMocks();
 
-      const offerSubmissions = [{
-        id: ethers.ZeroHash,
-        offeror: lender.address,
-        offerPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
-        amount: ethers.parseEther("100"),
-        purchaseToken: await mockPurchaseToken.getAddress()
-      }];
+      const offerSubmissions = [
+        {
+          id: ethers.ZeroHash,
+          offeror: lender.address,
+          offerPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
+          amount: ethers.parseEther("100"),
+          purchaseToken: await mockPurchaseToken.getAddress(),
+        },
+      ];
 
       await expect(
-        termRouterFacet.connect(lender).lockOffers(
-          await mockTermAuctionOfferLocker.getAddress(),
-          offerSubmissions,
-          false
-        )
+        termRouterFacet
+          .connect(lender)
+          .lockOffers(
+            await mockTermAuctionOfferLocker.getAddress(),
+            offerSubmissions,
+            false,
+          ),
       ).to.not.be.reverted;
     });
   });
 
   describe("lockOffersWithReferral", () => {
     it("should revert with InvalidTermController when term controller is not approved", async () => {
-      const offerSubmissions = [{
-        id: ethers.ZeroHash,
-        offeror: lender.address,
-        offerPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
-        amount: ethers.parseEther("100"),
-        purchaseToken: await mockPurchaseToken.getAddress()
-      }];
+      const offerSubmissions = [
+        {
+          id: ethers.ZeroHash,
+          offeror: lender.address,
+          offerPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
+          amount: ethers.parseEther("100"),
+          purchaseToken: await mockPurchaseToken.getAddress(),
+        },
+      ];
 
       await expect(
-        termRouterFacet.connect(lender).lockOffersWithReferral(
-          await mockTermAuctionOfferLocker.getAddress(),
-          offerSubmissions,
-          wallet2.address,
-          false
-        )
+        termRouterFacet
+          .connect(lender)
+          .lockOffersWithReferral(
+            await mockTermAuctionOfferLocker.getAddress(),
+            offerSubmissions,
+            wallet2.address,
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -1644,42 +1990,50 @@ describe("TermRouterFacet Unit Tests", () => {
         kind: "read",
       });
 
-      const offerSubmissions = [{
-        id: ethers.ZeroHash,
-        offeror: lender.address,
-        offerPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
-        amount: ethers.parseEther("100"),
-        purchaseToken: await mockPurchaseToken.getAddress()
-      }];
+      const offerSubmissions = [
+        {
+          id: ethers.ZeroHash,
+          offeror: lender.address,
+          offerPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
+          amount: ethers.parseEther("100"),
+          purchaseToken: await mockPurchaseToken.getAddress(),
+        },
+      ];
 
       await expect(
-        termRouterFacet.connect(lender).lockOffersWithReferral(
-          await mockTermAuctionOfferLocker.getAddress(),
-          offerSubmissions,
-          wallet2.address,
-          false
-        )
+        termRouterFacet
+          .connect(lender)
+          .lockOffersWithReferral(
+            await mockTermAuctionOfferLocker.getAddress(),
+            offerSubmissions,
+            wallet2.address,
+            false,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
 
     it("should successfully lock offers with referral when validation passes", async () => {
       await setupAuctionMocks();
 
-      const offerSubmissions = [{
-        id: ethers.ZeroHash,
-        offeror: lender.address,
-        offerPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
-        amount: ethers.parseEther("100"),
-        purchaseToken: await mockPurchaseToken.getAddress()
-      }];
+      const offerSubmissions = [
+        {
+          id: ethers.ZeroHash,
+          offeror: lender.address,
+          offerPriceHash: ethers.keccak256(ethers.toUtf8Bytes("test")),
+          amount: ethers.parseEther("100"),
+          purchaseToken: await mockPurchaseToken.getAddress(),
+        },
+      ];
 
       await expect(
-        termRouterFacet.connect(lender).lockOffersWithReferral(
-          await mockTermAuctionOfferLocker.getAddress(),
-          offerSubmissions,
-          wallet2.address,
-          false
-        )
+        termRouterFacet
+          .connect(lender)
+          .lockOffersWithReferral(
+            await mockTermAuctionOfferLocker.getAddress(),
+            offerSubmissions,
+            wallet2.address,
+            false,
+          ),
       ).to.not.be.reverted;
     });
   });
@@ -1689,10 +2043,12 @@ describe("TermRouterFacet Unit Tests", () => {
       const offerIds = [ethers.keccak256(ethers.toUtf8Bytes("offer1"))];
 
       await expect(
-        termRouterFacet.connect(lender).unlockOffers(
-          await mockTermAuctionOfferLocker.getAddress(),
-          offerIds
-        )
+        termRouterFacet
+          .connect(lender)
+          .unlockOffers(
+            await mockTermAuctionOfferLocker.getAddress(),
+            offerIds,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidTermController");
     });
 
@@ -1711,10 +2067,12 @@ describe("TermRouterFacet Unit Tests", () => {
       const offerIds = [ethers.keccak256(ethers.toUtf8Bytes("offer1"))];
 
       await expect(
-        termRouterFacet.connect(lender).unlockOffers(
-          await mockTermAuctionOfferLocker.getAddress(),
-          offerIds
-        )
+        termRouterFacet
+          .connect(lender)
+          .unlockOffers(
+            await mockTermAuctionOfferLocker.getAddress(),
+            offerIds,
+          ),
       ).to.be.revertedWithCustomError(termRouterFacet, "InvalidRepoId");
     });
 
@@ -1723,14 +2081,16 @@ describe("TermRouterFacet Unit Tests", () => {
 
       const offerIds = [
         ethers.keccak256(ethers.toUtf8Bytes("offer1")),
-        ethers.keccak256(ethers.toUtf8Bytes("offer2"))
+        ethers.keccak256(ethers.toUtf8Bytes("offer2")),
       ];
 
       await expect(
-        termRouterFacet.connect(lender).unlockOffers(
-          await mockTermAuctionOfferLocker.getAddress(),
-          offerIds
-        )
+        termRouterFacet
+          .connect(lender)
+          .unlockOffers(
+            await mockTermAuctionOfferLocker.getAddress(),
+            offerIds,
+          ),
       ).to.not.be.reverted;
     });
   });
@@ -1762,55 +2122,84 @@ describe("TermRouterFacet Unit Tests", () => {
 
     beforeEach(async () => {
       // Deploy standalone router helper (not via diamond)
-      const RouterHelperFactory = await ethers.getContractFactory("TestTermRouterFacetHelper");
+      const RouterHelperFactory = await ethers.getContractFactory(
+        "TestTermRouterFacetHelper",
+      );
       routerHelper = await RouterHelperFactory.deploy();
       await routerHelper.waitForDeployment();
 
       // Deploy mock controller
-      const MockControllerFactory = await ethers.getContractFactory("TestMockTermController");
+      const MockControllerFactory = await ethers.getContractFactory(
+        "TestMockTermController",
+      );
       mockController3 = await MockControllerFactory.deploy();
       await mockController3.waitForDeployment();
-      await routerHelper.addApprovedTermController(await mockController3.getAddress());
+      await routerHelper.addApprovedTermController(
+        await mockController3.getAddress(),
+      );
 
       // Deploy real purchase and collateral tokens
       const TestTokenFactory = await ethers.getContractFactory("TestToken");
-      purchaseToken3 = await (upgrades.deployProxy(
-        TestTokenFactory,
-        ["Purchase Token", "PUR", 18, [wallet1.address], [ethers.parseEther("1000")]],
-      )) as unknown as TestToken;
+      purchaseToken3 = (await upgrades.deployProxy(TestTokenFactory, [
+        "Purchase Token",
+        "PUR",
+        18,
+        [wallet1.address],
+        [ethers.parseEther("1000")],
+      ])) as unknown as TestToken;
       await purchaseToken3.waitForDeployment();
 
-      collateralToken3 = await (upgrades.deployProxy(
-        TestTokenFactory,
-        ["Collateral Token", "COL", 18, [wallet1.address], [ethers.parseEther("1000")]],
-      )) as unknown as TestToken;
+      collateralToken3 = (await upgrades.deployProxy(TestTokenFactory, [
+        "Collateral Token",
+        "COL",
+        18,
+        [wallet1.address],
+        [ethers.parseEther("1000")],
+      ])) as unknown as TestToken;
       await collateralToken3.waitForDeployment();
 
       // Deploy mock collateral manager
-      const CollateralMgrFactory = await ethers.getContractFactory("TestMockCollateralManager");
+      const CollateralMgrFactory = await ethers.getContractFactory(
+        "TestMockCollateralManager",
+      );
       mockCollateralMgr = await CollateralMgrFactory.deploy();
       await mockCollateralMgr.waitForDeployment();
-      await mockCollateralMgr.setCollateralTokens([await collateralToken3.getAddress()]);
+      await mockCollateralMgr.setCollateralTokens([
+        await collateralToken3.getAddress(),
+      ]);
 
       // Deploy full mock servicer
-      const ServicerFactory = await ethers.getContractFactory("TestMockRepoServicerFull");
+      const ServicerFactory = await ethers.getContractFactory(
+        "TestMockRepoServicerFull",
+      );
       mockServicerFull = await ServicerFactory.deploy();
       await mockServicerFull.waitForDeployment();
 
-      await mockServicerFull.setPurchaseToken(await purchaseToken3.getAddress());
-      await mockServicerFull.setTermController(await mockController3.getAddress());
-      await mockServicerFull.setCollateralManager(await mockCollateralMgr.getAddress());
+      await mockServicerFull.setPurchaseToken(
+        await purchaseToken3.getAddress(),
+      );
+      await mockServicerFull.setTermController(
+        await mockController3.getAddress(),
+      );
+      await mockServicerFull.setCollateralManager(
+        await mockCollateralMgr.getAddress(),
+      );
       await mockServicerFull.setTermRepoLocker(wallet2.address); // dummy locker
       await mockServicerFull.setRepurchaseObligation(ethers.parseEther("100"));
 
       // Register servicer in controller
-      await mockController3.setTermDeployed(await mockServicerFull.getAddress(), true);
+      await mockController3.setTermDeployed(
+        await mockServicerFull.getAddress(),
+        true,
+      );
     });
 
     describe("previewSubmitRepurchasePayment", () => {
       it("should revert InputOutputTokenCollision when purchaseToken equals collateralToken", async () => {
         // Set purchaseToken3 as both a valid collateral token and use it as both input and output
-        await mockCollateralMgr.setCollateralTokens([await purchaseToken3.getAddress()]);
+        await mockCollateralMgr.setCollateralTokens([
+          await purchaseToken3.getAddress(),
+        ]);
 
         await expect(
           routerHelper.previewSubmitRepurchasePayment({
@@ -1820,16 +2209,27 @@ describe("TermRouterFacet Unit Tests", () => {
             outputToken: await purchaseToken3.getAddress(), // Same as inputToken to trigger collision
             minOutputAmount: ethers.parseEther("1"),
             targetAddress: await mockServicerFull.getAddress(),
-            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+              ["bool"],
+              [false],
+            ),
           }),
-        ).to.be.revertedWithCustomError(routerHelper, "InputOutputTokenCollision");
+        ).to.be.revertedWithCustomError(
+          routerHelper,
+          "InputOutputTokenCollision",
+        );
       });
 
       it("should revert InvalidCollateralToken when outputToken is not a supported collateral token", async () => {
         // Set collateral tokens to only include purchaseToken3, making collateralToken3 unsupported
-        await mockCollateralMgr.setCollateralTokens([await purchaseToken3.getAddress()]);
+        await mockCollateralMgr.setCollateralTokens([
+          await purchaseToken3.getAddress(),
+        ]);
         // Explicitly set collateralToken3's maintenance ratio to 0 (mappings persist, so we need to clear it)
-        await mockCollateralMgr.setMaintenanceRatio(await collateralToken3.getAddress(), 0);
+        await mockCollateralMgr.setMaintenanceRatio(
+          await collateralToken3.getAddress(),
+          0,
+        );
 
         await expect(
           routerHelper.previewSubmitRepurchasePayment({
@@ -1839,7 +2239,10 @@ describe("TermRouterFacet Unit Tests", () => {
             outputToken: await collateralToken3.getAddress(), // This is NOT in supported list
             minOutputAmount: ethers.parseEther("1"),
             targetAddress: await mockServicerFull.getAddress(),
-            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+              ["bool"],
+              [false],
+            ),
           }),
         ).to.be.revertedWithCustomError(routerHelper, "InvalidCollateralToken");
       });
@@ -1855,12 +2258,19 @@ describe("TermRouterFacet Unit Tests", () => {
           outputToken: await collateralToken3.getAddress(),
           minOutputAmount: collateralOut,
           targetAddress: await mockServicerFull.getAddress(),
-          additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+          additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+            ["bool"],
+            [false],
+          ),
         });
 
-        expect(preview.expectedInputToken).to.equal(await purchaseToken3.getAddress());
+        expect(preview.expectedInputToken).to.equal(
+          await purchaseToken3.getAddress(),
+        );
         expect(preview.expectedInputAmount).to.equal(repurchaseObligation);
-        expect(preview.expectedOutputToken).to.equal(await collateralToken3.getAddress());
+        expect(preview.expectedOutputToken).to.equal(
+          await collateralToken3.getAddress(),
+        );
         expect(preview.expectedOutputAmount).to.equal(collateralOut);
         expect(preview.isDeterministic).to.equal(true);
       });
@@ -1879,33 +2289,47 @@ describe("TermRouterFacet Unit Tests", () => {
             await mockServicerFull.getAddress(),
             ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
           ),
-        ).to.be.revertedWithCustomError(routerHelper, "UnsupportedHookSelector");
+        ).to.be.revertedWithCustomError(
+          routerHelper,
+          "UnsupportedHookSelector",
+        );
       });
 
       it("should return valid previewAction and encodedCalldata for submitRepurchasePaymentHook selector", async () => {
-        const hookSelector = routerHelper.interface.getFunction("submitRepurchasePaymentHook").selector;
+        const hookSelector = routerHelper.interface.getFunction(
+          "submitRepurchasePaymentHook",
+        ).selector;
 
-        const [previewAction, encodedCalldata] = await routerHelper.generateActionCalldata(
-          wallet1.address,
-          await purchaseToken3.getAddress(),
-          ethers.parseEther("100"),
-          await collateralToken3.getAddress(),
-          ethers.parseEther("1"),
-          hookSelector,
-          await mockServicerFull.getAddress(),
-          ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
-        );
+        const [previewAction, encodedCalldata] =
+          await routerHelper.generateActionCalldata(
+            wallet1.address,
+            await purchaseToken3.getAddress(),
+            ethers.parseEther("100"),
+            await collateralToken3.getAddress(),
+            ethers.parseEther("1"),
+            hookSelector,
+            await mockServicerFull.getAddress(),
+            ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+          );
 
         expect(previewAction.isDeterministic).to.equal(true);
-        expect(previewAction.expectedInputToken).to.equal(await purchaseToken3.getAddress());
-        expect(previewAction.expectedOutputToken).to.equal(await collateralToken3.getAddress());
+        expect(previewAction.expectedInputToken).to.equal(
+          await purchaseToken3.getAddress(),
+        );
+        expect(previewAction.expectedOutputToken).to.equal(
+          await collateralToken3.getAddress(),
+        );
         expect(encodedCalldata.slice(0, 10)).to.equal(hookSelector);
       });
 
       it("should propagate InputOutputTokenCollision from preview when tokens collide", async () => {
-        const hookSelector = routerHelper.interface.getFunction("submitRepurchasePaymentHook").selector;
+        const hookSelector = routerHelper.interface.getFunction(
+          "submitRepurchasePaymentHook",
+        ).selector;
         // Set purchaseToken3 as both a valid collateral and use it as both input and output
-        await mockCollateralMgr.setCollateralTokens([await purchaseToken3.getAddress()]);
+        await mockCollateralMgr.setCollateralTokens([
+          await purchaseToken3.getAddress(),
+        ]);
 
         await expect(
           routerHelper.generateActionCalldata(
@@ -1932,7 +2356,10 @@ describe("TermRouterFacet Unit Tests", () => {
             outputToken: await collateralToken3.getAddress(),
             minOutputAmount: ethers.parseEther("1"),
             targetAddress: await mockServicerFull.getAddress(),
-            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+              ["bool"],
+              [false],
+            ),
           }),
         ).to.be.revertedWith("Unauthorized caller");
       });
@@ -1948,7 +2375,10 @@ describe("TermRouterFacet Unit Tests", () => {
             outputToken: await collateralToken3.getAddress(),
             minOutputAmount: ethers.parseEther("1"),
             targetAddress: await mockServicerFull.getAddress(),
-            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+              ["bool"],
+              [false],
+            ),
           }),
         ).to.be.revertedWith("Unauthorized caller");
 
@@ -1974,7 +2404,10 @@ describe("TermRouterFacet Unit Tests", () => {
             outputToken: await collateralToken3.getAddress(),
             minOutputAmount: collateralAmount,
             targetAddress: await mockServicerFull.getAddress(),
-            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+              ["bool"],
+              [false],
+            ),
           }),
         ).to.be.revertedWithCustomError(routerHelper, "PurchaseTokenMismatch");
 
@@ -1993,9 +2426,15 @@ describe("TermRouterFacet Unit Tests", () => {
             outputToken: await collateralToken3.getAddress(),
             minOutputAmount: ethers.parseEther("1"), // > 0 balance
             targetAddress: await mockServicerFull.getAddress(),
-            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+              ["bool"],
+              [false],
+            ),
           }),
-        ).to.be.revertedWithCustomError(routerHelper, "InsufficientCollateralAmount");
+        ).to.be.revertedWithCustomError(
+          routerHelper,
+          "InsufficientCollateralAmount",
+        );
 
         await routerHelper.clearActiveFlashLoanBorrower();
       });
@@ -2005,7 +2444,9 @@ describe("TermRouterFacet Unit Tests", () => {
         const repaymentAmount = ethers.parseEther("100");
 
         // Ensure collateralToken3 is properly set up as a valid collateral
-        await mockCollateralMgr.setCollateralTokens([await collateralToken3.getAddress()]);
+        await mockCollateralMgr.setCollateralTokens([
+          await collateralToken3.getAddress(),
+        ]);
 
         // Set flash loan context
         await routerHelper.setActiveFlashLoanBorrower(wallet1.address);
@@ -2018,10 +2459,9 @@ describe("TermRouterFacet Unit Tests", () => {
         );
 
         // Approve router to pull collateral from wallet1
-        await collateralToken3.connect(wallet1).approve(
-          await routerHelper.getAddress(),
-          collateralAmount,
-        );
+        await collateralToken3
+          .connect(wallet1)
+          .approve(await routerHelper.getAddress(), collateralAmount);
 
         await expect(
           routerHelper.connect(wallet1).submitRepurchasePaymentHook({
@@ -2031,7 +2471,10 @@ describe("TermRouterFacet Unit Tests", () => {
             outputToken: await collateralToken3.getAddress(),
             minOutputAmount: collateralAmount,
             targetAddress: await mockServicerFull.getAddress(),
-            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+              ["bool"],
+              [false],
+            ),
           }),
         ).to.not.be.reverted;
 
@@ -2043,7 +2486,9 @@ describe("TermRouterFacet Unit Tests", () => {
         const repaymentAmount = ethers.parseEther("100");
 
         // Ensure collateralToken3 is properly set up as a valid collateral
-        await mockCollateralMgr.setCollateralTokens([await collateralToken3.getAddress()]);
+        await mockCollateralMgr.setCollateralTokens([
+          await collateralToken3.getAddress(),
+        ]);
 
         await routerHelper.setActiveFlashLoanBorrower(wallet1.address);
 
@@ -2055,7 +2500,9 @@ describe("TermRouterFacet Unit Tests", () => {
 
         // Approve canonical Permit2 address for collateral
         const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
-        await collateralToken3.connect(wallet1).approve(PERMIT2_ADDRESS, collateralAmount);
+        await collateralToken3
+          .connect(wallet1)
+          .approve(PERMIT2_ADDRESS, collateralAmount);
 
         await expect(
           routerHelper.connect(wallet1).submitRepurchasePaymentHook({
@@ -2065,7 +2512,10 @@ describe("TermRouterFacet Unit Tests", () => {
             outputToken: await collateralToken3.getAddress(),
             minOutputAmount: collateralAmount,
             targetAddress: await mockServicerFull.getAddress(),
-            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [true]),
+            additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+              ["bool"],
+              [true],
+            ),
           }),
         ).to.not.be.reverted;
 
@@ -2086,28 +2536,34 @@ describe("TermRouterFacet Unit Tests", () => {
         await setupAuctionMocks();
 
         // Check balance before
-        const balanceBefore = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceBefore =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceBefore).to.equal(0n);
 
         // Execute the function
-        const bidSubmissions = [{
-          id: getBytesHash("test-bid-1"),
-          bidder: borrower.address,
-          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-          amount: ethers.parseEther("100"),
-          collateralAmounts: [ethers.parseEther("100")],
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [await mockCollateralToken.getAddress()]
-        }];
+        const bidSubmissions = [
+          {
+            id: getBytesHash("test-bid-1"),
+            bidder: borrower.address,
+            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+            amount: ethers.parseEther("100"),
+            collateralAmounts: [ethers.parseEther("100")],
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [await mockCollateralToken.getAddress()],
+          },
+        ];
 
-        await termRouterFacet.connect(borrower).lockBids(
-          await mockTermAuctionBidLocker.getAddress(),
-          bidSubmissions,
-          false
-        );
+        await termRouterFacet
+          .connect(borrower)
+          .lockBids(
+            await mockTermAuctionBidLocker.getAddress(),
+            bidSubmissions,
+            false,
+          );
 
         // Check balance after
-        const balanceAfter = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceAfter =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceAfter).to.equal(0n);
       });
 
@@ -2115,28 +2571,32 @@ describe("TermRouterFacet Unit Tests", () => {
         await setupAuctionMocks();
 
         // Check balance before
-        const balanceBefore = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceBefore =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceBefore).to.equal(0n);
 
         // Execute the function with usePermit2 = true
-        const bidSubmissions = [{
-          id: getBytesHash("test-bid-2"),
-          bidder: borrower.address,
-          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-          amount: ethers.parseEther("100"),
-          collateralAmounts: [ethers.parseEther("100")],
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [await mockCollateralToken.getAddress()]
-        }];
+        const bidSubmissions = [
+          {
+            id: getBytesHash("test-bid-2"),
+            bidder: borrower.address,
+            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+            amount: ethers.parseEther("100"),
+            collateralAmounts: [ethers.parseEther("100")],
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [await mockCollateralToken.getAddress()],
+          },
+        ];
 
         await termRouterFacet.connect(borrower).lockBids(
           await mockTermAuctionBidLocker.getAddress(),
           bidSubmissions,
-          true // usePermit2
+          true, // usePermit2
         );
 
         // Check balance after
-        const balanceAfter = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceAfter =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceAfter).to.equal(0n);
       });
 
@@ -2155,34 +2615,46 @@ describe("TermRouterFacet Unit Tests", () => {
           collateralTokens: [],
           isRollover: false,
           rolloverPairOffTermRepoServicer: ZeroAddress,
-          isRevealed: false
+          isRevealed: false,
         };
 
         await mockTermAuctionBidLocker.setup({
-          abi: ITermAuctionBidLocker__factory.createInterface().getFunction("lockedBid"),
+          abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+            "lockedBid",
+          ),
           inputs: [getBytesHash("new-bid-1")],
           outputs: [emptyBid],
           kind: "read",
         });
 
         // Setup mock for multiple collateral tokens
-        const bidSubmissions = [{
-          id: getBytesHash("new-bid-1"),
-          bidder: borrower.address,
-          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-          amount: ethers.parseEther("100"),
-          collateralAmounts: [ethers.parseEther("50"), ethers.parseEther("50")], // Multiple collateral amounts
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [await mockCollateralToken.getAddress(), await mockCollateralToken.getAddress()]
-        }];
+        const bidSubmissions = [
+          {
+            id: getBytesHash("new-bid-1"),
+            bidder: borrower.address,
+            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+            amount: ethers.parseEther("100"),
+            collateralAmounts: [
+              ethers.parseEther("50"),
+              ethers.parseEther("50"),
+            ], // Multiple collateral amounts
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [
+              await mockCollateralToken.getAddress(),
+              await mockCollateralToken.getAddress(),
+            ],
+          },
+        ];
 
         // This should NOT revert with array index error
         await expect(
-          termRouterFacet.connect(borrower).lockBids(
-            await mockTermAuctionBidLocker.getAddress(),
-            bidSubmissions,
-            false
-          )
+          termRouterFacet
+            .connect(borrower)
+            .lockBids(
+              await mockTermAuctionBidLocker.getAddress(),
+              bidSubmissions,
+              false,
+            ),
         ).to.not.be.reverted;
       });
 
@@ -2201,26 +2673,36 @@ describe("TermRouterFacet Unit Tests", () => {
           collateralTokens: [],
           isRollover: false,
           rolloverPairOffTermRepoServicer: ZeroAddress,
-          isRevealed: false
+          isRevealed: false,
         };
 
         await mockTermAuctionBidLocker.setup({
-          abi: ITermAuctionBidLocker__factory.createInterface().getFunction("lockedBid"),
+          abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+            "lockedBid",
+          ),
           inputs: [getBytesHash("new-bid-2")],
           outputs: [emptyBid],
           kind: "read",
         });
 
         // Setup mock for multiple collateral tokens
-        const bidSubmissions = [{
-          id: getBytesHash("new-bid-2"),
-          bidder: borrower.address,
-          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-          amount: ethers.parseEther("100"),
-          collateralAmounts: [ethers.parseEther("50"), ethers.parseEther("50")], // Multiple collateral amounts
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [await mockCollateralToken.getAddress(), await mockCollateralToken.getAddress()]
-        }];
+        const bidSubmissions = [
+          {
+            id: getBytesHash("new-bid-2"),
+            bidder: borrower.address,
+            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+            amount: ethers.parseEther("100"),
+            collateralAmounts: [
+              ethers.parseEther("50"),
+              ethers.parseEther("50"),
+            ], // Multiple collateral amounts
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [
+              await mockCollateralToken.getAddress(),
+              await mockCollateralToken.getAddress(),
+            ],
+          },
+        ];
 
         // This should NOT revert with array index error when using Permit2
         // Note: This test is skipped if Permit2 is not set up, but we're adding it for completeness
@@ -2228,8 +2710,8 @@ describe("TermRouterFacet Unit Tests", () => {
           termRouterFacet.connect(borrower).lockBids(
             await mockTermAuctionBidLocker.getAddress(),
             bidSubmissions,
-            true // usePermit2
-          )
+            true, // usePermit2
+          ),
         ).to.not.be.reverted;
       });
 
@@ -2248,34 +2730,40 @@ describe("TermRouterFacet Unit Tests", () => {
           collateralTokens: [await mockCollateralToken.getAddress()],
           isRollover: false,
           rolloverPairOffTermRepoServicer: ZeroAddress,
-          isRevealed: false
+          isRevealed: false,
         };
 
         await mockTermAuctionBidLocker.setup({
-          abi: ITermAuctionBidLocker__factory.createInterface().getFunction("lockedBid"),
+          abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+            "lockedBid",
+          ),
           inputs: [getBytesHash("existing-bid-1")],
           outputs: [existingBid],
           kind: "read",
         });
 
         // Update bid with more collateral
-        const bidSubmissions = [{
-          id: getBytesHash("existing-bid-1"),
-          bidder: borrower.address,
-          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-          amount: ethers.parseEther("100"),
-          collateralAmounts: [ethers.parseEther("75")], // Increase collateral
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [await mockCollateralToken.getAddress()]
-        }];
+        const bidSubmissions = [
+          {
+            id: getBytesHash("existing-bid-1"),
+            bidder: borrower.address,
+            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+            amount: ethers.parseEther("100"),
+            collateralAmounts: [ethers.parseEther("75")], // Increase collateral
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [await mockCollateralToken.getAddress()],
+          },
+        ];
 
         // Should only transfer the difference (75 - 25 = 50)
         await expect(
-          termRouterFacet.connect(borrower).lockBids(
-            await mockTermAuctionBidLocker.getAddress(),
-            bidSubmissions,
-            false
-          )
+          termRouterFacet
+            .connect(borrower)
+            .lockBids(
+              await mockTermAuctionBidLocker.getAddress(),
+              bidSubmissions,
+              false,
+            ),
         ).to.not.be.reverted;
       });
     });
@@ -2285,29 +2773,33 @@ describe("TermRouterFacet Unit Tests", () => {
         await setupAuctionMocks();
 
         // Check balance before
-        const balanceBefore = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceBefore =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceBefore).to.equal(0n);
 
         // Execute the function
-        const bidSubmissions = [{
-          id: getBytesHash("test-bid-3"),
-          bidder: borrower.address,
-          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-          amount: ethers.parseEther("100"),
-          collateralAmounts: [ethers.parseEther("100")],
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [await mockCollateralToken.getAddress()]
-        }];
+        const bidSubmissions = [
+          {
+            id: getBytesHash("test-bid-3"),
+            bidder: borrower.address,
+            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+            amount: ethers.parseEther("100"),
+            collateralAmounts: [ethers.parseEther("100")],
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [await mockCollateralToken.getAddress()],
+          },
+        ];
 
         await termRouterFacet.connect(borrower).lockBidsWithReferral(
           await mockTermAuctionBidLocker.getAddress(),
           bidSubmissions,
           wallet2.address, // referral
-          false
+          false,
         );
 
         // Check balance after
-        const balanceAfter = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceAfter =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceAfter).to.equal(0n);
       });
 
@@ -2315,29 +2807,33 @@ describe("TermRouterFacet Unit Tests", () => {
         await setupAuctionMocks();
 
         // Check balance before
-        const balanceBefore = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceBefore =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceBefore).to.equal(0n);
 
         // Execute the function with usePermit2 = true
-        const bidSubmissions = [{
-          id: getBytesHash("test-bid-4"),
-          bidder: borrower.address,
-          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-          amount: ethers.parseEther("100"),
-          collateralAmounts: [ethers.parseEther("100")],
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [await mockCollateralToken.getAddress()]
-        }];
+        const bidSubmissions = [
+          {
+            id: getBytesHash("test-bid-4"),
+            bidder: borrower.address,
+            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+            amount: ethers.parseEther("100"),
+            collateralAmounts: [ethers.parseEther("100")],
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [await mockCollateralToken.getAddress()],
+          },
+        ];
 
         await termRouterFacet.connect(borrower).lockBidsWithReferral(
           await mockTermAuctionBidLocker.getAddress(),
           bidSubmissions,
           wallet2.address, // referral
-          true // usePermit2
+          true, // usePermit2
         );
 
         // Check balance after
-        const balanceAfter = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceAfter =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceAfter).to.equal(0n);
       });
 
@@ -2356,26 +2852,36 @@ describe("TermRouterFacet Unit Tests", () => {
           collateralTokens: [],
           isRollover: false,
           rolloverPairOffTermRepoServicer: ZeroAddress,
-          isRevealed: false
+          isRevealed: false,
         };
 
         await mockTermAuctionBidLocker.setup({
-          abi: ITermAuctionBidLocker__factory.createInterface().getFunction("lockedBid"),
+          abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+            "lockedBid",
+          ),
           inputs: [getBytesHash("new-bid-referral-1")],
           outputs: [emptyBid],
           kind: "read",
         });
 
         // Setup mock for multiple collateral tokens
-        const bidSubmissions = [{
-          id: getBytesHash("new-bid-referral-1"),
-          bidder: borrower.address,
-          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-          amount: ethers.parseEther("100"),
-          collateralAmounts: [ethers.parseEther("50"), ethers.parseEther("50")], // Multiple collateral amounts
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [await mockCollateralToken.getAddress(), await mockCollateralToken.getAddress()]
-        }];
+        const bidSubmissions = [
+          {
+            id: getBytesHash("new-bid-referral-1"),
+            bidder: borrower.address,
+            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+            amount: ethers.parseEther("100"),
+            collateralAmounts: [
+              ethers.parseEther("50"),
+              ethers.parseEther("50"),
+            ], // Multiple collateral amounts
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [
+              await mockCollateralToken.getAddress(),
+              await mockCollateralToken.getAddress(),
+            ],
+          },
+        ];
 
         // This should NOT revert with array index error
         await expect(
@@ -2383,8 +2889,8 @@ describe("TermRouterFacet Unit Tests", () => {
             await mockTermAuctionBidLocker.getAddress(),
             bidSubmissions,
             wallet2.address, // referral
-            false
-          )
+            false,
+          ),
         ).to.not.be.reverted;
       });
 
@@ -2403,26 +2909,36 @@ describe("TermRouterFacet Unit Tests", () => {
           collateralTokens: [],
           isRollover: false,
           rolloverPairOffTermRepoServicer: ZeroAddress,
-          isRevealed: false
+          isRevealed: false,
         };
 
         await mockTermAuctionBidLocker.setup({
-          abi: ITermAuctionBidLocker__factory.createInterface().getFunction("lockedBid"),
+          abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+            "lockedBid",
+          ),
           inputs: [getBytesHash("new-bid-referral-2")],
           outputs: [emptyBid],
           kind: "read",
         });
 
         // Setup mock for multiple collateral tokens
-        const bidSubmissions = [{
-          id: getBytesHash("new-bid-referral-2"),
-          bidder: borrower.address,
-          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-          amount: ethers.parseEther("100"),
-          collateralAmounts: [ethers.parseEther("50"), ethers.parseEther("50")], // Multiple collateral amounts
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [await mockCollateralToken.getAddress(), await mockCollateralToken.getAddress()]
-        }];
+        const bidSubmissions = [
+          {
+            id: getBytesHash("new-bid-referral-2"),
+            bidder: borrower.address,
+            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+            amount: ethers.parseEther("100"),
+            collateralAmounts: [
+              ethers.parseEther("50"),
+              ethers.parseEther("50"),
+            ], // Multiple collateral amounts
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [
+              await mockCollateralToken.getAddress(),
+              await mockCollateralToken.getAddress(),
+            ],
+          },
+        ];
 
         // This should NOT revert with array index error when using Permit2
         await expect(
@@ -2430,8 +2946,8 @@ describe("TermRouterFacet Unit Tests", () => {
             await mockTermAuctionBidLocker.getAddress(),
             bidSubmissions,
             wallet2.address, // referral
-            true // usePermit2
-          )
+            true, // usePermit2
+          ),
         ).to.not.be.reverted;
       });
     });
@@ -2445,19 +2961,23 @@ describe("TermRouterFacet Unit Tests", () => {
         expect(balanceBefore).to.equal(0n);
 
         // Execute the function
-        const offerSubmissions = [{
-          id: getBytesHash("test-offer-1"),
-          offeror: lender.address,
-          offerPriceHash: solidityPackedKeccak256(["uint256"], ["10"]),
-          amount: ethers.parseEther("100"),
-          purchaseToken: await mockPurchaseToken.getAddress()
-        }];
+        const offerSubmissions = [
+          {
+            id: getBytesHash("test-offer-1"),
+            offeror: lender.address,
+            offerPriceHash: solidityPackedKeccak256(["uint256"], ["10"]),
+            amount: ethers.parseEther("100"),
+            purchaseToken: await mockPurchaseToken.getAddress(),
+          },
+        ];
 
-        await termRouterFacet.connect(lender).lockOffers(
-          await mockTermAuctionOfferLocker.getAddress(),
-          offerSubmissions,
-          false
-        );
+        await termRouterFacet
+          .connect(lender)
+          .lockOffers(
+            await mockTermAuctionOfferLocker.getAddress(),
+            offerSubmissions,
+            false,
+          );
 
         // Check balance after
         const balanceAfter = await mockPurchaseToken.balanceOf(diamondAddress);
@@ -2472,18 +2992,20 @@ describe("TermRouterFacet Unit Tests", () => {
         expect(balanceBefore).to.equal(0n);
 
         // Execute the function with usePermit2 = true
-        const offerSubmissions = [{
-          id: getBytesHash("test-offer-2"),
-          offeror: lender.address,
-          offerPriceHash: solidityPackedKeccak256(["uint256"], ["10"]),
-          amount: ethers.parseEther("100"),
-          purchaseToken: await mockPurchaseToken.getAddress()
-        }];
+        const offerSubmissions = [
+          {
+            id: getBytesHash("test-offer-2"),
+            offeror: lender.address,
+            offerPriceHash: solidityPackedKeccak256(["uint256"], ["10"]),
+            amount: ethers.parseEther("100"),
+            purchaseToken: await mockPurchaseToken.getAddress(),
+          },
+        ];
 
         await termRouterFacet.connect(lender).lockOffers(
           await mockTermAuctionOfferLocker.getAddress(),
           offerSubmissions,
-          true // usePermit2
+          true, // usePermit2
         );
 
         // Check balance after
@@ -2501,19 +3023,21 @@ describe("TermRouterFacet Unit Tests", () => {
         expect(balanceBefore).to.equal(0n);
 
         // Execute the function
-        const offerSubmissions = [{
-          id: getBytesHash("test-offer-3"),
-          offeror: lender.address,
-          offerPriceHash: solidityPackedKeccak256(["uint256"], ["10"]),
-          amount: ethers.parseEther("100"),
-          purchaseToken: await mockPurchaseToken.getAddress()
-        }];
+        const offerSubmissions = [
+          {
+            id: getBytesHash("test-offer-3"),
+            offeror: lender.address,
+            offerPriceHash: solidityPackedKeccak256(["uint256"], ["10"]),
+            amount: ethers.parseEther("100"),
+            purchaseToken: await mockPurchaseToken.getAddress(),
+          },
+        ];
 
         await termRouterFacet.connect(lender).lockOffersWithReferral(
           await mockTermAuctionOfferLocker.getAddress(),
           offerSubmissions,
           wallet2.address, // referral
-          false
+          false,
         );
 
         // Check balance after
@@ -2529,19 +3053,21 @@ describe("TermRouterFacet Unit Tests", () => {
         expect(balanceBefore).to.equal(0n);
 
         // Execute the function with usePermit2 = true
-        const offerSubmissions = [{
-          id: getBytesHash("test-offer-4"),
-          offeror: lender.address,
-          offerPriceHash: solidityPackedKeccak256(["uint256"], ["10"]),
-          amount: ethers.parseEther("100"),
-          purchaseToken: await mockPurchaseToken.getAddress()
-        }];
+        const offerSubmissions = [
+          {
+            id: getBytesHash("test-offer-4"),
+            offeror: lender.address,
+            offerPriceHash: solidityPackedKeccak256(["uint256"], ["10"]),
+            amount: ethers.parseEther("100"),
+            purchaseToken: await mockPurchaseToken.getAddress(),
+          },
+        ];
 
         await termRouterFacet.connect(lender).lockOffersWithReferral(
           await mockTermAuctionOfferLocker.getAddress(),
           offerSubmissions,
           wallet2.address, // referral
-          true // usePermit2
+          true, // usePermit2
         );
 
         // Check balance after
@@ -2559,11 +3085,13 @@ describe("TermRouterFacet Unit Tests", () => {
         expect(balanceBefore).to.equal(0n);
 
         // Execute the function
-        await termRouterFacet.connect(borrower).submitRepurchasePayment(
-          await mockTermRepoServicer.getAddress(),
-          ethers.parseEther("50"),
-          false
-        );
+        await termRouterFacet
+          .connect(borrower)
+          .submitRepurchasePayment(
+            await mockTermRepoServicer.getAddress(),
+            ethers.parseEther("50"),
+            false,
+          );
 
         // Check balance after
         const balanceAfter = await mockPurchaseToken.balanceOf(diamondAddress);
@@ -2581,7 +3109,7 @@ describe("TermRouterFacet Unit Tests", () => {
         await termRouterFacet.connect(borrower).submitRepurchasePayment(
           await mockTermRepoServicer.getAddress(),
           ethers.parseEther("50"),
-          true // usePermit2
+          true, // usePermit2
         );
 
         // Check balance after
@@ -2595,7 +3123,8 @@ describe("TermRouterFacet Unit Tests", () => {
         await setupSuccessfulMocks();
 
         // Check balance before
-        const balanceBefore = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceBefore =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceBefore).to.equal(0n);
 
         // Execute the function
@@ -2604,11 +3133,12 @@ describe("TermRouterFacet Unit Tests", () => {
           await mockTermRepoServicer.getAddress(),
           ethers.parseEther("50"), // purchaseTokenAmount
           collateralAmounts,
-          false
+          false,
         );
 
         // Check balance after
-        const balanceAfter = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceAfter =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceAfter).to.equal(0n);
       });
 
@@ -2616,7 +3146,8 @@ describe("TermRouterFacet Unit Tests", () => {
         await setupSuccessfulMocks();
 
         // Check balance before
-        const balanceBefore = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceBefore =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceBefore).to.equal(0n);
 
         // Execute the function with usePermit2 = true
@@ -2625,11 +3156,12 @@ describe("TermRouterFacet Unit Tests", () => {
           await mockTermRepoServicer.getAddress(),
           ethers.parseEther("50"), // purchaseTokenAmount
           collateralAmounts,
-          true // usePermit2
+          true, // usePermit2
         );
 
         // Check balance after
-        const balanceAfter = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceAfter =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceAfter).to.equal(0n);
       });
     });
@@ -2639,19 +3171,23 @@ describe("TermRouterFacet Unit Tests", () => {
         await setupSuccessfulMocks();
 
         // Check balance before
-        const balanceBefore = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceBefore =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceBefore).to.equal(0n);
 
         // Execute the function
-        await termRouterFacet.connect(borrower).externalLockCollateral(
-          await mockTermRepoCollateralManager.getAddress(),
-          await mockCollateralToken.getAddress(),
-          ethers.parseEther("100"),
-          false
-        );
+        await termRouterFacet
+          .connect(borrower)
+          .externalLockCollateral(
+            await mockTermRepoCollateralManager.getAddress(),
+            await mockCollateralToken.getAddress(),
+            ethers.parseEther("100"),
+            false,
+          );
 
         // Check balance after
-        const balanceAfter = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceAfter =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceAfter).to.equal(0n);
       });
 
@@ -2659,7 +3195,8 @@ describe("TermRouterFacet Unit Tests", () => {
         await setupSuccessfulMocks();
 
         // Check balance before
-        const balanceBefore = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceBefore =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceBefore).to.equal(0n);
 
         // Execute the function with usePermit2 = true
@@ -2667,11 +3204,12 @@ describe("TermRouterFacet Unit Tests", () => {
           await mockTermRepoCollateralManager.getAddress(),
           await mockCollateralToken.getAddress(),
           ethers.parseEther("100"),
-          true // usePermit2
+          true, // usePermit2
         );
 
         // Check balance after
-        const balanceAfter = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceAfter =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceAfter).to.equal(0n);
       });
     });
@@ -2703,58 +3241,73 @@ describe("TermRouterFacet Unit Tests", () => {
             abi: erc20Interface.getFunction("balanceOf"),
             outputs: [0n],
             kind: "read",
-          }
+          },
         );
 
         // Check balances before
-        const balance1Before = await mockCollateralToken.balanceOf(diamondAddress);
-        const balance2Before = await mockCollateralToken2.balanceOf(diamondAddress);
+        const balance1Before =
+          await mockCollateralToken.balanceOf(diamondAddress);
+        const balance2Before =
+          await mockCollateralToken2.balanceOf(diamondAddress);
         expect(balance1Before).to.equal(0n);
         expect(balance2Before).to.equal(0n);
 
         // Execute with multiple collateral tokens
-        const bidSubmissions = [{
-          id: getBytesHash("test-bid-multi"),
-          bidder: borrower.address,
-          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-          amount: ethers.parseEther("100"),
-          collateralAmounts: [ethers.parseEther("50"), ethers.parseEther("50")],
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [
-            await mockCollateralToken.getAddress(),
-            await mockCollateralToken2.getAddress()
-          ]
-        }];
+        const bidSubmissions = [
+          {
+            id: getBytesHash("test-bid-multi"),
+            bidder: borrower.address,
+            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+            amount: ethers.parseEther("100"),
+            collateralAmounts: [
+              ethers.parseEther("50"),
+              ethers.parseEther("50"),
+            ],
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [
+              await mockCollateralToken.getAddress(),
+              await mockCollateralToken2.getAddress(),
+            ],
+          },
+        ];
 
         // Update the lockedBid mock to return appropriate arrays for multiple collateral tokens
         await mockTermAuctionBidLocker.setup({
-          abi: ITermAuctionBidLocker__factory.createInterface().getFunction("lockedBid"),
+          abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+            "lockedBid",
+          ),
           inputs: [getBytesHash("test-bid-multi")],
-          outputs: [{
-            id: ethers.ZeroHash,
-            bidder: ethers.ZeroAddress,
-            bidPriceRevealed: 0,
-            bidPriceHash: ethers.ZeroHash,
-            amount: 0,
-            collateralAmounts: [0, 0],
-            purchaseToken: ethers.ZeroAddress,
-            collateralTokens: [ethers.ZeroAddress, ethers.ZeroAddress],
-            isRollover: false,
-            rolloverPairOffTermRepoServicer: ethers.ZeroAddress,
-            isRevealed: false
-          }],
+          outputs: [
+            {
+              id: ethers.ZeroHash,
+              bidder: ethers.ZeroAddress,
+              bidPriceRevealed: 0,
+              bidPriceHash: ethers.ZeroHash,
+              amount: 0,
+              collateralAmounts: [0, 0],
+              purchaseToken: ethers.ZeroAddress,
+              collateralTokens: [ethers.ZeroAddress, ethers.ZeroAddress],
+              isRollover: false,
+              rolloverPairOffTermRepoServicer: ethers.ZeroAddress,
+              isRevealed: false,
+            },
+          ],
           kind: "read",
         });
 
-        await termRouterFacet.connect(borrower).lockBids(
-          await mockTermAuctionBidLocker.getAddress(),
-          bidSubmissions,
-          false
-        );
+        await termRouterFacet
+          .connect(borrower)
+          .lockBids(
+            await mockTermAuctionBidLocker.getAddress(),
+            bidSubmissions,
+            false,
+          );
 
         // Check balances after
-        const balance1After = await mockCollateralToken.balanceOf(diamondAddress);
-        const balance2After = await mockCollateralToken2.balanceOf(diamondAddress);
+        const balance1After =
+          await mockCollateralToken.balanceOf(diamondAddress);
+        const balance2After =
+          await mockCollateralToken2.balanceOf(diamondAddress);
         expect(balance1After).to.equal(0n);
         expect(balance2After).to.equal(0n);
       });
@@ -2763,29 +3316,35 @@ describe("TermRouterFacet Unit Tests", () => {
         await setupAuctionMocks();
 
         // Check balance before
-        const balanceBefore = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceBefore =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceBefore).to.equal(0n);
 
         // Execute with a submission where both existing and new amounts are 0
         // This should skip the transfer logic entirely
-        const bidSubmissions = [{
-          id: getBytesHash("test-bid-zero"),
-          bidder: borrower.address,
-          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-          amount: ethers.parseEther("100"),
-          collateralAmounts: [0], // Zero amount
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [await mockCollateralToken.getAddress()]
-        }];
+        const bidSubmissions = [
+          {
+            id: getBytesHash("test-bid-zero"),
+            bidder: borrower.address,
+            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+            amount: ethers.parseEther("100"),
+            collateralAmounts: [0], // Zero amount
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [await mockCollateralToken.getAddress()],
+          },
+        ];
 
-        await termRouterFacet.connect(borrower).lockBids(
-          await mockTermAuctionBidLocker.getAddress(),
-          bidSubmissions,
-          false
-        );
+        await termRouterFacet
+          .connect(borrower)
+          .lockBids(
+            await mockTermAuctionBidLocker.getAddress(),
+            bidSubmissions,
+            false,
+          );
 
         // Check balance after - should still be 0
-        const balanceAfter = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceAfter =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceAfter).to.equal(0n);
       });
 
@@ -2794,48 +3353,58 @@ describe("TermRouterFacet Unit Tests", () => {
 
         // Setup mock to return an existing bid with higher collateral
         await mockTermAuctionBidLocker.setup({
-          abi: ITermAuctionBidLocker__factory.createInterface().getFunction("lockedBid"),
+          abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+            "lockedBid",
+          ),
           inputs: [getBytesHash("test-bid-modify")],
-          outputs: [{
-            id: getBytesHash("test-bid-modify"),
-            bidder: borrower.address,
-            bidPriceRevealed: 0,
-            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-            amount: ethers.parseEther("100"),
-            collateralAmounts: [ethers.parseEther("200")], // Existing bid has 200
-            purchaseToken: await mockPurchaseToken.getAddress(),
-            collateralTokens: [await mockCollateralToken.getAddress()],
-            isRollover: false,
-            rolloverPairOffTermRepoServicer: ethers.ZeroAddress,
-            isRevealed: false
-          }],
+          outputs: [
+            {
+              id: getBytesHash("test-bid-modify"),
+              bidder: borrower.address,
+              bidPriceRevealed: 0,
+              bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+              amount: ethers.parseEther("100"),
+              collateralAmounts: [ethers.parseEther("200")], // Existing bid has 200
+              purchaseToken: await mockPurchaseToken.getAddress(),
+              collateralTokens: [await mockCollateralToken.getAddress()],
+              isRollover: false,
+              rolloverPairOffTermRepoServicer: ethers.ZeroAddress,
+              isRevealed: false,
+            },
+          ],
           kind: "read",
         });
 
         // Check balance before
-        const balanceBefore = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceBefore =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceBefore).to.equal(0n);
 
         // Submit a bid with lower collateral (100 instead of 200)
         // This should not require any token transfer since collateralRequired = 0
-        const bidSubmissions = [{
-          id: getBytesHash("test-bid-modify"),
-          bidder: borrower.address,
-          bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
-          amount: ethers.parseEther("100"),
-          collateralAmounts: [ethers.parseEther("100")], // Reducing to 100
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [await mockCollateralToken.getAddress()]
-        }];
+        const bidSubmissions = [
+          {
+            id: getBytesHash("test-bid-modify"),
+            bidder: borrower.address,
+            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15"]),
+            amount: ethers.parseEther("100"),
+            collateralAmounts: [ethers.parseEther("100")], // Reducing to 100
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [await mockCollateralToken.getAddress()],
+          },
+        ];
 
-        await termRouterFacet.connect(borrower).lockBids(
-          await mockTermAuctionBidLocker.getAddress(),
-          bidSubmissions,
-          false
-        );
+        await termRouterFacet
+          .connect(borrower)
+          .lockBids(
+            await mockTermAuctionBidLocker.getAddress(),
+            bidSubmissions,
+            false,
+          );
 
         // Check balance after - should still be 0
-        const balanceAfter = await mockCollateralToken.balanceOf(diamondAddress);
+        const balanceAfter =
+          await mockCollateralToken.balanceOf(diamondAddress);
         expect(balanceAfter).to.equal(0n);
       });
     });
@@ -2849,14 +3418,18 @@ describe("TermRouterFacet Unit Tests", () => {
         const iface = TermController__factory.createInterface();
         await mockTermController.setup({
           abi: iface.getFunction("isTermDeployed"),
-          inputs: [bidLockerAddr], outputs: [false], kind: "read"
+          inputs: [bidLockerAddr],
+          outputs: [false],
+          kind: "read",
         });
         await mockTermController.setup({
           abi: iface.getFunction("isFactoryDeployed"),
-          inputs: [bidLockerAddr], outputs: [true], kind: "read"
+          inputs: [bidLockerAddr],
+          outputs: [true],
+          kind: "read",
         });
         await expect(
-          termRouterFacet.connect(borrower).lockBids(bidLockerAddr, [], false)
+          termRouterFacet.connect(borrower).lockBids(bidLockerAddr, [], false),
         ).to.not.be.reverted;
       });
 
@@ -2866,14 +3439,20 @@ describe("TermRouterFacet Unit Tests", () => {
         const iface = TermController__factory.createInterface();
         await mockTermController.setup({
           abi: iface.getFunction("isTermDeployed"),
-          inputs: [offerLockerAddr], outputs: [false], kind: "read"
+          inputs: [offerLockerAddr],
+          outputs: [false],
+          kind: "read",
         });
         await mockTermController.setup({
           abi: iface.getFunction("isFactoryDeployed"),
-          inputs: [offerLockerAddr], outputs: [true], kind: "read"
+          inputs: [offerLockerAddr],
+          outputs: [true],
+          kind: "read",
         });
         await expect(
-          termRouterFacet.connect(lender).lockOffers(offerLockerAddr, [], false)
+          termRouterFacet
+            .connect(lender)
+            .lockOffers(offerLockerAddr, [], false),
         ).to.not.be.reverted;
       });
 
@@ -2883,38 +3462,53 @@ describe("TermRouterFacet Unit Tests", () => {
         const iface = TermController__factory.createInterface();
         await mockTermController.setup({
           abi: iface.getFunction("isTermDeployed"),
-          inputs: [servicerAddr], outputs: [false], kind: "read"
+          inputs: [servicerAddr],
+          outputs: [false],
+          kind: "read",
         });
         await mockTermController.setup({
           abi: iface.getFunction("isFactoryDeployed"),
-          inputs: [servicerAddr], outputs: [true], kind: "read"
+          inputs: [servicerAddr],
+          outputs: [true],
+          kind: "read",
         });
         await expect(
-          termRouterFacet.connect(borrower).submitRepurchasePayment(
-            servicerAddr, ethers.parseEther("10"), false
-          )
+          termRouterFacet
+            .connect(borrower)
+            .submitRepurchasePayment(
+              servicerAddr,
+              ethers.parseEther("10"),
+              false,
+            ),
         ).to.not.be.reverted;
       });
 
       it("externalLockCollateral: succeeds when isTermDeployed=false but isFactoryDeployed=true", async () => {
         await approveTermControllerProper();
-        const collateralMgrAddr = await mockTermRepoCollateralManager.getAddress();
+        const collateralMgrAddr =
+          await mockTermRepoCollateralManager.getAddress();
         const iface = TermController__factory.createInterface();
         await mockTermController.setup({
           abi: iface.getFunction("isTermDeployed"),
-          inputs: [collateralMgrAddr], outputs: [false], kind: "read"
+          inputs: [collateralMgrAddr],
+          outputs: [false],
+          kind: "read",
         });
         await mockTermController.setup({
           abi: iface.getFunction("isFactoryDeployed"),
-          inputs: [collateralMgrAddr], outputs: [true], kind: "read"
+          inputs: [collateralMgrAddr],
+          outputs: [true],
+          kind: "read",
         });
         await expect(
-          termRouterFacet.connect(borrower).externalLockCollateral(
-            collateralMgrAddr,
-            await mockCollateralToken.getAddress(),
-            ethers.parseEther("100"),
-            false
-          )
+          termRouterFacet
+            .connect(borrower)
+            .externalLockCollateral(
+              collateralMgrAddr,
+              await mockCollateralToken.getAddress(),
+              ethers.parseEther("100"),
+              false,
+            ),
         ).to.not.be.reverted;
       });
 
@@ -2924,18 +3518,22 @@ describe("TermRouterFacet Unit Tests", () => {
         const iface = TermController__factory.createInterface();
         await mockTermController.setup({
           abi: iface.getFunction("isTermDeployed"),
-          inputs: [rolloverMgrAddr], outputs: [false], kind: "read"
+          inputs: [rolloverMgrAddr],
+          outputs: [false],
+          kind: "read",
         });
         await mockTermController.setup({
           abi: iface.getFunction("isFactoryDeployed"),
-          inputs: [rolloverMgrAddr], outputs: [true], kind: "read"
+          inputs: [rolloverMgrAddr],
+          outputs: [true],
+          kind: "read",
         });
         await expect(
           termRouterFacet.connect(borrower).electRollover(rolloverMgrAddr, {
             rolloverAuctionBidLocker: ZeroAddress,
             rolloverAmount: ethers.parseEther("100"),
             rolloverBidPriceHash: ethers.ZeroHash,
-          } as any)
+          } as any),
         ).to.not.be.reverted;
       });
     });
@@ -2944,36 +3542,50 @@ describe("TermRouterFacet Unit Tests", () => {
       it("lockBids: empty submissions skips all loops and approve blocks", async () => {
         await setupAuctionMocks();
         await expect(
-          termRouterFacet.connect(borrower).lockBids(
-            await mockTermAuctionBidLocker.getAddress(), [], false
-          )
+          termRouterFacet
+            .connect(borrower)
+            .lockBids(await mockTermAuctionBidLocker.getAddress(), [], false),
         ).to.not.be.reverted;
       });
 
       it("lockBidsWithReferral: empty submissions skips all loops and approve blocks", async () => {
         await setupAuctionMocks();
         await expect(
-          termRouterFacet.connect(borrower).lockBidsWithReferral(
-            await mockTermAuctionBidLocker.getAddress(), [], wallet2.address, false
-          )
+          termRouterFacet
+            .connect(borrower)
+            .lockBidsWithReferral(
+              await mockTermAuctionBidLocker.getAddress(),
+              [],
+              wallet2.address,
+              false,
+            ),
         ).to.not.be.reverted;
       });
 
       it("lockOffers: empty submissions skips loop and approve (purchaseToken=address(0))", async () => {
         await setupAuctionMocks();
         await expect(
-          termRouterFacet.connect(lender).lockOffers(
-            await mockTermAuctionOfferLocker.getAddress(), [], false
-          )
+          termRouterFacet
+            .connect(lender)
+            .lockOffers(
+              await mockTermAuctionOfferLocker.getAddress(),
+              [],
+              false,
+            ),
         ).to.not.be.reverted;
       });
 
       it("lockOffersWithReferral: empty submissions skips loop and approve (purchaseToken=address(0))", async () => {
         await setupAuctionMocks();
         await expect(
-          termRouterFacet.connect(lender).lockOffersWithReferral(
-            await mockTermAuctionOfferLocker.getAddress(), [], wallet2.address, false
-          )
+          termRouterFacet
+            .connect(lender)
+            .lockOffersWithReferral(
+              await mockTermAuctionOfferLocker.getAddress(),
+              [],
+              wallet2.address,
+              false,
+            ),
         ).to.not.be.reverted;
       });
     });
@@ -2996,24 +3608,32 @@ describe("TermRouterFacet Unit Tests", () => {
           isRevealed: false,
         };
         await mockTermAuctionBidLocker.setup({
-          abi: ITermAuctionBidLocker__factory.createInterface().getFunction("lockedBid"),
+          abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+            "lockedBid",
+          ),
           inputs: [bidId],
           outputs: [existingBid],
           kind: "read",
         });
-        const bidSubmissions = [{
-          id: bidId,
-          bidder: borrower.address,
-          bidPriceHash: ethers.ZeroHash,
-          amount: ethers.parseEther("50"),
-          collateralAmounts: [0n],
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [await mockCollateralToken.getAddress()],
-        }];
+        const bidSubmissions = [
+          {
+            id: bidId,
+            bidder: borrower.address,
+            bidPriceHash: ethers.ZeroHash,
+            amount: ethers.parseEther("50"),
+            collateralAmounts: [0n],
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [await mockCollateralToken.getAddress()],
+          },
+        ];
         await expect(
-          termRouterFacet.connect(borrower).lockBids(
-            await mockTermAuctionBidLocker.getAddress(), bidSubmissions, false
-          )
+          termRouterFacet
+            .connect(borrower)
+            .lockBids(
+              await mockTermAuctionBidLocker.getAddress(),
+              bidSubmissions,
+              false,
+            ),
         ).to.not.be.reverted;
       });
 
@@ -3034,24 +3654,33 @@ describe("TermRouterFacet Unit Tests", () => {
           isRevealed: false,
         };
         await mockTermAuctionBidLocker.setup({
-          abi: ITermAuctionBidLocker__factory.createInterface().getFunction("lockedBid"),
+          abi: ITermAuctionBidLocker__factory.createInterface().getFunction(
+            "lockedBid",
+          ),
           inputs: [bidId],
           outputs: [existingBid],
           kind: "read",
         });
-        const bidSubmissions = [{
-          id: bidId,
-          bidder: borrower.address,
-          bidPriceHash: ethers.ZeroHash,
-          amount: ethers.parseEther("50"),
-          collateralAmounts: [0n],
-          purchaseToken: await mockPurchaseToken.getAddress(),
-          collateralTokens: [await mockCollateralToken.getAddress()],
-        }];
+        const bidSubmissions = [
+          {
+            id: bidId,
+            bidder: borrower.address,
+            bidPriceHash: ethers.ZeroHash,
+            amount: ethers.parseEther("50"),
+            collateralAmounts: [0n],
+            purchaseToken: await mockPurchaseToken.getAddress(),
+            collateralTokens: [await mockCollateralToken.getAddress()],
+          },
+        ];
         await expect(
-          termRouterFacet.connect(borrower).lockBidsWithReferral(
-            await mockTermAuctionBidLocker.getAddress(), bidSubmissions, wallet2.address, false
-          )
+          termRouterFacet
+            .connect(borrower)
+            .lockBidsWithReferral(
+              await mockTermAuctionBidLocker.getAddress(),
+              bidSubmissions,
+              wallet2.address,
+              false,
+            ),
         ).to.not.be.reverted;
       });
     });
@@ -3070,22 +3699,30 @@ describe("TermRouterFacet Unit Tests", () => {
           isRevealed: false,
         };
         await mockTermAuctionOfferLocker.setup({
-          abi: ITermAuctionOfferLocker__factory.createInterface().getFunction("lockedOffer"),
+          abi: ITermAuctionOfferLocker__factory.createInterface().getFunction(
+            "lockedOffer",
+          ),
           inputs: [offerId],
           outputs: [existingOffer],
           kind: "read",
         });
-        const offerSubmissions = [{
-          id: offerId,
-          offeror: lender.address,
-          offerPriceHash: ethers.ZeroHash,
-          amount: ethers.parseEther("100"),
-          purchaseToken: await mockPurchaseToken.getAddress(),
-        }];
+        const offerSubmissions = [
+          {
+            id: offerId,
+            offeror: lender.address,
+            offerPriceHash: ethers.ZeroHash,
+            amount: ethers.parseEther("100"),
+            purchaseToken: await mockPurchaseToken.getAddress(),
+          },
+        ];
         await expect(
-          termRouterFacet.connect(lender).lockOffers(
-            await mockTermAuctionOfferLocker.getAddress(), offerSubmissions, false
-          )
+          termRouterFacet
+            .connect(lender)
+            .lockOffers(
+              await mockTermAuctionOfferLocker.getAddress(),
+              offerSubmissions,
+              false,
+            ),
         ).to.not.be.reverted;
       });
 
@@ -3102,22 +3739,30 @@ describe("TermRouterFacet Unit Tests", () => {
           isRevealed: false,
         };
         await mockTermAuctionOfferLocker.setup({
-          abi: ITermAuctionOfferLocker__factory.createInterface().getFunction("lockedOffer"),
+          abi: ITermAuctionOfferLocker__factory.createInterface().getFunction(
+            "lockedOffer",
+          ),
           inputs: [offerId],
           outputs: [existingOffer],
           kind: "read",
         });
-        const offerSubmissions = [{
-          id: offerId,
-          offeror: lender.address,
-          offerPriceHash: ethers.ZeroHash,
-          amount: ethers.parseEther("50"),
-          purchaseToken: await mockPurchaseToken.getAddress(),
-        }];
+        const offerSubmissions = [
+          {
+            id: offerId,
+            offeror: lender.address,
+            offerPriceHash: ethers.ZeroHash,
+            amount: ethers.parseEther("50"),
+            purchaseToken: await mockPurchaseToken.getAddress(),
+          },
+        ];
         await expect(
-          termRouterFacet.connect(lender).lockOffers(
-            await mockTermAuctionOfferLocker.getAddress(), offerSubmissions, false
-          )
+          termRouterFacet
+            .connect(lender)
+            .lockOffers(
+              await mockTermAuctionOfferLocker.getAddress(),
+              offerSubmissions,
+              false,
+            ),
         ).to.not.be.reverted;
       });
 
@@ -3134,22 +3779,30 @@ describe("TermRouterFacet Unit Tests", () => {
           isRevealed: false,
         };
         await mockTermAuctionOfferLocker.setup({
-          abi: ITermAuctionOfferLocker__factory.createInterface().getFunction("lockedOffer"),
+          abi: ITermAuctionOfferLocker__factory.createInterface().getFunction(
+            "lockedOffer",
+          ),
           inputs: [offerId],
           outputs: [existingOffer],
           kind: "read",
         });
-        const offerSubmissions = [{
-          id: offerId,
-          offeror: lender.address,
-          offerPriceHash: ethers.ZeroHash,
-          amount: 0n,
-          purchaseToken: await mockPurchaseToken.getAddress(),
-        }];
+        const offerSubmissions = [
+          {
+            id: offerId,
+            offeror: lender.address,
+            offerPriceHash: ethers.ZeroHash,
+            amount: 0n,
+            purchaseToken: await mockPurchaseToken.getAddress(),
+          },
+        ];
         await expect(
-          termRouterFacet.connect(lender).lockOffers(
-            await mockTermAuctionOfferLocker.getAddress(), offerSubmissions, false
-          )
+          termRouterFacet
+            .connect(lender)
+            .lockOffers(
+              await mockTermAuctionOfferLocker.getAddress(),
+              offerSubmissions,
+              false,
+            ),
         ).to.not.be.reverted;
       });
 
@@ -3166,22 +3819,31 @@ describe("TermRouterFacet Unit Tests", () => {
           isRevealed: false,
         };
         await mockTermAuctionOfferLocker.setup({
-          abi: ITermAuctionOfferLocker__factory.createInterface().getFunction("lockedOffer"),
+          abi: ITermAuctionOfferLocker__factory.createInterface().getFunction(
+            "lockedOffer",
+          ),
           inputs: [offerId],
           outputs: [existingOffer],
           kind: "read",
         });
-        const offerSubmissions = [{
-          id: offerId,
-          offeror: lender.address,
-          offerPriceHash: ethers.ZeroHash,
-          amount: ethers.parseEther("100"),
-          purchaseToken: await mockPurchaseToken.getAddress(),
-        }];
+        const offerSubmissions = [
+          {
+            id: offerId,
+            offeror: lender.address,
+            offerPriceHash: ethers.ZeroHash,
+            amount: ethers.parseEther("100"),
+            purchaseToken: await mockPurchaseToken.getAddress(),
+          },
+        ];
         await expect(
-          termRouterFacet.connect(lender).lockOffersWithReferral(
-            await mockTermAuctionOfferLocker.getAddress(), offerSubmissions, wallet2.address, false
-          )
+          termRouterFacet
+            .connect(lender)
+            .lockOffersWithReferral(
+              await mockTermAuctionOfferLocker.getAddress(),
+              offerSubmissions,
+              wallet2.address,
+              false,
+            ),
         ).to.not.be.reverted;
       });
 
@@ -3198,22 +3860,31 @@ describe("TermRouterFacet Unit Tests", () => {
           isRevealed: false,
         };
         await mockTermAuctionOfferLocker.setup({
-          abi: ITermAuctionOfferLocker__factory.createInterface().getFunction("lockedOffer"),
+          abi: ITermAuctionOfferLocker__factory.createInterface().getFunction(
+            "lockedOffer",
+          ),
           inputs: [offerId],
           outputs: [existingOffer],
           kind: "read",
         });
-        const offerSubmissions = [{
-          id: offerId,
-          offeror: lender.address,
-          offerPriceHash: ethers.ZeroHash,
-          amount: 0n,
-          purchaseToken: await mockPurchaseToken.getAddress(),
-        }];
+        const offerSubmissions = [
+          {
+            id: offerId,
+            offeror: lender.address,
+            offerPriceHash: ethers.ZeroHash,
+            amount: 0n,
+            purchaseToken: await mockPurchaseToken.getAddress(),
+          },
+        ];
         await expect(
-          termRouterFacet.connect(lender).lockOffersWithReferral(
-            await mockTermAuctionOfferLocker.getAddress(), offerSubmissions, wallet2.address, false
-          )
+          termRouterFacet
+            .connect(lender)
+            .lockOffersWithReferral(
+              await mockTermAuctionOfferLocker.getAddress(),
+              offerSubmissions,
+              wallet2.address,
+              false,
+            ),
         ).to.not.be.reverted;
       });
     });

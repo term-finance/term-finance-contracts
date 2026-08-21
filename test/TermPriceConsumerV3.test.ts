@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
@@ -326,9 +325,9 @@ describe("TermPriceConsumerV3", () => {
       await expect(
         termOracle.connect(wallet2).upgrade(wallet1.address),
       ).to.be.revertedWithCustomError(
-      termOracle,
-      "AccessControlUnauthorizedAccount",
-    );
+        termOracle,
+        "AccessControlUnauthorizedAccount",
+      );
     });
   });
 
@@ -622,7 +621,7 @@ describe("TermPriceConsumerV3", () => {
       const blockNumber = await ethers.provider.getBlockNumber();
       const block = await ethers.provider.getBlock(blockNumber);
       const currentTimestamp = block?.timestamp!;
-      
+
       // Create mock feeds with timestamps that are too far in the future
       const futureTimestamp = currentTimestamp + 120; // 120 seconds ahead (> 60 second limit)
 
@@ -635,8 +634,9 @@ describe("TermPriceConsumerV3", () => {
         wallet1,
       );
 
-      const priceFeedInterface = AggregatorV3Interface__factory.createInterface();
-      
+      const priceFeedInterface =
+        AggregatorV3Interface__factory.createInterface();
+
       // Setup primary feed with future timestamp
       await mockCollateralFeedFuture.setup(
         {
@@ -680,13 +680,11 @@ describe("TermPriceConsumerV3", () => {
 
     it("should revert with InvalidUpdateTimestamp when primary feed timestamp is too far in future and no fallback", async () => {
       // Add primary feed with future timestamp and no fallback
-      await termOracle
-        .connect(devopsWallet)
-        .addNewTokenPriceFeed(
-          await testBorrowedToken.getAddress(),
-          await mockCollateralFeedFuture.getAddress(),
-          BigInt(60 * 60 * 24), // 24 hour refresh threshold
-        );
+      await termOracle.connect(devopsWallet).addNewTokenPriceFeed(
+        await testBorrowedToken.getAddress(),
+        await mockCollateralFeedFuture.getAddress(),
+        BigInt(60 * 60 * 24), // 24 hour refresh threshold
+      );
 
       await expect(
         termOracle
@@ -724,15 +722,16 @@ describe("TermPriceConsumerV3", () => {
       const blockNumber = await ethers.provider.getBlockNumber();
       const block = await ethers.provider.getBlock(blockNumber);
       const currentTimestamp = block?.timestamp!;
-      
+
       // Create fallback feed with valid timestamp
       const mockFallbackFeedValid = await deployMock<TestPriceFeed>(
         TestPriceFeed__factory.abi,
         wallet1,
       );
 
-      const priceFeedInterface = AggregatorV3Interface__factory.createInterface();
-      
+      const priceFeedInterface =
+        AggregatorV3Interface__factory.createInterface();
+
       await mockFallbackFeedValid.setup(
         {
           abi: priceFeedInterface.getFunction("latestRoundData"),
@@ -770,7 +769,7 @@ describe("TermPriceConsumerV3", () => {
           await testBorrowedToken.getAddress(),
           "1000000000000000000",
         );
-      
+
       expect(result).to.deep.equal([2000000000000n]); // 2.0 from fallback feed (with 18 decimal places)
     });
 
@@ -788,7 +787,7 @@ describe("TermPriceConsumerV3", () => {
       const blockNumber = await ethers.provider.getBlockNumber();
       const block = await ethers.provider.getBlock(blockNumber);
       const currentTimestamp = block?.timestamp!;
-      
+
       // Create feed with timestamp exactly 60 seconds ahead (at the boundary)
       const boundaryTimestamp = currentTimestamp + 60;
 
@@ -797,8 +796,9 @@ describe("TermPriceConsumerV3", () => {
         wallet1,
       );
 
-      const priceFeedInterface = AggregatorV3Interface__factory.createInterface();
-      
+      const priceFeedInterface =
+        AggregatorV3Interface__factory.createInterface();
+
       await mockCollateralFeedBoundary.setup(
         {
           abi: priceFeedInterface.getFunction("latestRoundData"),
@@ -818,13 +818,11 @@ describe("TermPriceConsumerV3", () => {
         },
       );
 
-      await termOracle
-        .connect(devopsWallet)
-        .addNewTokenPriceFeed(
-          await testBorrowedToken.getAddress(),
-          await mockCollateralFeedBoundary.getAddress(),
-          BigInt(60 * 60 * 24), // 24 hour refresh threshold
-        );
+      await termOracle.connect(devopsWallet).addNewTokenPriceFeed(
+        await testBorrowedToken.getAddress(),
+        await mockCollateralFeedBoundary.getAddress(),
+        BigInt(60 * 60 * 24), // 24 hour refresh threshold
+      );
 
       // Move forward 60 seconds so the timestamp is now exactly current
       await network.provider.request({
@@ -843,7 +841,7 @@ describe("TermPriceConsumerV3", () => {
           await testBorrowedToken.getAddress(),
           "1000000000000000000",
         );
-      
+
       expect(result).to.deep.equal([3000000000000n]); // 3.0 from primary feed (with 18 decimal places)
     });
 
@@ -851,7 +849,7 @@ describe("TermPriceConsumerV3", () => {
       const blockNumber = await ethers.provider.getBlockNumber();
       const block = await ethers.provider.getBlock(blockNumber);
       const currentTimestamp = block?.timestamp!;
-      
+
       // Create feed with timestamp significantly ahead (way over the limit)
       const overLimitTimestamp = currentTimestamp + 120;
 
@@ -860,8 +858,9 @@ describe("TermPriceConsumerV3", () => {
         wallet1,
       );
 
-      const priceFeedInterface = AggregatorV3Interface__factory.createInterface();
-      
+      const priceFeedInterface =
+        AggregatorV3Interface__factory.createInterface();
+
       await mockCollateralFeedOverLimit.setup(
         {
           abi: priceFeedInterface.getFunction("latestRoundData"),
@@ -881,13 +880,11 @@ describe("TermPriceConsumerV3", () => {
         },
       );
 
-      await termOracle
-        .connect(devopsWallet)
-        .addNewTokenPriceFeed(
-          await testBorrowedToken.getAddress(),
-          await mockCollateralFeedOverLimit.getAddress(),
-          BigInt(60), // SHORT refresh threshold to force staleness check
-        );
+      await termOracle.connect(devopsWallet).addNewTokenPriceFeed(
+        await testBorrowedToken.getAddress(),
+        await mockCollateralFeedOverLimit.getAddress(),
+        BigInt(60), // SHORT refresh threshold to force staleness check
+      );
 
       await expect(
         termOracle
@@ -902,19 +899,21 @@ describe("TermPriceConsumerV3", () => {
 
   describe("View Functions", () => {
     it("getPriceFeedConfig returns correct configuration for existing price feed", async () => {
-      const [priceFeed, refreshRateThreshold] = await termOracle.getPriceFeedConfig(
-        await testCollateralToken.getAddress()
-      );
-      
+      const [priceFeed, refreshRateThreshold] =
+        await termOracle.getPriceFeedConfig(
+          await testCollateralToken.getAddress(),
+        );
+
       expect(priceFeed).to.equal(await mockCollateralFeed.getAddress());
       expect(refreshRateThreshold).to.equal(BigInt(60 * 60 * 24));
     });
 
     it("getPriceFeedConfig returns zero values for non-existent price feed", async () => {
-      const [priceFeed, refreshRateThreshold] = await termOracle.getPriceFeedConfig(
-        await testBorrowedToken.getAddress()
-      );
-      
+      const [priceFeed, refreshRateThreshold] =
+        await termOracle.getPriceFeedConfig(
+          await testBorrowedToken.getAddress(),
+        );
+
       expect(priceFeed).to.equal(ZeroAddress);
       expect(refreshRateThreshold).to.equal(0n);
     });
@@ -926,22 +925,26 @@ describe("TermPriceConsumerV3", () => {
         .addNewTokenFallbackPriceFeed(
           await testCollateralToken.getAddress(),
           await mockCollateralFeed3.getAddress(),
-          BigInt(60 * 60 * 12)
+          BigInt(60 * 60 * 12),
         );
 
-      const [fallbackPriceFeed, refreshRateThreshold] = await termOracle.getFallbackPriceFeedConfig(
-        await testCollateralToken.getAddress()
+      const [fallbackPriceFeed, refreshRateThreshold] =
+        await termOracle.getFallbackPriceFeedConfig(
+          await testCollateralToken.getAddress(),
+        );
+
+      expect(fallbackPriceFeed).to.equal(
+        await mockCollateralFeed3.getAddress(),
       );
-      
-      expect(fallbackPriceFeed).to.equal(await mockCollateralFeed3.getAddress());
       expect(refreshRateThreshold).to.equal(BigInt(60 * 60 * 12));
     });
 
     it("getFallbackPriceFeedConfig returns zero values for non-existent fallback price feed", async () => {
-      const [fallbackPriceFeed, refreshRateThreshold] = await termOracle.getFallbackPriceFeedConfig(
-        await testBorrowedToken.getAddress()
-      );
-      
+      const [fallbackPriceFeed, refreshRateThreshold] =
+        await termOracle.getFallbackPriceFeedConfig(
+          await testBorrowedToken.getAddress(),
+        );
+
       expect(fallbackPriceFeed).to.equal(ZeroAddress);
       expect(refreshRateThreshold).to.equal(0n);
     });
@@ -958,20 +961,22 @@ describe("TermPriceConsumerV3", () => {
           await mockCollateralFeed2.getAddress(),
           refreshRatePrimary,
           await mockCollateralFeed3.getAddress(),
-          refreshRateFallback
+          refreshRateFallback,
         );
 
       // Check primary price feed config
-      const [primaryFeed, primaryThreshold] = await termOracle.getPriceFeedConfig(
-        await testCollateralToken2.getAddress()
-      );
+      const [primaryFeed, primaryThreshold] =
+        await termOracle.getPriceFeedConfig(
+          await testCollateralToken2.getAddress(),
+        );
       expect(primaryFeed).to.equal(await mockCollateralFeed2.getAddress());
       expect(primaryThreshold).to.equal(refreshRatePrimary);
 
-      // Check fallback price feed config  
-      const [fallbackFeed, fallbackThreshold] = await termOracle.getFallbackPriceFeedConfig(
-        await testCollateralToken2.getAddress()
-      );
+      // Check fallback price feed config
+      const [fallbackFeed, fallbackThreshold] =
+        await termOracle.getFallbackPriceFeedConfig(
+          await testCollateralToken2.getAddress(),
+        );
       expect(fallbackFeed).to.equal(await mockCollateralFeed3.getAddress());
       expect(fallbackThreshold).to.equal(refreshRateFallback);
     });
@@ -983,13 +988,14 @@ describe("TermPriceConsumerV3", () => {
         .addNewTokenFallbackPriceFeed(
           await testCollateralToken.getAddress(),
           await mockCollateralFeed3.getAddress(),
-          BigInt(60 * 60 * 6)
+          BigInt(60 * 60 * 6),
         );
 
       // Verify it was added
-      const [fallbackFeed, fallbackThreshold] = await termOracle.getFallbackPriceFeedConfig(
-        await testCollateralToken.getAddress()
-      );
+      const [fallbackFeed, fallbackThreshold] =
+        await termOracle.getFallbackPriceFeedConfig(
+          await testCollateralToken.getAddress(),
+        );
       expect(fallbackFeed).to.equal(await mockCollateralFeed3.getAddress());
       expect(fallbackThreshold).to.equal(BigInt(60 * 60 * 6));
 
@@ -999,19 +1005,20 @@ describe("TermPriceConsumerV3", () => {
         .removeFallbackTokenPriceFeed(await testCollateralToken.getAddress());
 
       // Verify it was removed
-      const [removedFallbackFeed, removedFallbackThreshold] = await termOracle.getFallbackPriceFeedConfig(
-        await testCollateralToken.getAddress()
-      );
+      const [removedFallbackFeed, removedFallbackThreshold] =
+        await termOracle.getFallbackPriceFeedConfig(
+          await testCollateralToken.getAddress(),
+        );
       expect(removedFallbackFeed).to.equal(ZeroAddress);
       expect(removedFallbackThreshold).to.equal(0n);
 
       // Primary feed should still be there
-      const [primaryFeed, primaryThreshold] = await termOracle.getPriceFeedConfig(
-        await testCollateralToken.getAddress()
-      );
+      const [primaryFeed, primaryThreshold] =
+        await termOracle.getPriceFeedConfig(
+          await testCollateralToken.getAddress(),
+        );
       expect(primaryFeed).to.equal(await mockCollateralFeed.getAddress());
       expect(primaryThreshold).to.equal(BigInt(60 * 60 * 24));
     });
   });
 });
-/* eslint-enable camelcase */

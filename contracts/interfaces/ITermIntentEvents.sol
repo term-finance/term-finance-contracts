@@ -82,17 +82,12 @@ interface ITermIntentEvents {
 
     /// @notice Event emitted when an intent is successfully cancelled
     /// @param orderHash The hash of the order that was cancelled
-    event IntentCancelled(
-        bytes32 orderHash
-    );
+    event IntentCancelled(bytes32 orderHash);
 
     /// @notice Event emitted when a repo token swap order is filled
     /// @param orderHash The hash of the order that was filled
     /// @param swapData The swap data containing all swap details
-    event RepoTokenSwapFilled(
-        bytes32 orderHash,
-        RepoTokenSwapData swapData
-    );
+    event RepoTokenSwapFilled(bytes32 orderHash, RepoTokenSwapData swapData);
 
     /// @notice Event emitted when a minimum salt value is set for limit orders of a specific token pair by a maker
     /// @dev This event is used to track the minimum salt requirements for order creation
@@ -119,4 +114,22 @@ interface ITermIntentEvents {
         address takerToken,
         uint256 minSaltValue
     );
+
+    /// @notice Event emitted when a limit order hash is pre-signed by its maker
+    /// @param orderHash The EIP712 hash of the pre-signed limit order
+    /// @param signer The address of the maker who pre-signed the limit order
+    event PresignedLimitOrderSet(bytes32 orderHash, address signer);
+
+    /// @notice Event emitted when a pre-signed limit order hash is revoked by its maker
+    /// @param orderHash The EIP712 hash of the revoked limit order
+    event PresignedLimitOrderRevoked(bytes32 orderHash);
+
+    /// @notice Event emitted when a swap order hash is pre-signed by its maker
+    /// @param orderHash The EIP712 hash of the pre-signed swap order
+    /// @param signer The address of the maker who pre-signed the swap order
+    event PresignedSwapOrderSet(bytes32 orderHash, address signer);
+
+    /// @notice Event emitted when a pre-signed swap order hash is revoked by its maker
+    /// @param orderHash The EIP712 hash of the revoked swap order
+    event PresignedSwapOrderRevoked(bytes32 orderHash);
 }

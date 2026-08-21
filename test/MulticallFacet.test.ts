@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
@@ -17,7 +16,7 @@ describe("MulticallFacet Tests", () => {
   let diamondCutFacet: DiamondCutFacet;
   let diamondLoupeFacet: DiamondLoupeFacet;
   let termDiamond: TermDiamond;
-  let termDiamondFactory: TermDiamondFactory
+  let termDiamondFactory: TermDiamondFactory;
   let testRevertContract: TestRevertContract;
 
   let devops: SignerWithAddress;
@@ -31,19 +30,26 @@ describe("MulticallFacet Tests", () => {
     [devops, admin, user1, user2] = await ethers.getSigners();
 
     // Deploy facets
-    const DiamondFactoryFactory = await ethers.getContractFactory("TermDiamondFactory");
-    termDiamondFactory = await DiamondFactoryFactory.deploy(admin.address, devops.address);
+    const DiamondFactoryFactory =
+      await ethers.getContractFactory("TermDiamondFactory");
+    termDiamondFactory = await DiamondFactoryFactory.deploy(
+      admin.address,
+      devops.address,
+    );
 
-    const DiamondLoupeFacetFactory = await ethers.getContractFactory("DiamondLoupeFacet");
+    const DiamondLoupeFacetFactory =
+      await ethers.getContractFactory("DiamondLoupeFacet");
     diamondLoupeFacet = await DiamondLoupeFacetFactory.deploy();
     await diamondLoupeFacet.waitForDeployment();
 
-    const MulticallFacetFactory = await ethers.getContractFactory("MulticallFacet");
+    const MulticallFacetFactory =
+      await ethers.getContractFactory("MulticallFacet");
     multicallFacet = await MulticallFacetFactory.deploy();
     await multicallFacet.waitForDeployment();
 
     // Deploy test revert contract
-    const TestRevertContractFactory = await ethers.getContractFactory("TestRevertContract");
+    const TestRevertContractFactory =
+      await ethers.getContractFactory("TestRevertContract");
     testRevertContract = await TestRevertContractFactory.deploy();
     await testRevertContract.waitForDeployment();
   });
@@ -55,42 +61,54 @@ describe("MulticallFacet Tests", () => {
 
     // Read diamond address from DiamondDeployed event log
     const diamondDeployedEvent = receipt?.logs.find(
-      log => log.topics[0] === termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash
+      (log) =>
+        log.topics[0] ===
+        termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash,
     );
 
     if (!diamondDeployedEvent) {
       throw new Error("DiamondDeployed event not found");
     }
 
-    const decodedEvent = termDiamondFactory.interface.parseLog(diamondDeployedEvent);
+    const decodedEvent =
+      termDiamondFactory.interface.parseLog(diamondDeployedEvent);
     const diamondAddress = decodedEvent?.args.diamond;
     const diamondCutFacetAddr = decodedEvent?.args.diamondCutFacet;
 
-    termDiamond = await ethers.getContractAt("TermDiamond", diamondAddress) as TermDiamond;
-    
-    diamondCutFacet = await ethers.getContractAt(
+    termDiamond = (await ethers.getContractAt(
+      "TermDiamond",
+      diamondAddress,
+    )) as TermDiamond;
+
+    diamondCutFacet = (await ethers.getContractAt(
       "DiamondCutFacet",
-      diamondCutFacetAddr
-    ) as DiamondCutFacet;
+      diamondCutFacetAddr,
+    )) as DiamondCutFacet;
 
     // Add DiamondLoupe facet to the diamond
-    const diamondCut = await ethers.getContractAt("DiamondCutFacet", await termDiamond.getAddress());
+    const diamondCut = await ethers.getContractAt(
+      "DiamondCutFacet",
+      await termDiamond.getAddress(),
+    );
 
     const loupeSelectors = [
       diamondLoupeFacet.interface.getFunction("facets").selector,
       diamondLoupeFacet.interface.getFunction("facetAddresses").selector,
       diamondLoupeFacet.interface.getFunction("facetAddress").selector,
-      diamondLoupeFacet.interface.getFunction("facetFunctionSelectors").selector,
+      diamondLoupeFacet.interface.getFunction("facetFunctionSelectors")
+        .selector,
     ];
 
     await diamondCut.diamondCut(
-      [{
-        facetAddress: await diamondLoupeFacet.getAddress(),
-        action: 0, // Add
-        functionSelectors: loupeSelectors
-      }],
+      [
+        {
+          facetAddress: await diamondLoupeFacet.getAddress(),
+          action: 0, // Add
+          functionSelectors: loupeSelectors,
+        },
+      ],
       ZeroAddress,
-      "0x"
+      "0x",
     );
 
     // Add MulticallFacet to the diamond
@@ -101,31 +119,36 @@ describe("MulticallFacet Tests", () => {
     ];
 
     await diamondCut.diamondCut(
-      [{
-        facetAddress: await multicallFacet.getAddress(),
-        action: 0, // Add
-        functionSelectors: multicallSelectors
-      }],
+      [
+        {
+          facetAddress: await multicallFacet.getAddress(),
+          action: 0, // Add
+          functionSelectors: multicallSelectors,
+        },
+      ],
       ZeroAddress,
-      "0x"
+      "0x",
     );
 
     // Add TestRevertContract facet to the diamond for testing revert scenarios
     const testRevertSelectors = [
       testRevertContract.interface.getFunction("revertWithMessage").selector,
-      testRevertContract.interface.getFunction("revertWithCustomError").selector,
+      testRevertContract.interface.getFunction("revertWithCustomError")
+        .selector,
       testRevertContract.interface.getFunction("revertWithNoData").selector,
       testRevertContract.interface.getFunction("succeed").selector,
     ];
 
     await diamondCut.diamondCut(
-      [{
-        facetAddress: await testRevertContract.getAddress(),
-        action: 0, // Add
-        functionSelectors: testRevertSelectors
-      }],
+      [
+        {
+          facetAddress: await testRevertContract.getAddress(),
+          action: 0, // Add
+          functionSelectors: testRevertSelectors,
+        },
+      ],
       ZeroAddress,
-      "0x"
+      "0x",
     );
 
     snapshotId = await network.provider.send("evm_snapshot");
@@ -137,16 +160,20 @@ describe("MulticallFacet Tests", () => {
 
   describe("Basic Functionality", () => {
     it("should execute single valid call successfully", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
 
       // Prepare a call to facetAddresses()
-      const callData = diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
+      const callData =
+        diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
 
       const tx = await multicall.multicall([callData]);
       const receipt = await tx.wait();
 
       // Verify event was emitted
-      const event = receipt?.logs.find(log => {
+      const event = receipt?.logs.find((log) => {
         try {
           const parsed = multicall.interface.parseLog(log);
           return parsed?.name === "MulticallExecuted";
@@ -159,17 +186,21 @@ describe("MulticallFacet Tests", () => {
     });
 
     it("should execute multiple valid calls successfully", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
 
       // Prepare multiple calls
-      const call1 = diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
+      const call1 =
+        diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
       const call2 = diamondLoupeFacet.interface.encodeFunctionData("facets");
 
       const tx = await multicall.multicall([call1, call2]);
       const receipt = await tx.wait();
 
       // Verify MulticallExecuted event
-      const event = receipt?.logs.find(log => {
+      const event = receipt?.logs.find((log) => {
         try {
           const parsed = multicall.interface.parseLog(log);
           return parsed?.name === "MulticallExecuted";
@@ -188,17 +219,27 @@ describe("MulticallFacet Tests", () => {
     });
 
     it("should return correct data from calls", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
-      const loupe = await ethers.getContractAt("DiamondLoupeFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
+      const loupe = await ethers.getContractAt(
+        "DiamondLoupeFacet",
+        await termDiamond.getAddress(),
+      );
 
       // Get expected data directly
       const expectedFacetAddresses = await loupe.facetAddresses();
 
       // Prepare call
-      const callData = diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
+      const callData =
+        diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
 
       const result = await multicall.multicall.staticCall([callData]);
-      const decodedResult = diamondLoupeFacet.interface.decodeFunctionResult("facetAddresses", result[0]);
+      const decodedResult = diamondLoupeFacet.interface.decodeFunctionResult(
+        "facetAddresses",
+        result[0],
+      );
 
       expect(decodedResult[0]).to.deep.equal(expectedFacetAddresses);
     });
@@ -206,41 +247,58 @@ describe("MulticallFacet Tests", () => {
 
   describe("Input Validation", () => {
     it("should revert with EmptyCallsArray when calls array is empty", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
 
-      await expect(multicall.multicall([]))
-        .to.be.revertedWithCustomError(multicall, "EmptyCallsArray");
+      await expect(multicall.multicall([])).to.be.revertedWithCustomError(
+        multicall,
+        "EmptyCallsArray",
+      );
     });
 
     it("should revert with InvalidFunctionSelector for invalid selector", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
 
       // Call with invalid selector (non-existent function)
       const invalidCallData = "0x12345678"; // Non-existent selector
 
-      await expect(multicall.multicall([invalidCallData]))
-        .to.be.revertedWithCustomError(multicall, "InvalidFunctionSelector");
+      await expect(
+        multicall.multicall([invalidCallData]),
+      ).to.be.revertedWithCustomError(multicall, "InvalidFunctionSelector");
     });
 
     it("should revert with InvalidFunctionSelector for call data too short", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
 
       // Call with data shorter than 4 bytes (3 bytes total)
       const shortCallData = "0x123456";
 
-      await expect(multicall.multicall([shortCallData]))
-        .to.be.revertedWithCustomError(multicall, "InvalidFunctionSelector");
+      await expect(
+        multicall.multicall([shortCallData]),
+      ).to.be.revertedWithCustomError(multicall, "InvalidFunctionSelector");
     });
 
     it("should validate facet is enabled", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
 
       // Try to call a function that doesn't exist on any enabled facet
       const nonExistentSelector = "0xffffffff";
       const callData = nonExistentSelector + "0".repeat(56); // Pad to make valid call data
 
-      await expect(multicall.multicall([callData]))
-        .to.be.revertedWithCustomError(multicall, "InvalidFunctionSelector");
+      await expect(
+        multicall.multicall([callData]),
+      ).to.be.revertedWithCustomError(multicall, "InvalidFunctionSelector");
     });
   });
 
@@ -248,21 +306,29 @@ describe("MulticallFacet Tests", () => {
     it("should prevent reentrancy", async () => {
       // This test would require a malicious contract that attempts reentrancy
       // For now, we'll test the basic reentrancy guard state
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
 
       // The reentrancy guard uses a private storage slot, so we can't directly test it
       // But we can verify that the function executes normally
-      const callData = diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
+      const callData =
+        diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
 
       await expect(multicall.multicall([callData])).to.not.be.reverted;
     });
 
     it("should set and reset multicall initiator properly", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
 
       // The multicallInitiator is set during execution and reset after
       // We can't directly access it, but we can verify the function completes successfully
-      const callData = diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
+      const callData =
+        diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
 
       await expect(multicall.multicall([callData])).to.not.be.reverted;
     });
@@ -276,37 +342,51 @@ describe("MulticallFacet Tests", () => {
 
   describe("Error Handling", () => {
     it("should revert entire transaction if any call fails", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
 
       // Create a valid call and an invalid call
-      const validCall = diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
+      const validCall =
+        diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
       const invalidCall = "0x12345678"; // Invalid selector
 
-      await expect(multicall.multicall([validCall, invalidCall]))
-        .to.be.revertedWithCustomError(multicall, "InvalidFunctionSelector");
+      await expect(
+        multicall.multicall([validCall, invalidCall]),
+      ).to.be.revertedWithCustomError(multicall, "InvalidFunctionSelector");
     });
 
     it("should bubble up revert messages from failed calls", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
 
       // Try to call a function that doesn't exist
       const invalidCall = "0xdeadbeef" + "0".repeat(56);
 
-      await expect(multicall.multicall([invalidCall]))
-        .to.be.revertedWithCustomError(multicall, "InvalidFunctionSelector");
+      await expect(
+        multicall.multicall([invalidCall]),
+      ).to.be.revertedWithCustomError(multicall, "InvalidFunctionSelector");
     });
 
     it("should handle delegatecall failures with access control revert", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
-      const diamondCut = await ethers.getContractAt("DiamondCutFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
+      const diamondCut = await ethers.getContractAt(
+        "DiamondCutFacet",
+        await termDiamond.getAddress(),
+      );
 
       // Try to call diamondCut without proper permissions from user1
       // This will pass validation (function exists) but fail during execution (access control)
-      const diamondCutCall = diamondCut.interface.encodeFunctionData("diamondCut", [
-        [],
-        ZeroAddress,
-        "0x"
-      ]);
+      const diamondCutCall = diamondCut.interface.encodeFunctionData(
+        "diamondCut",
+        [[], ZeroAddress, "0x"],
+      );
 
       // Connect as user1 who doesn't have DEVOPS_ROLE
       const multicallAsUser1 = multicall.connect(user1);
@@ -316,19 +396,30 @@ describe("MulticallFacet Tests", () => {
     });
 
     it("should handle delegatecall failures and bubble up custom errors", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
-      const diamondCut = await ethers.getContractAt("DiamondCutFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
+      const diamondCut = await ethers.getContractAt(
+        "DiamondCutFacet",
+        await termDiamond.getAddress(),
+      );
 
       // Encode a diamondCut call with invalid parameters
-      const diamondCutCall = diamondCut.interface.encodeFunctionData("diamondCut", [
-        [{
-          facetAddress: ZeroAddress,
-          action: 0,
-          functionSelectors: []
-        }],
-        ZeroAddress,
-        "0x"
-      ]);
+      const diamondCutCall = diamondCut.interface.encodeFunctionData(
+        "diamondCut",
+        [
+          [
+            {
+              facetAddress: ZeroAddress,
+              action: 0,
+              functionSelectors: [],
+            },
+          ],
+          ZeroAddress,
+          "0x",
+        ],
+      );
 
       // Connect as user1 who doesn't have DEVOPS_ROLE
       const multicallAsUser1 = multicall.connect(user1);
@@ -338,41 +429,64 @@ describe("MulticallFacet Tests", () => {
     });
 
     it("should propagate revert data from failed subcalls", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
-      const diamondCut = await ethers.getContractAt("DiamondCutFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
+      const diamondCut = await ethers.getContractAt(
+        "DiamondCutFacet",
+        await termDiamond.getAddress(),
+      );
 
       // Create multiple calls where one will fail
-      const validCall = diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
-      const failingCall = diamondCut.interface.encodeFunctionData("diamondCut", [
-        [],
-        ZeroAddress,
-        "0x"
-      ]);
+      const validCall =
+        diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
+      const failingCall = diamondCut.interface.encodeFunctionData(
+        "diamondCut",
+        [[], ZeroAddress, "0x"],
+      );
 
       const multicallAsUser1 = multicall.connect(user1);
 
       // The failing call should cause the entire multicall to revert
-      await expect(multicallAsUser1.multicall([validCall, failingCall])).to.be.reverted;
+      await expect(multicallAsUser1.multicall([validCall, failingCall])).to.be
+        .reverted;
     });
 
     it("should bubble up revert with message from delegatecall", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
-      const testRevert = await ethers.getContractAt("TestRevertContract", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
+      const testRevert = await ethers.getContractAt(
+        "TestRevertContract",
+        await termDiamond.getAddress(),
+      );
 
       // Call a function that reverts with a message
-      const revertCall = testRevert.interface.encodeFunctionData("revertWithMessage");
+      const revertCall =
+        testRevert.interface.encodeFunctionData("revertWithMessage");
 
       // This should revert and bubble up the revert message through _revert function
-      await expect(multicall.multicall([revertCall]))
-        .to.be.revertedWith("This is a test revert message");
+      await expect(multicall.multicall([revertCall])).to.be.revertedWith(
+        "This is a test revert message",
+      );
     });
 
     it("should bubble up custom error from delegatecall", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
-      const testRevert = await ethers.getContractAt("TestRevertContract", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
+      const testRevert = await ethers.getContractAt(
+        "TestRevertContract",
+        await termDiamond.getAddress(),
+      );
 
       // Call a function that reverts with a custom error
-      const revertCall = testRevert.interface.encodeFunctionData("revertWithCustomError");
+      const revertCall = testRevert.interface.encodeFunctionData(
+        "revertWithCustomError",
+      );
 
       // This should revert and bubble up the custom error through _revert function
       await expect(multicall.multicall([revertCall]))
@@ -381,45 +495,66 @@ describe("MulticallFacet Tests", () => {
     });
 
     it("should handle revert with no data from delegatecall", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
-      const testRevert = await ethers.getContractAt("TestRevertContract", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
+      const testRevert = await ethers.getContractAt(
+        "TestRevertContract",
+        await termDiamond.getAddress(),
+      );
 
       // Call a function that reverts with no data
-      const revertCall = testRevert.interface.encodeFunctionData("revertWithNoData");
+      const revertCall =
+        testRevert.interface.encodeFunctionData("revertWithNoData");
 
       // This should trigger the require check for empty return data in _revert
-      await expect(multicall.multicall([revertCall]))
-        .to.be.revertedWith("call reverted");
+      await expect(multicall.multicall([revertCall])).to.be.revertedWith(
+        "call reverted",
+      );
     });
 
     it("should handle mixed success and failure calls correctly", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
-      const testRevert = await ethers.getContractAt("TestRevertContract", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
+      const testRevert = await ethers.getContractAt(
+        "TestRevertContract",
+        await termDiamond.getAddress(),
+      );
 
       // Create a sequence of calls where a later one fails
       const successCall = testRevert.interface.encodeFunctionData("succeed");
-      const validCall = diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
-      const revertCall = testRevert.interface.encodeFunctionData("revertWithMessage");
+      const validCall =
+        diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
+      const revertCall =
+        testRevert.interface.encodeFunctionData("revertWithMessage");
 
       // Even though first calls succeed, the failure should revert the entire transaction
-      await expect(multicall.multicall([successCall, validCall, revertCall]))
-        .to.be.revertedWith("This is a test revert message");
+      await expect(
+        multicall.multicall([successCall, validCall, revertCall]),
+      ).to.be.revertedWith("This is a test revert message");
     });
   });
 
   describe("Edge Cases", () => {
     it("should handle large number of calls", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
 
       // Create multiple identical calls
-      const callData = diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
+      const callData =
+        diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
       const manyCalls = Array(10).fill(callData);
 
       const tx = await multicall.multicall(manyCalls);
       const receipt = await tx.wait();
 
       // Verify event shows correct count
-      const event = receipt?.logs.find(log => {
+      const event = receipt?.logs.find((log) => {
         try {
           const parsed = multicall.interface.parseLog(log);
           return parsed?.name === "MulticallExecuted";
@@ -439,20 +574,28 @@ describe("MulticallFacet Tests", () => {
     });
 
     it("should handle calls with different parameter types", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
 
       // Test with different call types
-      const call1 = diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
+      const call1 =
+        diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
       const call2 = diamondLoupeFacet.interface.encodeFunctionData("facets");
 
       await expect(multicall.multicall([call1, call2])).to.not.be.reverted;
     });
 
     it("should work with view functions", async () => {
-      const multicall = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
+      const multicall = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
 
       // All our test calls are view functions, so this tests that behavior
-      const callData = diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
+      const callData =
+        diamondLoupeFacet.interface.encodeFunctionData("facetAddresses");
 
       const result = await multicall.multicall.staticCall([callData]);
       expect(result).to.be.an("array");
@@ -464,7 +607,10 @@ describe("MulticallFacet Tests", () => {
     it("should decode error strings correctly", async () => {
       // Test the decodeErrorString function
       const errorString = "Test error message";
-      const encodedError = ethers.AbiCoder.defaultAbiCoder().encode(["string"], [errorString]);
+      const encodedError = ethers.AbiCoder.defaultAbiCoder().encode(
+        ["string"],
+        [errorString],
+      );
 
       const result = await multicallFacet.decodeErrorString(encodedError);
       expect(result).to.equal(errorString);
@@ -474,7 +620,8 @@ describe("MulticallFacet Tests", () => {
       // Test with invalid encoded data
       const invalidData = "0x1234";
 
-      await expect(multicallFacet.decodeErrorString(invalidData)).to.be.reverted;
+      await expect(multicallFacet.decodeErrorString(invalidData)).to.be
+        .reverted;
     });
 
     it("should convert uint to string for zero", async () => {
@@ -505,14 +652,17 @@ describe("MulticallFacet Tests", () => {
 
     it("should convert uint to string through diamond", async () => {
       // Test calling through the diamond to ensure the function is properly accessible
-      const multicallDiamond = await ethers.getContractAt("MulticallFacet", await termDiamond.getAddress());
-      
+      const multicallDiamond = await ethers.getContractAt(
+        "MulticallFacet",
+        await termDiamond.getAddress(),
+      );
+
       const result1 = await multicallDiamond.uint2strTestHelper(0);
       expect(result1).to.equal("0");
-      
+
       const result2 = await multicallDiamond.uint2strTestHelper(999);
       expect(result2).to.equal("999");
-      
+
       const result3 = await multicallDiamond.uint2strTestHelper(1234567890n);
       expect(result3).to.equal("1234567890");
     });

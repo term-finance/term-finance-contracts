@@ -91,6 +91,11 @@
     },
     {
       "inputs": [],
+      "name": "ZeroMintAmount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
       "name": "ZeroTermRepoTokenBalance",
       "type": "error"
     }

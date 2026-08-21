@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
@@ -63,7 +62,13 @@ describe("TermAuctionOfferLocker", () => {
       await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [devopsMultisig.address, wallet3.address, termInitializer.address, wallet3.address, termDiamond.address],
+      [
+        devopsMultisig.address,
+        wallet3.address,
+        termInitializer.address,
+        wallet3.address,
+        termDiamond.address,
+      ],
       { kind: "uups" },
     )) as unknown as TermEventEmitter;
     await termEventEmitter.waitForDeployment();
@@ -87,9 +92,8 @@ describe("TermAuctionOfferLocker", () => {
 
     termRepoServicer = await deployMock<TermRepoServicer>(
       TermRepoServicer__factory.abi,
-      wallet1
+      wallet1,
     );
-     
 
     termController = await deployMock<TermController>(
       TermController__factory.abi,
@@ -105,15 +109,14 @@ describe("TermAuctionOfferLocker", () => {
       abi: termRepoServicerInterface.getFunction("termController"),
       inputs: [],
       outputs: [await termController.getAddress()],
-      kind: "read",}
-    );
+      kind: "read",
+    });
     await termController.setup({
       abi: termControllerInterface.getFunction("termContractsPaused"),
       inputs: [],
       outputs: [false],
-      kind: "read",}
-    );
-
+      kind: "read",
+    });
 
     const termAuctionOfferLockerFactory = await ethers.getContractFactory(
       "TestingTermAuctionOfferLocker",
@@ -185,7 +188,7 @@ describe("TermAuctionOfferLocker", () => {
           await termRepoServicer.getAddress(),
           devopsMultisig.address,
           adminWallet.address,
-          termDiamond.address
+          termDiamond.address,
         ),
     ).to.be.revertedWithCustomError(
       termAuctionOfferLocker,
@@ -1443,22 +1446,26 @@ describe("TermAuctionOfferLocker", () => {
     // Key difference: termDiamond (with DIAMOND_ROLE) calls lockOffers on behalf of wallet1
     // Purchase token should be taken from termDiamond (msg.sender), not wallet1 (offeror)
     await expect(
-      termAuctionOfferLocker.connect(termDiamond)["lockOffersWithReferral(address,(bytes32,address,bytes32,uint256,address)[],address)"](
-        wallet1.address,
+      termAuctionOfferLocker
+        .connect(termDiamond)
         [
-          {
-            id: getBytesHash("test-id-7"),
-            offeror: wallet1.address,
-            offerPriceHash: solidityPackedKeccak256(
-              ["uint256", "uint256"],
-              ["15", "5555555555"],
-            ),
-            amount: "2000",
-            purchaseToken: await testBorrowedToken.getAddress(),
-          },
-        ],
-        ZeroAddress,
-      ),
+          "lockOffersWithReferral(address,(bytes32,address,bytes32,uint256,address)[],address)"
+        ](
+          wallet1.address,
+          [
+            {
+              id: getBytesHash("test-id-7"),
+              offeror: wallet1.address,
+              offerPriceHash: solidityPackedKeccak256(
+                ["uint256", "uint256"],
+                ["15", "5555555555"],
+              ),
+              amount: "2000",
+              purchaseToken: await testBorrowedToken.getAddress(),
+            },
+          ],
+          ZeroAddress,
+        ),
     )
       .to.emit(termEventEmitter, "OfferLocked")
       .withArgs(
@@ -1478,27 +1485,36 @@ describe("TermAuctionOfferLocker", () => {
   });
 
   it("lockOffersWithReferral with offeror parameter reverts if not called by DIAMOND_ROLE", async () => {
-    await termAuctionOfferLocker.setStartTime(dayjs().subtract(1, "hour").unix());
+    await termAuctionOfferLocker.setStartTime(
+      dayjs().subtract(1, "hour").unix(),
+    );
     await termAuctionOfferLocker.setRevealTime(dayjs().add(1, "hour").unix());
 
     await expect(
-      termAuctionOfferLocker.connect(wallet1)["lockOffersWithReferral(address,(bytes32,address,bytes32,uint256,address)[],address)"](
-        wallet1.address,
+      termAuctionOfferLocker
+        .connect(wallet1)
         [
-          {
-            id: getBytesHash("test-id-9"),
-            offeror: wallet1.address,
-            offerPriceHash: solidityPackedKeccak256(
-              ["uint256", "uint256"],
-              ["15", "5555555555"],
-            ),
-            amount: "2000",
-            purchaseToken: await testBorrowedToken.getAddress(),
-          },
-        ],
-        ZeroAddress
-      ),
-    ).to.be.revertedWithCustomError(termAuctionOfferLocker, "AccessControlUnauthorizedAccount");
+          "lockOffersWithReferral(address,(bytes32,address,bytes32,uint256,address)[],address)"
+        ](
+          wallet1.address,
+          [
+            {
+              id: getBytesHash("test-id-9"),
+              offeror: wallet1.address,
+              offerPriceHash: solidityPackedKeccak256(
+                ["uint256", "uint256"],
+                ["15", "5555555555"],
+              ),
+              amount: "2000",
+              purchaseToken: await testBorrowedToken.getAddress(),
+            },
+          ],
+          ZeroAddress,
+        ),
+    ).to.be.revertedWithCustomError(
+      termAuctionOfferLocker,
+      "AccessControlUnauthorizedAccount",
+    );
   });
 
   it("unlockOffers with offeror parameter returns purchase token and unlocks offers", async () => {
@@ -1523,13 +1539,18 @@ describe("TermAuctionOfferLocker", () => {
       "123456",
     );
 
-    await termAuctionOfferLocker.setStartTime(dayjs().subtract(1, "hour").unix());
+    await termAuctionOfferLocker.setStartTime(
+      dayjs().subtract(1, "hour").unix(),
+    );
     await termAuctionOfferLocker.setRevealTime(dayjs().add(1, "hour").unix());
 
     // Unlock offer via diamond role (msg.sender = termDiamond, offeror = wallet2)
     await expect(
       termAuctionOfferLocker
-        .connect(termDiamond)["unlockOffers(address,bytes32[])"](wallet2.address, [getBytesHash("test-id-10")]),
+        .connect(termDiamond)
+        [
+          "unlockOffers(address,bytes32[])"
+        ](wallet2.address, [getBytesHash("test-id-10")]),
     )
       .to.emit(termEventEmitter, "OfferUnlocked")
       .withArgs(auctionIdHash, getBytesHash("test-id-10"));
@@ -1550,13 +1571,18 @@ describe("TermAuctionOfferLocker", () => {
       "123456",
     );
 
-    await termAuctionOfferLocker.setStartTime(dayjs().subtract(1, "hour").unix());
+    await termAuctionOfferLocker.setStartTime(
+      dayjs().subtract(1, "hour").unix(),
+    );
     await termAuctionOfferLocker.setRevealTime(dayjs().add(1, "hour").unix());
 
     // Try to unlock from non-DIAMOND_ROLE account
     await expect(
       termAuctionOfferLocker
-        .connect(wallet2)["unlockOffers(address,bytes32[])"](wallet2.address, [getBytesHash("test-id-11")]),
+        .connect(wallet2)
+        [
+          "unlockOffers(address,bytes32[])"
+        ](wallet2.address, [getBytesHash("test-id-11")]),
     ).to.be.reverted;
   });
 
@@ -1564,4 +1590,3 @@ describe("TermAuctionOfferLocker", () => {
     expect(await termAuctionOfferLocker.version()).to.eq(expectedVersion);
   });
 });
-/* eslint-enable camelcase */

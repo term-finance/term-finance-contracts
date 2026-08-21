@@ -44,7 +44,7 @@ describe("TermRepoToken Tests", () => {
       devopsMultisig,
       adminWallet,
       collateralToken,
-      termDiamond
+      termDiamond,
     ] = await ethers.getSigners();
 
     const versionableFactory = await ethers.getContractFactory("Versionable");
@@ -57,20 +57,25 @@ describe("TermRepoToken Tests", () => {
       await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [devopsMultisig.address, wallet2.address, termInitializer.address, adminWallet.address, termDiamond.address],
+      [
+        devopsMultisig.address,
+        wallet2.address,
+        termInitializer.address,
+        adminWallet.address,
+        termDiamond.address,
+      ],
       { kind: "uups" },
     )) as unknown as TermEventEmitter;
 
     mockTermController = await deployMock(TermController__factory.abi, wallet1);
-    const mockTermControllerInterface = TermController__factory.createInterface();
-    await mockTermController.setup(
-      {
-        abi: mockTermControllerInterface.getFunction("termContractsPaused"),
-        inputs: [],
-        outputs: [false],
-        kind: "read",
-      },
-    );
+    const mockTermControllerInterface =
+      TermController__factory.createInterface();
+    await mockTermController.setup({
+      abi: mockTermControllerInterface.getFunction("termContractsPaused"),
+      inputs: [],
+      outputs: [false],
+      kind: "read",
+    });
 
     const mockTermRepoCollateralManager = await deployMock(
       TermRepoCollateralManager__factory.abi,
@@ -83,7 +88,8 @@ describe("TermRepoToken Tests", () => {
     );
     const mockTermRepoCollateralManagerInterface =
       TermRepoCollateralManager__factory.createInterface();
-    const mockTermRepoServicerInterface = TermRepoServicer__factory.createInterface();
+    const mockTermRepoServicerInterface =
+      TermRepoServicer__factory.createInterface();
     await mockTermRepoCollateralManager.setup(
       {
         abi: mockTermRepoCollateralManagerInterface.getFunction(
@@ -111,16 +117,12 @@ describe("TermRepoToken Tests", () => {
       },
     );
 
-    await mockTermRepoServicer.setup(
-      {
-        abi: mockTermRepoServicerInterface.getFunction("termController"),
-        inputs: [],
-        outputs: [
-          await mockTermController.getAddress(),
-        ],
-        kind: "read",
-      },
-    );
+    await mockTermRepoServicer.setup({
+      abi: mockTermRepoServicerInterface.getFunction("termController"),
+      inputs: [],
+      outputs: [await mockTermController.getAddress()],
+      kind: "read",
+    });
 
     const termIdString = "term-id-1";
 
@@ -218,9 +220,9 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(wallet2).upgrade(wallet1.address),
       ).to.be.revertedWithCustomError(
-      termRepoToken,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoToken,
+        "AccessControlUnauthorizedAccount",
+      );
     });
   });
 
@@ -247,15 +249,15 @@ describe("TermRepoToken Tests", () => {
           .mintRedemptionValue(wallet1.address, 10000000),
       ).to.be.revertedWithCustomError(
         termRepoToken,
-      "AccessControlUnauthorizedAccount",
+        "AccessControlUnauthorizedAccount",
       );
 
       await expect(
         termRepoToken.connect(wallet1).mintTokens(wallet1.address, 10000000),
       ).to.be.revertedWithCustomError(
-      termRepoToken,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoToken,
+        "AccessControlUnauthorizedAccount",
+      );
     });
     it("Mint Calls by Minter Role succeeds", async () => {
       await termRepoToken
@@ -276,9 +278,9 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(contractAddress).pauseMinting(),
       ).to.be.revertedWithCustomError(
-      termRepoToken,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoToken,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(termRepoToken.connect(adminWallet).pauseMinting())
         .to.emit(termEventEmitter, "TermRepoTokenMintingPaused")
@@ -306,9 +308,9 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(contractAddress).unpauseMinting(),
       ).to.be.revertedWithCustomError(
-      termRepoToken,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoToken,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(termRepoToken.connect(adminWallet).unpauseMinting())
         .to.emit(termEventEmitter, "TermRepoTokenMintingUnpaused")
@@ -337,7 +339,7 @@ describe("TermRepoToken Tests", () => {
           .resetMintExposureCap("2000000000000000000"),
       ).to.be.revertedWithCustomError(
         termRepoToken,
-      "AccessControlUnauthorizedAccount",
+        "AccessControlUnauthorizedAccount",
       );
 
       await termRepoToken
@@ -370,15 +372,15 @@ describe("TermRepoToken Tests", () => {
           .mintRedemptionValue(wallet1.address, 10000000),
       ).to.be.revertedWithCustomError(
         termRepoToken,
-      "AccessControlUnauthorizedAccount",
+        "AccessControlUnauthorizedAccount",
       );
 
       await expect(
         termRepoToken.connect(wallet1).mintTokens(wallet1.address, 10000000),
       ).to.be.revertedWithCustomError(
-      termRepoToken,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoToken,
+        "AccessControlUnauthorizedAccount",
+      );
     });
     it("Mint Calls by Minter Role succeeds", async () => {
       await termRepoToken
@@ -399,9 +401,9 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(contractAddress).pauseMinting(),
       ).to.be.revertedWithCustomError(
-      termRepoToken,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoToken,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(termRepoToken.connect(adminWallet).pauseMinting())
         .to.emit(termEventEmitter, "TermRepoTokenMintingPaused")
@@ -429,9 +431,9 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(contractAddress).unpauseMinting(),
       ).to.be.revertedWithCustomError(
-      termRepoToken,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoToken,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(termRepoToken.connect(adminWallet).unpauseMinting())
         .to.emit(termEventEmitter, "TermRepoTokenMintingUnpaused")
@@ -457,9 +459,9 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(wallet1).burn(wallet1.address, 10),
       ).to.be.revertedWithCustomError(
-      termRepoToken,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoToken,
+        "AccessControlUnauthorizedAccount",
+      );
     });
     it("Burn Call by Burner Role succeeds", async () => {
       await termRepoToken
@@ -483,9 +485,9 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(contractAddress).pauseBurning(),
       ).to.be.revertedWithCustomError(
-      termRepoToken,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoToken,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(termRepoToken.connect(adminWallet).pauseBurning())
         .to.emit(termEventEmitter, "TermRepoTokenBurningPaused")
@@ -511,9 +513,9 @@ describe("TermRepoToken Tests", () => {
       await expect(
         termRepoToken.connect(contractAddress).unpauseBurning(),
       ).to.be.revertedWithCustomError(
-      termRepoToken,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoToken,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(termRepoToken.connect(adminWallet).unpauseBurning())
         .to.emit(termEventEmitter, "TermRepoTokenBurningUnpaused")
@@ -531,4 +533,3 @@ describe("TermRepoToken Tests", () => {
     expect(await termRepoToken.version()).to.eq(expectedVersion);
   });
 });
-/* eslint-enable camelcase */

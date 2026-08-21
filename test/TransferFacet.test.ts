@@ -1,11 +1,7 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
-import {
-  TestTransferFacetHelper,
-  TestToken,
-} from "../typechain-types";
+import { TestTransferFacetHelper, TestToken } from "../typechain-types";
 
 describe("TransferFacet Tests", () => {
   let transferFacet: TestTransferFacetHelper;
@@ -86,7 +82,11 @@ describe("TransferFacet Tests", () => {
         await expect(
           transferFacet
             .connect(wallet1)
-            .erc20Transfer(await asset.getAddress(), ethers.ZeroAddress, amount),
+            .erc20Transfer(
+              await asset.getAddress(),
+              ethers.ZeroAddress,
+              amount,
+            ),
         ).to.be.revertedWithCustomError(transferFacet, "ZeroAddress");
       });
 
@@ -158,7 +158,11 @@ describe("TransferFacet Tests", () => {
         const smallAmount = ethers.parseEther("1");
         await transferFacet
           .connect(wallet1)
-          .erc20Transfer(await asset.getAddress(), wallet2.address, smallAmount);
+          .erc20Transfer(
+            await asset.getAddress(),
+            wallet2.address,
+            smallAmount,
+          );
 
         // Transfer a large amount
         const largeAmount = ethers.parseEther("4999");
@@ -186,7 +190,10 @@ describe("TransferFacet Tests", () => {
         await expect(
           transferFacet
             .connect(wallet1)
-            .erc20TransferFrom(await asset.getAddress(), ethers.parseEther("100")),
+            .erc20TransferFrom(
+              await asset.getAddress(),
+              ethers.parseEther("100"),
+            ),
         ).to.be.revertedWith("uninitialized");
       });
 
@@ -198,7 +205,10 @@ describe("TransferFacet Tests", () => {
         await expect(
           transferFacet
             .connect(wallet2)
-            .erc20TransferFrom(await asset.getAddress(), ethers.parseEther("100")),
+            .erc20TransferFrom(
+              await asset.getAddress(),
+              ethers.parseEther("100"),
+            ),
         ).to.be.revertedWith("unauthorized");
       });
 
