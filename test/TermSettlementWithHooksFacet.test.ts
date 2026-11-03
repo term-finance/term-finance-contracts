@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-expressions */
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network } from "hardhat";
@@ -56,6 +54,7 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
 
   let CURRENT_TIME: number;
   let MATURITY_TIME: number;
+  let REDEMPTION_TIME: number;
   let ORDER_EXPIRY: number;
 
   // Selector strings for the hook functions (the contract under test)
@@ -79,6 +78,8 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
     const latestBlock = await ethers.provider.getBlock("latest");
     CURRENT_TIME = latestBlock!.timestamp;
     MATURITY_TIME = CURRENT_TIME + 86400 * 30;
+    // maturity + repurchase window + redemption buffer
+    REDEMPTION_TIME = MATURITY_TIME + 86400 * 7;
     ORDER_EXPIRY = CURRENT_TIME + 86400 * 365;
 
     // Precompute retrieve funds selector
@@ -97,7 +98,7 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       await ethers.getContractFactory("TermDiamondFactory");
     const termDiamondFactory = await termDiamondFactoryFactory.deploy(
       admin.address,
-      devops.address
+      devops.address,
     );
     await termDiamondFactory.waitForDeployment();
 
@@ -107,7 +108,7 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
     const diamondDeployedEvent = receipt?.logs.find(
       (log) =>
         log.topics[0] ===
-        termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash
+        termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash,
     );
     if (!diamondDeployedEvent)
       throw new Error("DiamondDeployed event not found");
@@ -119,35 +120,38 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
 
     termDiamond = (await ethers.getContractAt(
       "TermDiamond",
-      diamondAddress
+      diamondAddress,
     )) as TermDiamond;
     diamondCutFacet = await ethers.getContractAt(
       "DiamondCutFacet",
-      diamondCutFacetAddr
+      diamondCutFacetAddr,
     );
     await diamondCutFacet.waitForDeployment();
 
     // Deploy facet implementations
-    const TermLoanIntentFacetFactory =
-      await ethers.getContractFactory("TermLoanIntentFacet");
+    const TermLoanIntentFacetFactory = await ethers.getContractFactory(
+      "TermLoanIntentFacet",
+    );
     loanIntentFacetImpl =
       (await TermLoanIntentFacetFactory.deploy()) as TermLoanIntentFacet;
     await loanIntentFacetImpl.waitForDeployment();
 
     const TermRepoTokenIntentFacetFactory = await ethers.getContractFactory(
-      "TermRepoTokenIntentFacet"
+      "TermRepoTokenIntentFacet",
     );
     repoTokenIntentFacetImpl =
       (await TermRepoTokenIntentFacetFactory.deploy()) as TermRepoTokenIntentFacet;
     await repoTokenIntentFacetImpl.waitForDeployment();
 
-    const TermSettlementWithHooksFacetFactory =
-      await ethers.getContractFactory("TermSettlementWithHooksFacet");
+    const TermSettlementWithHooksFacetFactory = await ethers.getContractFactory(
+      "TermSettlementWithHooksFacet",
+    );
     settlementFacetImpl = await TermSettlementWithHooksFacetFactory.deploy();
     await settlementFacetImpl.waitForDeployment();
 
-    const TermControllerFacetFactory =
-      await ethers.getContractFactory("TermControllerFacet");
+    const TermControllerFacetFactory = await ethers.getContractFactory(
+      "TermControllerFacet",
+    );
     termControllerFacetImpl =
       (await TermControllerFacetFactory.deploy()) as TermControllerFacet;
     await termControllerFacetImpl.waitForDeployment();
@@ -162,6 +166,7 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       "function termController() external view returns (address)",
       "function termRepoId() external view returns (bytes32)",
       "function maturityTimestamp() external view returns (uint256)",
+      "function redemptionTimestamp() external view returns (uint256)",
       "function purchaseToken() external view returns (address)",
       "function termRepoCollateralManager() external view returns (address)",
       "function termRepoToken() external view returns (address)",
@@ -199,7 +204,7 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
     mockRepoServicer = await deployMockContract(devops, repoServicerABI);
     mockCollateralManager = await deployMockContract(
       devops,
-      collateralManagerABI
+      collateralManagerABI,
     );
     mockPurchaseToken = await deployMockContract(devops, erc20ABI);
     mockCollateralToken = await deployMockContract(devops, erc20ABI);
@@ -216,17 +221,18 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
     await mockTermController.mock.isTermDeployed.returns(true);
     await mockTermController.mock.isFactoryDeployed.returns(true);
     await mockTermController.mock.getProtocolReserveAddress.returns(
-      approvedFeeRecipient.address
+      approvedFeeRecipient.address,
     );
 
     await mockRepoServicer.mock.termController.returns(
-      await mockTermController.getAddress()
+      await mockTermController.getAddress(),
     );
     await mockRepoServicer.mock.termRepoId.returns(ZeroHash);
     await mockRepoServicer.mock.maturityTimestamp.returns(MATURITY_TIME);
+    await mockRepoServicer.mock.redemptionTimestamp.returns(REDEMPTION_TIME);
     await mockRepoServicer.mock.purchaseToken.returns(mockPurchaseTokenAddr);
     await mockRepoServicer.mock.termRepoCollateralManager.returns(
-      await mockCollateralManager.getAddress()
+      await mockCollateralManager.getAddress(),
     );
     await mockRepoServicer.mock.termRepoToken.returns(mockRepoTokenAddr);
     await mockRepoServicer.mock.termRepoLocker.returns(mockRepoTokenAddr);
@@ -234,12 +240,12 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
 
     await mockCollateralManager.mock.numOfAcceptedCollateralTokens.returns(1);
     await mockCollateralManager.mock.collateralTokens.returns(
-      mockCollateralTokenAddr
+      mockCollateralTokenAddr,
     );
 
     await mockPurchaseToken.mock.decimals.returns(6);
     await mockPurchaseToken.mock.balanceOf.returns(
-      ethers.parseUnits("1000000", 6)
+      ethers.parseUnits("1000000", 6),
     );
     await mockPurchaseToken.mock.transfer.returns(true);
     await mockPurchaseToken.mock.transferFrom.returns(true);
@@ -260,10 +266,10 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       MATURITY_TIME,
       mockPurchaseTokenAddr,
       mockRepoServicerAddr,
-      0
+      0,
     );
     await mockRepoToken.mock.redemptionValue.returns(
-      ethers.parseUnits("1", 18)
+      ethers.parseUnits("1", 18),
     );
     await mockRepoToken.mock.transfer.returns(true);
     await mockRepoToken.mock.transferFrom.returns(true);
@@ -276,7 +282,7 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
 
     const diamondCut = await ethers.getContractAt(
       "DiamondCutFacet",
-      await termDiamond.getAddress()
+      await termDiamond.getAddress(),
     );
 
     const loanIntentSelectors = [
@@ -324,8 +330,9 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       "supportsInterface(bytes4)",
     ].map((sig) => ethers.id(sig).slice(0, 10));
 
-    const TestRetrieveFundsFacetFactory =
-      await ethers.getContractFactory("TestRetrieveFundsFacet");
+    const TestRetrieveFundsFacetFactory = await ethers.getContractFactory(
+      "TestRetrieveFundsFacet",
+    );
     const testRetrieveFundsFacet = await TestRetrieveFundsFacetFactory.deploy();
     await testRetrieveFundsFacet.waitForDeployment();
     const retrieveFundsSelectors = [
@@ -335,7 +342,7 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
     ].map((sig) => ethers.id(sig).slice(0, 10));
 
     const TestAtomicTxHelperFactory = await ethers.getContractFactory(
-      "TestAtomicTxProtectionHelper"
+      "TestAtomicTxProtectionHelper",
     );
     const testAtomicTxHelper = await TestAtomicTxHelperFactory.deploy();
     await testAtomicTxHelper.waitForDeployment();
@@ -383,16 +390,16 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
         },
       ],
       ZeroAddress,
-      "0x"
+      "0x",
     );
 
     // Initialize loan intent facet
     const loanIntent = await ethers.getContractAt(
       "TermLoanIntentFacet",
-      await termDiamond.getAddress()
+      await termDiamond.getAddress(),
     );
     await loanIntent.initializeTermIntentFacet(
-      await mockTermEventEmitter.getAddress()
+      await mockTermEventEmitter.getAddress(),
     );
   });
 
@@ -405,7 +412,7 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
   async function approveTermControllerProper() {
     const tcf = await ethers.getContractAt(
       "TermControllerFacet",
-      await termDiamond.getAddress()
+      await termDiamond.getAddress(),
     );
     await tcf
       .connect(devops)
@@ -415,7 +422,7 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
   async function approveFeeRecipientProper() {
     const tcf = await ethers.getContractAt(
       "TermControllerFacet",
-      await termDiamond.getAddress()
+      await termDiamond.getAddress(),
     );
     await tcf.connect(devops).approveFeeRecipient(approvedFeeRecipient.address);
   }
@@ -520,16 +527,14 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeLendOrder();
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
-        settlement.connect(taker)[LEND_HOOK_SIG](
-          order,
-          0n,
-          [COLLATERAL_AMOUNT],
-          PRESIGNED_SIG,
-          [mockRetrieveFunds()]
-        )
+        settlement
+          .connect(taker)
+          [
+            LEND_HOOK_SIG
+          ](order, 0n, [COLLATERAL_AMOUNT], PRESIGNED_SIG, [mockRetrieveFunds()]),
       ).to.be.revertedWithCustomError(settlement, "InvalidFillAmount");
     });
 
@@ -537,20 +542,18 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeLendOrder();
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       // numOfAcceptedCollateralTokens returns 1, but we provide 2
       await expect(
-        settlement.connect(taker)[LEND_HOOK_SIG](
-          order,
-          FILL_AMOUNT,
-          [COLLATERAL_AMOUNT, COLLATERAL_AMOUNT],
-          PRESIGNED_SIG,
-          [mockRetrieveFunds(), mockRetrieveFunds()]
-        )
+        settlement
+          .connect(taker)
+          [
+            LEND_HOOK_SIG
+          ](order, FILL_AMOUNT, [COLLATERAL_AMOUNT, COLLATERAL_AMOUNT], PRESIGNED_SIG, [mockRetrieveFunds(), mockRetrieveFunds()]),
       ).to.be.revertedWithCustomError(
         settlement,
-        "InvalidCollateralAmountsInput"
+        "InvalidCollateralAmountsInput",
       );
     });
 
@@ -558,20 +561,18 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeLendOrder();
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       // collateralAmounts length 1, retrieveFundsList length 2
       await expect(
-        settlement.connect(taker)[LEND_HOOK_SIG](
-          order,
-          FILL_AMOUNT,
-          [COLLATERAL_AMOUNT],
-          PRESIGNED_SIG,
-          [mockRetrieveFunds(), mockRetrieveFunds()]
-        )
+        settlement
+          .connect(taker)
+          [
+            LEND_HOOK_SIG
+          ](order, FILL_AMOUNT, [COLLATERAL_AMOUNT], PRESIGNED_SIG, [mockRetrieveFunds(), mockRetrieveFunds()]),
       ).to.be.revertedWithCustomError(
         settlement,
-        "InvalidRetrieveFundsListLength"
+        "InvalidRetrieveFundsListLength",
       );
     });
 
@@ -579,16 +580,14 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeLendOrder();
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
-        settlement.connect(taker)[LEND_HOOK_SIG](
-          order,
-          FILL_AMOUNT,
-          [COLLATERAL_AMOUNT],
-          PRESIGNED_SIG,
-          [zeroRetrieveFunds()]
-        )
+        settlement
+          .connect(taker)
+          [
+            LEND_HOOK_SIG
+          ](order, FILL_AMOUNT, [COLLATERAL_AMOUNT], PRESIGNED_SIG, [zeroRetrieveFunds()]),
       ).to.be.revertedWithCustomError(settlement, "RetrieveFundsNotSpecified");
     });
 
@@ -596,19 +595,17 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeLendOrder();
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
-        settlement.connect(taker)[LEND_HOOK_SIG](
-          order,
-          FILL_AMOUNT,
-          [COLLATERAL_AMOUNT],
-          PRESIGNED_SIG,
-          [invalidRetrieveFunds()]
-        )
+        settlement
+          .connect(taker)
+          [
+            LEND_HOOK_SIG
+          ](order, FILL_AMOUNT, [COLLATERAL_AMOUNT], PRESIGNED_SIG, [invalidRetrieveFunds()]),
       ).to.be.revertedWithCustomError(
         settlement,
-        "InvalidRetrieveFundsFunction"
+        "InvalidRetrieveFundsFunction",
       );
     });
 
@@ -616,19 +613,17 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeLendOrder({ purchaseTokenAmount: FILL_AMOUNT });
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
-        settlement.connect(taker)[LEND_HOOK_SIG](
-          order,
-          FILL_AMOUNT + 1n,
-          [COLLATERAL_AMOUNT],
-          PRESIGNED_SIG,
-          [mockRetrieveFunds()]
-        )
+        settlement
+          .connect(taker)
+          [
+            LEND_HOOK_SIG
+          ](order, FILL_AMOUNT + 1n, [COLLATERAL_AMOUNT], PRESIGNED_SIG, [mockRetrieveFunds()]),
       ).to.be.revertedWithCustomError(
         settlement,
-        "InsufficientRemainingCapacity"
+        "InsufficientRemainingCapacity",
       );
     });
 
@@ -640,7 +635,7 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeLendOrder({ purchaseTokenAmount: FILL_AMOUNT });
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
         settlement.connect(taker)[LEND_HOOK_SIG](
@@ -648,8 +643,8 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
           FILL_AMOUNT,
           [0n], // amount == 0 → continue
           INVALID_SIG, // will fail at settleLimitLend signature check
-          [zeroRetrieveFunds()] // method==0 but never validated since amount==0
-        )
+          [zeroRetrieveFunds()], // method==0 but never validated since amount==0
+        ),
       ).to.be.reverted;
     });
 
@@ -665,23 +660,31 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
         "function collateralTokens(uint256) external view returns (address)",
       ]);
       await collateralManager.mock.numOfAcceptedCollateralTokens.returns(1);
-      await collateralManager.mock.collateralTokens.returns(collateralTokenAddr);
+      await collateralManager.mock.collateralTokens.returns(
+        collateralTokenAddr,
+      );
 
       const repoServicer = await deployMockContract(devops, [
         "function termController() external view returns (address)",
         "function termRepoId() external view returns (bytes32)",
         "function maturityTimestamp() external view returns (uint256)",
+        "function redemptionTimestamp() external view returns (uint256)",
         "function purchaseToken() external view returns (address)",
         "function termRepoCollateralManager() external view returns (address)",
         "function termRepoToken() external view returns (address)",
         "function termRepoLocker() external view returns (address)",
         "function mintOpenExposureFromIntent(address,address,uint256,uint256[],uint256,bool) external returns (uint256)",
       ]);
-      await repoServicer.mock.termController.returns(await mockTermController.getAddress());
+      await repoServicer.mock.termController.returns(
+        await mockTermController.getAddress(),
+      );
       await repoServicer.mock.termRepoId.returns(ZeroHash);
       await repoServicer.mock.maturityTimestamp.returns(MATURITY_TIME);
+      await repoServicer.mock.redemptionTimestamp.returns(REDEMPTION_TIME);
       await repoServicer.mock.purchaseToken.returns(mockPurchaseTokenAddr);
-      await repoServicer.mock.termRepoCollateralManager.returns(await collateralManager.getAddress());
+      await repoServicer.mock.termRepoCollateralManager.returns(
+        await collateralManager.getAddress(),
+      );
       await repoServicer.mock.termRepoToken.returns(mockRepoTokenAddr);
       await repoServicer.mock.termRepoLocker.returns(mockRepoTokenAddr);
       await repoServicer.mock.mintOpenExposureFromIntent.returns(FILL_AMOUNT);
@@ -697,25 +700,23 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       // Maker presigns the lend order
       const loanIntent = await ethers.getContractAt(
         "TermLoanIntentFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await loanIntent.connect(maker).setPreSignedLendOrderHash(order);
 
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
 
       // Taker calls hook: mockRetrieveFunds mints real collateral to diamond,
       // balance check passes, then settleLimitLend runs with mocked servicer
       await expect(
-        settlement.connect(taker)[LEND_HOOK_SIG](
-          order,
-          FILL_AMOUNT,
-          [COLLATERAL_AMOUNT],
-          PRESIGNED_SIG,
-          [mockRetrieveFunds()]
-        )
+        settlement
+          .connect(taker)
+          [
+            LEND_HOOK_SIG
+          ](order, FILL_AMOUNT, [COLLATERAL_AMOUNT], PRESIGNED_SIG, [mockRetrieveFunds()]),
       ).to.not.be.reverted;
     });
   });
@@ -734,15 +735,12 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeBorrowOrder();
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
-        settlement.connect(taker)[BORROW_HOOK_SIG](
-          order,
-          0n,
-          PRESIGNED_SIG,
-          mockRetrieveFunds()
-        )
+        settlement
+          .connect(taker)
+          [BORROW_HOOK_SIG](order, 0n, PRESIGNED_SIG, mockRetrieveFunds()),
       ).to.be.revertedWithCustomError(settlement, "InvalidFillAmount");
     });
 
@@ -750,15 +748,14 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeBorrowOrder();
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
-        settlement.connect(taker)[BORROW_HOOK_SIG](
-          order,
-          FILL_AMOUNT,
-          PRESIGNED_SIG,
-          zeroRetrieveFunds()
-        )
+        settlement
+          .connect(taker)
+          [
+            BORROW_HOOK_SIG
+          ](order, FILL_AMOUNT, PRESIGNED_SIG, zeroRetrieveFunds()),
       ).to.be.revertedWithCustomError(settlement, "RetrieveFundsNotSpecified");
     });
 
@@ -766,18 +763,17 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeBorrowOrder();
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
-        settlement.connect(taker)[BORROW_HOOK_SIG](
-          order,
-          FILL_AMOUNT,
-          PRESIGNED_SIG,
-          invalidRetrieveFunds()
-        )
+        settlement
+          .connect(taker)
+          [
+            BORROW_HOOK_SIG
+          ](order, FILL_AMOUNT, PRESIGNED_SIG, invalidRetrieveFunds()),
       ).to.be.revertedWithCustomError(
         settlement,
-        "InvalidRetrieveFundsFunction"
+        "InvalidRetrieveFundsFunction",
       );
     });
 
@@ -785,18 +781,17 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeBorrowOrder({ purchaseTokenAmount: FILL_AMOUNT });
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
-        settlement.connect(taker)[BORROW_HOOK_SIG](
-          order,
-          FILL_AMOUNT + 1n,
-          PRESIGNED_SIG,
-          mockRetrieveFunds()
-        )
+        settlement
+          .connect(taker)
+          [
+            BORROW_HOOK_SIG
+          ](order, FILL_AMOUNT + 1n, PRESIGNED_SIG, mockRetrieveFunds()),
       ).to.be.revertedWithCustomError(
         settlement,
-        "InsufficientRemainingCapacity"
+        "InsufficientRemainingCapacity",
       );
     });
 
@@ -811,17 +806,23 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
         "function termController() external view returns (address)",
         "function termRepoId() external view returns (bytes32)",
         "function maturityTimestamp() external view returns (uint256)",
+        "function redemptionTimestamp() external view returns (uint256)",
         "function purchaseToken() external view returns (address)",
         "function termRepoCollateralManager() external view returns (address)",
         "function termRepoToken() external view returns (address)",
         "function termRepoLocker() external view returns (address)",
         "function mintOpenExposureFromIntent(address,address,uint256,uint256[],uint256,bool) external returns (uint256)",
       ]);
-      await repoServicer.mock.termController.returns(await mockTermController.getAddress());
+      await repoServicer.mock.termController.returns(
+        await mockTermController.getAddress(),
+      );
       await repoServicer.mock.termRepoId.returns(ZeroHash);
       await repoServicer.mock.maturityTimestamp.returns(MATURITY_TIME);
+      await repoServicer.mock.redemptionTimestamp.returns(REDEMPTION_TIME);
       await repoServicer.mock.purchaseToken.returns(purchaseTokenAddr);
-      await repoServicer.mock.termRepoCollateralManager.returns(await mockCollateralManager.getAddress());
+      await repoServicer.mock.termRepoCollateralManager.returns(
+        await mockCollateralManager.getAddress(),
+      );
       await repoServicer.mock.termRepoToken.returns(mockRepoTokenAddr);
       await repoServicer.mock.termRepoLocker.returns(mockRepoTokenAddr);
       await repoServicer.mock.mintOpenExposureFromIntent.returns(FILL_AMOUNT);
@@ -838,24 +839,23 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       // Maker (borrower) presigns the borrow order
       const loanIntent = await ethers.getContractAt(
         "TermLoanIntentFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await loanIntent.connect(maker).setPreSignedBorrowOrderHash(order);
 
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
 
       // Taker (lender) calls hook: mockRetrieveFunds mints real purchase tokens to diamond,
       // balance check passes, then settleLimitBorrow runs with mocked servicer
       await expect(
-        settlement.connect(taker)[BORROW_HOOK_SIG](
-          order,
-          FILL_AMOUNT,
-          PRESIGNED_SIG,
-          mockRetrieveFunds()
-        )
+        settlement
+          .connect(taker)
+          [
+            BORROW_HOOK_SIG
+          ](order, FILL_AMOUNT, PRESIGNED_SIG, mockRetrieveFunds()),
       ).to.not.be.reverted;
     });
   });
@@ -874,15 +874,12 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeSwapOrder({ makerAssetIsPurchaseToken: false });
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
-        settlement.connect(taker)[SWAP_HOOK_SIG](
-          order,
-          0n,
-          PRESIGNED_SIG,
-          mockRetrieveFunds()
-        )
+        settlement
+          .connect(taker)
+          [SWAP_HOOK_SIG](order, 0n, PRESIGNED_SIG, mockRetrieveFunds()),
       ).to.be.revertedWithCustomError(settlement, "InvalidFillAmount");
     });
 
@@ -890,15 +887,14 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeSwapOrder({ makerAssetIsPurchaseToken: false });
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
-        settlement.connect(taker)[SWAP_HOOK_SIG](
-          order,
-          FILL_AMOUNT,
-          PRESIGNED_SIG,
-          zeroRetrieveFunds()
-        )
+        settlement
+          .connect(taker)
+          [
+            SWAP_HOOK_SIG
+          ](order, FILL_AMOUNT, PRESIGNED_SIG, zeroRetrieveFunds()),
       ).to.be.revertedWithCustomError(settlement, "RetrieveFundsNotSpecified");
     });
 
@@ -906,18 +902,17 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeSwapOrder({ makerAssetIsPurchaseToken: false });
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
-        settlement.connect(taker)[SWAP_HOOK_SIG](
-          order,
-          FILL_AMOUNT,
-          PRESIGNED_SIG,
-          invalidRetrieveFunds()
-        )
+        settlement
+          .connect(taker)
+          [
+            SWAP_HOOK_SIG
+          ](order, FILL_AMOUNT, PRESIGNED_SIG, invalidRetrieveFunds()),
       ).to.be.revertedWithCustomError(
         settlement,
-        "InvalidRetrieveFundsFunction"
+        "InvalidRetrieveFundsFunction",
       );
     });
 
@@ -925,15 +920,14 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       const order = makeSwapOrder({ makerAssetIsPurchaseToken: true });
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
-        settlement.connect(taker)[SWAP_HOOK_SIG](
-          order,
-          FILL_AMOUNT,
-          PRESIGNED_SIG,
-          mockRetrieveFunds()
-        )
+        settlement
+          .connect(taker)
+          [
+            SWAP_HOOK_SIG
+          ](order, FILL_AMOUNT, PRESIGNED_SIG, mockRetrieveFunds()),
       ).to.be.revertedWithCustomError(settlement, "InvalidSwapOrderToFill");
     });
 
@@ -944,18 +938,17 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       });
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await expect(
-        settlement.connect(taker)[SWAP_HOOK_SIG](
-          order,
-          FILL_AMOUNT + 1n,
-          PRESIGNED_SIG,
-          mockRetrieveFunds()
-        )
+        settlement
+          .connect(taker)
+          [
+            SWAP_HOOK_SIG
+          ](order, FILL_AMOUNT + 1n, PRESIGNED_SIG, mockRetrieveFunds()),
       ).to.be.revertedWithCustomError(
         settlement,
-        "InsufficientRemainingCapacity"
+        "InsufficientRemainingCapacity",
       );
     });
 
@@ -977,7 +970,7 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
         MATURITY_TIME,
         purchaseTokenAddr,
         mockRepoServicerAddr,
-        0
+        0,
       );
       await repoToken.mock.redemptionValue.returns(ethers.parseUnits("1", 18));
       await repoToken.mock.transfer.returns(true);
@@ -996,24 +989,23 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       // Maker presigns the swap order
       const repoTokenIntent = await ethers.getContractAt(
         "TermRepoTokenIntentFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await repoTokenIntent.connect(maker).setPreSignedSwapHash(order);
 
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
 
       // Taker calls hook: mockRetrieveFunds mints real purchase tokens to diamond,
       // balance check passes, then swapRepoToken runs with mocked repo token transfers
       await expect(
-        settlement.connect(taker)[SWAP_HOOK_SIG](
-          order,
-          FILL_AMOUNT,
-          PRESIGNED_SIG,
-          mockRetrieveFunds()
-        )
+        settlement
+          .connect(taker)
+          [
+            SWAP_HOOK_SIG
+          ](order, FILL_AMOUNT, PRESIGNED_SIG, mockRetrieveFunds()),
       ).to.not.be.reverted;
     });
   });
@@ -1030,24 +1022,22 @@ describe("TermSettlementWithHooksFacet Unit Tests", () => {
       // Pre-set atomicTxInitiatior via the test helper facet
       const atomicTxHelper = await ethers.getContractAt(
         "TestAtomicTxProtectionHelper",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
       await atomicTxHelper.setAtomicTxInitiator(taker.address);
 
       const order = makeLendOrder();
       const settlement = await ethers.getContractAt(
         "TermSettlementWithHooksFacet",
-        await termDiamond.getAddress()
+        await termDiamond.getAddress(),
       );
 
       await expect(
-        settlement.connect(taker)[LEND_HOOK_SIG](
-          order,
-          FILL_AMOUNT,
-          [COLLATERAL_AMOUNT],
-          PRESIGNED_SIG,
-          [mockRetrieveFunds()]
-        )
+        settlement
+          .connect(taker)
+          [
+            LEND_HOOK_SIG
+          ](order, FILL_AMOUNT, [COLLATERAL_AMOUNT], PRESIGNED_SIG, [mockRetrieveFunds()]),
       ).to.be.revertedWith("AtomicTx already initiated");
     });
   });

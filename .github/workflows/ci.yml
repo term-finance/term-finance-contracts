@@ -4,27 +4,30 @@ permissions:
   contents: read
   pages: write
   id-token: write
+concurrency:
+  group: ci-${{ github.ref == 'refs/heads/main' && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - id: nodeversion
         run: echo "version=$(grep nodejs .tool-versions | sed -e 's/[^[:space:]]*[[:space:]]*//')" >> $GITHUB_OUTPUT
-      - uses: actions/setup-node@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ steps.nodeversion.outputs.version }}
           cache: yarn
-      - run: corepack enable
       - run: yarn install --immutable
       - run: yarn build
       - run: yarn check:coverage
         env:
           REPORT_GAS: "true"
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   formal-verfication:
@@ -53,26 +56,27 @@ jobs:
           - "termRepoServicer-repaymentsRedemptionsReverts.conf"
           - "termRepoServicer-stateVariables.conf"
           - "termRepoToken.conf"
-      fail-fast: false
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - id: nodeversion
+        run: echo "version=$(grep nodejs .tool-versions | sed -e 's/[^[:space:]]*[[:space:]]*//')" >> $GITHUB_OUTPUT
+      - id: pythonversion
+        run: echo "version=$(grep python .tool-versions | sed -e 's/[^[:space:]]*[[:space:]]*//')" >> $GITHUB_OUTPUT
+      - uses: actions/setup-node@v7
         with:
-          node-version: "18.15"
+          node-version: ${{ steps.nodeversion.outputs.version }}
           cache: yarn
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: ${{ steps.pythonversion.outputs.version }}
       - run: |
           yarn install --immutable
           yarn build
       - run: |
           pip3 install -r requirements.txt
       - run: |
-          msg="${2:-"$(hostname) - ${conf_file} - $(date +%s)"}"
-
           pip3 install solc-select
           solc-select install ${SOLC_VERSION}
 

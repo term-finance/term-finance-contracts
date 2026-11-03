@@ -1,10 +1,12 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
 import dayjs from "dayjs";
 import { ZeroAddress } from "ethers";
-import { deployMaturityPeriod, MaturityPeriodInfo } from "../utils/deploy-utils";
+import {
+  deployMaturityPeriod,
+  MaturityPeriodInfo,
+} from "../utils/deploy-utils";
 import {
   TermController,
   TermDiamond,
@@ -205,8 +207,9 @@ describe("IntentOrders Integration Tests", () => {
     await testCollateralToken.initialize("Collateral Token", "CT", 18, [], []);
 
     // ── 2. Deploy TermPriceConsumerV3 ─────────────────────────────────────────
-    const termPriceOracleFactory =
-      await ethers.getContractFactory("TermPriceConsumerV3");
+    const termPriceOracleFactory = await ethers.getContractFactory(
+      "TermPriceConsumerV3",
+    );
     termOracle = (await upgrades.deployProxy(
       termPriceOracleFactory,
       [devops.address],
@@ -291,11 +294,25 @@ describe("IntentOrders Integration Tests", () => {
       await ethers.getContractFactory("TestPriceFeed");
     // Purchase token: $1.00 (8-decimal Chainlink feed, answer = 1e8)
     const mockPurchaseFeed = await mockPriceFeedFactory.deploy(
-      8, "", 1, 1, 100000000n, 1, 1, 1,
+      8,
+      "",
+      1,
+      1,
+      100000000n,
+      1,
+      1,
+      1,
     );
     // Collateral token: $1.00 (same price for easy ratio math: 150% -> 1500 tokens)
     const mockCollateralFeed = await mockPriceFeedFactory.deploy(
-      8, "", 1, 1, 100000000n, 1, 1, 1,
+      8,
+      "",
+      1,
+      1,
+      100000000n,
+      1,
+      1,
+      1,
     );
     await termOracle
       .connect(devops)
@@ -358,7 +375,8 @@ describe("IntentOrders Integration Tests", () => {
 
     diamondAddress = await maturityPeriod.termDiamond.getAddress();
     termRepoLockerAddress = await maturityPeriod.termRepoLocker.getAddress();
-    termRepoServicerAddress = await maturityPeriod.termRepoServicer.getAddress();
+    termRepoServicerAddress =
+      await maturityPeriod.termRepoServicer.getAddress();
 
     // ── 7. Deploy Aave mock infrastructure ────────────────────────────────────
     const MockATokenFactory = await ethers.getContractFactory("TestMockAToken");
@@ -409,14 +427,30 @@ describe("IntentOrders Integration Tests", () => {
 
     // Data provider: used by _lookupReserveTokens (variableDebtToken must be non-zero)
     await aaveDataProvider.setReserveTokensAddresses(
-      pAddr, pAToken, pCreditDeleg, pCreditDeleg,
+      pAddr,
+      pAToken,
+      pCreditDeleg,
+      pCreditDeleg,
     );
     await aaveDataProvider.setReserveTokensAddresses(
-      cAddr, cAToken, cCreditDeleg, cCreditDeleg,
+      cAddr,
+      cAToken,
+      cCreditDeleg,
+      cCreditDeleg,
     );
     // Pool storage: used by pool.withdraw to burn aTokens
-    await mockAavePool.setReserveTokens(pAddr, pAToken, pCreditDeleg, pCreditDeleg);
-    await mockAavePool.setReserveTokens(cAddr, cAToken, cCreditDeleg, cCreditDeleg);
+    await mockAavePool.setReserveTokens(
+      pAddr,
+      pAToken,
+      pCreditDeleg,
+      pCreditDeleg,
+    );
+    await mockAavePool.setReserveTokens(
+      cAddr,
+      cAToken,
+      cCreditDeleg,
+      cCreditDeleg,
+    );
 
     // ── 8. Deploy Morpho mock pool ────────────────────────────────────────────
     const MockMorphoFactory =
@@ -436,10 +470,18 @@ describe("IntentOrders Integration Tests", () => {
     borrowMarketId = computeMarketId(cAddr, pAddr, oracleAddr, irmAddr, lltv);
 
     await mockMorphoPool.setMarketParams(lendMarketId, [
-      pAddr, cAddr, oracleAddr, irmAddr, lltv,
+      pAddr,
+      cAddr,
+      oracleAddr,
+      irmAddr,
+      lltv,
     ]);
     await mockMorphoPool.setMarketParams(borrowMarketId, [
-      cAddr, pAddr, oracleAddr, irmAddr, lltv,
+      cAddr,
+      pAddr,
+      oracleAddr,
+      irmAddr,
+      lltv,
     ]);
 
     // ── 9. Deploy vault mocks (no proxy needed) ───────────────────────────────
@@ -458,30 +500,34 @@ describe("IntentOrders Integration Tests", () => {
     const diamondLoupeFacet = await DiamondLoupeFacetFactory.deploy();
     await diamondLoupeFacet.waitForDeployment();
 
-    const TermControllerFacetFactory =
-      await ethers.getContractFactory("TermControllerFacet");
+    const TermControllerFacetFactory = await ethers.getContractFactory(
+      "TermControllerFacet",
+    );
     const termControllerFacet = await TermControllerFacetFactory.deploy();
     await termControllerFacet.waitForDeployment();
 
-    const TermLoanIntentFacetFactory =
-      await ethers.getContractFactory("TermLoanIntentFacet");
+    const TermLoanIntentFacetFactory = await ethers.getContractFactory(
+      "TermLoanIntentFacet",
+    );
     loanIntentFacetImpl = await TermLoanIntentFacetFactory.deploy();
     await loanIntentFacetImpl.waitForDeployment();
 
-    const TermAaveInterfaceFacetFactory =
-      await ethers.getContractFactory("TermAaveInterfaceFacet");
+    const TermAaveInterfaceFacetFactory = await ethers.getContractFactory(
+      "TermAaveInterfaceFacet",
+    );
     const aaveInterfaceFacet = await TermAaveInterfaceFacetFactory.deploy();
     await aaveInterfaceFacet.waitForDeployment();
 
-    const TermMorphoInterfaceFacetFactory =
-      await ethers.getContractFactory("TermMorphoInterfaceFacet");
-    const morphoInterfaceFacet = await TermMorphoInterfaceFacetFactory.deploy(
-      morphoPoolAddr,
+    const TermMorphoInterfaceFacetFactory = await ethers.getContractFactory(
+      "TermMorphoInterfaceFacet",
     );
+    const morphoInterfaceFacet =
+      await TermMorphoInterfaceFacetFactory.deploy(morphoPoolAddr);
     await morphoInterfaceFacet.waitForDeployment();
 
-    const ERC4626InterfaceFacetFactory =
-      await ethers.getContractFactory("ERC4626InterfaceFacet");
+    const ERC4626InterfaceFacetFactory = await ethers.getContractFactory(
+      "ERC4626InterfaceFacet",
+    );
     const erc4626Facet = await ERC4626InterfaceFacetFactory.deploy();
     await erc4626Facet.waitForDeployment();
 
@@ -616,9 +662,7 @@ describe("IntentOrders Integration Tests", () => {
     await ctrlFacet
       .connect(devops)
       .approveTermController(await maturityPeriod.controller.getAddress());
-    await ctrlFacet
-      .connect(devops)
-      .approveFeeRecipient(feeRecipient.address);
+    await ctrlFacet.connect(devops).approveFeeRecipient(feeRecipient.address);
 
     // ── 14. Mark external protocols as approved in controller (ADMIN_ROLE) ────
     await termController.connect(admin).markTermApproved(aavePoolAddr);
@@ -658,7 +702,9 @@ describe("IntentOrders Integration Tests", () => {
     AAVE_WITHDRAW_SELECTOR = sel(
       "aaveWithdrawOnBehalfOf(address,address,uint256,address,bool)",
     );
-    AAVE_BORROW_SELECTOR = sel("aaveBorrow(address,address,uint256,address,bool)");
+    AAVE_BORROW_SELECTOR = sel(
+      "aaveBorrow(address,address,uint256,address,bool)",
+    );
     MORPHO_BORROW_SELECTOR = sel(
       "morphoBorrow(address,(address,address,address,address,uint256),uint256,address,bool)",
     );
@@ -727,37 +773,69 @@ describe("IntentOrders Integration Tests", () => {
 
   // ── FulfillOrder encode helpers ────────────────────────────────────────────
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function encodeLendFillParams(order: any, fillAmount: bigint, sig: any): string {
+  function encodeLendFillParams(
+    order: any,
+    fillAmount: bigint,
+    sig: any,
+  ): string {
     return ethers.AbiCoder.defaultAbiCoder().encode(
-      ["tuple(tuple(address,uint256,uint256,address,address,uint256,address,uint256,uint256,tuple(bytes4,address,bytes)),uint256,tuple(uint8,bytes))"],
-      [[
+      [
+        "tuple(tuple(address,uint256,uint256,address,address,uint256,address,uint256,uint256,tuple(bytes4,address,bytes)),uint256,tuple(uint8,bytes))",
+      ],
+      [
         [
-          order.repoServicer, order.purchaseTokenAmount, order.offerRate,
-          order.maker, order.taker, order.borrowFee, order.feeRecipient,
-          order.expiry, order.salt,
-          [order.retrieveFunds.method, order.retrieveFunds.target, order.retrieveFunds.additionalCalldata],
+          [
+            order.repoServicer,
+            order.purchaseTokenAmount,
+            order.offerRate,
+            order.maker,
+            order.taker,
+            order.borrowFee,
+            order.feeRecipient,
+            order.expiry,
+            order.salt,
+            [
+              order.retrieveFunds.method,
+              order.retrieveFunds.target,
+              order.retrieveFunds.additionalCalldata,
+            ],
+          ],
+          fillAmount,
+          [sig.sigType, sig.sigData],
         ],
-        fillAmount,
-        [sig.sigType, sig.sigData],
-      ]],
+      ],
     );
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function encodeBorrowFillParams(order: any, sig: any): string {
     return ethers.AbiCoder.defaultAbiCoder().encode(
-      ["tuple(tuple(address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,tuple(bytes4,address,bytes)[]),tuple(uint8,bytes))"],
-      [[
+      [
+        "tuple(tuple(address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,tuple(bytes4,address,bytes)[]),tuple(uint8,bytes))",
+      ],
+      [
         [
-          order.repoServicer, order.purchaseTokenAmount, order.collateralAmounts,
-          order.offerRate, order.maker, order.taker, order.borrowFee, order.feeRecipient,
-          order.expiry, order.salt,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          order.retrieveFundsList.map((r: any) => [r.method, r.target, r.additionalCalldata]),
+          [
+            order.repoServicer,
+            order.purchaseTokenAmount,
+            order.collateralAmounts,
+            order.offerRate,
+            order.maker,
+            order.taker,
+            order.borrowFee,
+            order.feeRecipient,
+            order.expiry,
+            order.salt,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            order.retrieveFundsList.map((r: any) => [
+              r.method,
+              r.target,
+              r.additionalCalldata,
+            ]),
+          ],
+          [sig.sigType, sig.sigData],
         ],
-        [sig.sigType, sig.sigData],
-      ]],
+      ],
     );
   }
 
@@ -786,20 +864,29 @@ describe("IntentOrders Integration Tests", () => {
       const sig = await signLendOrder(lender, order);
 
       const before = await testPurchaseToken.balanceOf(borrower.address);
-      const diamondPurchaseBefore = await testPurchaseToken.balanceOf(diamondAddress);
-      const diamondCollateralBefore = await testCollateralToken.balanceOf(diamondAddress);
-      const diamondPurchaseATokenBefore = await purchaseAToken.balanceOf(diamondAddress);
+      const diamondPurchaseBefore =
+        await testPurchaseToken.balanceOf(diamondAddress);
+      const diamondCollateralBefore =
+        await testCollateralToken.balanceOf(diamondAddress);
+      const diamondPurchaseATokenBefore =
+        await purchaseAToken.balanceOf(diamondAddress);
       await loanIntent
         .connect(borrower)
-        ["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-          order, FILL_AMOUNT, COLLATERAL_AMOUNTS, sig, false,
-        );
+        [
+          "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+        ](order, FILL_AMOUNT, COLLATERAL_AMOUNTS, sig, false);
       const after = await testPurchaseToken.balanceOf(borrower.address);
 
       expect(after - before).to.equal(FILL_AMOUNT);
-      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(diamondPurchaseBefore);
-      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(diamondCollateralBefore);
-      expect(await purchaseAToken.balanceOf(diamondAddress)).to.equal(diamondPurchaseATokenBefore);
+      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(
+        diamondPurchaseBefore,
+      );
+      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(
+        diamondCollateralBefore,
+      );
+      expect(await purchaseAToken.balanceOf(diamondAddress)).to.equal(
+        diamondPurchaseATokenBefore,
+      );
     });
 
     it("Test 2: aaveBorrow", async () => {
@@ -824,18 +911,24 @@ describe("IntentOrders Integration Tests", () => {
       const sig = await signLendOrder(lender, order);
 
       const before = await testPurchaseToken.balanceOf(borrower.address);
-      const diamondPurchaseBefore = await testPurchaseToken.balanceOf(diamondAddress);
-      const diamondCollateralBefore = await testCollateralToken.balanceOf(diamondAddress);
+      const diamondPurchaseBefore =
+        await testPurchaseToken.balanceOf(diamondAddress);
+      const diamondCollateralBefore =
+        await testCollateralToken.balanceOf(diamondAddress);
       await loanIntent
         .connect(borrower)
-        ["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-          order, FILL_AMOUNT, COLLATERAL_AMOUNTS, sig, false,
-        );
+        [
+          "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+        ](order, FILL_AMOUNT, COLLATERAL_AMOUNTS, sig, false);
       const after = await testPurchaseToken.balanceOf(borrower.address);
 
       expect(after - before).to.equal(FILL_AMOUNT);
-      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(diamondPurchaseBefore);
-      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(diamondCollateralBefore);
+      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(
+        diamondPurchaseBefore,
+      );
+      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(
+        diamondCollateralBefore,
+      );
     });
 
     it("Test 3: morphoBorrow", async () => {
@@ -859,18 +952,24 @@ describe("IntentOrders Integration Tests", () => {
       const sig = await signLendOrder(lender, order);
 
       const before = await testPurchaseToken.balanceOf(borrower.address);
-      const diamondPurchaseBefore = await testPurchaseToken.balanceOf(diamondAddress);
-      const diamondCollateralBefore = await testCollateralToken.balanceOf(diamondAddress);
+      const diamondPurchaseBefore =
+        await testPurchaseToken.balanceOf(diamondAddress);
+      const diamondCollateralBefore =
+        await testCollateralToken.balanceOf(diamondAddress);
       await loanIntent
         .connect(borrower)
-        ["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-          order, FILL_AMOUNT, COLLATERAL_AMOUNTS, sig, false,
-        );
+        [
+          "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+        ](order, FILL_AMOUNT, COLLATERAL_AMOUNTS, sig, false);
       const after = await testPurchaseToken.balanceOf(borrower.address);
 
       expect(after - before).to.equal(FILL_AMOUNT);
-      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(diamondPurchaseBefore);
-      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(diamondCollateralBefore);
+      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(
+        diamondPurchaseBefore,
+      );
+      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(
+        diamondCollateralBefore,
+      );
     });
 
     it("Test 4: withdrawFromVault", async () => {
@@ -898,21 +997,30 @@ describe("IntentOrders Integration Tests", () => {
       const sig = await signLendOrder(lender, order);
 
       const before = await testPurchaseToken.balanceOf(borrower.address);
-      const diamondPurchaseBefore = await testPurchaseToken.balanceOf(diamondAddress);
-      const diamondCollateralBefore = await testCollateralToken.balanceOf(diamondAddress);
-      const diamondPurchaseVaultBefore = await purchaseVault.balanceOf(diamondAddress);
+      const diamondPurchaseBefore =
+        await testPurchaseToken.balanceOf(diamondAddress);
+      const diamondCollateralBefore =
+        await testCollateralToken.balanceOf(diamondAddress);
+      const diamondPurchaseVaultBefore =
+        await purchaseVault.balanceOf(diamondAddress);
       await loanIntent
         .connect(borrower)
-        ["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-          order, FILL_AMOUNT, COLLATERAL_AMOUNTS, sig, false,
-        );
+        [
+          "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+        ](order, FILL_AMOUNT, COLLATERAL_AMOUNTS, sig, false);
       const after = await testPurchaseToken.balanceOf(borrower.address);
 
       expect(after - before).to.equal(FILL_AMOUNT);
       expect(await purchaseVault.balanceOf(lender.address)).to.equal(0n);
-      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(diamondPurchaseBefore);
-      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(diamondCollateralBefore);
-      expect(await purchaseVault.balanceOf(diamondAddress)).to.equal(diamondPurchaseVaultBefore);
+      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(
+        diamondPurchaseBefore,
+      );
+      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(
+        diamondCollateralBefore,
+      );
+      expect(await purchaseVault.balanceOf(diamondAddress)).to.equal(
+        diamondPurchaseVaultBefore,
+      );
     });
   });
 
@@ -926,7 +1034,9 @@ describe("IntentOrders Integration Tests", () => {
     it("Test 5: aaveWithdrawOnBehalfOf (for collateral)", async () => {
       // Lender provides purchase tokens; borrower's collateral comes from Aave withdrawal
       await testPurchaseToken.mint(lender.address, FILL_AMOUNT);
-      await testPurchaseToken.connect(lender).approve(diamondAddress, FILL_AMOUNT);
+      await testPurchaseToken
+        .connect(lender)
+        .approve(diamondAddress, FILL_AMOUNT);
       await collateralAToken.mint(borrower.address, COLLATERAL_AMOUNTS[0]);
       await collateralAToken
         .connect(borrower)
@@ -944,24 +1054,37 @@ describe("IntentOrders Integration Tests", () => {
       const sig = await signBorrowOrder(borrower, order);
 
       const before = await testPurchaseToken.balanceOf(borrower.address);
-      const diamondPurchaseBefore = await testPurchaseToken.balanceOf(diamondAddress);
-      const diamondCollateralBefore = await testCollateralToken.balanceOf(diamondAddress);
-      const diamondCollateralATokenBefore = await collateralAToken.balanceOf(diamondAddress);
+      const diamondPurchaseBefore =
+        await testPurchaseToken.balanceOf(diamondAddress);
+      const diamondCollateralBefore =
+        await testCollateralToken.balanceOf(diamondAddress);
+      const diamondCollateralATokenBefore =
+        await collateralAToken.balanceOf(diamondAddress);
       await loanIntent
         .connect(lender)
-        ["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](order, FILL_AMOUNT, sig, false);
+        [
+          "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+        ](order, FILL_AMOUNT, sig, false);
       const after = await testPurchaseToken.balanceOf(borrower.address);
 
       expect(after - before).to.equal(FILL_AMOUNT);
-      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(diamondPurchaseBefore);
-      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(diamondCollateralBefore);
-      expect(await collateralAToken.balanceOf(diamondAddress)).to.equal(diamondCollateralATokenBefore);
+      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(
+        diamondPurchaseBefore,
+      );
+      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(
+        diamondCollateralBefore,
+      );
+      expect(await collateralAToken.balanceOf(diamondAddress)).to.equal(
+        diamondCollateralATokenBefore,
+      );
     });
 
     it("Test 6: aaveBorrow (for collateral)", async () => {
       // Borrower uses credit delegation to borrow collateral token from Aave
       await testPurchaseToken.mint(lender.address, FILL_AMOUNT);
-      await testPurchaseToken.connect(lender).approve(diamondAddress, FILL_AMOUNT);
+      await testPurchaseToken
+        .connect(lender)
+        .approve(diamondAddress, FILL_AMOUNT);
       await collateralCreditDelegation.setBorrowAllowance(
         borrower.address,
         diamondAddress,
@@ -980,22 +1103,32 @@ describe("IntentOrders Integration Tests", () => {
       const sig = await signBorrowOrder(borrower, order);
 
       const before = await testPurchaseToken.balanceOf(borrower.address);
-      const diamondPurchaseBefore = await testPurchaseToken.balanceOf(diamondAddress);
-      const diamondCollateralBefore = await testCollateralToken.balanceOf(diamondAddress);
+      const diamondPurchaseBefore =
+        await testPurchaseToken.balanceOf(diamondAddress);
+      const diamondCollateralBefore =
+        await testCollateralToken.balanceOf(diamondAddress);
       await loanIntent
         .connect(lender)
-        ["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](order, FILL_AMOUNT, sig, false);
+        [
+          "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+        ](order, FILL_AMOUNT, sig, false);
       const after = await testPurchaseToken.balanceOf(borrower.address);
 
       expect(after - before).to.equal(FILL_AMOUNT);
-      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(diamondPurchaseBefore);
-      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(diamondCollateralBefore);
+      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(
+        diamondPurchaseBefore,
+      );
+      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(
+        diamondCollateralBefore,
+      );
     });
 
     it("Test 7: morphoBorrow (for collateral)", async () => {
       // borrowMarket: loanToken=collateralToken → morpho borrow yields collateralToken
       await testPurchaseToken.mint(lender.address, FILL_AMOUNT);
-      await testPurchaseToken.connect(lender).approve(diamondAddress, FILL_AMOUNT);
+      await testPurchaseToken
+        .connect(lender)
+        .approve(diamondAddress, FILL_AMOUNT);
 
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
@@ -1013,22 +1146,32 @@ describe("IntentOrders Integration Tests", () => {
       const sig = await signBorrowOrder(borrower, order);
 
       const before = await testPurchaseToken.balanceOf(borrower.address);
-      const diamondPurchaseBefore = await testPurchaseToken.balanceOf(diamondAddress);
-      const diamondCollateralBefore = await testCollateralToken.balanceOf(diamondAddress);
+      const diamondPurchaseBefore =
+        await testPurchaseToken.balanceOf(diamondAddress);
+      const diamondCollateralBefore =
+        await testCollateralToken.balanceOf(diamondAddress);
       await loanIntent
         .connect(lender)
-        ["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](order, FILL_AMOUNT, sig, false);
+        [
+          "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+        ](order, FILL_AMOUNT, sig, false);
       const after = await testPurchaseToken.balanceOf(borrower.address);
 
       expect(after - before).to.equal(FILL_AMOUNT);
-      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(diamondPurchaseBefore);
-      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(diamondCollateralBefore);
+      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(
+        diamondPurchaseBefore,
+      );
+      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(
+        diamondCollateralBefore,
+      );
     });
 
     it("Test 8: withdrawFromVault (for collateral)", async () => {
       // Borrower deposits collateral into vault, then approves diamond for shares
       await testPurchaseToken.mint(lender.address, FILL_AMOUNT);
-      await testPurchaseToken.connect(lender).approve(diamondAddress, FILL_AMOUNT);
+      await testPurchaseToken
+        .connect(lender)
+        .approve(diamondAddress, FILL_AMOUNT);
 
       await testCollateralToken.mint(borrower.address, COLLATERAL_AMOUNTS[0]);
       await testCollateralToken
@@ -1052,25 +1195,38 @@ describe("IntentOrders Integration Tests", () => {
       const sig = await signBorrowOrder(borrower, order);
 
       const before = await testPurchaseToken.balanceOf(borrower.address);
-      const diamondPurchaseBefore = await testPurchaseToken.balanceOf(diamondAddress);
-      const diamondCollateralBefore = await testCollateralToken.balanceOf(diamondAddress);
-      const diamondCollateralVaultBefore = await collateralVault.balanceOf(diamondAddress);
+      const diamondPurchaseBefore =
+        await testPurchaseToken.balanceOf(diamondAddress);
+      const diamondCollateralBefore =
+        await testCollateralToken.balanceOf(diamondAddress);
+      const diamondCollateralVaultBefore =
+        await collateralVault.balanceOf(diamondAddress);
       await loanIntent
         .connect(lender)
-        ["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](order, FILL_AMOUNT, sig, false);
+        [
+          "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+        ](order, FILL_AMOUNT, sig, false);
       const after = await testPurchaseToken.balanceOf(borrower.address);
 
       expect(after - before).to.equal(FILL_AMOUNT);
       expect(await collateralVault.balanceOf(borrower.address)).to.equal(0n);
-      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(diamondPurchaseBefore);
-      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(diamondCollateralBefore);
-      expect(await collateralVault.balanceOf(diamondAddress)).to.equal(diamondCollateralVaultBefore);
+      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(
+        diamondPurchaseBefore,
+      );
+      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(
+        diamondCollateralBefore,
+      );
+      expect(await collateralVault.balanceOf(diamondAddress)).to.equal(
+        diamondCollateralVaultBefore,
+      );
     });
 
     it("Test 9: morphoWithdrawCollateral", async () => {
       // lendMarket has collateralToken as collateral; morphoWithdrawCollateral sends it
       await testPurchaseToken.mint(lender.address, FILL_AMOUNT);
-      await testPurchaseToken.connect(lender).approve(diamondAddress, FILL_AMOUNT);
+      await testPurchaseToken
+        .connect(lender)
+        .approve(diamondAddress, FILL_AMOUNT);
 
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["bytes32"],
@@ -1088,16 +1244,24 @@ describe("IntentOrders Integration Tests", () => {
       const sig = await signBorrowOrder(borrower, order);
 
       const before = await testPurchaseToken.balanceOf(borrower.address);
-      const diamondPurchaseBefore = await testPurchaseToken.balanceOf(diamondAddress);
-      const diamondCollateralBefore = await testCollateralToken.balanceOf(diamondAddress);
+      const diamondPurchaseBefore =
+        await testPurchaseToken.balanceOf(diamondAddress);
+      const diamondCollateralBefore =
+        await testCollateralToken.balanceOf(diamondAddress);
       await loanIntent
         .connect(lender)
-        ["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](order, FILL_AMOUNT, sig, false);
+        [
+          "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+        ](order, FILL_AMOUNT, sig, false);
       const after = await testPurchaseToken.balanceOf(borrower.address);
 
       expect(after - before).to.equal(FILL_AMOUNT);
-      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(diamondPurchaseBefore);
-      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(diamondCollateralBefore);
+      expect(await testPurchaseToken.balanceOf(diamondAddress)).to.equal(
+        diamondPurchaseBefore,
+      );
+      expect(await testCollateralToken.balanceOf(diamondAddress)).to.equal(
+        diamondCollateralBefore,
+      );
     });
   });
 });

@@ -1,17 +1,12 @@
-/* eslint-disable no-unused-expressions */
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
-import hre from 'hardhat';
+import hre from "hardhat";
 import { ethers, network } from "hardhat";
 import {
   MockContract,
   deployMockContract,
 } from "@term-finance/ethers-mock-contract/compat/waffle";
-import {
-  ZeroAddress,
-  ZeroHash,
-} from "ethers";
+import { ZeroAddress, ZeroHash } from "ethers";
 import {
   TermDiamond,
   DiamondCutFacet,
@@ -61,6 +56,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
 
   let CURRENT_TIME: number;
   let MATURITY_TIME: number;
+  let REDEMPTION_TIME: number;
   let ORDER_EXPIRY: number;
 
   before(async () => {
@@ -78,12 +74,15 @@ describe("TermLoanIntentFacet Unit Tests", () => {
     const latestBlock = await ethers.provider.getBlock("latest");
     CURRENT_TIME = latestBlock!.timestamp;
     MATURITY_TIME = CURRENT_TIME + 86400 * 30;
+    // maturity + repurchase window + redemption buffer
+    REDEMPTION_TIME = MATURITY_TIME + 86400 * 7;
     ORDER_EXPIRY = CURRENT_TIME + 86400 * 365;
 
-    const termDiamondFactoryFactory = await ethers.getContractFactory("TermDiamondFactory");
+    const termDiamondFactoryFactory =
+      await ethers.getContractFactory("TermDiamondFactory");
     const termDiamondFactory = await termDiamondFactoryFactory.deploy(
       admin.address,
-      devops.address
+      devops.address,
     );
     await termDiamondFactory.waitForDeployment();
 
@@ -93,30 +92,42 @@ describe("TermLoanIntentFacet Unit Tests", () => {
 
     // Read diamond address from DiamondDeployed event log
     const diamondDeployedEvent = receipt?.logs.find(
-      log => log.topics[0] === termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash
+      (log) =>
+        log.topics[0] ===
+        termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash,
     );
 
     if (!diamondDeployedEvent) {
       throw new Error("DiamondDeployed event not found");
     }
 
-    const decodedEvent = termDiamondFactory.interface.parseLog(diamondDeployedEvent);
+    const decodedEvent =
+      termDiamondFactory.interface.parseLog(diamondDeployedEvent);
     const diamondAddress = decodedEvent?.args.diamond;
     const diamondCutFacetAddr = decodedEvent?.args.diamondCutFacet;
 
-    termDiamond = await ethers.getContractAt("TermDiamond", diamondAddress) as TermDiamond;
-    diamondCutFacet = await ethers.getContractAt("DiamondCutFacet", diamondCutFacetAddr);
+    termDiamond = (await ethers.getContractAt(
+      "TermDiamond",
+      diamondAddress,
+    )) as TermDiamond;
+    diamondCutFacet = await ethers.getContractAt(
+      "DiamondCutFacet",
+      diamondCutFacetAddr,
+    );
 
-    
     await diamondCutFacet.waitForDeployment();
 
     // Deploy TermLoanIntentFacet
-    const TermLoanIntentFacetFactory = await ethers.getContractFactory("TermLoanIntentFacet");
+    const TermLoanIntentFacetFactory = await ethers.getContractFactory(
+      "TermLoanIntentFacet",
+    );
     loanIntentFacet = await TermLoanIntentFacetFactory.deploy();
     await loanIntentFacet.waitForDeployment();
 
     // Deploy TermControllerFacet
-    const TermControllerFacetFactory = await ethers.getContractFactory("TermControllerFacet");
+    const TermControllerFacetFactory = await ethers.getContractFactory(
+      "TermControllerFacet",
+    );
     termControllerFacet = await TermControllerFacetFactory.deploy();
     await termControllerFacet.waitForDeployment();
 
@@ -131,6 +142,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       "function termController() external view returns (address)",
       "function termRepoId() external view returns (bytes32)",
       "function maturityTimestamp() external view returns (uint256)",
+      "function redemptionTimestamp() external view returns (uint256)",
       "function purchaseToken() external view returns (address)",
       "function termRepoCollateralManager() external view returns (address)",
       "function termRepoToken() external view returns (address)",
@@ -163,7 +175,10 @@ describe("TermLoanIntentFacet Unit Tests", () => {
 
     mockTermController = await deployMockContract(devops, termControllerABI);
     mockRepoServicer = await deployMockContract(devops, repoServicerABI);
-    mockCollateralManager = await deployMockContract(devops, collateralManagerABI);
+    mockCollateralManager = await deployMockContract(
+      devops,
+      collateralManagerABI,
+    );
     mockPurchaseToken = await deployMockContract(devops, erc20ABI);
     mockCollateralToken = await deployMockContract(devops, erc20ABI);
     mockTermEventEmitter = await deployMockContract(devops, eventEmitterABI);
@@ -172,35 +187,54 @@ describe("TermLoanIntentFacet Unit Tests", () => {
     // Setup default mock behaviors
     await mockTermController.mock.isTermDeployed.returns(true);
     await mockTermController.mock.isFactoryDeployed.returns(true);
-    await mockTermController.mock.getProtocolReserveAddress.returns(approvedFeeRecipient.address);
+    await mockTermController.mock.getProtocolReserveAddress.returns(
+      approvedFeeRecipient.address,
+    );
 
-    await mockRepoServicer.mock.termController.returns(await mockTermController.getAddress());
+    await mockRepoServicer.mock.termController.returns(
+      await mockTermController.getAddress(),
+    );
     await mockRepoServicer.mock.termRepoId.returns(ZeroHash);
     await mockRepoServicer.mock.maturityTimestamp.returns(MATURITY_TIME);
-    await mockRepoServicer.mock.purchaseToken.returns(await mockPurchaseToken.getAddress());
-    await mockRepoServicer.mock.termRepoCollateralManager.returns(await mockCollateralManager.getAddress());
-    await mockRepoServicer.mock.termRepoToken.returns(await mockTermRepoToken.getAddress());
+    await mockRepoServicer.mock.redemptionTimestamp.returns(REDEMPTION_TIME);
+    await mockRepoServicer.mock.purchaseToken.returns(
+      await mockPurchaseToken.getAddress(),
+    );
+    await mockRepoServicer.mock.termRepoCollateralManager.returns(
+      await mockCollateralManager.getAddress(),
+    );
+    await mockRepoServicer.mock.termRepoToken.returns(
+      await mockTermRepoToken.getAddress(),
+    );
 
     await mockCollateralManager.mock.numOfAcceptedCollateralTokens.returns(1);
 
     await mockPurchaseToken.mock.decimals.returns(6);
-    await mockPurchaseToken.mock.balanceOf.returns(ethers.parseUnits("1000000", 6));
+    await mockPurchaseToken.mock.balanceOf.returns(
+      ethers.parseUnits("1000000", 6),
+    );
 
     await mockTermRepoToken.mock.config.returns(
       MATURITY_TIME,
       await mockPurchaseToken.getAddress(),
       await mockRepoServicer.getAddress(),
-      0
+      0,
     );
 
     await mockTermEventEmitter.mock.emitLimitOrderTokenPairMinSaltValue.returns();
     await mockTermEventEmitter.mock.emitIntentCancelled.returns();
     await mockTermEventEmitter.mock.emitIntentFilled.returns();
 
-    await mockRepoServicer.mock.termRepoLocker.returns(await mockTermRepoToken.getAddress());
-    await mockRepoServicer.mock.mintOpenExposureFromIntent.returns(ethers.parseUnits("100", 6));
+    await mockRepoServicer.mock.termRepoLocker.returns(
+      await mockTermRepoToken.getAddress(),
+    );
+    await mockRepoServicer.mock.mintOpenExposureFromIntent.returns(
+      ethers.parseUnits("100", 6),
+    );
 
-    await mockCollateralManager.mock.collateralTokens.returns(await mockCollateralToken.getAddress());
+    await mockCollateralManager.mock.collateralTokens.returns(
+      await mockCollateralToken.getAddress(),
+    );
 
     await mockCollateralToken.mock.approve.returns(true);
     await mockCollateralToken.mock.transfer.returns(true);
@@ -216,7 +250,10 @@ describe("TermLoanIntentFacet Unit Tests", () => {
     snapshotId = await network.provider.send("evm_snapshot");
 
     // Add TermLoanIntentFacet to diamond
-    const diamondCut = await ethers.getContractAt("DiamondCutFacet", await termDiamond.getAddress());
+    const diamondCut = await ethers.getContractAt(
+      "DiamondCutFacet",
+      await termDiamond.getAddress(),
+    );
 
     // Get all function selectors from TermLoanIntentFacet
     const loanIntentSelectors = [
@@ -234,8 +271,8 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       "cancelLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),(uint8,bytes))",
       "getLendOrderHash((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)))",
       "getBorrowOrderHash((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]))",
-      "DOMAIN_SEPARATOR()"
-    ].map(sig => ethers.id(sig).slice(0, 10));
+      "DOMAIN_SEPARATOR()",
+    ].map((sig) => ethers.id(sig).slice(0, 10));
 
     // Get function selectors from TermControllerFacet
     const controllerSelectors = [
@@ -243,30 +280,35 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       "revokeTermController(address)",
       "approveFeeRecipient(address)",
       "revokeFeeRecipient(address)",
-      "updateEIP712DomainSeparator(address)"
-    ].map(sig => ethers.id(sig).slice(0, 10));
+      "updateEIP712DomainSeparator(address)",
+    ].map((sig) => ethers.id(sig).slice(0, 10));
 
     // Deploy and get selectors for TestTermLoanIntentFacetHelper
-    const TestLoanIntentHelperFactory = await ethers.getContractFactory("TestTermLoanIntentFacetHelper");
+    const TestLoanIntentHelperFactory = await ethers.getContractFactory(
+      "TestTermLoanIntentFacetHelper",
+    );
     const testLoanIntentHelper = await TestLoanIntentHelperFactory.deploy();
     await testLoanIntentHelper.waitForDeployment();
     const helperSelectors = [
       "setMulticallInitiator(address)",
       "clearMulticallInitiator()",
-    ].map(sig => ethers.id(sig).slice(0, 10));
+    ].map((sig) => ethers.id(sig).slice(0, 10));
 
     // Deploy and get selectors for TestRetrieveFundsFacet
-    const TestRetrieveFundsFacetFactory = await ethers.getContractFactory("TestRetrieveFundsFacet");
+    const TestRetrieveFundsFacetFactory = await ethers.getContractFactory(
+      "TestRetrieveFundsFacet",
+    );
     const testRetrieveFundsFacet = await TestRetrieveFundsFacetFactory.deploy();
     await testRetrieveFundsFacet.waitForDeployment();
     const retrieveFundsSelectors = [
       "noopForRetrieveFunds()",
       "mockRetrieveFunds(address,uint256)",
       "generateCalldata(bytes4,address,address,address,uint256,bool,bytes)",
-    ].map(sig => ethers.id(sig).slice(0, 10));
+    ].map((sig) => ethers.id(sig).slice(0, 10));
 
     // Deploy DiamondLoupeFacet (required for IDiamondLoupe.facetAddress() calls in retrieveFunds validation)
-    const DiamondLoupeFacetFactory = await ethers.getContractFactory("DiamondLoupeFacet");
+    const DiamondLoupeFacetFactory =
+      await ethers.getContractFactory("DiamondLoupeFacet");
     const diamondLoupeFacet = await DiamondLoupeFacetFactory.deploy();
     await diamondLoupeFacet.waitForDeployment();
     const loupeSelectors = [
@@ -276,45 +318,50 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       "facetAddress(bytes4)",
       "diamondPaused()",
       "supportsInterface(bytes4)",
-    ].map(sig => ethers.id(sig).slice(0, 10));
+    ].map((sig) => ethers.id(sig).slice(0, 10));
 
     await diamondCut.diamondCut(
       [
         {
           facetAddress: await loanIntentFacet.getAddress(),
           action: 0, // Add
-          functionSelectors: loanIntentSelectors
+          functionSelectors: loanIntentSelectors,
         },
         {
           facetAddress: await termControllerFacet.getAddress(),
           action: 0, // Add
-          functionSelectors: controllerSelectors
+          functionSelectors: controllerSelectors,
         },
         {
           facetAddress: await testLoanIntentHelper.getAddress(),
           action: 0, // Add
-          functionSelectors: helperSelectors
+          functionSelectors: helperSelectors,
         },
         {
           facetAddress: await testRetrieveFundsFacet.getAddress(),
           action: 0, // Add
-          functionSelectors: retrieveFundsSelectors
+          functionSelectors: retrieveFundsSelectors,
         },
         {
           facetAddress: await diamondLoupeFacet.getAddress(),
           action: 0, // Add
-          functionSelectors: loupeSelectors
+          functionSelectors: loupeSelectors,
         },
       ],
       ZeroAddress,
-      "0x"
+      "0x",
     );
 
     // Get loan intent instance through diamond
-    loanIntent = await ethers.getContractAt("TermLoanIntentFacet", await termDiamond.getAddress());
+    loanIntent = await ethers.getContractAt(
+      "TermLoanIntentFacet",
+      await termDiamond.getAddress(),
+    );
 
     // Initialize loan intent facet
-    await loanIntent.initializeTermIntentFacet(await mockTermEventEmitter.getAddress());
+    await loanIntent.initializeTermIntentFacet(
+      await mockTermEventEmitter.getAddress(),
+    );
   });
 
   afterEach(async () => {
@@ -323,18 +370,42 @@ describe("TermLoanIntentFacet Unit Tests", () => {
 
   // Helper function to approve term controller using TermControllerFacet
   async function approveTermControllerProper() {
-    const termControllerFacetInstance = await ethers.getContractAt("TermControllerFacet", await termDiamond.getAddress());
-    await termControllerFacetInstance.connect(devops).approveTermController(
-      await mockTermController.getAddress()
+    const termControllerFacetInstance = await ethers.getContractAt(
+      "TermControllerFacet",
+      await termDiamond.getAddress(),
     );
+    await termControllerFacetInstance
+      .connect(devops)
+      .approveTermController(await mockTermController.getAddress());
   }
 
-   // Helper function to approve fee recipient
+  // Helper function to approve fee recipient
   async function approveFeeRecipientProper() {
-    const termControllerFacetInstance = await ethers.getContractAt("TermControllerFacet", await termDiamond.getAddress());
-    await termControllerFacetInstance.connect(devops).approveFeeRecipient(
-      approvedFeeRecipient.address
+    const termControllerFacetInstance = await ethers.getContractAt(
+      "TermControllerFacet",
+      await termDiamond.getAddress(),
     );
+    await termControllerFacetInstance
+      .connect(devops)
+      .approveFeeRecipient(approvedFeeRecipient.address);
+  }
+
+  // Counts EIP712DomainSeparatorUpdated logs emitted by the diamond so far.
+  // `.to.not.emit` cannot be used on a reverting call, so reverting paths are
+  // asserted by confirming no such log was ever written.
+  async function countDomainSeparatorUpdatedLogs(diamondAddress: string) {
+    const tcfInterface = (
+      await ethers.getContractFactory("TermControllerFacet")
+    ).interface;
+    const logs = await ethers.provider.getLogs({
+      address: diamondAddress,
+      fromBlock: 0,
+      toBlock: "latest",
+      topics: [
+        tcfInterface.getEvent("EIP712DomainSeparatorUpdated")!.topicHash,
+      ],
+    });
+    return logs.length;
   }
 
   // Helper functions to create test orders
@@ -370,11 +441,13 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       feeRecipient: approvedFeeRecipient,
       expiry: BigInt(ORDER_EXPIRY),
       salt: 1n,
-      retrieveFundsList: [{
-        method: "0x00000000",
-        target: ZeroAddress,
-        additionalCalldata: "0x",
-      }],
+      retrieveFundsList: [
+        {
+          method: "0x00000000",
+          target: ZeroAddress,
+          additionalCalldata: "0x",
+        },
+      ],
       ...overrides,
     };
   }
@@ -395,14 +468,20 @@ describe("TermLoanIntentFacet Unit Tests", () => {
     describe("Initialization", () => {
       it("should revert with AlreadyInitialized when initializing twice", async () => {
         await expect(
-          loanIntent.initializeTermIntentFacet(await mockTermEventEmitter.getAddress())
+          loanIntent.initializeTermIntentFacet(
+            await mockTermEventEmitter.getAddress(),
+          ),
         ).to.be.revertedWithCustomError(loanIntent, "AlreadyInitialized");
       });
 
       it("should revert when initializing with zero address emitter", async () => {
         // Deploy a fresh diamond without initialization
-        const TermDiamondFactoryFactory = await ethers.getContractFactory("TermDiamondFactory");
-        const termDiamondFactory = await TermDiamondFactoryFactory.deploy(admin.address, devops.address);
+        const TermDiamondFactoryFactory =
+          await ethers.getContractFactory("TermDiamondFactory");
+        const termDiamondFactory = await TermDiamondFactoryFactory.deploy(
+          admin.address,
+          devops.address,
+        );
         await termDiamondFactory.waitForDeployment();
 
         const deployTx = await termDiamondFactory.deployDiamond();
@@ -411,38 +490,49 @@ describe("TermLoanIntentFacet Unit Tests", () => {
 
         // Read diamond address from DiamondDeployed event log
         const diamondDeployedEvent = receipt?.logs.find(
-          log => log.topics[0] === termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash
+          (log) =>
+            log.topics[0] ===
+            termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash,
         );
 
         if (!diamondDeployedEvent) {
           throw new Error("DiamondDeployed event not found");
         }
 
-        const decodedEvent = termDiamondFactory.interface.parseLog(diamondDeployedEvent);
+        const decodedEvent =
+          termDiamondFactory.interface.parseLog(diamondDeployedEvent);
         const diamondAddress = decodedEvent?.args[1];
-        const freshDiamond = await ethers.getContractAt("TermDiamond", diamondAddress) as TermDiamond;
-  
-        const diamondCutFresh = await ethers.getContractAt("DiamondCutFacet", await freshDiamond.getAddress());
+        const freshDiamond = (await ethers.getContractAt(
+          "TermDiamond",
+          diamondAddress,
+        )) as TermDiamond;
 
-        const loanIntentSelectors = [
-          "initializeTermIntentFacet(address)",
-        ].map(sig => ethers.id(sig).slice(0, 10));
+        const diamondCutFresh = await ethers.getContractAt(
+          "DiamondCutFacet",
+          await freshDiamond.getAddress(),
+        );
+
+        const loanIntentSelectors = ["initializeTermIntentFacet(address)"].map(
+          (sig) => ethers.id(sig).slice(0, 10),
+        );
 
         const initCalldata = loanIntentFacet.interface.encodeFunctionData(
           "initializeTermIntentFacet",
-          [ZeroAddress]
+          [ZeroAddress],
         );
 
         await expect(
           diamondCutFresh.diamondCut(
-            [{
-              facetAddress: await loanIntentFacet.getAddress(),
-              action: 0,
-              functionSelectors: loanIntentSelectors
-            }],
+            [
+              {
+                facetAddress: await loanIntentFacet.getAddress(),
+                action: 0,
+                functionSelectors: loanIntentSelectors,
+              },
+            ],
             await loanIntentFacet.getAddress(),
-            initCalldata
-          )
+            initCalldata,
+          ),
         ).to.be.reverted;
       });
     });
@@ -469,14 +559,15 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const collateralAmounts = [ethers.parseEther("100")];
 
         await expect(
-          loanIntent.connect(borrower)["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            collateralAmounts,
-            signature,
-            false
-          )
-        ).to.be.revertedWithCustomError(loanIntent, "InvalidPurchaseTokenAmount");
+          loanIntent
+            .connect(borrower)
+            [
+              "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), collateralAmounts, signature, false),
+        ).to.be.revertedWithCustomError(
+          loanIntent,
+          "InvalidPurchaseTokenAmount",
+        );
       });
 
       it("should revert with OrderExpired when order has expired", async () => {
@@ -488,13 +579,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const collateralAmounts = [ethers.parseEther("100")];
 
         await expect(
-          loanIntent.connect(borrower)["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            collateralAmounts,
-            signature,
-            false
-          )
+          loanIntent
+            .connect(borrower)
+            [
+              "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), collateralAmounts, signature, false),
         ).to.be.revertedWithCustomError(loanIntent, "OrderExpired");
       });
 
@@ -507,13 +596,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const collateralAmounts = [ethers.parseEther("100")];
 
         await expect(
-          loanIntent.connect(borrower)["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            collateralAmounts,
-            signature,
-            false
-          )
+          loanIntent
+            .connect(borrower)
+            [
+              "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), collateralAmounts, signature, false),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidOfferRate");
       });
     });
@@ -527,13 +614,17 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const collateralAmounts = [ethers.parseEther("100")];
 
         await expect(
-          loanIntent.connect(borrower)["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-            order,
-            0, // Fill amount is 0
-            collateralAmounts,
-            signature,
-            false
-          )
+          loanIntent
+            .connect(borrower)
+            [
+              "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+            ](
+              order,
+              0, // Fill amount is 0
+              collateralAmounts,
+              signature,
+              false,
+            ),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidFillAmount");
       });
 
@@ -546,13 +637,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const collateralAmounts = [ethers.parseEther("100")];
 
         await expect(
-          loanIntent.connect(borrower)["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            collateralAmounts,
-            signature,
-            false
-          )
+          loanIntent
+            .connect(borrower)
+            [
+              "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), collateralAmounts, signature, false),
         ).to.be.revertedWithCustomError(loanIntent, "MakerCannotBeTaker");
       });
 
@@ -564,19 +653,21 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         // This signature will recover to address(1) which should not match any maker
         const invalidSigData = ethers.AbiCoder.defaultAbiCoder().encode(
           ["uint8", "bytes32", "bytes32"],
-          [28, "0x0000000000000000000000000000000000000000000000000000000000000001", "0x0000000000000000000000000000000000000000000000000000000000000001"]
+          [
+            28,
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+          ],
         );
         const invalidSignature = createSignature(0, invalidSigData);
         const collateralAmounts = [ethers.parseEther("100")];
 
         await expect(
-          loanIntent.connect(borrower)["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            collateralAmounts,
-            invalidSignature,
-            false
-          )
+          loanIntent
+            .connect(borrower)
+            [
+              "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), collateralAmounts, invalidSignature, false),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidSignature");
       });
     });
@@ -586,11 +677,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const order = createLimitLendOrder({
           repoServicer: await mockRepoServicer.getAddress(),
           maker: maker.address,
-          feeRecipient: approvedFeeRecipient
+          feeRecipient: approvedFeeRecipient,
         });
 
         await expect(
-          loanIntent.connect(taker).setPreSignedLendOrderHash(order)
+          loanIntent.connect(taker).setPreSignedLendOrderHash(order),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidSender");
       });
     });
@@ -616,13 +707,15 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const signature = createSignature();
 
         await expect(
-          loanIntent.connect(lender)["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            signature,
-            false
-          )
-        ).to.be.revertedWithCustomError(loanIntent, "InvalidPurchaseTokenAmount");
+          loanIntent
+            .connect(lender)
+            [
+              "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), signature, false),
+        ).to.be.revertedWithCustomError(
+          loanIntent,
+          "InvalidPurchaseTokenAmount",
+        );
       });
 
       it("should revert with OrderExpired when order has expired", async () => {
@@ -633,12 +726,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const signature = createSignature();
 
         await expect(
-          loanIntent.connect(lender)["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            signature,
-            false
-          )
+          loanIntent
+            .connect(lender)
+            [
+              "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), signature, false),
         ).to.be.revertedWithCustomError(loanIntent, "OrderExpired");
       });
 
@@ -650,12 +742,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const signature = createSignature();
 
         await expect(
-          loanIntent.connect(lender)["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            signature,
-            false
-          )
+          loanIntent
+            .connect(lender)
+            [
+              "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), signature, false),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidOfferRate");
       });
 
@@ -664,20 +755,30 @@ describe("TermLoanIntentFacet Unit Tests", () => {
           repoServicer: await mockRepoServicer.getAddress(),
           collateralAmounts: [ethers.parseEther("100")],
           retrieveFundsList: [
-            { method: "0x00000000", target: ethers.ZeroAddress, additionalCalldata: "0x" },
-            { method: "0x00000000", target: ethers.ZeroAddress, additionalCalldata: "0x" }
+            {
+              method: "0x00000000",
+              target: ethers.ZeroAddress,
+              additionalCalldata: "0x",
+            },
+            {
+              method: "0x00000000",
+              target: ethers.ZeroAddress,
+              additionalCalldata: "0x",
+            },
           ], // List length (2) doesn't match collateral length (1)
         });
         const signature = createSignature();
 
         await expect(
-          loanIntent.connect(lender)["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            signature,
-            false
-          )
-        ).to.be.revertedWithCustomError(loanIntent, "InvalidRetrieveFundsListLength");
+          loanIntent
+            .connect(lender)
+            [
+              "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), signature, false),
+        ).to.be.revertedWithCustomError(
+          loanIntent,
+          "InvalidRetrieveFundsListLength",
+        );
       });
     });
 
@@ -689,12 +790,16 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const signature = createSignature();
 
         await expect(
-          loanIntent.connect(lender)["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](
-            order,
-            0, // Fill amount is 0
-            signature,
-            false
-          )
+          loanIntent
+            .connect(lender)
+            [
+              "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+            ](
+              order,
+              0, // Fill amount is 0
+              signature,
+              false,
+            ),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidFillAmount");
       });
 
@@ -706,12 +811,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const signature = createSignature();
 
         await expect(
-          loanIntent.connect(lender)["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            signature,
-            false
-          )
+          loanIntent
+            .connect(lender)
+            [
+              "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), signature, false),
         ).to.be.revertedWithCustomError(loanIntent, "MakerCannotBeTaker");
       });
 
@@ -723,17 +827,20 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         // This signature will recover to address(1) which should not match any maker
         const invalidSigData = ethers.AbiCoder.defaultAbiCoder().encode(
           ["uint8", "bytes32", "bytes32"],
-          [28, "0x0000000000000000000000000000000000000000000000000000000000000001", "0x0000000000000000000000000000000000000000000000000000000000000001"]
+          [
+            28,
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+          ],
         );
         const invalidSignature = createSignature(0, invalidSigData);
 
         await expect(
-          loanIntent.connect(lender)["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            invalidSignature,
-            false
-          )
+          loanIntent
+            .connect(lender)
+            [
+              "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), invalidSignature, false),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidSignature");
       });
     });
@@ -746,7 +853,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         });
 
         await expect(
-          loanIntent.connect(taker).setPreSignedBorrowOrderHash(order)
+          loanIntent.connect(taker).setPreSignedBorrowOrderHash(order),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidSender");
       });
     });
@@ -858,7 +965,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
           verifyingContract: domain.verifyingContract,
         },
         LEND_ORDER_TYPES,
-        order
+        order,
       );
 
       // Decode the signature to extract v, r, s
@@ -867,7 +974,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       // Encode as (uint8 v, bytes32 r, bytes32 s) for the contract
       const sigData = ethers.AbiCoder.defaultAbiCoder().encode(
         ["uint8", "bytes32", "bytes32"],
-        [sig.v, sig.r, sig.s]
+        [sig.v, sig.r, sig.s],
       );
 
       return { sigType: 0, sigData }; // 0 = EIP712
@@ -886,7 +993,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
           verifyingContract: domain.verifyingContract,
         },
         BORROW_ORDER_TYPES,
-        order
+        order,
       );
 
       // Decode the signature to extract v, r, s
@@ -895,7 +1002,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       // Encode as (uint8 v, bytes32 r, bytes32 s) for the contract
       const sigData = ethers.AbiCoder.defaultAbiCoder().encode(
         ["uint8", "bytes32", "bytes32"],
-        [sig.v, sig.r, sig.s]
+        [sig.v, sig.r, sig.s],
       );
 
       return { sigType: 0, sigData }; // 0 = EIP712
@@ -911,7 +1018,6 @@ describe("TermLoanIntentFacet Unit Tests", () => {
           feeRecipient: approvedFeeRecipient.address,
         });
 
-
         // Sign the order with the maker's key
         const signature = await signLendOrder(maker, order);
         const collateralAmounts = [ethers.parseEther("100")];
@@ -920,13 +1026,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         // since the signature is valid but the order settlement will fail
         // due to mock contract limitations (e.g., token transfers)
         await expect(
-          loanIntent.connect(borrower)["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            collateralAmounts,
-            signature,
-            false
-          )
+          loanIntent
+            .connect(borrower)
+            [
+              "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), collateralAmounts, signature, false),
         ).to.not.be.revertedWithCustomError(loanIntent, "InvalidSignature");
       });
 
@@ -942,13 +1046,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const collateralAmounts = [ethers.parseEther("100")];
 
         await expect(
-          loanIntent.connect(borrower)["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            collateralAmounts,
-            signature,
-            false
-          )
+          loanIntent
+            .connect(borrower)
+            [
+              "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), collateralAmounts, signature, false),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidSignature");
       });
 
@@ -962,19 +1064,17 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         // Create a malformed signature with incorrect v, r, s values
         const malformedSigData = ethers.AbiCoder.defaultAbiCoder().encode(
           ["uint8", "bytes32", "bytes32"],
-          [28, ethers.ZeroHash, ethers.ZeroHash]
+          [28, ethers.ZeroHash, ethers.ZeroHash],
         );
         const signature = { sigType: 0, sigData: malformedSigData };
         const collateralAmounts = [ethers.parseEther("100")];
 
         await expect(
-          loanIntent.connect(borrower)["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            collateralAmounts,
-            signature,
-            false
-          )
+          loanIntent
+            .connect(borrower)
+            [
+              "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), collateralAmounts, signature, false),
         ).to.be.reverted; // Will revert (either InvalidSignature or ECDSA error)
       });
 
@@ -994,23 +1094,21 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         };
 
         const sig = ethers.Signature.from(
-          await maker.signTypedData(wrongDomain, LEND_ORDER_TYPES, order)
+          await maker.signTypedData(wrongDomain, LEND_ORDER_TYPES, order),
         );
         const sigData = ethers.AbiCoder.defaultAbiCoder().encode(
           ["uint8", "bytes32", "bytes32"],
-          [sig.v, sig.r, sig.s]
+          [sig.v, sig.r, sig.s],
         );
         const signature = { sigType: 0, sigData };
         const collateralAmounts = [ethers.parseEther("100")];
 
         await expect(
-          loanIntent.connect(borrower)["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            collateralAmounts,
-            signature,
-            false
-          )
+          loanIntent
+            .connect(borrower)
+            [
+              "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), collateralAmounts, signature, false),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidSignature");
       });
 
@@ -1025,17 +1123,18 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const signature = await signLendOrder(maker, order);
 
         // Modify the order after signing
-        const modifiedOrder = { ...order, purchaseTokenAmount: ethers.parseUnits("2000", 6) };
+        const modifiedOrder = {
+          ...order,
+          purchaseTokenAmount: ethers.parseUnits("2000", 6),
+        };
         const collateralAmounts = [ethers.parseEther("100")];
 
         await expect(
-          loanIntent.connect(borrower)["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-            modifiedOrder,
-            ethers.parseUnits("100", 6),
-            collateralAmounts,
-            signature,
-            false
-          )
+          loanIntent
+            .connect(borrower)
+            [
+              "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+            ](modifiedOrder, ethers.parseUnits("100", 6), collateralAmounts, signature, false),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidSignature");
       });
     });
@@ -1046,26 +1145,32 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         console.log("\n=== Testing Manual EIP-712 Encoding ===");
 
         // Manual encoding to match contract exactly
-        const RETRIEVE_FUNDS_STRUCT_TYPEHASH = "0x256d2844f30b75f89e6ec9418f35732e254268f054ce2b9f508642c924b76a8a";
-        const BORROW_ORDER_TYPEHASH = "0xa92b0c41d8931853dfcf7e881934d0e47cebb5e838164ed0473362e6958b70a5";
+        const RETRIEVE_FUNDS_STRUCT_TYPEHASH =
+          "0x256d2844f30b75f89e6ec9418f35732e254268f054ce2b9f508642c924b76a8a";
+        const BORROW_ORDER_TYPEHASH =
+          "0xa92b0c41d8931853dfcf7e881934d0e47cebb5e838164ed0473362e6958b70a5";
 
         // Helper to hash a RetrieveFundsStruct like the contract does
         function hashRetrieveFundsStruct(item: any) {
-          return ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
-            ["bytes32", "bytes4", "address", "bytes32"],
-            [
-              RETRIEVE_FUNDS_STRUCT_TYPEHASH,
-              item.method,
-              item.target,
-              ethers.keccak256(item.additionalCalldata || "0x")
-            ]
-          ));
+          return ethers.keccak256(
+            ethers.AbiCoder.defaultAbiCoder().encode(
+              ["bytes32", "bytes4", "address", "bytes32"],
+              [
+                RETRIEVE_FUNDS_STRUCT_TYPEHASH,
+                item.method,
+                item.target,
+                ethers.keccak256(item.additionalCalldata || "0x"),
+              ],
+            ),
+          );
         }
 
         // Helper to hash an array of RetrieveFundsStruct like the contract does
         function hashRetrieveFundsArray(items: any[]) {
-          const hashes = items.map(item => hashRetrieveFundsStruct(item));
-          return ethers.keccak256(ethers.solidityPacked(["bytes32[]"], [hashes]));
+          const hashes = items.map((item) => hashRetrieveFundsStruct(item));
+          return ethers.keccak256(
+            ethers.solidityPacked(["bytes32[]"], [hashes]),
+          );
         }
 
         const order = createLimitBorrowOrder({
@@ -1075,26 +1180,45 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         });
 
         // Manually compute the struct hash like the contract
-        const retrieveFundsArrayHash = hashRetrieveFundsArray(order.retrieveFundsList);
-        const collateralAmountsHash = ethers.keccak256(ethers.solidityPacked(["uint256[]"], [order.collateralAmounts]));
+        const retrieveFundsArrayHash = hashRetrieveFundsArray(
+          order.retrieveFundsList,
+        );
+        const collateralAmountsHash = ethers.keccak256(
+          ethers.solidityPacked(["uint256[]"], [order.collateralAmounts]),
+        );
 
-        const manualStructHash = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(
-          ["bytes32", "address", "uint256", "bytes32", "uint256", "address", "address", "uint256", "address", "uint256", "uint256", "bytes32"],
-          [
-            BORROW_ORDER_TYPEHASH,
-            order.repoServicer,
-            order.purchaseTokenAmount,
-            collateralAmountsHash,
-            order.offerRate,
-            order.maker,
-            order.taker,
-            order.borrowFee,
-            order.feeRecipient,
-            order.expiry,
-            order.salt,
-            retrieveFundsArrayHash
-          ]
-        ));
+        const manualStructHash = ethers.keccak256(
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            [
+              "bytes32",
+              "address",
+              "uint256",
+              "bytes32",
+              "uint256",
+              "address",
+              "address",
+              "uint256",
+              "address",
+              "uint256",
+              "uint256",
+              "bytes32",
+            ],
+            [
+              BORROW_ORDER_TYPEHASH,
+              order.repoServicer,
+              order.purchaseTokenAmount,
+              collateralAmountsHash,
+              order.offerRate,
+              order.maker,
+              order.taker,
+              order.borrowFee,
+              order.feeRecipient,
+              order.expiry,
+              order.salt,
+              retrieveFundsArrayHash,
+            ],
+          ),
+        );
         console.log("Manual struct hash:", manualStructHash);
 
         // Get domain separator
@@ -1105,16 +1229,21 @@ describe("TermLoanIntentFacet Unit Tests", () => {
           chainId: domainData.chainId,
           verifyingContract: domainData.verifyingContract,
         });
-        const manualOrderHash = ethers.keccak256(ethers.solidityPacked(
-          ["string", "bytes32", "bytes32"],
-          ["\x19\x01", domainSeparator, manualStructHash]
-        ));
+        const manualOrderHash = ethers.keccak256(
+          ethers.solidityPacked(
+            ["string", "bytes32", "bytes32"],
+            ["\x19\x01", domainSeparator, manualStructHash],
+          ),
+        );
         console.log("Manual order hash:", manualOrderHash);
 
         // Compare with contract
         const contractOrderHash = await loanIntent.getBorrowOrderHash(order);
         console.log("Contract order hash:", contractOrderHash);
-        console.log("Hashes match:", manualOrderHash === contractOrderHash ? "✓ YES" : "✗ NO");
+        console.log(
+          "Hashes match:",
+          manualOrderHash === contractOrderHash ? "✓ YES" : "✗ NO",
+        );
 
         // Sign the order with the maker's key
         const signature = await signBorrowOrder(maker, order);
@@ -1124,14 +1253,15 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         console.log("Maker address:", maker.address);
 
         // Get the order hash from the contract
-        const orderHashFromContract = await loanIntent.getBorrowOrderHash(order);
+        const orderHashFromContract =
+          await loanIntent.getBorrowOrderHash(order);
         console.log("Order hash from contract:", orderHashFromContract);
 
         // Decode the signature
         const sigData = signature.sigData;
         const decodedSig = ethers.AbiCoder.defaultAbiCoder().decode(
           ["uint8", "bytes32", "bytes32"],
-          sigData
+          sigData,
         );
         const [v, r, s] = decodedSig;
         console.log("Signature components:");
@@ -1141,22 +1271,27 @@ describe("TermLoanIntentFacet Unit Tests", () => {
 
         // Recover the signer using ethers (mimicking what contract does)
         const sig = ethers.Signature.from({ r, s, v });
-        const recoveredSigner = ethers.recoverAddress(orderHashFromContract, sig);
+        const recoveredSigner = ethers.recoverAddress(
+          orderHashFromContract,
+          sig,
+        );
         console.log("Recovered signer:", recoveredSigner);
         console.log("Expected signer (maker):", maker.address);
-        console.log("Signatures match:", recoveredSigner.toLowerCase() === maker.address.toLowerCase());
+        console.log(
+          "Signatures match:",
+          recoveredSigner.toLowerCase() === maker.address.toLowerCase(),
+        );
         console.log("=== End Debug ===");
 
         // This should fail with a different error (not InvalidSignature)
         // since the signature is valid but the order settlement will fail
         // due to mock contract limitations (e.g., token transfers)
         await expect(
-          loanIntent.connect(lender)["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            signature,
-            false
-          )
+          loanIntent
+            .connect(lender)
+            [
+              "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), signature, false),
         ).to.not.be.revertedWithCustomError(loanIntent, "InvalidSignature");
       });
 
@@ -1171,12 +1306,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const signature = await signBorrowOrder(taker, order);
 
         await expect(
-          loanIntent.connect(lender)["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            signature,
-            false
-          )
+          loanIntent
+            .connect(lender)
+            [
+              "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), signature, false),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidSignature");
       });
 
@@ -1190,17 +1324,16 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         // Create a malformed signature with incorrect v, r, s values
         const malformedSigData = ethers.AbiCoder.defaultAbiCoder().encode(
           ["uint8", "bytes32", "bytes32"],
-          [28, ethers.ZeroHash, ethers.ZeroHash]
+          [28, ethers.ZeroHash, ethers.ZeroHash],
         );
         const signature = { sigType: 0, sigData: malformedSigData };
 
         await expect(
-          loanIntent.connect(lender)["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            signature,
-            false
-          )
+          loanIntent
+            .connect(lender)
+            [
+              "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), signature, false),
         ).to.be.reverted; // Will revert (either InvalidSignature or ECDSA error)
       });
 
@@ -1220,21 +1353,20 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         };
 
         const sig = ethers.Signature.from(
-          await maker.signTypedData(wrongDomain, BORROW_ORDER_TYPES, order)
+          await maker.signTypedData(wrongDomain, BORROW_ORDER_TYPES, order),
         );
         const sigData = ethers.AbiCoder.defaultAbiCoder().encode(
           ["uint8", "bytes32", "bytes32"],
-          [sig.v, sig.r, sig.s]
+          [sig.v, sig.r, sig.s],
         );
         const signature = { sigType: 0, sigData };
 
         await expect(
-          loanIntent.connect(lender)["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            signature,
-            false
-          )
+          loanIntent
+            .connect(lender)
+            [
+              "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), signature, false),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidSignature");
       });
 
@@ -1249,15 +1381,17 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const signature = await signBorrowOrder(maker, order);
 
         // Modify the order after signing
-        const modifiedOrder = { ...order, purchaseTokenAmount: ethers.parseUnits("2000", 6) };
+        const modifiedOrder = {
+          ...order,
+          purchaseTokenAmount: ethers.parseUnits("2000", 6),
+        };
 
         await expect(
-          loanIntent.connect(lender)["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](
-            modifiedOrder,
-            ethers.parseUnits("100", 6),
-            signature,
-            false
-          )
+          loanIntent
+            .connect(lender)
+            [
+              "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+            ](modifiedOrder, ethers.parseUnits("100", 6), signature, false),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidSignature");
       });
 
@@ -1272,26 +1406,25 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const wrongDomain = {
           name: domainName,
           version: domainVersion,
-          chainId: 0xDEADBEEFn, // Clearly invalid test chain ID
+          chainId: 0xdeadbeefn, // Clearly invalid test chain ID
           verifyingContract: await termDiamond.getAddress(),
         };
 
         const sig = ethers.Signature.from(
-          await maker.signTypedData(wrongDomain, BORROW_ORDER_TYPES, order)
+          await maker.signTypedData(wrongDomain, BORROW_ORDER_TYPES, order),
         );
         const sigData = ethers.AbiCoder.defaultAbiCoder().encode(
           ["uint8", "bytes32", "bytes32"],
-          [sig.v, sig.r, sig.s]
+          [sig.v, sig.r, sig.s],
         );
         const signature = { sigType: 0, sigData };
 
         await expect(
-          loanIntent.connect(lender)["settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            signature,
-            false
-          )
+          loanIntent
+            .connect(lender)
+            [
+              "settleLimitBorrow((address,uint256,uint256[],uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)[]),uint256,(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), signature, false),
         ).to.be.revertedWithCustomError(loanIntent, "InvalidSignature");
       });
     });
@@ -1308,13 +1441,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         const collateralAmounts = [ethers.parseEther("100")];
 
         await expect(
-          loanIntent.connect(borrower)["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            collateralAmounts,
-            signature,
-            false
-          )
+          loanIntent
+            .connect(borrower)
+            [
+              "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), collateralAmounts, signature, false),
         ).to.be.reverted;
       });
 
@@ -1328,21 +1459,21 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         // Create signature with clearly invalid v value (valid values are 0, 1, 27, or 28)
         const invalidSigData = ethers.AbiCoder.defaultAbiCoder().encode(
           ["uint8", "bytes32", "bytes32"],
-          [30, // Invalid v value
-           "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-           "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321"]
+          [
+            30, // Invalid v value
+            "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+            "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321",
+          ],
         );
         const signature = { sigType: 0, sigData: invalidSigData };
         const collateralAmounts = [ethers.parseEther("100")];
 
         await expect(
-          loanIntent.connect(borrower)["settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"](
-            order,
-            ethers.parseUnits("100", 6),
-            collateralAmounts,
-            signature,
-            false
-          )
+          loanIntent
+            .connect(borrower)
+            [
+              "settleLimitLend((address,uint256,uint256,address,address,uint256,address,uint256,uint256,(bytes4,address,bytes)),uint256,uint256[],(uint8,bytes),bool)"
+            ](order, ethers.parseUnits("100", 6), collateralAmounts, signature, false),
         ).to.be.reverted;
       });
     });
@@ -1414,22 +1545,30 @@ describe("TermLoanIntentFacet Unit Tests", () => {
 
   async function signLendOrderOuter(signer: SignerWithAddress, order: any) {
     const domain = await getEIP712DomainOuter();
-    const signature = await signer.signTypedData(domain, LEND_ORDER_TYPES_OUTER, order);
+    const signature = await signer.signTypedData(
+      domain,
+      LEND_ORDER_TYPES_OUTER,
+      order,
+    );
     const sig = ethers.Signature.from(signature);
     const sigData = ethers.AbiCoder.defaultAbiCoder().encode(
       ["uint8", "bytes32", "bytes32"],
-      [sig.v, sig.r, sig.s]
+      [sig.v, sig.r, sig.s],
     );
     return { sigType: 0, sigData };
   }
 
   async function signBorrowOrderOuter(signer: SignerWithAddress, order: any) {
     const domain = await getEIP712DomainOuter();
-    const signature = await signer.signTypedData(domain, BORROW_ORDER_TYPES_OUTER, order);
+    const signature = await signer.signTypedData(
+      domain,
+      BORROW_ORDER_TYPES_OUTER,
+      order,
+    );
     const sig = ethers.Signature.from(signature);
     const sigData = ethers.AbiCoder.defaultAbiCoder().encode(
       ["uint8", "bytes32", "bytes32"],
-      [sig.v, sig.r, sig.s]
+      [sig.v, sig.r, sig.s],
     );
     return { sigType: 0, sigData };
   }
@@ -1447,38 +1586,60 @@ describe("TermLoanIntentFacet Unit Tests", () => {
 
     it("makerToken=0 reverts InvalidParameters", async () => {
       await expect(
-        loanIntent.setLimitOrderMakerTokenPairMinSaltValue(ZeroAddress, maker.address, 1n)
+        loanIntent.setLimitOrderMakerTokenPairMinSaltValue(
+          ZeroAddress,
+          maker.address,
+          1n,
+        ),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidParameters");
     });
 
     it("takerToken=0 reverts InvalidParameters", async () => {
       await expect(
-        loanIntent.setLimitOrderMakerTokenPairMinSaltValue(maker.address, ZeroAddress, 1n)
+        loanIntent.setLimitOrderMakerTokenPairMinSaltValue(
+          maker.address,
+          ZeroAddress,
+          1n,
+        ),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidParameters");
     });
 
     it("makerToken==takerToken reverts InvalidParameters", async () => {
       await expect(
-        loanIntent.setLimitOrderMakerTokenPairMinSaltValue(maker.address, maker.address, 1n)
+        loanIntent.setLimitOrderMakerTokenPairMinSaltValue(
+          maker.address,
+          maker.address,
+          1n,
+        ),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidParameters");
     });
 
     it("minValidSalt=type(uint256).max reverts InvalidParameters", async () => {
       await expect(
         loanIntent.setLimitOrderMakerTokenPairMinSaltValue(
-          maker.address, taker.address, ethers.MaxUint256
-        )
+          maker.address,
+          taker.address,
+          ethers.MaxUint256,
+        ),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidParameters");
     });
 
     it("decreasing salt below current reverts InvalidMinSalt", async () => {
-      await loanIntent.connect(maker).setLimitOrderMakerTokenPairMinSaltValue(
-        await mockPurchaseToken.getAddress(), await mockTermRepoToken.getAddress(), 100n
-      );
+      await loanIntent
+        .connect(maker)
+        .setLimitOrderMakerTokenPairMinSaltValue(
+          await mockPurchaseToken.getAddress(),
+          await mockTermRepoToken.getAddress(),
+          100n,
+        );
       await expect(
-        loanIntent.connect(maker).setLimitOrderMakerTokenPairMinSaltValue(
-          await mockPurchaseToken.getAddress(), await mockTermRepoToken.getAddress(), 50n
-        )
+        loanIntent
+          .connect(maker)
+          .setLimitOrderMakerTokenPairMinSaltValue(
+            await mockPurchaseToken.getAddress(),
+            await mockTermRepoToken.getAddress(),
+            50n,
+          ),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidMinSalt");
     });
 
@@ -1486,19 +1647,23 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       const val = await loanIntent.getLimitOrderMakerTokenPairMinSaltValue(
         maker.address,
         await mockPurchaseToken.getAddress(),
-        await mockTermRepoToken.getAddress()
+        await mockTermRepoToken.getAddress(),
       );
       expect(val).to.equal(0n);
     });
 
     it("setLimitOrderMakerTokenPairMinSaltValue succeeds and getter returns set value", async () => {
-      await loanIntent.connect(maker).setLimitOrderMakerTokenPairMinSaltValue(
-        await mockPurchaseToken.getAddress(), await mockTermRepoToken.getAddress(), 42n
-      );
+      await loanIntent
+        .connect(maker)
+        .setLimitOrderMakerTokenPairMinSaltValue(
+          await mockPurchaseToken.getAddress(),
+          await mockTermRepoToken.getAddress(),
+          42n,
+        );
       const val = await loanIntent.getLimitOrderMakerTokenPairMinSaltValue(
         maker.address,
         await mockPurchaseToken.getAddress(),
-        await mockTermRepoToken.getAddress()
+        await mockTermRepoToken.getAddress(),
       );
       expect(val).to.equal(42n);
     });
@@ -1523,8 +1688,12 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         "function termRepoLocker() external view returns (address)",
         "function mintOpenExposureFromIntent(address,address,uint256,uint256[],uint256,bool) external returns (uint256)",
       ]);
-      await expiredRepoServicer.mock.termController.returns(await mockTermController.getAddress());
-      await expiredRepoServicer.mock.termRepoCollateralManager.returns(await mockCollateralManager.getAddress());
+      await expiredRepoServicer.mock.termController.returns(
+        await mockTermController.getAddress(),
+      );
+      await expiredRepoServicer.mock.termRepoCollateralManager.returns(
+        await mockCollateralManager.getAddress(),
+      );
       await expiredRepoServicer.mock.maturityTimestamp.returns(1000);
       const order = createLimitLendOrder({
         repoServicer: await expiredRepoServicer.getAddress(),
@@ -1533,9 +1702,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = createSignature();
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "AfterMaturity");
     });
 
@@ -1552,7 +1723,9 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         "function termRepoLocker() external view returns (address)",
         "function mintOpenExposureFromIntent(address,address,uint256,uint256[],uint256,bool) external returns (uint256)",
       ]);
-      await expiredRepoServicer.mock.termController.returns(await mockTermController.getAddress());
+      await expiredRepoServicer.mock.termController.returns(
+        await mockTermController.getAddress(),
+      );
       await expiredRepoServicer.mock.maturityTimestamp.returns(1000);
       const order = createLimitBorrowOrder({
         repoServicer: await expiredRepoServicer.getAddress(),
@@ -1561,9 +1734,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = createSignature();
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_4](
-          order, ethers.parseUnits("100", 6), signature, false
-        )
+        loanIntent
+          .connect(lender)
+          [
+            SETTLE_BORROW_4
+          ](order, ethers.parseUnits("100", 6), signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "AfterMaturity");
     });
 
@@ -1576,9 +1751,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = createSignature();
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidTermController");
     });
 
@@ -1590,9 +1767,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = createSignature();
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_4](
-          order, ethers.parseUnits("100", 6), signature, false
-        )
+        loanIntent
+          .connect(lender)
+          [
+            SETTLE_BORROW_4
+          ](order, ethers.parseUnits("100", 6), signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidTermController");
     });
 
@@ -1605,8 +1784,13 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       await notDeployedController.mock.isTermDeployed.returns(false);
       await notDeployedController.mock.isFactoryDeployed.returns(false);
 
-      const termControllerFacetInstance = await ethers.getContractAt("TermControllerFacet", await termDiamond.getAddress());
-      await termControllerFacetInstance.connect(devops).approveTermController(await notDeployedController.getAddress());
+      const termControllerFacetInstance = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
+      await termControllerFacetInstance
+        .connect(devops)
+        .approveTermController(await notDeployedController.getAddress());
 
       const notDeployedServicer = await deployMockContract(devops, [
         "function termController() external view returns (address)",
@@ -1618,8 +1802,12 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         "function termRepoLocker() external view returns (address)",
         "function mintOpenExposureFromIntent(address,address,uint256,uint256[],uint256,bool) external returns (uint256)",
       ]);
-      await notDeployedServicer.mock.termController.returns(await notDeployedController.getAddress());
-      await notDeployedServicer.mock.termRepoCollateralManager.returns(await mockCollateralManager.getAddress());
+      await notDeployedServicer.mock.termController.returns(
+        await notDeployedController.getAddress(),
+      );
+      await notDeployedServicer.mock.termRepoCollateralManager.returns(
+        await mockCollateralManager.getAddress(),
+      );
 
       const order = createLimitLendOrder({
         repoServicer: await notDeployedServicer.getAddress(),
@@ -1628,9 +1816,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = createSignature();
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidRepoId");
     });
 
@@ -1645,12 +1835,15 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       // collateralAmounts has 2 elements but mock returns 1
       const signature = createSignature();
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, ethers.parseUnits("100", 6),
-          [ethers.parseEther("100"), ethers.parseEther("50")],
-          signature, false
-        )
-      ).to.be.revertedWithCustomError(loanIntent, "InvalidCollateralAmountsInput");
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, ethers.parseUnits("100", 6), [ethers.parseEther("100"), ethers.parseEther("50")], signature, false),
+      ).to.be.revertedWithCustomError(
+        loanIntent,
+        "InvalidCollateralAmountsInput",
+      );
     });
 
     it("InvalidCollateralAmountsInput - borrow: wrong collateral array length", async () => {
@@ -1666,10 +1859,15 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = createSignature();
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_4](
-          order, ethers.parseUnits("100", 6), signature, false
-        )
-      ).to.be.revertedWithCustomError(loanIntent, "InvalidCollateralAmountsInput");
+        loanIntent
+          .connect(lender)
+          [
+            SETTLE_BORROW_4
+          ](order, ethers.parseUnits("100", 6), signature, false),
+      ).to.be.revertedWithCustomError(
+        loanIntent,
+        "InvalidCollateralAmountsInput",
+      );
     });
 
     it("InvalidTaker - lend: specific taker set but different address fills", async () => {
@@ -1683,9 +1881,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidTaker");
     });
 
@@ -1701,9 +1901,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signBorrowOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_4](
-          order, ethers.parseUnits("100", 6), signature, false
-        )
+        loanIntent
+          .connect(lender)
+          [
+            SETTLE_BORROW_4
+          ](order, ethers.parseUnits("100", 6), signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidTaker");
     });
 
@@ -1711,9 +1913,13 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       await approveTermControllerProper();
       await approveFeeRecipientProper();
       // Set minSalt = 1 for maker / purchaseToken -> repoToken pair
-      await loanIntent.connect(maker).setLimitOrderMakerTokenPairMinSaltValue(
-        await mockPurchaseToken.getAddress(), await mockTermRepoToken.getAddress(), 1n
-      );
+      await loanIntent
+        .connect(maker)
+        .setLimitOrderMakerTokenPairMinSaltValue(
+          await mockPurchaseToken.getAddress(),
+          await mockTermRepoToken.getAddress(),
+          1n,
+        );
       const order = createLimitLendOrder({
         repoServicer: await mockRepoServicer.getAddress(),
         maker: maker.address,
@@ -1722,9 +1928,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "OrderCancelled");
     });
 
@@ -1732,9 +1940,13 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       await approveTermControllerProper();
       await approveFeeRecipientProper();
       // makerToken for borrow is repoToken, takerToken is purchaseToken
-      await loanIntent.connect(maker).setLimitOrderMakerTokenPairMinSaltValue(
-        await mockTermRepoToken.getAddress(), await mockPurchaseToken.getAddress(), 1n
-      );
+      await loanIntent
+        .connect(maker)
+        .setLimitOrderMakerTokenPairMinSaltValue(
+          await mockTermRepoToken.getAddress(),
+          await mockPurchaseToken.getAddress(),
+          1n,
+        );
       const order = createLimitBorrowOrder({
         repoServicer: await mockRepoServicer.getAddress(),
         maker: maker.address,
@@ -1744,9 +1956,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signBorrowOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_4](
-          order, ethers.parseUnits("100", 6), signature, false
-        )
+        loanIntent
+          .connect(lender)
+          [
+            SETTLE_BORROW_4
+          ](order, ethers.parseUnits("100", 6), signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "OrderCancelled");
     });
 
@@ -1760,9 +1974,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidFeeRecipient");
     });
 
@@ -1776,9 +1992,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signBorrowOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_4](
-          order, ethers.parseUnits("100", 6), signature, false
-        )
+        loanIntent
+          .connect(lender)
+          [
+            SETTLE_BORROW_4
+          ](order, ethers.parseUnits("100", 6), signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidFeeRecipient");
     });
 
@@ -1794,14 +2012,18 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       // Fill fully
-      await loanIntent.connect(borrower)[SETTLE_LEND_4](
-        order, fillAmt, [ethers.parseEther("100")], signature, false
-      );
+      await loanIntent
+        .connect(borrower)
+        [
+          SETTLE_LEND_4
+        ](order, fillAmt, [ethers.parseEther("100")], signature, false);
       // Try again → InvalidOrderStatus
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, fillAmt, [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, fillAmt, [ethers.parseEther("100")], signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidOrderStatus");
     });
 
@@ -1818,9 +2040,9 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       await loanIntent.connect(maker).cancelLimitBorrow(order, cancelSig);
       const fillSig = await signBorrowOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_4](
-          order, ethers.parseUnits("100", 6), fillSig, false
-        )
+        loanIntent
+          .connect(lender)
+          [SETTLE_BORROW_4](order, ethers.parseUnits("100", 6), fillSig, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidOrderStatus");
     });
 
@@ -1836,14 +2058,18 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       // Full fill
-      await loanIntent.connect(borrower)[SETTLE_LEND_4](
-        order, fillAmt, [ethers.parseEther("100")], signature, false
-      );
+      await loanIntent
+        .connect(borrower)
+        [
+          SETTLE_LEND_4
+        ](order, fillAmt, [ethers.parseEther("100")], signature, false);
       // NothingToFill
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, 1n, [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, 1n, [ethers.parseEther("100")], signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidOrderStatus");
     });
 
@@ -1859,10 +2085,15 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, totalAmt + 1n, [ethers.parseEther("100")], signature, false
-        )
-      ).to.be.revertedWithCustomError(loanIntent, "InsufficientRemainingCapacity");
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, totalAmt + 1n, [ethers.parseEther("100")], signature, false),
+      ).to.be.revertedWithCustomError(
+        loanIntent,
+        "InsufficientRemainingCapacity",
+      );
     });
 
     it("Partial fill succeeds when fillAmount is less than remaining capacity", async () => {
@@ -1878,9 +2109,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, partialAmt, [ethers.parseEther("50")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, partialAmt, [ethers.parseEther("50")], signature, false),
       ).to.not.be.reverted;
     });
 
@@ -1899,10 +2132,15 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false
-        )
-      ).to.be.revertedWithCustomError(loanIntent, "InvalidRetrieveFundsFunction");
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false),
+      ).to.be.revertedWithCustomError(
+        loanIntent,
+        "InvalidRetrieveFundsFunction",
+      );
     });
 
     it("InsufficientFundsRetrieved - lend: retrieve funds returns insufficient tokens", async () => {
@@ -1923,9 +2161,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, fillAmt, [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, fillAmt, [ethers.parseEther("100")], signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "InsufficientFundsRetrieved");
     });
   });
@@ -1947,9 +2187,8 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         maker: maker.address,
         feeRecipient: approvedFeeRecipient.address,
       });
-      await expect(
-        loanIntent.connect(maker).setPreSignedLendOrderHash(order)
-      ).to.not.be.reverted;
+      await expect(loanIntent.connect(maker).setPreSignedLendOrderHash(order))
+        .to.not.be.reverted;
     });
 
     it("setPreSignedLendOrderHash - AlreadyPreSigned when pre-signing same order twice", async () => {
@@ -1960,7 +2199,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       await loanIntent.connect(maker).setPreSignedLendOrderHash(order);
       await expect(
-        loanIntent.connect(maker).setPreSignedLendOrderHash(order)
+        loanIntent.connect(maker).setPreSignedLendOrderHash(order),
       ).to.be.revertedWithCustomError(loanIntent, "AlreadyPreSigned");
     });
 
@@ -1974,12 +2213,14 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       // Fill fully first
-      await loanIntent.connect(borrower)[SETTLE_LEND_4](
-        order, fillAmt, [ethers.parseEther("100")], signature, false
-      );
+      await loanIntent
+        .connect(borrower)
+        [
+          SETTLE_LEND_4
+        ](order, fillAmt, [ethers.parseEther("100")], signature, false);
       // Now try to pre-sign → InvalidOrderStatus
       await expect(
-        loanIntent.connect(maker).setPreSignedLendOrderHash(order)
+        loanIntent.connect(maker).setPreSignedLendOrderHash(order),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidOrderStatus");
     });
 
@@ -1990,9 +2231,8 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         feeRecipient: approvedFeeRecipient.address,
         retrieveFundsList: [],
       });
-      await expect(
-        loanIntent.connect(maker).setPreSignedBorrowOrderHash(order)
-      ).to.not.be.reverted;
+      await expect(loanIntent.connect(maker).setPreSignedBorrowOrderHash(order))
+        .to.not.be.reverted;
     });
 
     it("setPreSignedBorrowOrderHash - AlreadyPreSigned", async () => {
@@ -2004,7 +2244,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       await loanIntent.connect(maker).setPreSignedBorrowOrderHash(order);
       await expect(
-        loanIntent.connect(maker).setPreSignedBorrowOrderHash(order)
+        loanIntent.connect(maker).setPreSignedBorrowOrderHash(order),
       ).to.be.revertedWithCustomError(loanIntent, "AlreadyPreSigned");
     });
 
@@ -2017,7 +2257,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       await loanIntent.connect(maker).setPreSignedLendOrderHash(order);
       const orderHash = await loanIntent.getLendOrderHash(order);
       await expect(
-        loanIntent.connect(maker).revokePreSignedLimitOrderHash(orderHash)
+        loanIntent.connect(maker).revokePreSignedLimitOrderHash(orderHash),
       ).to.not.be.reverted;
     });
 
@@ -2030,7 +2270,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       await loanIntent.connect(maker).setPreSignedLendOrderHash(order);
       const orderHash = await loanIntent.getLendOrderHash(order);
       await expect(
-        loanIntent.connect(taker).revokePreSignedLimitOrderHash(orderHash)
+        loanIntent.connect(taker).revokePreSignedLimitOrderHash(orderHash),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidSender");
     });
 
@@ -2042,9 +2282,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const presignSig = { sigType: 1, sigData: "0x" }; // PRESIGN but not registered
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], presignSig, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], presignSig, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidSignature");
     });
 
@@ -2056,10 +2298,240 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const unknownSig = { sigType: 2, sigData: "0x" };
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], unknownSig, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], unknownSig, false),
       ).to.be.reverted;
+    });
+  });
+
+  /**
+   * ==========================================================================
+   * Pre-Sign Event Tests
+   * ==========================================================================
+   */
+  describe("Pre-Sign Event Tests", () => {
+    beforeEach(async () => {
+      await approveTermControllerProper();
+      await approveFeeRecipientProper();
+    });
+
+    it("setPreSignedLendOrderHash - emits PresignedLimitOrderSet with order hash and signer", async () => {
+      const order = createLimitLendOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: maker.address,
+        feeRecipient: approvedFeeRecipient.address,
+      });
+      const orderHash = await loanIntent.getLendOrderHash(order);
+      await expect(loanIntent.connect(maker).setPreSignedLendOrderHash(order))
+        .to.emit(loanIntent, "PresignedLimitOrderSet")
+        .withArgs(orderHash, maker.address);
+    });
+
+    it("setPreSignedBorrowOrderHash - emits PresignedLimitOrderSet with order hash and signer", async () => {
+      const order = createLimitBorrowOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: maker.address,
+        feeRecipient: approvedFeeRecipient.address,
+        retrieveFundsList: [],
+      });
+      const orderHash = await loanIntent.getBorrowOrderHash(order);
+      await expect(loanIntent.connect(maker).setPreSignedBorrowOrderHash(order))
+        .to.emit(loanIntent, "PresignedLimitOrderSet")
+        .withArgs(orderHash, maker.address);
+    });
+
+    it("setPreSignedLendOrderHash - signer is msg.sender, distinct from the taker", async () => {
+      // maker is the only permitted caller, so the signer arg always tracks the maker
+      const order = createLimitLendOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: lender.address,
+        feeRecipient: approvedFeeRecipient.address,
+      });
+      const orderHash = await loanIntent.getLendOrderHash(order);
+      await expect(loanIntent.connect(lender).setPreSignedLendOrderHash(order))
+        .to.emit(loanIntent, "PresignedLimitOrderSet")
+        .withArgs(orderHash, lender.address);
+    });
+
+    it("setPreSignedLendOrderHash - distinct orders emit distinct order hashes", async () => {
+      const orderOne = createLimitLendOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: maker.address,
+        feeRecipient: approvedFeeRecipient.address,
+        salt: 1n,
+      });
+      const orderTwo = createLimitLendOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: maker.address,
+        feeRecipient: approvedFeeRecipient.address,
+        salt: 2n,
+      });
+      const hashOne = await loanIntent.getLendOrderHash(orderOne);
+      const hashTwo = await loanIntent.getLendOrderHash(orderTwo);
+      expect(hashOne).to.not.equal(hashTwo);
+
+      await expect(
+        loanIntent.connect(maker).setPreSignedLendOrderHash(orderOne),
+      )
+        .to.emit(loanIntent, "PresignedLimitOrderSet")
+        .withArgs(hashOne, maker.address);
+      await expect(
+        loanIntent.connect(maker).setPreSignedLendOrderHash(orderTwo),
+      )
+        .to.emit(loanIntent, "PresignedLimitOrderSet")
+        .withArgs(hashTwo, maker.address);
+    });
+
+    it("setPreSignedLendOrderHash - emits exactly one PresignedLimitOrderSet, and no Revoked event", async () => {
+      const order = createLimitLendOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: maker.address,
+        feeRecipient: approvedFeeRecipient.address,
+      });
+      await expect(
+        loanIntent.connect(maker).setPreSignedLendOrderHash(order),
+      ).to.not.emit(loanIntent, "PresignedLimitOrderRevoked");
+      const setEvents = await loanIntent.queryFilter(
+        loanIntent.filters.PresignedLimitOrderSet(),
+      );
+      expect(setEvents.length).to.equal(1);
+    });
+
+    it("setPreSignedLendOrderHash - AlreadyPreSigned revert leaves only the original Set event", async () => {
+      const order = createLimitLendOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: maker.address,
+        feeRecipient: approvedFeeRecipient.address,
+      });
+      await loanIntent.connect(maker).setPreSignedLendOrderHash(order);
+      await expect(
+        loanIntent.connect(maker).setPreSignedLendOrderHash(order),
+      ).to.be.revertedWithCustomError(loanIntent, "AlreadyPreSigned");
+      const setEvents = await loanIntent.queryFilter(
+        loanIntent.filters.PresignedLimitOrderSet(),
+      );
+      expect(setEvents.length).to.equal(1);
+    });
+
+    it("setPreSignedLendOrderHash - no Set event recorded when caller is not the maker", async () => {
+      const order = createLimitLendOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: maker.address,
+        feeRecipient: approvedFeeRecipient.address,
+      });
+      await expect(
+        loanIntent.connect(taker).setPreSignedLendOrderHash(order),
+      ).to.be.revertedWithCustomError(loanIntent, "InvalidSender");
+      const setEvents = await loanIntent.queryFilter(
+        loanIntent.filters.PresignedLimitOrderSet(),
+      );
+      expect(setEvents.length).to.equal(0);
+    });
+
+    it("revokePreSignedLimitOrderHash - emits PresignedLimitOrderRevoked for a pre-signed lend order", async () => {
+      const order = createLimitLendOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: maker.address,
+        feeRecipient: approvedFeeRecipient.address,
+      });
+      await loanIntent.connect(maker).setPreSignedLendOrderHash(order);
+      const orderHash = await loanIntent.getLendOrderHash(order);
+      await expect(
+        loanIntent.connect(maker).revokePreSignedLimitOrderHash(orderHash),
+      )
+        .to.emit(loanIntent, "PresignedLimitOrderRevoked")
+        .withArgs(orderHash);
+    });
+
+    it("revokePreSignedLimitOrderHash - emits PresignedLimitOrderRevoked for a pre-signed borrow order", async () => {
+      const order = createLimitBorrowOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: maker.address,
+        feeRecipient: approvedFeeRecipient.address,
+        retrieveFundsList: [],
+      });
+      await loanIntent.connect(maker).setPreSignedBorrowOrderHash(order);
+      const orderHash = await loanIntent.getBorrowOrderHash(order);
+      await expect(
+        loanIntent.connect(maker).revokePreSignedLimitOrderHash(orderHash),
+      )
+        .to.emit(loanIntent, "PresignedLimitOrderRevoked")
+        .withArgs(orderHash);
+    });
+
+    it("revokePreSignedLimitOrderHash - emits Revoked but not Set", async () => {
+      const order = createLimitLendOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: maker.address,
+        feeRecipient: approvedFeeRecipient.address,
+      });
+      await loanIntent.connect(maker).setPreSignedLendOrderHash(order);
+      const orderHash = await loanIntent.getLendOrderHash(order);
+      await expect(
+        loanIntent.connect(maker).revokePreSignedLimitOrderHash(orderHash),
+      ).to.not.emit(loanIntent, "PresignedLimitOrderSet");
+      const revokedEvents = await loanIntent.queryFilter(
+        loanIntent.filters.PresignedLimitOrderRevoked(),
+      );
+      expect(revokedEvents.length).to.equal(1);
+    });
+
+    it("revokePreSignedLimitOrderHash - no Revoked event recorded when caller is not the maker", async () => {
+      const order = createLimitLendOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: maker.address,
+        feeRecipient: approvedFeeRecipient.address,
+      });
+      await loanIntent.connect(maker).setPreSignedLendOrderHash(order);
+      const orderHash = await loanIntent.getLendOrderHash(order);
+      await expect(
+        loanIntent.connect(taker).revokePreSignedLimitOrderHash(orderHash),
+      ).to.be.revertedWithCustomError(loanIntent, "InvalidSender");
+      const revokedEvents = await loanIntent.queryFilter(
+        loanIntent.filters.PresignedLimitOrderRevoked(),
+      );
+      expect(revokedEvents.length).to.equal(0);
+    });
+
+    it("revokePreSignedLimitOrderHash - no Revoked event recorded for a hash that was never pre-signed", async () => {
+      const order = createLimitLendOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: maker.address,
+        feeRecipient: approvedFeeRecipient.address,
+      });
+      const orderHash = await loanIntent.getLendOrderHash(order);
+      await expect(
+        loanIntent.connect(maker).revokePreSignedLimitOrderHash(orderHash),
+      ).to.be.revertedWithCustomError(loanIntent, "InvalidSender");
+      const revokedEvents = await loanIntent.queryFilter(
+        loanIntent.filters.PresignedLimitOrderRevoked(),
+      );
+      expect(revokedEvents.length).to.equal(0);
+    });
+
+    it("set → revoke → set emits the full event sequence for the same order hash", async () => {
+      const order = createLimitLendOrder({
+        repoServicer: await mockRepoServicer.getAddress(),
+        maker: maker.address,
+        feeRecipient: approvedFeeRecipient.address,
+      });
+      const orderHash = await loanIntent.getLendOrderHash(order);
+
+      await expect(loanIntent.connect(maker).setPreSignedLendOrderHash(order))
+        .to.emit(loanIntent, "PresignedLimitOrderSet")
+        .withArgs(orderHash, maker.address);
+      await expect(
+        loanIntent.connect(maker).revokePreSignedLimitOrderHash(orderHash),
+      )
+        .to.emit(loanIntent, "PresignedLimitOrderRevoked")
+        .withArgs(orderHash);
+      // revoking clears the entry, so the same hash can be pre-signed again
+      await expect(loanIntent.connect(maker).setPreSignedLendOrderHash(order))
+        .to.emit(loanIntent, "PresignedLimitOrderSet")
+        .withArgs(orderHash, maker.address);
     });
   });
 
@@ -2083,11 +2555,13 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         feeRecipient: approvedFeeRecipient.address,
       });
       const signature = await signLendOrderOuter(maker, order);
-      await loanIntent.connect(borrower)[SETTLE_LEND_4](
-        order, fillAmt, [ethers.parseEther("100")], signature, false
-      );
+      await loanIntent
+        .connect(borrower)
+        [
+          SETTLE_LEND_4
+        ](order, fillAmt, [ethers.parseEther("100")], signature, false);
       await expect(
-        loanIntent.connect(maker).cancelLimitLend(order, signature)
+        loanIntent.connect(maker).cancelLimitLend(order, signature),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidOrderStatus");
     });
 
@@ -2100,7 +2574,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       const signature = await signLendOrderOuter(maker, order);
       await loanIntent.connect(maker).cancelLimitLend(order, signature);
       await expect(
-        loanIntent.connect(maker).cancelLimitLend(order, signature)
+        loanIntent.connect(maker).cancelLimitLend(order, signature),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidOrderStatus");
     });
 
@@ -2113,7 +2587,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       // Sign with taker instead of maker
       const wrongSig = await signLendOrderOuter(taker, order);
       await expect(
-        loanIntent.connect(maker).cancelLimitLend(order, wrongSig)
+        loanIntent.connect(maker).cancelLimitLend(order, wrongSig),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidSignature");
     });
 
@@ -2125,7 +2599,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(taker).cancelLimitLend(order, signature)
+        loanIntent.connect(taker).cancelLimitLend(order, signature),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidSender");
     });
 
@@ -2136,9 +2610,8 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         feeRecipient: approvedFeeRecipient.address,
       });
       const signature = await signLendOrderOuter(maker, order);
-      await expect(
-        loanIntent.connect(maker).cancelLimitLend(order, signature)
-      ).to.not.be.reverted;
+      await expect(loanIntent.connect(maker).cancelLimitLend(order, signature))
+        .to.not.be.reverted;
     });
 
     it("cancelLimitBorrow - success", async () => {
@@ -2150,7 +2623,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signBorrowOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(maker).cancelLimitBorrow(order, signature)
+        loanIntent.connect(maker).cancelLimitBorrow(order, signature),
       ).to.not.be.reverted;
     });
 
@@ -2164,7 +2637,7 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       const signature = await signBorrowOrderOuter(maker, order);
       await loanIntent.connect(maker).cancelLimitBorrow(order, signature);
       await expect(
-        loanIntent.connect(maker).cancelLimitBorrow(order, signature)
+        loanIntent.connect(maker).cancelLimitBorrow(order, signature),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidOrderStatus");
     });
   });
@@ -2190,9 +2663,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, fillAmt, [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, fillAmt, [ethers.parseEther("100")], signature, false),
       ).to.not.be.reverted;
     });
 
@@ -2207,14 +2682,18 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       // First partial fill
-      await loanIntent.connect(borrower)[SETTLE_LEND_4](
-        order, halfAmt, [ethers.parseEther("50")], signature, false
-      );
+      await loanIntent
+        .connect(borrower)
+        [
+          SETTLE_LEND_4
+        ](order, halfAmt, [ethers.parseEther("50")], signature, false);
       // Second fill completing the order
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, halfAmt, [ethers.parseEther("50")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, halfAmt, [ethers.parseEther("50")], signature, false),
       ).to.not.be.reverted;
     });
 
@@ -2228,17 +2707,23 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         feeRecipient: approvedFeeRecipient.address,
       });
       const signature = await signLendOrderOuter(maker, order);
-      await loanIntent.connect(borrower)[SETTLE_LEND_4](
-        order, halfAmt, [ethers.parseEther("50")], signature, false
-      );
-      await loanIntent.connect(borrower)[SETTLE_LEND_4](
-        order, halfAmt, [ethers.parseEther("50")], signature, false
-      );
+      await loanIntent
+        .connect(borrower)
+        [
+          SETTLE_LEND_4
+        ](order, halfAmt, [ethers.parseEther("50")], signature, false);
+      await loanIntent
+        .connect(borrower)
+        [
+          SETTLE_LEND_4
+        ](order, halfAmt, [ethers.parseEther("50")], signature, false);
       // Both branches of _updateOrderStatus covered; order FILLED → InvalidOrderStatus
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, 1n, [ethers.parseEther("1")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, 1n, [ethers.parseEther("1")], signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidOrderStatus");
     });
 
@@ -2253,14 +2738,18 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, fillAmt, [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, fillAmt, [ethers.parseEther("100")], signature, false),
       ).to.not.be.reverted;
     });
 
     it("with retrieveFunds.method != 0 exercises routed purchase token path", async () => {
-      const mockRetrieveSelector = ethers.id("mockRetrieveFunds(address,uint256)").slice(0, 10);
+      const mockRetrieveSelector = ethers
+        .id("mockRetrieveFunds(address,uint256)")
+        .slice(0, 10);
       const fillAmt = ethers.parseUnits("1000", 6);
 
       // Deploy a real ERC20 so balance actually changes after mockRetrieveFunds mints tokens
@@ -2275,20 +2764,32 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         "function termController() external view returns (address)",
         "function termRepoId() external view returns (bytes32)",
         "function maturityTimestamp() external view returns (uint256)",
+        "function redemptionTimestamp() external view returns (uint256)",
         "function purchaseToken() external view returns (address)",
         "function termRepoCollateralManager() external view returns (address)",
         "function termRepoToken() external view returns (address)",
         "function termRepoLocker() external view returns (address)",
         "function mintOpenExposureFromIntent(address,address,uint256,uint256[],uint256,bool) external returns (uint256)",
       ]);
-      await freshServicer.mock.termController.returns(await mockTermController.getAddress());
+      await freshServicer.mock.termController.returns(
+        await mockTermController.getAddress(),
+      );
       await freshServicer.mock.termRepoId.returns(ZeroHash);
       await freshServicer.mock.maturityTimestamp.returns(MATURITY_TIME);
+      await freshServicer.mock.redemptionTimestamp.returns(REDEMPTION_TIME);
       await freshServicer.mock.purchaseToken.returns(realAddr);
-      await freshServicer.mock.termRepoCollateralManager.returns(await mockCollateralManager.getAddress());
-      await freshServicer.mock.termRepoToken.returns(await mockTermRepoToken.getAddress());
-      await freshServicer.mock.termRepoLocker.returns(await mockTermRepoToken.getAddress());
-      await freshServicer.mock.mintOpenExposureFromIntent.returns(ethers.parseUnits("100", 6));
+      await freshServicer.mock.termRepoCollateralManager.returns(
+        await mockCollateralManager.getAddress(),
+      );
+      await freshServicer.mock.termRepoToken.returns(
+        await mockTermRepoToken.getAddress(),
+      );
+      await freshServicer.mock.termRepoLocker.returns(
+        await mockTermRepoToken.getAddress(),
+      );
+      await freshServicer.mock.mintOpenExposureFromIntent.returns(
+        ethers.parseUnits("100", 6),
+      );
 
       const order = createLimitLendOrder({
         repoServicer: await freshServicer.getAddress(),
@@ -2303,14 +2804,18 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, fillAmt, [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, fillAmt, [ethers.parseEther("100")], signature, false),
       ).to.not.be.reverted;
     });
 
     it("with retrieveFunds and borrowFee > 0 exercises routed+fee branch", async () => {
-      const mockRetrieveSelector = ethers.id("mockRetrieveFunds(address,uint256)").slice(0, 10);
+      const mockRetrieveSelector = ethers
+        .id("mockRetrieveFunds(address,uint256)")
+        .slice(0, 10);
       const fillAmt = ethers.parseUnits("1000", 6);
 
       const RealToken = await ethers.getContractFactory("TestToken");
@@ -2324,20 +2829,32 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         "function termController() external view returns (address)",
         "function termRepoId() external view returns (bytes32)",
         "function maturityTimestamp() external view returns (uint256)",
+        "function redemptionTimestamp() external view returns (uint256)",
         "function purchaseToken() external view returns (address)",
         "function termRepoCollateralManager() external view returns (address)",
         "function termRepoToken() external view returns (address)",
         "function termRepoLocker() external view returns (address)",
         "function mintOpenExposureFromIntent(address,address,uint256,uint256[],uint256,bool) external returns (uint256)",
       ]);
-      await freshServicer.mock.termController.returns(await mockTermController.getAddress());
+      await freshServicer.mock.termController.returns(
+        await mockTermController.getAddress(),
+      );
       await freshServicer.mock.termRepoId.returns(ZeroHash);
       await freshServicer.mock.maturityTimestamp.returns(MATURITY_TIME);
+      await freshServicer.mock.redemptionTimestamp.returns(REDEMPTION_TIME);
       await freshServicer.mock.purchaseToken.returns(realAddr);
-      await freshServicer.mock.termRepoCollateralManager.returns(await mockCollateralManager.getAddress());
-      await freshServicer.mock.termRepoToken.returns(await mockTermRepoToken.getAddress());
-      await freshServicer.mock.termRepoLocker.returns(await mockTermRepoToken.getAddress());
-      await freshServicer.mock.mintOpenExposureFromIntent.returns(ethers.parseUnits("100", 6));
+      await freshServicer.mock.termRepoCollateralManager.returns(
+        await mockCollateralManager.getAddress(),
+      );
+      await freshServicer.mock.termRepoToken.returns(
+        await mockTermRepoToken.getAddress(),
+      );
+      await freshServicer.mock.termRepoLocker.returns(
+        await mockTermRepoToken.getAddress(),
+      );
+      await freshServicer.mock.mintOpenExposureFromIntent.returns(
+        ethers.parseUnits("100", 6),
+      );
 
       const order = createLimitLendOrder({
         repoServicer: await freshServicer.getAddress(),
@@ -2353,9 +2870,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, fillAmt, [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, fillAmt, [ethers.parseEther("100")], signature, false),
       ).to.not.be.reverted;
     });
   });
@@ -2382,9 +2901,9 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signBorrowOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_4](
-          order, fillAmt, signature, false
-        )
+        loanIntent
+          .connect(lender)
+          [SETTLE_BORROW_4](order, fillAmt, signature, false),
       ).to.not.be.reverted;
     });
 
@@ -2399,9 +2918,13 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         retrieveFundsList: [],
       });
       const signature = await signBorrowOrderOuter(maker, order);
-      await loanIntent.connect(lender)[SETTLE_BORROW_4](order, halfAmt, signature, false);
+      await loanIntent
+        .connect(lender)
+        [SETTLE_BORROW_4](order, halfAmt, signature, false);
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_4](order, halfAmt, signature, false)
+        loanIntent
+          .connect(lender)
+          [SETTLE_BORROW_4](order, halfAmt, signature, false),
       ).to.not.be.reverted;
     });
 
@@ -2417,12 +2940,16 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signBorrowOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_4](order, fillAmt, signature, false)
+        loanIntent
+          .connect(lender)
+          [SETTLE_BORROW_4](order, fillAmt, signature, false),
       ).to.not.be.reverted;
     });
 
     it("retrieveFundsList method != 0: routed collateral path via generateCalldata", async () => {
-      const mockRetrieveSelector = ethers.id("mockRetrieveFunds(address,uint256)").slice(0, 10);
+      const mockRetrieveSelector = ethers
+        .id("mockRetrieveFunds(address,uint256)")
+        .slice(0, 10);
       const fillAmt = ethers.parseUnits("1000", 6);
 
       // Deploy a real ERC20 as collateral so balance actually changes after mockRetrieveFunds mints
@@ -2437,43 +2964,65 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         "function numOfAcceptedCollateralTokens() external view returns (uint8)",
         "function collateralTokens(uint256) external view returns (address)",
       ]);
-      await freshCollateralManager.mock.numOfAcceptedCollateralTokens.returns(1);
-      await freshCollateralManager.mock.collateralTokens.returns(realCollateralAddr);
+      await freshCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
+        1,
+      );
+      await freshCollateralManager.mock.collateralTokens.returns(
+        realCollateralAddr,
+      );
 
       // Deploy a fresh mock servicer to avoid Waffle state desync after evm_revert
       const freshServicer = await deployMockContract(devops, [
         "function termController() external view returns (address)",
         "function termRepoId() external view returns (bytes32)",
         "function maturityTimestamp() external view returns (uint256)",
+        "function redemptionTimestamp() external view returns (uint256)",
         "function purchaseToken() external view returns (address)",
         "function termRepoCollateralManager() external view returns (address)",
         "function termRepoToken() external view returns (address)",
         "function termRepoLocker() external view returns (address)",
         "function mintOpenExposureFromIntent(address,address,uint256,uint256[],uint256,bool) external returns (uint256)",
       ]);
-      await freshServicer.mock.termController.returns(await mockTermController.getAddress());
+      await freshServicer.mock.termController.returns(
+        await mockTermController.getAddress(),
+      );
       await freshServicer.mock.termRepoId.returns(ZeroHash);
       await freshServicer.mock.maturityTimestamp.returns(MATURITY_TIME);
-      await freshServicer.mock.purchaseToken.returns(await mockPurchaseToken.getAddress());
-      await freshServicer.mock.termRepoCollateralManager.returns(await freshCollateralManager.getAddress());
-      await freshServicer.mock.termRepoToken.returns(await mockTermRepoToken.getAddress());
-      await freshServicer.mock.termRepoLocker.returns(await mockTermRepoToken.getAddress());
-      await freshServicer.mock.mintOpenExposureFromIntent.returns(ethers.parseUnits("100", 6));
+      await freshServicer.mock.redemptionTimestamp.returns(REDEMPTION_TIME);
+      await freshServicer.mock.purchaseToken.returns(
+        await mockPurchaseToken.getAddress(),
+      );
+      await freshServicer.mock.termRepoCollateralManager.returns(
+        await freshCollateralManager.getAddress(),
+      );
+      await freshServicer.mock.termRepoToken.returns(
+        await mockTermRepoToken.getAddress(),
+      );
+      await freshServicer.mock.termRepoLocker.returns(
+        await mockTermRepoToken.getAddress(),
+      );
+      await freshServicer.mock.mintOpenExposureFromIntent.returns(
+        ethers.parseUnits("100", 6),
+      );
 
       const order = createLimitBorrowOrder({
         repoServicer: await freshServicer.getAddress(),
         maker: maker.address,
         purchaseTokenAmount: fillAmt,
         feeRecipient: approvedFeeRecipient.address,
-        retrieveFundsList: [{
-          method: mockRetrieveSelector,
-          target: ZeroAddress,
-          additionalCalldata: "0x",
-        }],
+        retrieveFundsList: [
+          {
+            method: mockRetrieveSelector,
+            target: ZeroAddress,
+            additionalCalldata: "0x",
+          },
+        ],
       });
       const signature = await signBorrowOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_4](order, fillAmt, signature, false)
+        loanIntent
+          .connect(lender)
+          [SETTLE_BORROW_4](order, fillAmt, signature, false),
       ).to.not.be.reverted;
     });
 
@@ -2487,15 +3036,19 @@ describe("TermLoanIntentFacet Unit Tests", () => {
         // method=0 but list has 1 entry → retrieveFundsRequested=false since _validateRetrieveFunds returns false for method=0
         // Actually: list length > 0 triggers the loop; _validateRetrieveFunds returns false for method=0
         // So retrieveFundsRequested stays false and the "else" branch (naked transfer) is hit
-        retrieveFundsList: [{
-          method: "0x00000000",
-          target: ZeroAddress,
-          additionalCalldata: "0x",
-        }],
+        retrieveFundsList: [
+          {
+            method: "0x00000000",
+            target: ZeroAddress,
+            additionalCalldata: "0x",
+          },
+        ],
       });
       const signature = await signBorrowOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_4](order, fillAmt, signature, false)
+        loanIntent
+          .connect(lender)
+          [SETTLE_BORROW_4](order, fillAmt, signature, false),
       ).to.not.be.reverted;
     });
   });
@@ -2519,10 +3072,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_5](
-          order, borrower.address, ethers.parseUnits("100", 6),
-          [ethers.parseEther("100")], signature
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_5
+          ](order, borrower.address, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature),
       ).to.be.reverted; // "Batch context required"
     });
 
@@ -2535,9 +3089,11 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signBorrowOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_5](
-          order, lender.address, ethers.parseUnits("100", 6), signature
-        )
+        loanIntent
+          .connect(lender)
+          [
+            SETTLE_BORROW_5
+          ](order, lender.address, ethers.parseUnits("100", 6), signature),
       ).to.be.reverted; // "Batch context required"
     });
   });
@@ -2554,29 +3110,47 @@ describe("TermLoanIntentFacet Unit Tests", () => {
     });
 
     it("access control: devops cannot call updateEIP712DomainSeparator", async () => {
-      const tcf = await ethers.getContractAt("TermControllerFacet", await termDiamond.getAddress());
+      const tcf = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
       await expect(
-        tcf.connect(devops).updateEIP712DomainSeparator(await loanIntentFacet.getAddress())
+        tcf
+          .connect(devops)
+          .updateEIP712DomainSeparator(await loanIntentFacet.getAddress()),
       ).to.be.reverted;
     });
 
     it("access control: random signer cannot call updateEIP712DomainSeparator", async () => {
-      const tcf = await ethers.getContractAt("TermControllerFacet", await termDiamond.getAddress());
+      const tcf = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
       await expect(
-        tcf.connect(maker).updateEIP712DomainSeparator(await loanIntentFacet.getAddress())
+        tcf
+          .connect(maker)
+          .updateEIP712DomainSeparator(await loanIntentFacet.getAddress()),
       ).to.be.reverted;
     });
 
     it("InvalidFacetAddress: unregistered address reverts", async () => {
-      const tcf = await ethers.getContractAt("TermControllerFacet", await termDiamond.getAddress());
+      const tcf = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
       await expect(
-        tcf.connect(admin).updateEIP712DomainSeparator(maker.address)
+        tcf.connect(admin).updateEIP712DomainSeparator(maker.address),
       ).to.be.revertedWithCustomError(tcf, "InvalidFacetAddress");
     });
 
     it("success: domain separator updated correctly", async () => {
-      const tcf = await ethers.getContractAt("TermControllerFacet", await termDiamond.getAddress());
-      await tcf.connect(admin).updateEIP712DomainSeparator(await loanIntentFacet.getAddress());
+      const tcf = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
+      await tcf
+        .connect(admin)
+        .updateEIP712DomainSeparator(await loanIntentFacet.getAddress());
 
       const domainSep = await loanIntent.DOMAIN_SEPARATOR();
       const chainId = (await ethers.provider.getNetwork()).chainId;
@@ -2590,8 +3164,13 @@ describe("TermLoanIntentFacet Unit Tests", () => {
     });
 
     it("order fulfillment works after update: LimitLendOrder passes signature validation", async () => {
-      const tcf = await ethers.getContractAt("TermControllerFacet", await termDiamond.getAddress());
-      await tcf.connect(admin).updateEIP712DomainSeparator(await loanIntentFacet.getAddress());
+      const tcf = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
+      await tcf
+        .connect(admin)
+        .updateEIP712DomainSeparator(await loanIntentFacet.getAddress());
 
       const order = createLimitLendOrder({
         repoServicer: await mockRepoServicer.getAddress(),
@@ -2601,15 +3180,22 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signLendOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(borrower)[SETTLE_LEND_4](
-          order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false
-        )
+        loanIntent
+          .connect(borrower)
+          [
+            SETTLE_LEND_4
+          ](order, ethers.parseUnits("100", 6), [ethers.parseEther("100")], signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidTaker");
     });
 
     it("order fulfillment works after update: LimitBorrowOrder passes signature validation", async () => {
-      const tcf = await ethers.getContractAt("TermControllerFacet", await termDiamond.getAddress());
-      await tcf.connect(admin).updateEIP712DomainSeparator(await loanIntentFacet.getAddress());
+      const tcf = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
+      await tcf
+        .connect(admin)
+        .updateEIP712DomainSeparator(await loanIntentFacet.getAddress());
 
       const order = createLimitBorrowOrder({
         repoServicer: await mockRepoServicer.getAddress(),
@@ -2620,10 +3206,167 @@ describe("TermLoanIntentFacet Unit Tests", () => {
       });
       const signature = await signBorrowOrderOuter(maker, order);
       await expect(
-        loanIntent.connect(lender)[SETTLE_BORROW_4](
-          order, ethers.parseUnits("100", 6), signature, false
-        )
+        loanIntent
+          .connect(lender)
+          [
+            SETTLE_BORROW_4
+          ](order, ethers.parseUnits("100", 6), signature, false),
       ).to.be.revertedWithCustomError(loanIntent, "InvalidTaker");
+    });
+
+    it("emits EIP712DomainSeparatorUpdated with the new domain separator", async () => {
+      const tcf = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
+      const chainId = (await ethers.provider.getNetwork()).chainId;
+      const expected = ethers.TypedDataEncoder.hashDomain({
+        name: "TermFinance",
+        version: "development",
+        chainId,
+        verifyingContract: await termDiamond.getAddress(),
+      });
+
+      await expect(
+        tcf
+          .connect(admin)
+          .updateEIP712DomainSeparator(await loanIntentFacet.getAddress()),
+      )
+        .to.emit(tcf, "EIP712DomainSeparatorUpdated")
+        .withArgs(expected);
+    });
+
+    it("emitted domain separator matches the value stored in term storage", async () => {
+      const tcf = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
+      const tx = await tcf
+        .connect(admin)
+        .updateEIP712DomainSeparator(await loanIntentFacet.getAddress());
+      const receipt = await tx.wait();
+
+      const topicHash = tcf.interface.getEvent(
+        "EIP712DomainSeparatorUpdated",
+      ).topicHash;
+      const emitted = receipt!.logs.filter(
+        (log) => log.topics[0] === topicHash,
+      );
+      expect(emitted.length).to.equal(1);
+
+      const parsed = tcf.interface.parseLog({
+        topics: [...emitted[0].topics],
+        data: emitted[0].data,
+      });
+      expect(parsed!.args.newDomainSeparator).to.equal(
+        await loanIntent.DOMAIN_SEPARATOR(),
+      );
+    });
+
+    it("event is emitted by the diamond address, not the facet implementation", async () => {
+      const tcf = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
+      const tx = await tcf
+        .connect(admin)
+        .updateEIP712DomainSeparator(await loanIntentFacet.getAddress());
+      const receipt = await tx.wait();
+
+      const topicHash = tcf.interface.getEvent(
+        "EIP712DomainSeparatorUpdated",
+      ).topicHash;
+      const emitted = receipt!.logs.filter(
+        (log) => log.topics[0] === topicHash,
+      );
+      expect(emitted.length).to.equal(1);
+      expect(emitted[0].address).to.equal(await termDiamond.getAddress());
+    });
+
+    it("emits the same separator when updated from a different registered facet", async () => {
+      const tcf = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
+      const loupe = await ethers.getContractAt(
+        "DiamondLoupeFacet",
+        await termDiamond.getAddress(),
+      );
+      // Any registered facet inherits the same Versionable version string, so
+      // the derived separator must be identical regardless of which facet is read.
+      const loupeFacetAddress = await loupe.facetAddress(
+        ethers.id("facetAddresses()").slice(0, 10),
+      );
+
+      const chainId = (await ethers.provider.getNetwork()).chainId;
+      const expected = ethers.TypedDataEncoder.hashDomain({
+        name: "TermFinance",
+        version: "development",
+        chainId,
+        verifyingContract: await termDiamond.getAddress(),
+      });
+
+      await expect(
+        tcf.connect(admin).updateEIP712DomainSeparator(loupeFacetAddress),
+      )
+        .to.emit(tcf, "EIP712DomainSeparatorUpdated")
+        .withArgs(expected);
+    });
+
+    it("emits again on a repeated update with the unchanged separator", async () => {
+      const tcf = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
+      await tcf
+        .connect(admin)
+        .updateEIP712DomainSeparator(await loanIntentFacet.getAddress());
+      const domainSep = await loanIntent.DOMAIN_SEPARATOR();
+
+      await expect(
+        tcf
+          .connect(admin)
+          .updateEIP712DomainSeparator(await loanIntentFacet.getAddress()),
+      )
+        .to.emit(tcf, "EIP712DomainSeparatorUpdated")
+        .withArgs(domainSep);
+      expect(await loanIntent.DOMAIN_SEPARATOR()).to.equal(domainSep);
+    });
+
+    it("does not emit EIP712DomainSeparatorUpdated when the facet address is invalid", async () => {
+      const tcf = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
+      const before = await loanIntent.DOMAIN_SEPARATOR();
+
+      await expect(
+        tcf.connect(admin).updateEIP712DomainSeparator(maker.address),
+      ).to.be.revertedWithCustomError(tcf, "InvalidFacetAddress");
+
+      expect(
+        await countDomainSeparatorUpdatedLogs(await tcf.getAddress()),
+      ).to.equal(0);
+      expect(await loanIntent.DOMAIN_SEPARATOR()).to.equal(before);
+    });
+
+    it("does not emit EIP712DomainSeparatorUpdated when the caller lacks ADMIN_ROLE", async () => {
+      const tcf = await ethers.getContractAt(
+        "TermControllerFacet",
+        await termDiamond.getAddress(),
+      );
+      const before = await loanIntent.DOMAIN_SEPARATOR();
+
+      await expect(
+        tcf
+          .connect(devops)
+          .updateEIP712DomainSeparator(await loanIntentFacet.getAddress()),
+      ).to.be.revertedWithCustomError(tcf, "AccessControlUnauthorizedAccount");
+
+      expect(
+        await countDomainSeparatorUpdatedLogs(await tcf.getAddress()),
+      ).to.equal(0);
+      expect(await loanIntent.DOMAIN_SEPARATOR()).to.equal(before);
     });
   });
 });

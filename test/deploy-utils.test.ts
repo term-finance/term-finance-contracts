@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { ethers, upgrades } from "hardhat";
 import { deployMaturityPeriod } from "../utils/deploy-utils";
 import {
@@ -380,4 +379,3 @@ describe("deploy-utils", () => {
     );
   });
 });
-/* eslint-enable camelcase */

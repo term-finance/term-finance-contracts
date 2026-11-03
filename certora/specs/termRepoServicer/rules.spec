@@ -86,7 +86,7 @@ methods {
     // is the path-count blowup for onlyRoleCanCallRevert on those paths. It locks collateral / computes a max-mint
     // gate -- no rule here asserts on collateral state, and the servicer ledger/total are incremented by the
     // mintTokens value (lockstep) regardless of the returned gate, so NONDET it (internal => binds across the link).
-    function TermRepoServicer._handleCollateral(address,address,uint256[] calldata) internal returns (uint256) => NONDET;
+    function TermRepoServicer._handleCollateral(address,address,uint256,uint256[] calldata) internal returns (uint256) => NONDET;
     // fulfillBid -> collateralManager.journalBidCollateralToCollateralManager is a DOUBLE loop: an inner
     // _encumberExistingCollateralInternal (loops all collateral tokens) plus the outer ledger-journal loop. It does
     // no token transfers -- only collateral-manager ledger/encumbered updates -- which no rule here asserts on, and

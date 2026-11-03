@@ -14,10 +14,10 @@ describe("TermFlashLoanCentralReceiverFacet Tests", () => {
     [wallet1, wallet2] = await ethers.getSigners();
 
     const HelperFactory = await ethers.getContractFactory(
-      "TestTermFlashLoanCentralReceiverFacetHelper"
+      "TestTermFlashLoanCentralReceiverFacetHelper",
     );
     helper = (await HelperFactory.deploy(
-      wallet1.address
+      wallet1.address,
     )) as TestTermFlashLoanCentralReceiverFacetHelper;
     await helper.waitForDeployment();
 
@@ -28,11 +28,11 @@ describe("TermFlashLoanCentralReceiverFacet Tests", () => {
   function encodeOperationData(
     callbackFacet: string,
     selector: string,
-    extraData = "0x"
+    extraData = "0x",
   ): string {
     return ethers.AbiCoder.defaultAbiCoder().encode(
       ["tuple(address callbackFacet, bytes4 selector)", "bytes"],
-      [{ callbackFacet, selector }, extraData]
+      [{ callbackFacet, selector }, extraData],
     );
   }
 
@@ -40,23 +40,25 @@ describe("TermFlashLoanCentralReceiverFacet Tests", () => {
     it("should revert with InvalidCaller when msg.sender is not the aggregator", async () => {
       const operationData = encodeOperationData(
         helperAddress,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
       await expect(
-        helper.connect(wallet2).executeOperation(
-          [wallet2.address],
-          [1000],
-          [10],
-          helperAddress,
-          operationData
-        )
+        helper
+          .connect(wallet2)
+          .executeOperation(
+            [wallet2.address],
+            [1000],
+            [10],
+            helperAddress,
+            operationData,
+          ),
       ).to.be.revertedWithCustomError(helper, "InvalidCaller");
     });
 
     it("should revert with InvalidInitiator when initiator is not address(this)", async () => {
       const operationData = encodeOperationData(
         helperAddress,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
       await expect(
         helper.connect(wallet1).executeOperation(
@@ -64,8 +66,8 @@ describe("TermFlashLoanCentralReceiverFacet Tests", () => {
           [1000],
           [10],
           wallet2.address, // wrong initiator
-          operationData
-        )
+          operationData,
+        ),
       ).to.be.revertedWithCustomError(helper, "InvalidInitiator");
     });
   });
@@ -74,32 +76,36 @@ describe("TermFlashLoanCentralReceiverFacet Tests", () => {
     it("should revert with ArrayLengthMismatch when assets.length != amounts.length", async () => {
       const operationData = encodeOperationData(
         helperAddress,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
       await expect(
-        helper.connect(wallet1).executeOperation(
-          [wallet2.address],
-          [],
-          [],
-          helperAddress,
-          operationData
-        )
+        helper
+          .connect(wallet1)
+          .executeOperation(
+            [wallet2.address],
+            [],
+            [],
+            helperAddress,
+            operationData,
+          ),
       ).to.be.revertedWithCustomError(helper, "ArrayLengthMismatch");
     });
 
     it("should revert with ArrayLengthMismatch when amounts.length != premiums.length", async () => {
       const operationData = encodeOperationData(
         helperAddress,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
       await expect(
-        helper.connect(wallet1).executeOperation(
-          [wallet2.address],
-          [1000],
-          [],
-          helperAddress,
-          operationData
-        )
+        helper
+          .connect(wallet1)
+          .executeOperation(
+            [wallet2.address],
+            [1000],
+            [],
+            helperAddress,
+            operationData,
+          ),
       ).to.be.revertedWithCustomError(helper, "ArrayLengthMismatch");
     });
   });
@@ -108,67 +114,78 @@ describe("TermFlashLoanCentralReceiverFacet Tests", () => {
     it("should revert with InvalidAssetAddress when an asset is the zero address", async () => {
       const operationData = encodeOperationData(
         helperAddress,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
       await expect(
-        helper.connect(wallet1).executeOperation(
-          [ethers.ZeroAddress],
-          [1000],
-          [10],
-          helperAddress,
-          operationData
-        )
+        helper
+          .connect(wallet1)
+          .executeOperation(
+            [ethers.ZeroAddress],
+            [1000],
+            [10],
+            helperAddress,
+            operationData,
+          ),
       ).to.be.revertedWithCustomError(helper, "InvalidAssetAddress");
     });
 
     it("should revert with ZeroAmount when an amount is 0", async () => {
       const operationData = encodeOperationData(
         helperAddress,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
       await expect(
-        helper.connect(wallet1).executeOperation(
-          [wallet2.address],
-          [0],
-          [0],
-          helperAddress,
-          operationData
-        )
+        helper
+          .connect(wallet1)
+          .executeOperation(
+            [wallet2.address],
+            [0],
+            [0],
+            helperAddress,
+            operationData,
+          ),
       ).to.be.revertedWithCustomError(helper, "ZeroAmount");
     });
 
     it("should revert with ExcessivePremium when premium exceeds 10% of amount", async () => {
       const operationData = encodeOperationData(
         helperAddress,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
       // 101 > 1000 * 1000 / 10000 = 100
       await expect(
-        helper.connect(wallet1).executeOperation(
-          [wallet2.address],
-          [1000],
-          [101],
-          helperAddress,
-          operationData
-        )
+        helper
+          .connect(wallet1)
+          .executeOperation(
+            [wallet2.address],
+            [1000],
+            [101],
+            helperAddress,
+            operationData,
+          ),
       ).to.be.revertedWithCustomError(helper, "ExcessivePremium");
     });
 
     it("should not revert ExcessivePremium at the exact 10% boundary", async () => {
-      await helper.setFacetAddress(mockCallbackSelector as `0x${string}`, helperAddress);
+      await helper.setFacetAddress(
+        mockCallbackSelector as `0x${string}`,
+        helperAddress,
+      );
       const operationData = encodeOperationData(
         helperAddress,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
       // 100 == 1000 * 1000 / 10000 = 100 — exactly at boundary, condition is strictly greater-than
       await expect(
-        helper.connect(wallet1).executeOperation(
-          [wallet2.address],
-          [1000],
-          [100],
-          helperAddress,
-          operationData
-        )
+        helper
+          .connect(wallet1)
+          .executeOperation(
+            [wallet2.address],
+            [1000],
+            [100],
+            helperAddress,
+            operationData,
+          ),
       ).to.not.be.reverted;
     });
   });
@@ -178,16 +195,21 @@ describe("TermFlashLoanCentralReceiverFacet Tests", () => {
       const largeInnerData = "0x" + "ff".repeat(32769);
       const operationData = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(address callbackFacet, bytes4 selector)", "bytes"],
-        [{ callbackFacet: helperAddress, selector: mockCallbackSelector }, largeInnerData]
+        [
+          { callbackFacet: helperAddress, selector: mockCallbackSelector },
+          largeInnerData,
+        ],
       );
       await expect(
-        helper.connect(wallet1).executeOperation(
-          [wallet2.address],
-          [1000],
-          [10],
-          helperAddress,
-          operationData
-        )
+        helper
+          .connect(wallet1)
+          .executeOperation(
+            [wallet2.address],
+            [1000],
+            [10],
+            helperAddress,
+            operationData,
+          ),
       ).to.be.revertedWithCustomError(helper, "CalldataTooLarge");
     });
 
@@ -195,44 +217,54 @@ describe("TermFlashLoanCentralReceiverFacet Tests", () => {
       // No setFacetAddress call — facetAddress returns address(0)
       const operationData = encodeOperationData(
         helperAddress,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
       await expect(
-        helper.connect(wallet1).executeOperation(
-          [wallet2.address],
-          [1000],
-          [10],
-          helperAddress,
-          operationData
-        )
+        helper
+          .connect(wallet1)
+          .executeOperation(
+            [wallet2.address],
+            [1000],
+            [10],
+            helperAddress,
+            operationData,
+          ),
       ).to.be.revertedWithCustomError(helper, "SelectorNotFound");
     });
 
     it("should revert with CallbackFacetSelectorMismatch when callbackFacet does not match mapped facet", async () => {
-      await helper.setFacetAddress(mockCallbackSelector as `0x${string}`, helperAddress);
+      await helper.setFacetAddress(
+        mockCallbackSelector as `0x${string}`,
+        helperAddress,
+      );
       // callbackFacet = wallet2.address but facetAddress returns helperAddress
       const operationData = encodeOperationData(
         wallet2.address,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
       await expect(
-        helper.connect(wallet1).executeOperation(
-          [wallet2.address],
-          [1000],
-          [10],
-          helperAddress,
-          operationData
-        )
+        helper
+          .connect(wallet1)
+          .executeOperation(
+            [wallet2.address],
+            [1000],
+            [10],
+            helperAddress,
+            operationData,
+          ),
       ).to.be.revertedWithCustomError(helper, "CallbackFacetSelectorMismatch");
     });
   });
 
   describe("executeOperation — success paths", () => {
     it("should return true when all validations pass and delegatecall succeeds", async () => {
-      await helper.setFacetAddress(mockCallbackSelector as `0x${string}`, helperAddress);
+      await helper.setFacetAddress(
+        mockCallbackSelector as `0x${string}`,
+        helperAddress,
+      );
       const operationData = encodeOperationData(
         helperAddress,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
       const result = await helper
         .connect(wallet1)
@@ -241,32 +273,40 @@ describe("TermFlashLoanCentralReceiverFacet Tests", () => {
           [1000],
           [10],
           helperAddress,
-          operationData
+          operationData,
         );
       expect(result).to.be.true;
     });
 
     it("should invoke the callback via delegatecall and set mockCallbackCalled", async () => {
-      await helper.setFacetAddress(mockCallbackSelector as `0x${string}`, helperAddress);
+      await helper.setFacetAddress(
+        mockCallbackSelector as `0x${string}`,
+        helperAddress,
+      );
       const operationData = encodeOperationData(
         helperAddress,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
-      await helper.connect(wallet1).executeOperation(
-        [wallet2.address],
-        [1000],
-        [10],
-        helperAddress,
-        operationData
-      );
+      await helper
+        .connect(wallet1)
+        .executeOperation(
+          [wallet2.address],
+          [1000],
+          [10],
+          helperAddress,
+          operationData,
+        );
       expect(await helper.mockCallbackCalled()).to.be.true;
     });
 
     it("should succeed with multiple assets covering full loop iterations", async () => {
-      await helper.setFacetAddress(mockCallbackSelector as `0x${string}`, helperAddress);
+      await helper.setFacetAddress(
+        mockCallbackSelector as `0x${string}`,
+        helperAddress,
+      );
       const operationData = encodeOperationData(
         helperAddress,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
       const result = await helper
         .connect(wallet1)
@@ -275,16 +315,19 @@ describe("TermFlashLoanCentralReceiverFacet Tests", () => {
           [1000, 2000],
           [10, 20],
           helperAddress,
-          operationData
+          operationData,
         );
       expect(result).to.be.true;
     });
 
     it("should succeed with an empty assets array (loop not entered)", async () => {
-      await helper.setFacetAddress(mockCallbackSelector as `0x${string}`, helperAddress);
+      await helper.setFacetAddress(
+        mockCallbackSelector as `0x${string}`,
+        helperAddress,
+      );
       const operationData = encodeOperationData(
         helperAddress,
-        mockCallbackSelector
+        mockCallbackSelector,
       );
       const result = await helper
         .connect(wallet1)

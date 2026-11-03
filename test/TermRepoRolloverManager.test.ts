@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
@@ -38,7 +37,7 @@ describe("TermRepoRollover Tests", () => {
   let termInitializer: SignerWithAddress;
   let devopsMultisig: SignerWithAddress;
   let adminWallet: SignerWithAddress;
-  let termDiamond: SignerWithAddress
+  let termDiamond: SignerWithAddress;
 
   let termRepoRolloverManager: TestTermRepoRolloverManager;
 
@@ -74,7 +73,7 @@ describe("TermRepoRollover Tests", () => {
       termInitializer,
       devopsMultisig,
       adminWallet,
-      termDiamond
+      termDiamond,
     ] = await ethers.getSigners();
 
     const versionableFactory = await ethers.getContractFactory("Versionable");
@@ -86,7 +85,13 @@ describe("TermRepoRollover Tests", () => {
       await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [devopsMultisig.address, wallet3.address, termInitializer.address, wallet3.address, termDiamond.address],
+      [
+        devopsMultisig.address,
+        wallet3.address,
+        termInitializer.address,
+        wallet3.address,
+        termDiamond.address,
+      ],
       { kind: "uups" },
     )) as unknown as TermEventEmitter;
 
@@ -432,7 +437,9 @@ describe("TermRepoRollover Tests", () => {
       );
 
       // Move time past endOfRepurchaseWindow (maturity + 15 hours)
-      await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 365 + 60 * 60 * 16]);
+      await network.provider.send("evm_increaseTime", [
+        60 * 60 * 24 * 365 + 60 * 60 * 16,
+      ]);
 
       await expect(
         termRepoRolloverManager
@@ -466,16 +473,18 @@ describe("TermRepoRollover Tests", () => {
       await mockTermRepoCollateralManager.mock.numOfAcceptedCollateralTokens.returns(
         2,
       );
-      await mockTermRepoCollateralManager.mock.collateralTokens
-        .returns(await collateralToken1.getAddress());
-      await mockAuctionBidLocker.mock.collateralTokens
-        .returns(true);
+      await mockTermRepoCollateralManager.mock.collateralTokens.returns(
+        await collateralToken1.getAddress(),
+      );
+      await mockAuctionBidLocker.mock.collateralTokens.returns(true);
       await mockAuctionBidLocker.mock.termAuction.returns(
         await mockAuction.getAddress(),
       );
 
       // Move time past maturity but before endOfRepurchaseWindow (maturity + 10 hours)
-      await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 365 + 60 * 60 * 10]);
+      await network.provider.send("evm_increaseTime", [
+        60 * 60 * 24 * 365 + 60 * 60 * 10,
+      ]);
 
       // Should succeed
       await expect(
@@ -1030,7 +1039,9 @@ describe("TermRepoRollover Tests", () => {
       );
 
       // Move time past endOfRepurchaseWindow (maturity + 15 hours)
-      await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 366 + 60 * 60 * 16]);
+      await network.provider.send("evm_increaseTime", [
+        60 * 60 * 24 * 366 + 60 * 60 * 16,
+      ]);
 
       await expect(
         termRepoRolloverManager.connect(wallet1).electRollover({
@@ -1046,8 +1057,10 @@ describe("TermRepoRollover Tests", () => {
 
     it("electRollover allowed after maturity but before endOfRepurchaseWindow", async () => {
       // Set up mocks for successful rollover processing
-      await mockTermRepoCollateralManager.mock.getCollateralBalances
-        .returns([await collateralToken1.getAddress()], ["10000000000"]);
+      await mockTermRepoCollateralManager.mock.getCollateralBalances.returns(
+        [await collateralToken1.getAddress()],
+        ["10000000000"],
+      );
       await mockAuctionBidLocker.mock.lockRolloverBid.returns();
       await mockAuctionBidLocker.mock.dayCountFractionMantissa.returns(
         10n ** 18n,
@@ -1058,8 +1071,10 @@ describe("TermRepoRollover Tests", () => {
         ["100000000000"],
       );
 
-      // Move time past maturity but before endOfRepurchaseWindow (maturity + 10 hours) 
-      await network.provider.send("evm_increaseTime", [60 * 60 * 24 * 365 + 60 * 60 * 10]);
+      // Move time past maturity but before endOfRepurchaseWindow (maturity + 10 hours)
+      await network.provider.send("evm_increaseTime", [
+        60 * 60 * 24 * 365 + 60 * 60 * 10,
+      ]);
 
       // Should succeed
       await expect(
@@ -1154,4 +1169,3 @@ describe("TermRepoRollover Tests", () => {
     expect(await termRepoRolloverManager.version()).to.eq(expectedVersion);
   });
 });
-/* eslint-enable camelcase */

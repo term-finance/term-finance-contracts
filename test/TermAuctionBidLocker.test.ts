@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-expressions */
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
@@ -92,7 +90,13 @@ describe("TermAuctionBidLocker (Not in shortfall)", () => {
       await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [devopsMultisig.address, wallet3.address, termInitializer.address, wallet3.address, termDiamond.address],
+      [
+        devopsMultisig.address,
+        wallet3.address,
+        termInitializer.address,
+        wallet3.address,
+        termDiamond.address,
+      ],
       { kind: "uups" },
     )) as unknown as TermEventEmitter;
 
@@ -142,7 +146,9 @@ describe("TermAuctionBidLocker (Not in shortfall)", () => {
       TermRepoServicer__factory.abi,
     );
     await termRepoServicer.mock.servicingFee.returns("1" + "0".repeat(17));
-    await termRepoServicer.mock.termController.returns(await termController.getAddress());
+    await termRepoServicer.mock.termController.returns(
+      await termController.getAddress(),
+    );
     await termController.mock.termContractsPaused.returns(false);
 
     await pairOffTermRepoServicer.mock.termRepoCollateralManager.returns(
@@ -198,13 +204,12 @@ describe("TermAuctionBidLocker (Not in shortfall)", () => {
           await termOracle.getAddress(),
           devopsMultisig.address,
           adminWallet.address,
-          termDiamond.address
+          termDiamond.address,
         ),
     ).to.be.revertedWithCustomError(
       termAuctionBidLocker,
       "AccessControlUnauthorizedAccount",
     );
-  
 
     await termAuctionBidLocker
       .connect(termInitializer)
@@ -216,7 +221,7 @@ describe("TermAuctionBidLocker (Not in shortfall)", () => {
         await termOracle.getAddress(),
         devopsMultisig.address,
         adminWallet.address,
-        termDiamond.address
+        termDiamond.address,
       );
 
     await expect(
@@ -230,13 +235,13 @@ describe("TermAuctionBidLocker (Not in shortfall)", () => {
           await termOracle.getAddress(),
           devopsMultisig.address,
           adminWallet.address,
-          termDiamond.address
+          termDiamond.address,
         ),
     ).to.be.revertedWithCustomError(
       termAuctionBidLocker,
       "AlreadyTermContractPaired",
     );
-    
+
     await expect(
       termAuctionBidLocker
         .connect(wallet2)
@@ -245,7 +250,7 @@ describe("TermAuctionBidLocker (Not in shortfall)", () => {
       termAuctionBidLocker,
       "AccessControlUnauthorizedAccount",
     );
-      
+
     await termAuctionBidLocker
       .connect(adminWallet)
       .pairRolloverManager(previousTermRepoRolloverManager.address);
@@ -577,8 +582,7 @@ describe("TermAuctionBidLocker (Not in shortfall)", () => {
       termAuctionBidLocker
         .connect(wallet1)
         .unlockBids([getBytesHash("test-id-1")]),
-    ).to.be.revertedWithCustomError(
-      termAuctionBidLocker, "UnlockingPaused");
+    ).to.be.revertedWithCustomError(termAuctionBidLocker, "UnlockingPaused");
     await expect(
       termAuctionBidLocker.connect(adminWallet).unpauseUnlocking(),
     ).to.emit(termEventEmitter, "BidUnlockingUnpaused");
@@ -847,22 +851,25 @@ describe("TermAuctionBidLocker (Not in shortfall)", () => {
 
     // Router (termDiamond) locks bids on behalf of wallet1
     await expect(
-      termAuctionBidLocker.connect(termDiamond)["lockBidsWithReferral(address,(bytes32,address,bytes32,uint256,uint256[],address,address[])[],address)"](
-        wallet1.address,
+      termAuctionBidLocker
+        .connect(termDiamond)
         [
-          {
-            id: getBytesHash("test-id-1"),
-            bidder: wallet1.address,
-            bidPriceHash: solidityPackedKeccak256(["uint256"], ["15000000"]),
-            amount: "2000",
-            purchaseToken: await testBorrowedToken.getAddress(),
-            collateralAmounts: [10000000n],
-            collateralTokens: [await testCollateralToken.getAddress()],
-          },
-        ],
-        ZeroAddress
-
-      ),
+          "lockBidsWithReferral(address,(bytes32,address,bytes32,uint256,uint256[],address,address[])[],address)"
+        ](
+          wallet1.address,
+          [
+            {
+              id: getBytesHash("test-id-1"),
+              bidder: wallet1.address,
+              bidPriceHash: solidityPackedKeccak256(["uint256"], ["15000000"]),
+              amount: "2000",
+              purchaseToken: await testBorrowedToken.getAddress(),
+              collateralAmounts: [10000000n],
+              collateralTokens: [await testCollateralToken.getAddress()],
+            },
+          ],
+          ZeroAddress,
+        ),
     )
       .to.emit(termEventEmitter, "BidLocked")
       .withArgs(
@@ -885,30 +892,37 @@ describe("TermAuctionBidLocker (Not in shortfall)", () => {
     await termAuctionBidLocker.setRevealTime(dayjs().add(1, "hour").unix());
 
     await expect(
-      termAuctionBidLocker.connect(wallet1)["lockBidsWithReferral(address,(bytes32,address,bytes32,uint256,uint256[],address,address[])[],address)"](
-        wallet1.address,
+      termAuctionBidLocker
+        .connect(wallet1)
         [
-          {
-            id: getBytesHash("test-id-9"),
-            bidder: wallet1.address,
-            bidPriceHash: solidityPackedKeccak256(
-              ["uint256", "uint256"],
-              ["20", "5555555"],
-            ),
-            amount: "2000",
-            collateralAmounts: [10000000n],
-            purchaseToken: await testBorrowedToken.getAddress(),
-            collateralTokens: [await testCollateralToken.getAddress()],
-          },
-        ],
-        ZeroAddress,
-      ),
-    ).to.be.revertedWithCustomError(termAuctionBidLocker, "AccessControlUnauthorizedAccount");
+          "lockBidsWithReferral(address,(bytes32,address,bytes32,uint256,uint256[],address,address[])[],address)"
+        ](
+          wallet1.address,
+          [
+            {
+              id: getBytesHash("test-id-9"),
+              bidder: wallet1.address,
+              bidPriceHash: solidityPackedKeccak256(
+                ["uint256", "uint256"],
+                ["20", "5555555"],
+              ),
+              amount: "2000",
+              collateralAmounts: [10000000n],
+              purchaseToken: await testBorrowedToken.getAddress(),
+              collateralTokens: [await testCollateralToken.getAddress()],
+            },
+          ],
+          ZeroAddress,
+        ),
+    ).to.be.revertedWithCustomError(
+      termAuctionBidLocker,
+      "AccessControlUnauthorizedAccount",
+    );
   });
 
   it("unlockBids with bidder parameter returns collateral and unlocks bids", async () => {
     await termRepoCollateralManager.mock.auctionUnlockCollateral.returns();
-    
+
     // Add a bid using the test helper
     await termAuctionBidLocker.addBid(
       {
@@ -931,12 +945,17 @@ describe("TermAuctionBidLocker (Not in shortfall)", () => {
     // Unlock bid via diamond role (msg.sender = termDiamond, bidder = wallet2)
     await expect(
       termAuctionBidLocker
-        .connect(termDiamond)["unlockBids(address,bytes32[])"](wallet2.address, [getBytesHash("test-id-10")]),
+        .connect(termDiamond)
+        [
+          "unlockBids(address,bytes32[])"
+        ](wallet2.address, [getBytesHash("test-id-10")]),
     )
       .to.emit(termEventEmitter, "BidUnlocked")
       .withArgs(auctionIdHash, getBytesHash("test-id-10"));
 
-    const unlockedBid = await termAuctionBidLocker.lockedBid(getBytesHash("test-id-10"));
+    const unlockedBid = await termAuctionBidLocker.lockedBid(
+      getBytesHash("test-id-10"),
+    );
     expect(unlockedBid[4]).to.equal(0n); // amount should be 0 (deleted)
   });
 
@@ -963,8 +982,14 @@ describe("TermAuctionBidLocker (Not in shortfall)", () => {
     // Try to unlock from non-diamond address (should fail access control)
     await expect(
       termAuctionBidLocker
-        .connect(wallet1)["unlockBids(address,bytes32[])"](wallet2.address, [getBytesHash("test-id-11")]),
-    ).to.be.revertedWithCustomError(termAuctionBidLocker, "AccessControlUnauthorizedAccount");
+        .connect(wallet1)
+        [
+          "unlockBids(address,bytes32[])"
+        ](wallet2.address, [getBytesHash("test-id-11")]),
+    ).to.be.revertedWithCustomError(
+      termAuctionBidLocker,
+      "AccessControlUnauthorizedAccount",
+    );
   });
 });
 
@@ -1029,7 +1054,13 @@ describe("TermAuctionBidLocker", () => {
       await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [devopsMultisig.address, wallet3.address, termInitializer.address, adminWallet.address, termDiamond.address],
+      [
+        devopsMultisig.address,
+        wallet3.address,
+        termInitializer.address,
+        adminWallet.address,
+        termDiamond.address,
+      ],
       { kind: "uups" },
     )) as unknown as TermEventEmitter;
 
@@ -1048,7 +1079,7 @@ describe("TermAuctionBidLocker", () => {
     termController = await deployMockContract<TermController>(
       wallet1,
       TermController__factory.abi,
-    );  
+    );
 
     await termController.mock.termContractsPaused.returns(false);
 
@@ -1080,7 +1111,9 @@ describe("TermAuctionBidLocker", () => {
       TermRepoServicer__factory.abi,
     );
     await termRepoServicer.mock.servicingFee.returns("1" + "0".repeat(17));
-    await termRepoServicer.mock.termController.returns(await termController.getAddress());
+    await termRepoServicer.mock.termController.returns(
+      await termController.getAddress(),
+    );
     await pairOffTermRepoServicer.mock.termRepoCollateralManager.returns(
       await pairOffTermRepoCollateralManager.getAddress(),
     );
@@ -1134,8 +1167,7 @@ describe("TermAuctionBidLocker", () => {
           await termOracle.getAddress(),
           devopsMultisig.address,
           adminWallet.address,
-          termDiamond.address
-
+          termDiamond.address,
         ),
     ).to.be.revertedWithCustomError(
       termAuctionBidLocker,
@@ -1152,7 +1184,7 @@ describe("TermAuctionBidLocker", () => {
         await termOracle.getAddress(),
         devopsMultisig.address,
         adminWallet.address,
-        termDiamond.address
+        termDiamond.address,
       );
 
     await expect(
@@ -1166,7 +1198,7 @@ describe("TermAuctionBidLocker", () => {
           await termOracle.getAddress(),
           devopsMultisig.address,
           adminWallet.address,
-          termDiamond.address
+          termDiamond.address,
         ),
     ).to.be.revertedWithCustomError(
       termAuctionBidLocker,
@@ -1181,7 +1213,7 @@ describe("TermAuctionBidLocker", () => {
       termAuctionBidLocker,
       "AccessControlUnauthorizedAccount",
     );
-    
+
     await termAuctionBidLocker
       .connect(adminWallet)
       .pairRolloverManager(previousTermRepoRolloverManager.address);
@@ -1263,7 +1295,7 @@ describe("TermAuctionBidLocker", () => {
           await termOracle.getAddress(),
           devopsMultisig.address,
           adminWallet.address,
-          termDiamond.address
+          termDiamond.address,
         ),
     ).to.be.revertedWithCustomError(
       termAuctionBidLockerPairRevert,
@@ -1346,8 +1378,7 @@ describe("TermAuctionBidLocker", () => {
           [],
         ),
     )
-      .to.be.revertedWithCustomError(
-termAuctionBidLocker, "BidCountIncorrect")
+      .to.be.revertedWithCustomError(termAuctionBidLocker, "BidCountIncorrect")
       .withArgs(3);
 
     await expect(
@@ -1359,8 +1390,7 @@ termAuctionBidLocker, "BidCountIncorrect")
           [getBytesHash("test-id-2")],
         ),
     )
-      .to.be.revertedWithCustomError(
-termAuctionBidLocker, `NonExistentBid`)
+      .to.be.revertedWithCustomError(termAuctionBidLocker, `NonExistentBid`)
       .withArgs(getBytesHash("test-id-0"));
 
     await expect(
@@ -1372,8 +1402,7 @@ termAuctionBidLocker, `NonExistentBid`)
           [],
         ),
     )
-      .to.be.revertedWithCustomError(
-termAuctionBidLocker, `NonRolloverBid`)
+      .to.be.revertedWithCustomError(termAuctionBidLocker, `NonRolloverBid`)
       .withArgs(getBytesHash("test-id-2"));
 
     await expect(
@@ -1404,8 +1433,7 @@ termAuctionBidLocker, `NonRolloverBid`)
           [],
         ),
     )
-      .to.be.revertedWithCustomError(
- termAuctionBidLocker, `BidNotRevealed`)
+      .to.be.revertedWithCustomError(termAuctionBidLocker, `BidNotRevealed`)
       .withArgs(getBytesHash("test-id-2"));
     await expect(
       termAuctionBidLocker
@@ -1416,8 +1444,7 @@ termAuctionBidLocker, `NonRolloverBid`)
           [getBytesHash("test-id-2"), getBytesHash("test-id-3")],
         ),
     )
-      .to.be.revertedWithCustomError(
-   termAuctionBidLocker, `BidRevealed`)
+      .to.be.revertedWithCustomError(termAuctionBidLocker, `BidRevealed`)
       .withArgs(getBytesHash("test-id-3"));
 
     await expect(
@@ -1665,8 +1692,7 @@ termAuctionBidLocker, `NonRolloverBid`)
           [getBytesHash("test-id-2"), getBytesHash("test-id-3")],
         ),
     )
-      .to.be.revertedWithCustomError(
- termAuctionBidLocker, `RolloverBidExpired`)
+      .to.be.revertedWithCustomError(termAuctionBidLocker, `RolloverBidExpired`)
       .withArgs(getBytesHash("test-id-1"));
 
     await expect(
@@ -1678,8 +1704,7 @@ termAuctionBidLocker, `NonRolloverBid`)
           [getBytesHash("test-id-2"), getBytesHash("test-id-3")],
         ),
     )
-      .to.be.revertedWithCustomError(
-  termAuctionBidLocker, `NonExistentBid`)
+      .to.be.revertedWithCustomError(termAuctionBidLocker, `NonExistentBid`)
       .withArgs(getBytesHash("test-id-4"));
 
     await expect(
@@ -1691,8 +1716,7 @@ termAuctionBidLocker, `NonRolloverBid`)
           [getBytesHash("test-id-2"), getBytesHash("test-id-4")],
         ),
     )
-      .to.be.revertedWithCustomError(
-termAuctionBidLocker, `NonExistentBid`)
+      .to.be.revertedWithCustomError(termAuctionBidLocker, `NonExistentBid`)
       .withArgs(getBytesHash("test-id-4"));
 
     await termAuctionBidLocker
@@ -1979,8 +2003,7 @@ termAuctionBidLocker, `NonExistentBid`)
           isRevealed: true,
         }),
     )
-      .to.be.revertedWithCustomError(
-  termAuctionBidLocker, "NonExistentBid")
+      .to.be.revertedWithCustomError(termAuctionBidLocker, "NonExistentBid")
       .withArgs(testRolloverId);
 
     expect(await termAuctionBidLocker.getBidCount()).to.eq(1);
@@ -2024,8 +2047,7 @@ termAuctionBidLocker, `NonExistentBid`)
           isRevealed: true,
         }),
     )
-      .to.be.revertedWithCustomError(
-  termAuctionBidLocker, "NonExistentBid")
+      .to.be.revertedWithCustomError(termAuctionBidLocker, "NonExistentBid")
       .withArgs(testRolloverId);
 
     expect(await termAuctionBidLocker.getBidCount()).to.eq(1);
@@ -2068,8 +2090,7 @@ termAuctionBidLocker, `NonExistentBid`)
             await pairOffTermRepoServicer.getAddress(),
           isRevealed: true,
         }),
-    ).to.be.revertedWithCustomError(
-   termAuctionBidLocker, "NonRolloverBid");
+    ).to.be.revertedWithCustomError(termAuctionBidLocker, "NonRolloverBid");
 
     expect(await termAuctionBidLocker.lockedBid(testRolloverId)).to.deep.equal([
       "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -2172,8 +2193,7 @@ termAuctionBidLocker, `NonExistentBid`)
           isRevealed: true,
         }),
     )
-      .to.be.revertedWithCustomError(
-    termAuctionBidLocker, "BidAmountTooLow")
+      .to.be.revertedWithCustomError(termAuctionBidLocker, "BidAmountTooLow")
       .withArgs("5");
 
     expect(await termAuctionBidLocker.lockedBid(testRolloverId)).to.deep.equal([
@@ -2304,8 +2324,7 @@ termAuctionBidLocker, `NonExistentBid`)
         ["1249913"],
       ),
     )
-      .to.be.revertedWithCustomError(
-     termAuctionBidLocker, `TenderPriceTooHigh`)
+      .to.be.revertedWithCustomError(termAuctionBidLocker, `TenderPriceTooHigh`)
       .withArgs(getBytesHash("test-id-1"), "100000000000000000000");
   });
   it("locking bid before auction is open reverts", async () => {
@@ -2324,8 +2343,7 @@ termAuctionBidLocker, `NonExistentBid`)
           collateralTokens: [await testCollateralToken.getAddress()],
         },
       ]),
-    ).to.be.revertedWithCustomError(
-     termAuctionBidLocker, "AuctionNotOpen");
+    ).to.be.revertedWithCustomError(termAuctionBidLocker, "AuctionNotOpen");
   });
   it("locking bid after auction is closed reverts", async () => {
     await termAuctionBidLocker.setStartTime(
@@ -2347,8 +2365,7 @@ termAuctionBidLocker, `NonExistentBid`)
           collateralTokens: [await testCollateralToken.getAddress()],
         },
       ]),
-    ).to.be.revertedWithCustomError(
-   termAuctionBidLocker, "AuctionNotOpen");
+    ).to.be.revertedWithCustomError(termAuctionBidLocker, "AuctionNotOpen");
   });
   it("revealing bid before auction is revealing reverts", async () => {
     await termAuctionBidLocker.addBid(
@@ -2413,8 +2430,7 @@ termAuctionBidLocker, `NonExistentBid`)
           collateralTokens: [await testCollateralToken.getAddress()],
         },
       ]),
-    ).to.be.revertedWithCustomError(
-    termAuctionBidLocker, "BidNotOwned");
+    ).to.be.revertedWithCustomError(termAuctionBidLocker, "BidNotOwned");
   });
   it("editing an existing bid with reordered collateral tokens reverts", async () => {
     const termAuctionBidLockerFactory = await ethers.getContractFactory(
@@ -2422,26 +2438,32 @@ termAuctionBidLocker, `NonExistentBid`)
     );
 
     const currentTimestamp = dayjs();
-    const termAuctionBidLockerWithTwoCollateralTokens = (await upgrades.deployProxy(
-      termAuctionBidLockerFactory,
-      [
-        termIdString,
-        auctionIdString,
-        BigInt(currentTimestamp.subtract(10, "hours").unix()),
-        BigInt(currentTimestamp.add(10, "hour").unix()),
-        BigInt(currentTimestamp.add(20, "hours").unix()),
-        BigInt(currentTimestamp.add(10, "day").unix()),
-        100n,
-        await testBorrowedToken.getAddress(),
-        [await testCollateralToken.getAddress(), await testBorrowedToken.getAddress()],
-        termInitializer.address,
-      ],
-      { kind: "uups" },
-    )) as unknown as TestingTermAuctionBidLocker;
+    const termAuctionBidLockerWithTwoCollateralTokens =
+      (await upgrades.deployProxy(
+        termAuctionBidLockerFactory,
+        [
+          termIdString,
+          auctionIdString,
+          BigInt(currentTimestamp.subtract(10, "hours").unix()),
+          BigInt(currentTimestamp.add(10, "hour").unix()),
+          BigInt(currentTimestamp.add(20, "hours").unix()),
+          BigInt(currentTimestamp.add(10, "day").unix()),
+          100n,
+          await testBorrowedToken.getAddress(),
+          [
+            await testCollateralToken.getAddress(),
+            await testBorrowedToken.getAddress(),
+          ],
+          termInitializer.address,
+        ],
+        { kind: "uups" },
+      )) as unknown as TestingTermAuctionBidLocker;
 
     await termEventEmitter
       .connect(termInitializer)
-      .pairTermContract(await termAuctionBidLockerWithTwoCollateralTokens.getAddress());
+      .pairTermContract(
+        await termAuctionBidLockerWithTwoCollateralTokens.getAddress(),
+      );
 
     await termAuctionBidLockerWithTwoCollateralTokens
       .connect(termInitializer)
@@ -2545,8 +2567,7 @@ termAuctionBidLocker, `NonExistentBid`)
           collateralTokens: [await testBorrowedToken.getAddress()],
         },
       ]),
-    ).to.be.revertedWithCustomError(
-  termAuctionBidLocker, `MaxBidCountReached`);
+    ).to.be.revertedWithCustomError(termAuctionBidLocker, `MaxBidCountReached`);
   });
   it("locking a rollover bid reverts if max bid count reached", async () => {
     await termAuctionBidLocker.setBidCount(1000);
@@ -2568,8 +2589,7 @@ termAuctionBidLocker, `NonExistentBid`)
             await pairOffTermRepoServicer.getAddress(),
           isRevealed: true,
         }),
-    ).to.be.revertedWithCustomError(
-     termAuctionBidLocker, "MaxBidCountReached");
+    ).to.be.revertedWithCustomError(termAuctionBidLocker, "MaxBidCountReached");
     expect(await termAuctionBidLocker.bidCount()).to.eq(1000);
   });
   it("locking a bid with an unapproved collateral token fails", async () => {
@@ -2619,8 +2639,7 @@ termAuctionBidLocker, `NonExistentBid`)
       termAuctionBidLocker
         .connect(wallet2)
         .unlockBids([getBytesHash("test-id-1")]),
-    ).to.be.revertedWithCustomError(
-     termAuctionBidLocker, "BidNotOwned");
+    ).to.be.revertedWithCustomError(termAuctionBidLocker, "BidNotOwned");
   });
   it("unlocking a rollover bid reverts", async () => {
     await termAuctionBidLocker.addBid(
@@ -2645,8 +2664,7 @@ termAuctionBidLocker, `NonExistentBid`)
       termAuctionBidLocker
         .connect(wallet1)
         .unlockBids([getBytesHash("test-id-1")]),
-    ).to.be.revertedWithCustomError(
-    termAuctionBidLocker, "RolloverBid");
+    ).to.be.revertedWithCustomError(termAuctionBidLocker, "RolloverBid");
   });
   it("unlocking an bid with a different wallet reverts (unlockBids)", async () => {
     await termAuctionBidLocker.addBid(
@@ -2671,16 +2689,14 @@ termAuctionBidLocker, `NonExistentBid`)
       termAuctionBidLocker
         .connect(wallet2)
         .unlockBids([getBytesHash("test-id-1")]),
-    ).to.be.revertedWithCustomError(
-     termAuctionBidLocker, "BidNotOwned");
+    ).to.be.revertedWithCustomError(termAuctionBidLocker, "BidNotOwned");
   });
   it("unlocking nonexistent bids reverts", async () => {
     await expect(
       termAuctionBidLocker
         .connect(wallet2)
         .unlockBids([getBytesHash("test-id-1")]),
-    ).to.be.revertedWithCustomError(
-     termAuctionBidLocker, "NonExistentBid");
+    ).to.be.revertedWithCustomError(termAuctionBidLocker, "NonExistentBid");
   });
   it("revealing a bid with a modified price reverts", async () => {
     await termAuctionBidLocker.addBid(
@@ -2708,8 +2724,7 @@ termAuctionBidLocker, `NonExistentBid`)
         ["11"],
         ["7518921"],
       ),
-    ).to.be.revertedWithCustomError(
-      termAuctionBidLocker, "BidPriceModified");
+    ).to.be.revertedWithCustomError(termAuctionBidLocker, "BidPriceModified");
   });
   it("reverts when an unauthorized wallet tries to pause locking", async () => {
     await expect(termAuctionBidLocker.connect(wallet2).pauseLocking()).to.be
@@ -2746,8 +2761,7 @@ termAuctionBidLocker, `NonExistentBid`)
         },
       ]),
     )
-      .to.be.revertedWithCustomError(
-    termAuctionBidLocker, "BidAmountTooLow")
+      .to.be.revertedWithCustomError(termAuctionBidLocker, "BidAmountTooLow")
       .withArgs(1);
   });
   it("locking a bid with too little collateral reverts", async () => {
@@ -2769,7 +2783,6 @@ termAuctionBidLocker, `NonExistentBid`)
         },
       ]),
     ).to.be.revertedWithCustomError(
-
       termAuctionBidLocker,
       "CollateralAmountTooLow",
     );
@@ -2814,11 +2827,9 @@ termAuctionBidLocker, `NonExistentBid`)
         ["11"],
         ["123456"],
       ),
-    ).to.be.revertedWithCustomError(
- termAuctionBidLocker, "BidPriceModified");
+    ).to.be.revertedWithCustomError(termAuctionBidLocker, "BidPriceModified");
   });
   it("version returns the current contract version", async () => {
     expect(await termAuctionBidLocker.version()).to.eq(expectedVersion);
   });
 });
-/* eslint-enable camelcase */

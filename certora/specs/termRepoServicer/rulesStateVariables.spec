@@ -58,7 +58,7 @@ methods {
     // _handleCollateral, which loops over collateral tokens locking collateral (transfers + oracle math) -- the
     // path-count source for the induction step on mint. It only touches collateral-side state / returns a max-mint
     // gate; the servicer ledger/total are incremented by the mintTokens value in lockstep regardless, so NONDET it.
-    function TermRepoServicer._handleCollateral(address,address,uint256[] calldata) internal returns (uint256) => NONDET;
+    function TermRepoServicer._handleCollateral(address,address,uint256,uint256[] calldata) internal returns (uint256) => NONDET;
     // fulfillBid -> journalBidCollateralToCollateralManager double loop (inner _encumberExistingCollateralInternal +
     // outer journal loop) only updates collateral-manager ledger/encumbered state; the servicer ledger/total are
     // changed by fulfillBid itself in lockstep, so NONDET-ing these is safe for every state-variable rule here.

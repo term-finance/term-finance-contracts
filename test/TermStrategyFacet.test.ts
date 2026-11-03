@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
@@ -6,9 +5,7 @@ import {
   MockContract,
   deployMockContract,
 } from "@term-finance/ethers-mock-contract/compat/waffle";
-import {
-  TestToken,
-} from "../typechain-types";
+import { TestToken } from "../typechain-types";
 
 describe("TermStrategyFacet Tests", () => {
   let termStrategyFacet: any;
@@ -23,36 +20,48 @@ describe("TermStrategyFacet Tests", () => {
     [wallet1, wallet2] = await ethers.getSigners();
 
     // Deploy mock controller
-    const MockControllerFactory = await ethers.getContractFactory("TestMockTermController");
+    const MockControllerFactory = await ethers.getContractFactory(
+      "TestMockTermController",
+    );
     mockController = await MockControllerFactory.deploy();
     await mockController.waitForDeployment();
 
     // Deploy TermStrategyFacet via test helper (for storage manipulation)
-    const TermStrategyFacetFactory =
-      await ethers.getContractFactory("TestTermStrategyFacetHelper");
+    const TermStrategyFacetFactory = await ethers.getContractFactory(
+      "TestTermStrategyFacetHelper",
+    );
     termStrategyFacet = await TermStrategyFacetFactory.deploy();
     await termStrategyFacet.waitForDeployment();
 
     // Add mock controller to approved list in diamond storage
-    await termStrategyFacet.addApprovedTermController(await mockController.getAddress());
+    await termStrategyFacet.addApprovedTermController(
+      await mockController.getAddress(),
+    );
 
     // Deploy real test tokens
     const TestTokenFactory = await ethers.getContractFactory("TestToken");
 
-    repoToken = (await upgrades.deployProxy(
-      TestTokenFactory,
-      ["Repo Token", "REPO", 18, [wallet1.address], [ethers.parseEther("1000")]],
-    )) as unknown as TestToken;
+    repoToken = (await upgrades.deployProxy(TestTokenFactory, [
+      "Repo Token",
+      "REPO",
+      18,
+      [wallet1.address],
+      [ethers.parseEther("1000")],
+    ])) as unknown as TestToken;
     await repoToken.waitForDeployment();
 
-    asset = (await upgrades.deployProxy(
-      TestTokenFactory,
-      ["Asset Token", "ASSET", 18, [wallet2.address], [ethers.parseEther("1000")]],
-    )) as unknown as TestToken;
+    asset = (await upgrades.deployProxy(TestTokenFactory, [
+      "Asset Token",
+      "ASSET",
+      18,
+      [wallet2.address],
+      [ethers.parseEther("1000")],
+    ])) as unknown as TestToken;
     await asset.waitForDeployment();
 
     // Deploy a simple strategy mock that will transfer assets
-    const MockStrategyFactory = await ethers.getContractFactory("TestMockStrategy");
+    const MockStrategyFactory =
+      await ethers.getContractFactory("TestMockStrategy");
     mockStrategy = await MockStrategyFactory.deploy(
       await asset.getAddress(),
       await mockController.getAddress(),
@@ -60,7 +69,10 @@ describe("TermStrategyFacet Tests", () => {
     await mockStrategy.waitForDeployment();
 
     // Register strategy as an approved external contract in the controller
-    await mockController.setVaultApproval(await mockStrategy.getAddress(), true);
+    await mockController.setVaultApproval(
+      await mockStrategy.getAddress(),
+      true,
+    );
   });
 
   describe("sellRepoToken", () => {
@@ -69,17 +81,23 @@ describe("TermStrategyFacet Tests", () => {
       const expectedProceeds = ethers.parseEther("95"); // 95% exchange rate
 
       // Give strategy some assets to work with
-      await asset.connect(wallet2).transfer(await mockStrategy.getAddress(), ethers.parseEther("200"));
+      await asset
+        .connect(wallet2)
+        .transfer(await mockStrategy.getAddress(), ethers.parseEther("200"));
 
       // Approve facet to spend repo tokens
-      await repoToken.connect(wallet1).approve(await termStrategyFacet.getAddress(), repoTokenAmount);
+      await repoToken
+        .connect(wallet1)
+        .approve(await termStrategyFacet.getAddress(), repoTokenAmount);
 
       // Execute
-      const tx = await termStrategyFacet.connect(wallet1).sellRepoToken(
-        await mockStrategy.getAddress(),
-        await repoToken.getAddress(),
-        repoTokenAmount,
-      );
+      const tx = await termStrategyFacet
+        .connect(wallet1)
+        .sellRepoToken(
+          await mockStrategy.getAddress(),
+          await repoToken.getAddress(),
+          repoTokenAmount,
+        );
 
       await expect(tx).to.not.be.reverted;
 
@@ -95,15 +113,19 @@ describe("TermStrategyFacet Tests", () => {
       await mockStrategy.setExchangeRate(0);
 
       // Approve facet to spend repo tokens
-      await repoToken.connect(wallet1).approve(await termStrategyFacet.getAddress(), repoTokenAmount);
+      await repoToken
+        .connect(wallet1)
+        .approve(await termStrategyFacet.getAddress(), repoTokenAmount);
 
       // Execute - should revert
       await expect(
-        termStrategyFacet.connect(wallet1).sellRepoToken(
-          await mockStrategy.getAddress(),
-          await repoToken.getAddress(),
-          repoTokenAmount,
-        ),
+        termStrategyFacet
+          .connect(wallet1)
+          .sellRepoToken(
+            await mockStrategy.getAddress(),
+            await repoToken.getAddress(),
+            repoTokenAmount,
+          ),
       ).to.be.revertedWithCustomError(termStrategyFacet, "NoProceedsReceived");
     });
 
@@ -111,7 +133,9 @@ describe("TermStrategyFacet Tests", () => {
       const repoTokenAmount = ethers.parseEther("100");
 
       // Deploy a malicious strategy that steals assets
-      const MaliciousStrategyFactory = await ethers.getContractFactory("TestMaliciousStrategy");
+      const MaliciousStrategyFactory = await ethers.getContractFactory(
+        "TestMaliciousStrategy",
+      );
       const maliciousStrategy = await MaliciousStrategyFactory.deploy(
         await asset.getAddress(),
         await termStrategyFacet.getAddress(),
@@ -120,21 +144,33 @@ describe("TermStrategyFacet Tests", () => {
       await maliciousStrategy.waitForDeployment();
 
       // Register malicious strategy as approved
-      await mockController.setVaultApproval(await maliciousStrategy.getAddress(), true);
+      await mockController.setVaultApproval(
+        await maliciousStrategy.getAddress(),
+        true,
+      );
 
       // Give the facet some initial assets
-      await asset.connect(wallet2).transfer(await termStrategyFacet.getAddress(), ethers.parseEther("50"));
+      await asset
+        .connect(wallet2)
+        .transfer(
+          await termStrategyFacet.getAddress(),
+          ethers.parseEther("50"),
+        );
 
       // Approve facet to spend repo tokens
-      await repoToken.connect(wallet1).approve(await termStrategyFacet.getAddress(), repoTokenAmount);
+      await repoToken
+        .connect(wallet1)
+        .approve(await termStrategyFacet.getAddress(), repoTokenAmount);
 
       // Execute - should revert because malicious strategy steals assets
       await expect(
-        termStrategyFacet.connect(wallet1).sellRepoToken(
-          await maliciousStrategy.getAddress(),
-          await repoToken.getAddress(),
-          repoTokenAmount,
-        ),
+        termStrategyFacet
+          .connect(wallet1)
+          .sellRepoToken(
+            await maliciousStrategy.getAddress(),
+            await repoToken.getAddress(),
+            repoTokenAmount,
+          ),
       ).to.be.revertedWithCustomError(termStrategyFacet, "NoProceedsReceived");
     });
 
@@ -142,60 +178,84 @@ describe("TermStrategyFacet Tests", () => {
       const repoTokenAmount = ethers.parseEther("100");
 
       // Give strategy some assets
-      await asset.connect(wallet2).transfer(await mockStrategy.getAddress(), ethers.parseEther("200"));
+      await asset
+        .connect(wallet2)
+        .transfer(await mockStrategy.getAddress(), ethers.parseEther("200"));
 
       // Approve facet to spend repo tokens
-      await repoToken.connect(wallet1).approve(await termStrategyFacet.getAddress(), repoTokenAmount);
+      await repoToken
+        .connect(wallet1)
+        .approve(await termStrategyFacet.getAddress(), repoTokenAmount);
 
       // First call should work
-      const tx1 = await termStrategyFacet.connect(wallet1).sellRepoToken(
-        await mockStrategy.getAddress(),
-        await repoToken.getAddress(),
-        repoTokenAmount,
-      );
+      const tx1 = await termStrategyFacet
+        .connect(wallet1)
+        .sellRepoToken(
+          await mockStrategy.getAddress(),
+          await repoToken.getAddress(),
+          repoTokenAmount,
+        );
 
       await expect(tx1).to.not.be.reverted;
 
       // Second call should also work (not blocked by reentrancy guard)
       await repoToken.connect(wallet1).mint(wallet1.address, repoTokenAmount);
-      await repoToken.connect(wallet1).approve(await termStrategyFacet.getAddress(), repoTokenAmount);
+      await repoToken
+        .connect(wallet1)
+        .approve(await termStrategyFacet.getAddress(), repoTokenAmount);
 
-      const tx2 = await termStrategyFacet.connect(wallet1).sellRepoToken(
-        await mockStrategy.getAddress(),
-        await repoToken.getAddress(),
-        repoTokenAmount,
-      );
+      const tx2 = await termStrategyFacet
+        .connect(wallet1)
+        .sellRepoToken(
+          await mockStrategy.getAddress(),
+          await repoToken.getAddress(),
+          repoTokenAmount,
+        );
 
       await expect(tx2).to.not.be.reverted;
     });
 
     it("should revert InvalidTermController when strategy controller is not approved", async () => {
-      const MockControllerFactory = await ethers.getContractFactory("TestMockTermController");
+      const MockControllerFactory = await ethers.getContractFactory(
+        "TestMockTermController",
+      );
       const unapprovedController = await MockControllerFactory.deploy();
       await unapprovedController.waitForDeployment();
 
-      const MockStrategyFullFactory = await ethers.getContractFactory("TestMockStrategyFull");
-      const strategyWithUnapprovedController = await MockStrategyFullFactory.deploy(
-        await asset.getAddress(),
-        await unapprovedController.getAddress(),
-        ethers.ZeroAddress,
+      const MockStrategyFullFactory = await ethers.getContractFactory(
+        "TestMockStrategyFull",
       );
+      const strategyWithUnapprovedController =
+        await MockStrategyFullFactory.deploy(
+          await asset.getAddress(),
+          await unapprovedController.getAddress(),
+          ethers.ZeroAddress,
+        );
       await strategyWithUnapprovedController.waitForDeployment();
 
       const repoTokenAmount = ethers.parseEther("100");
-      await repoToken.connect(wallet1).approve(await termStrategyFacet.getAddress(), repoTokenAmount);
+      await repoToken
+        .connect(wallet1)
+        .approve(await termStrategyFacet.getAddress(), repoTokenAmount);
 
       await expect(
-        termStrategyFacet.connect(wallet1).sellRepoToken(
-          await strategyWithUnapprovedController.getAddress(),
-          await repoToken.getAddress(),
-          repoTokenAmount,
-        ),
-      ).to.be.revertedWithCustomError(termStrategyFacet, "InvalidTermController");
+        termStrategyFacet
+          .connect(wallet1)
+          .sellRepoToken(
+            await strategyWithUnapprovedController.getAddress(),
+            await repoToken.getAddress(),
+            repoTokenAmount,
+          ),
+      ).to.be.revertedWithCustomError(
+        termStrategyFacet,
+        "InvalidTermController",
+      );
     });
 
     it("should revert InvalidStrategy when strategy is not approved by controller", async () => {
-      const MockStrategyFullFactory = await ethers.getContractFactory("TestMockStrategyFull");
+      const MockStrategyFullFactory = await ethers.getContractFactory(
+        "TestMockStrategyFull",
+      );
       const unregisteredStrategy = await MockStrategyFullFactory.deploy(
         await asset.getAddress(),
         await mockController.getAddress(), // approved controller
@@ -205,41 +265,59 @@ describe("TermStrategyFacet Tests", () => {
       // NOT calling mockController.setVaultApproval
 
       const repoTokenAmount = ethers.parseEther("100");
-      await repoToken.connect(wallet1).approve(await termStrategyFacet.getAddress(), repoTokenAmount);
+      await repoToken
+        .connect(wallet1)
+        .approve(await termStrategyFacet.getAddress(), repoTokenAmount);
 
       await expect(
-        termStrategyFacet.connect(wallet1).sellRepoToken(
-          await unregisteredStrategy.getAddress(),
-          await repoToken.getAddress(),
-          repoTokenAmount,
-        ),
+        termStrategyFacet
+          .connect(wallet1)
+          .sellRepoToken(
+            await unregisteredStrategy.getAddress(),
+            await repoToken.getAddress(),
+            repoTokenAmount,
+          ),
       ).to.be.revertedWithCustomError(termStrategyFacet, "InvalidStrategy");
     });
 
     it("should revert RepoTokensNotFullyConsumed when strategy only partially consumes tokens", async () => {
-      const MockStrategyFullFactory = await ethers.getContractFactory("TestMockStrategyFull");
+      const MockStrategyFullFactory = await ethers.getContractFactory(
+        "TestMockStrategyFull",
+      );
       const partialStrategy = await MockStrategyFullFactory.deploy(
         await asset.getAddress(),
         await mockController.getAddress(),
         ethers.ZeroAddress,
       );
       await partialStrategy.waitForDeployment();
-      await mockController.setVaultApproval(await partialStrategy.getAddress(), true);
+      await mockController.setVaultApproval(
+        await partialStrategy.getAddress(),
+        true,
+      );
       await partialStrategy.setPartialConsume(true);
 
       // Give strategy some assets for the partial proceeds it will pay
-      await asset.connect(wallet2).transfer(await partialStrategy.getAddress(), ethers.parseEther("100"));
+      await asset
+        .connect(wallet2)
+        .transfer(await partialStrategy.getAddress(), ethers.parseEther("100"));
 
       const repoTokenAmount = ethers.parseEther("100");
-      await repoToken.connect(wallet1).approve(await termStrategyFacet.getAddress(), repoTokenAmount);
+      await repoToken
+        .connect(wallet1)
+        .approve(await termStrategyFacet.getAddress(), repoTokenAmount);
 
       await expect(
-        termStrategyFacet.connect(wallet1).sellRepoToken(
-          await partialStrategy.getAddress(),
-          await repoToken.getAddress(),
-          repoTokenAmount,
-        ),
-      ).to.be.revertedWithCustomError(termStrategyFacet, "RepoTokensNotFullyConsumed");
+        termStrategyFacet
+          .connect(wallet1)
+          .sellRepoToken(
+            await partialStrategy.getAddress(),
+            await repoToken.getAddress(),
+            repoTokenAmount,
+          ),
+      ).to.be.revertedWithCustomError(
+        termStrategyFacet,
+        "RepoTokensNotFullyConsumed",
+      );
     });
   });
 
@@ -257,19 +335,25 @@ describe("TermStrategyFacet Tests", () => {
     const PERMIT2_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 
     beforeEach(async () => {
-      const MockControllerFactory = await ethers.getContractFactory("TestMockTermController");
+      const MockControllerFactory = await ethers.getContractFactory(
+        "TestMockTermController",
+      );
       mockController2 = await MockControllerFactory.deploy();
       await mockController2.waitForDeployment();
 
       mockServicerController = await MockControllerFactory.deploy();
       await mockServicerController.waitForDeployment();
 
-      const AdapterFactory = await ethers.getContractFactory("TestMockDiscountRateAdapter");
+      const AdapterFactory = await ethers.getContractFactory(
+        "TestMockDiscountRateAdapter",
+      );
       mockDiscountRateAdapter = await AdapterFactory.deploy();
       await mockDiscountRateAdapter.waitForDeployment();
 
       // Repo token minted by the servicer; redemptionValue = 1e18
-      const RepoTokenFactory = await ethers.getContractFactory("TestMockRepoTokenFull");
+      const RepoTokenFactory = await ethers.getContractFactory(
+        "TestMockRepoTokenFull",
+      );
       mockRepoToken = await RepoTokenFactory.deploy(
         "Mock Repo",
         "MREPO",
@@ -279,18 +363,27 @@ describe("TermStrategyFacet Tests", () => {
 
       // Collateral token given to wallet1
       const TestTokenFactory = await ethers.getContractFactory("TestToken");
-      collateralToken = (await upgrades.deployProxy(
-        TestTokenFactory,
-        ["Collateral Token", "COL", 18, [wallet1.address], [ethers.parseEther("100")]],
-      )) as unknown as TestToken;
+      collateralToken = (await upgrades.deployProxy(TestTokenFactory, [
+        "Collateral Token",
+        "COL",
+        18,
+        [wallet1.address],
+        [ethers.parseEther("100")],
+      ])) as unknown as TestToken;
       await collateralToken.waitForDeployment();
 
-      const CollateralManagerFactory = await ethers.getContractFactory("TestMockCollateralManager");
+      const CollateralManagerFactory = await ethers.getContractFactory(
+        "TestMockCollateralManager",
+      );
       mockCollateralManager = await CollateralManagerFactory.deploy();
       await mockCollateralManager.waitForDeployment();
-      await mockCollateralManager.setCollateralTokens([await collateralToken.getAddress()]);
+      await mockCollateralManager.setCollateralTokens([
+        await collateralToken.getAddress(),
+      ]);
 
-      const ServicerFactory = await ethers.getContractFactory("TestMockRepoServicerFull");
+      const ServicerFactory = await ethers.getContractFactory(
+        "TestMockRepoServicerFull",
+      );
       mockServicer = await ServicerFactory.deploy();
       await mockServicer.waitForDeployment();
 
@@ -299,15 +392,21 @@ describe("TermStrategyFacet Tests", () => {
       const futureRedemption = latestBlock!.timestamp + 360 * 24 * 3600 + 100;
 
       await mockServicer.setPurchaseToken(await asset.getAddress());
-      await mockServicer.setTermController(await mockServicerController.getAddress());
-      await mockServicer.setCollateralManager(await mockCollateralManager.getAddress());
+      await mockServicer.setTermController(
+        await mockServicerController.getAddress(),
+      );
+      await mockServicer.setCollateralManager(
+        await mockCollateralManager.getAddress(),
+      );
       await mockServicer.setTermRepoLocker(wallet2.address); // dummy locker address
       await mockServicer.setTermRepoToken(await mockRepoToken.getAddress());
       await mockServicer.setMaturityTimestamp(futureMaturity);
       await mockServicer.setRedemptionTimestamp(futureRedemption);
       await mockServicer.setServicingFee(0);
 
-      const StrategyFullFactory = await ethers.getContractFactory("TestMockStrategyFull");
+      const StrategyFullFactory = await ethers.getContractFactory(
+        "TestMockStrategyFull",
+      );
       mockStrategyFull = await StrategyFullFactory.deploy(
         await asset.getAddress(),
         await mockController2.getAddress(),
@@ -316,12 +415,22 @@ describe("TermStrategyFacet Tests", () => {
       await mockStrategyFull.waitForDeployment();
 
       // Register strategy as approved and servicer as deployed in their respective controllers
-      await mockController2.setVaultApproval(await mockStrategyFull.getAddress(), true);
-      await mockServicerController.setTermDeployed(await mockServicer.getAddress(), true);
+      await mockController2.setVaultApproval(
+        await mockStrategyFull.getAddress(),
+        true,
+      );
+      await mockServicerController.setTermDeployed(
+        await mockServicer.getAddress(),
+        true,
+      );
 
       // Add controllers to approved list
-      await termStrategyFacet.addApprovedTermController(await mockController2.getAddress());
-      await termStrategyFacet.addApprovedTermController(await mockServicerController.getAddress());
+      await termStrategyFacet.addApprovedTermController(
+        await mockController2.getAddress(),
+      );
+      await termStrategyFacet.addApprovedTermController(
+        await mockServicerController.getAddress(),
+      );
 
       // Discount rate: 50% (5e17), haircut: 0
       await mockDiscountRateAdapter.setDiscountRate(
@@ -330,10 +439,12 @@ describe("TermStrategyFacet Tests", () => {
       );
 
       // Give strategy ample assets to pay proceeds
-      await asset.connect(wallet2).transfer(
-        await mockStrategyFull.getAddress(),
-        ethers.parseEther("500"),
-      );
+      await asset
+        .connect(wallet2)
+        .transfer(
+          await mockStrategyFull.getAddress(),
+          ethers.parseEther("500"),
+        );
 
       // Wire up a mock event emitter so mintAndSellRepoToken's emitIntentFilled call succeeds
       const eventEmitterABI = [
@@ -341,15 +452,21 @@ describe("TermStrategyFacet Tests", () => {
       ];
       mockTermEventEmitter = await deployMockContract(wallet1, eventEmitterABI);
       await mockTermEventEmitter.mock.emitIntentFilled.returns();
-      await termStrategyFacet.setEmitter(await mockTermEventEmitter.getAddress());
+      await termStrategyFacet.setEmitter(
+        await mockTermEventEmitter.getAddress(),
+      );
     });
 
     it("should revert InvalidTermController when strategy controller is not approved", async () => {
-      const MockControllerFactory = await ethers.getContractFactory("TestMockTermController");
+      const MockControllerFactory = await ethers.getContractFactory(
+        "TestMockTermController",
+      );
       const unapprovedCtrl = await MockControllerFactory.deploy();
       await unapprovedCtrl.waitForDeployment();
 
-      const StrategyFullFactory = await ethers.getContractFactory("TestMockStrategyFull");
+      const StrategyFullFactory = await ethers.getContractFactory(
+        "TestMockStrategyFull",
+      );
       const badStrategy = await StrategyFullFactory.deploy(
         await asset.getAddress(),
         await unapprovedCtrl.getAddress(),
@@ -358,18 +475,25 @@ describe("TermStrategyFacet Tests", () => {
       await badStrategy.waitForDeployment();
 
       await expect(
-        termStrategyFacet.connect(wallet1).mintAndSellRepoToken(
-          await badStrategy.getAddress(),
-          await mockServicer.getAddress(),
-          ethers.parseEther("1"),
-          [],
-          false,
-        ),
-      ).to.be.revertedWithCustomError(termStrategyFacet, "InvalidTermController");
+        termStrategyFacet
+          .connect(wallet1)
+          .mintAndSellRepoToken(
+            await badStrategy.getAddress(),
+            await mockServicer.getAddress(),
+            ethers.parseEther("1"),
+            [],
+            false,
+          ),
+      ).to.be.revertedWithCustomError(
+        termStrategyFacet,
+        "InvalidTermController",
+      );
     });
 
     it("should revert InvalidStrategy when strategy is not approved by controller", async () => {
-      const StrategyFullFactory = await ethers.getContractFactory("TestMockStrategyFull");
+      const StrategyFullFactory = await ethers.getContractFactory(
+        "TestMockStrategyFull",
+      );
       const unregisteredStrategy = await StrategyFullFactory.deploy(
         await asset.getAddress(),
         await mockController2.getAddress(), // approved controller
@@ -379,52 +503,69 @@ describe("TermStrategyFacet Tests", () => {
       // NOT registering with mockController2
 
       await expect(
-        termStrategyFacet.connect(wallet1).mintAndSellRepoToken(
-          await unregisteredStrategy.getAddress(),
-          await mockServicer.getAddress(),
-          ethers.parseEther("1"),
-          [],
-          false,
-        ),
+        termStrategyFacet
+          .connect(wallet1)
+          .mintAndSellRepoToken(
+            await unregisteredStrategy.getAddress(),
+            await mockServicer.getAddress(),
+            ethers.parseEther("1"),
+            [],
+            false,
+          ),
       ).to.be.revertedWithCustomError(termStrategyFacet, "InvalidStrategy");
     });
 
     it("should revert InvalidTermController when servicer controller is not approved", async () => {
-      const MockControllerFactory = await ethers.getContractFactory("TestMockTermController");
+      const MockControllerFactory = await ethers.getContractFactory(
+        "TestMockTermController",
+      );
       const unapprovedCtrl = await MockControllerFactory.deploy();
       await unapprovedCtrl.waitForDeployment();
 
-      const ServicerFactory = await ethers.getContractFactory("TestMockRepoServicerFull");
+      const ServicerFactory = await ethers.getContractFactory(
+        "TestMockRepoServicerFull",
+      );
       const badServicer = await ServicerFactory.deploy();
       await badServicer.waitForDeployment();
       await badServicer.setTermController(await unapprovedCtrl.getAddress());
 
       await expect(
-        termStrategyFacet.connect(wallet1).mintAndSellRepoToken(
-          await mockStrategyFull.getAddress(),
-          await badServicer.getAddress(),
-          ethers.parseEther("1"),
-          [],
-          false,
-        ),
-      ).to.be.revertedWithCustomError(termStrategyFacet, "InvalidTermController");
+        termStrategyFacet
+          .connect(wallet1)
+          .mintAndSellRepoToken(
+            await mockStrategyFull.getAddress(),
+            await badServicer.getAddress(),
+            ethers.parseEther("1"),
+            [],
+            false,
+          ),
+      ).to.be.revertedWithCustomError(
+        termStrategyFacet,
+        "InvalidTermController",
+      );
     });
 
     it("should revert InvalidRepoId when servicer is not deployed by its controller", async () => {
-      const ServicerFactory = await ethers.getContractFactory("TestMockRepoServicerFull");
+      const ServicerFactory = await ethers.getContractFactory(
+        "TestMockRepoServicerFull",
+      );
       const unregisteredServicer = await ServicerFactory.deploy();
       await unregisteredServicer.waitForDeployment();
       // Controller is approved but servicer NOT registered
-      await unregisteredServicer.setTermController(await mockServicerController.getAddress());
+      await unregisteredServicer.setTermController(
+        await mockServicerController.getAddress(),
+      );
 
       await expect(
-        termStrategyFacet.connect(wallet1).mintAndSellRepoToken(
-          await mockStrategyFull.getAddress(),
-          await unregisteredServicer.getAddress(),
-          ethers.parseEther("1"),
-          [],
-          false,
-        ),
+        termStrategyFacet
+          .connect(wallet1)
+          .mintAndSellRepoToken(
+            await mockStrategyFull.getAddress(),
+            await unregisteredServicer.getAddress(),
+            ethers.parseEther("1"),
+            [],
+            false,
+          ),
       ).to.be.revertedWithCustomError(termStrategyFacet, "InvalidRepoId");
     });
 
@@ -432,35 +573,45 @@ describe("TermStrategyFacet Tests", () => {
       await mockServicer.setMaturityTimestamp(1); // far in the past
 
       await expect(
-        termStrategyFacet.connect(wallet1).mintAndSellRepoToken(
-          await mockStrategyFull.getAddress(),
-          await mockServicer.getAddress(),
-          ethers.parseEther("1"),
-          [],
-          false,
-        ),
+        termStrategyFacet
+          .connect(wallet1)
+          .mintAndSellRepoToken(
+            await mockStrategyFull.getAddress(),
+            await mockServicer.getAddress(),
+            ethers.parseEther("1"),
+            [],
+            false,
+          ),
       ).to.be.revertedWithCustomError(termStrategyFacet, "AfterMaturity");
     });
 
     it("should revert PurchaseTokenMismatch when servicer purchaseToken does not match strategy asset", async () => {
       const TestTokenFactory = await ethers.getContractFactory("TestToken");
-      const wrongToken = (await upgrades.deployProxy(
-        TestTokenFactory,
-        ["Wrong Token", "WRONG", 18, [], []],
-      )) as unknown as TestToken;
+      const wrongToken = (await upgrades.deployProxy(TestTokenFactory, [
+        "Wrong Token",
+        "WRONG",
+        18,
+        [],
+        [],
+      ])) as unknown as TestToken;
       await wrongToken.waitForDeployment();
 
       await mockServicer.setPurchaseToken(await wrongToken.getAddress());
 
       await expect(
-        termStrategyFacet.connect(wallet1).mintAndSellRepoToken(
-          await mockStrategyFull.getAddress(),
-          await mockServicer.getAddress(),
-          ethers.parseEther("1"),
-          [],
-          false,
-        ),
-      ).to.be.revertedWithCustomError(termStrategyFacet, "PurchaseTokenMismatch");
+        termStrategyFacet
+          .connect(wallet1)
+          .mintAndSellRepoToken(
+            await mockStrategyFull.getAddress(),
+            await mockServicer.getAddress(),
+            ethers.parseEther("1"),
+            [],
+            false,
+          ),
+      ).to.be.revertedWithCustomError(
+        termStrategyFacet,
+        "PurchaseTokenMismatch",
+      );
     });
 
     it("should revert RepoRedemptionHaircutNotSupported when haircut is non-zero", async () => {
@@ -470,27 +621,34 @@ describe("TermStrategyFacet Tests", () => {
       );
 
       await expect(
-        termStrategyFacet.connect(wallet1).mintAndSellRepoToken(
-          await mockStrategyFull.getAddress(),
-          await mockServicer.getAddress(),
-          ethers.parseEther("1"),
-          [],
-          false,
-        ),
-      ).to.be.revertedWithCustomError(termStrategyFacet, "RepoRedemptionHaircutNotSupported");
+        termStrategyFacet
+          .connect(wallet1)
+          .mintAndSellRepoToken(
+            await mockStrategyFull.getAddress(),
+            await mockServicer.getAddress(),
+            ethers.parseEther("1"),
+            [],
+            false,
+          ),
+      ).to.be.revertedWithCustomError(
+        termStrategyFacet,
+        "RepoRedemptionHaircutNotSupported",
+      );
     });
 
     it("should revert NoProceedsReceived when strategy pays zero proceeds", async () => {
       await mockStrategyFull.setExchangeRate(0); // strategy takes tokens but pays nothing
 
       await expect(
-        termStrategyFacet.connect(wallet1).mintAndSellRepoToken(
-          await mockStrategyFull.getAddress(),
-          await mockServicer.getAddress(),
-          ethers.parseEther("1"),
-          [],
-          false,
-        ),
+        termStrategyFacet
+          .connect(wallet1)
+          .mintAndSellRepoToken(
+            await mockStrategyFull.getAddress(),
+            await mockServicer.getAddress(),
+            ethers.parseEther("1"),
+            [],
+            false,
+          ),
       ).to.be.revertedWithCustomError(termStrategyFacet, "NoProceedsReceived");
     });
 
@@ -502,28 +660,38 @@ describe("TermStrategyFacet Tests", () => {
       await mockStrategyFull.setExchangeRate(ethers.parseEther("0.5"));
 
       await expect(
-        termStrategyFacet.connect(wallet1).mintAndSellRepoToken(
-          await mockStrategyFull.getAddress(),
-          await mockServicer.getAddress(),
-          ethers.parseEther("100"),
-          [],
-          false,
-        ),
-      ).to.be.revertedWithCustomError(termStrategyFacet, "NotEnoughProceedsReceived");
+        termStrategyFacet
+          .connect(wallet1)
+          .mintAndSellRepoToken(
+            await mockStrategyFull.getAddress(),
+            await mockServicer.getAddress(),
+            ethers.parseEther("100"),
+            [],
+            false,
+          ),
+      ).to.be.revertedWithCustomError(
+        termStrategyFacet,
+        "NotEnoughProceedsReceived",
+      );
     });
 
     it("should revert RepoTokensNotFullyConsumed when strategy only partially consumes minted repo tokens", async () => {
       await mockStrategyFull.setPartialConsume(true);
 
       await expect(
-        termStrategyFacet.connect(wallet1).mintAndSellRepoToken(
-          await mockStrategyFull.getAddress(),
-          await mockServicer.getAddress(),
-          ethers.parseEther("1"),
-          [],
-          false,
-        ),
-      ).to.be.revertedWithCustomError(termStrategyFacet, "RepoTokensNotFullyConsumed");
+        termStrategyFacet
+          .connect(wallet1)
+          .mintAndSellRepoToken(
+            await mockStrategyFull.getAddress(),
+            await mockServicer.getAddress(),
+            ethers.parseEther("1"),
+            [],
+            false,
+          ),
+      ).to.be.revertedWithCustomError(
+        termStrategyFacet,
+        "RepoTokensNotFullyConsumed",
+      );
     });
 
     it("should apply rounding adjustment when estimated proceeds are less than borrowAmount", async () => {
@@ -551,21 +719,22 @@ describe("TermStrategyFacet Tests", () => {
       const borrowAmount = ethers.parseEther("100");
 
       // Borrower approves facet to spend collateral
-      await collateralToken.connect(wallet1).approve(
-        await termStrategyFacet.getAddress(),
-        collateralAmount,
-      );
+      await collateralToken
+        .connect(wallet1)
+        .approve(await termStrategyFacet.getAddress(), collateralAmount);
 
       const wallet1AssetBefore = await asset.balanceOf(wallet1.address);
 
       await expect(
-        termStrategyFacet.connect(wallet1).mintAndSellRepoToken(
-          await mockStrategyFull.getAddress(),
-          await mockServicer.getAddress(),
-          borrowAmount,
-          [collateralAmount],
-          false,
-        ),
+        termStrategyFacet
+          .connect(wallet1)
+          .mintAndSellRepoToken(
+            await mockStrategyFull.getAddress(),
+            await mockServicer.getAddress(),
+            borrowAmount,
+            [collateralAmount],
+            false,
+          ),
       ).to.not.be.reverted;
 
       const wallet1AssetAfter = await asset.balanceOf(wallet1.address);
@@ -575,18 +744,26 @@ describe("TermStrategyFacet Tests", () => {
 
     it("should successfully mint and sell using Permit2 for collateral transfer (usePermit2=true)", async () => {
       // Plant TestMockPermit2 bytecode at the canonical Permit2 address
-      const MockPermit2Factory = await ethers.getContractFactory("TestMockPermit2");
+      const MockPermit2Factory =
+        await ethers.getContractFactory("TestMockPermit2");
       const tempMockPermit2 = await MockPermit2Factory.deploy();
       await tempMockPermit2.waitForDeployment();
 
-      const runtimeCode = await ethers.provider.getCode(await tempMockPermit2.getAddress());
-      await ethers.provider.send("hardhat_setCode", [PERMIT2_ADDRESS, runtimeCode]);
+      const runtimeCode = await ethers.provider.getCode(
+        await tempMockPermit2.getAddress(),
+      );
+      await ethers.provider.send("hardhat_setCode", [
+        PERMIT2_ADDRESS,
+        runtimeCode,
+      ]);
 
       const collateralAmount = ethers.parseEther("1");
       const borrowAmount = ethers.parseEther("100");
 
       // Borrower approves canonical Permit2 to spend collateral
-      await collateralToken.connect(wallet1).approve(PERMIT2_ADDRESS, collateralAmount);
+      await collateralToken
+        .connect(wallet1)
+        .approve(PERMIT2_ADDRESS, collateralAmount);
 
       await expect(
         termStrategyFacet.connect(wallet1).mintAndSellRepoToken(
@@ -603,20 +780,26 @@ describe("TermStrategyFacet Tests", () => {
       const borrowAmount = ethers.parseEther("100");
 
       const wallet1AssetBefore = await asset.balanceOf(wallet1.address);
-      const facetAssetBefore = await asset.balanceOf(await termStrategyFacet.getAddress());
-
-      // Call the internal function directly with payoutToUser=false
-      await termStrategyFacet.connect(wallet1).mintAndSellRepoTokenInternalExposed(
-        await mockStrategyFull.getAddress(),
-        await mockServicer.getAddress(),
-        wallet1.address, // borrower
-        borrowAmount,
-        [],
-        false, // payoutToUser = false
+      const facetAssetBefore = await asset.balanceOf(
+        await termStrategyFacet.getAddress(),
       );
 
+      // Call the internal function directly with payoutToUser=false
+      await termStrategyFacet
+        .connect(wallet1)
+        .mintAndSellRepoTokenInternalExposed(
+          await mockStrategyFull.getAddress(),
+          await mockServicer.getAddress(),
+          wallet1.address, // borrower
+          borrowAmount,
+          [],
+          false, // payoutToUser = false
+        );
+
       const wallet1AssetAfter = await asset.balanceOf(wallet1.address);
-      const facetAssetAfter = await asset.balanceOf(await termStrategyFacet.getAddress());
+      const facetAssetAfter = await asset.balanceOf(
+        await termStrategyFacet.getAddress(),
+      );
 
       // Borrower should NOT have received proceeds
       expect(wallet1AssetAfter).to.equal(wallet1AssetBefore);
@@ -627,14 +810,19 @@ describe("TermStrategyFacet Tests", () => {
     describe("previewMintAndSellRepoToken", () => {
       it("should revert PurchaseTokenMismatch when strategy asset does not match servicer purchaseToken", async () => {
         // Deploy a strategy whose asset is collateralToken (not asset/purchaseToken)
-        const StrategyFullFactory = await ethers.getContractFactory("TestMockStrategyFull");
+        const StrategyFullFactory = await ethers.getContractFactory(
+          "TestMockStrategyFull",
+        );
         const mismatchedStrategy = await StrategyFullFactory.deploy(
           await collateralToken.getAddress(), // asset = collateralToken ≠ servicer's purchaseToken
           await mockController2.getAddress(),
           await mockDiscountRateAdapter.getAddress(),
         );
         await mismatchedStrategy.waitForDeployment();
-        await mockController2.setVaultApproval(await mismatchedStrategy.getAddress(), true);
+        await mockController2.setVaultApproval(
+          await mismatchedStrategy.getAddress(),
+          true,
+        );
 
         const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
           ["address"],
@@ -651,7 +839,10 @@ describe("TermStrategyFacet Tests", () => {
             targetAddress: await mockServicer.getAddress(),
             additionalCalldata,
           }),
-        ).to.be.revertedWithCustomError(termStrategyFacet, "PurchaseTokenMismatch");
+        ).to.be.revertedWithCustomError(
+          termStrategyFacet,
+          "PurchaseTokenMismatch",
+        );
       });
 
       it("should return correct PreviewAction when tokens match", async () => {
@@ -663,18 +854,23 @@ describe("TermStrategyFacet Tests", () => {
           [await mockStrategyFull.getAddress()],
         );
 
-        const previewAction = await termStrategyFacet.previewMintAndSellRepoToken({
-          user: wallet1.address,
-          inputToken: await collateralToken.getAddress(),
-          maxInputAmount: collateralAmount,
-          outputToken: await asset.getAddress(),
-          minOutputAmount: borrowAmount,
-          targetAddress: await mockServicer.getAddress(),
-          additionalCalldata,
-        });
+        const previewAction =
+          await termStrategyFacet.previewMintAndSellRepoToken({
+            user: wallet1.address,
+            inputToken: await collateralToken.getAddress(),
+            maxInputAmount: collateralAmount,
+            outputToken: await asset.getAddress(),
+            minOutputAmount: borrowAmount,
+            targetAddress: await mockServicer.getAddress(),
+            additionalCalldata,
+          });
 
-        expect(previewAction.expectedInputToken).to.equal(await collateralToken.getAddress());
-        expect(previewAction.expectedOutputToken).to.equal(await asset.getAddress());
+        expect(previewAction.expectedInputToken).to.equal(
+          await collateralToken.getAddress(),
+        );
+        expect(previewAction.expectedOutputToken).to.equal(
+          await asset.getAddress(),
+        );
         expect(previewAction.expectedInputAmount).to.equal(collateralAmount);
         expect(previewAction.expectedOutputAmount).to.equal(borrowAmount);
         expect(previewAction.isDeterministic).to.equal(true);
@@ -692,45 +888,63 @@ describe("TermStrategyFacet Tests", () => {
             ethers.parseEther("100"),
             "0x12345678",
             await mockServicer.getAddress(),
-            ethers.AbiCoder.defaultAbiCoder().encode(["address"], [await mockStrategyFull.getAddress()]),
+            ethers.AbiCoder.defaultAbiCoder().encode(
+              ["address"],
+              [await mockStrategyFull.getAddress()],
+            ),
           ),
-        ).to.be.revertedWithCustomError(termStrategyFacet, "UnsupportedHookSelector");
+        ).to.be.revertedWithCustomError(
+          termStrategyFacet,
+          "UnsupportedHookSelector",
+        );
       });
 
       it("should return valid previewAction and encodedCalldata for mintAndSellRepoTokenHook selector", async () => {
-        const hookSelector = termStrategyFacet.interface.getFunction("mintAndSellRepoTokenHook").selector;
+        const hookSelector = termStrategyFacet.interface.getFunction(
+          "mintAndSellRepoTokenHook",
+        ).selector;
         const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
           ["address"],
           [await mockStrategyFull.getAddress()],
         );
 
-        const [previewAction, encodedCalldata] = await termStrategyFacet.generateActionCalldata(
-          wallet1.address,
-          await collateralToken.getAddress(),
-          ethers.parseEther("1"),
-          await asset.getAddress(),
-          ethers.parseEther("100"),
-          hookSelector,
-          await mockServicer.getAddress(),
-          additionalCalldata,
-        );
+        const [previewAction, encodedCalldata] =
+          await termStrategyFacet.generateActionCalldata(
+            wallet1.address,
+            await collateralToken.getAddress(),
+            ethers.parseEther("1"),
+            await asset.getAddress(),
+            ethers.parseEther("100"),
+            hookSelector,
+            await mockServicer.getAddress(),
+            additionalCalldata,
+          );
 
         expect(previewAction.isDeterministic).to.equal(true);
-        expect(previewAction.expectedOutputToken).to.equal(await asset.getAddress());
+        expect(previewAction.expectedOutputToken).to.equal(
+          await asset.getAddress(),
+        );
         expect(encodedCalldata.slice(0, 10)).to.equal(hookSelector);
       });
 
       it("should propagate PurchaseTokenMismatch from preview when strategy asset mismatches", async () => {
-        const hookSelector = termStrategyFacet.interface.getFunction("mintAndSellRepoTokenHook").selector;
+        const hookSelector = termStrategyFacet.interface.getFunction(
+          "mintAndSellRepoTokenHook",
+        ).selector;
 
-        const StrategyFullFactory = await ethers.getContractFactory("TestMockStrategyFull");
+        const StrategyFullFactory = await ethers.getContractFactory(
+          "TestMockStrategyFull",
+        );
         const mismatchedStrategy = await StrategyFullFactory.deploy(
           await collateralToken.getAddress(),
           await mockController2.getAddress(),
           await mockDiscountRateAdapter.getAddress(),
         );
         await mismatchedStrategy.waitForDeployment();
-        await mockController2.setVaultApproval(await mismatchedStrategy.getAddress(), true);
+        await mockController2.setVaultApproval(
+          await mismatchedStrategy.getAddress(),
+          true,
+        );
 
         const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
           ["address"],
@@ -813,7 +1027,10 @@ describe("TermStrategyFacet Tests", () => {
             targetAddress: await mockServicer.getAddress(),
             additionalCalldata,
           }),
-        ).to.be.revertedWithCustomError(termStrategyFacet, "PurchaseTokenMismatch");
+        ).to.be.revertedWithCustomError(
+          termStrategyFacet,
+          "PurchaseTokenMismatch",
+        );
 
         await termStrategyFacet.clearActiveFlashLoanBorrower();
       });
@@ -826,10 +1043,9 @@ describe("TermStrategyFacet Tests", () => {
         await termStrategyFacet.setActiveFlashLoanBorrower(wallet1.address);
 
         // Pre-fund the facet with collateral (hook does NOT pull collateral from user)
-        await collateralToken.connect(wallet1).transfer(
-          await termStrategyFacet.getAddress(),
-          collateralAmount,
-        );
+        await collateralToken
+          .connect(wallet1)
+          .transfer(await termStrategyFacet.getAddress(), collateralAmount);
 
         const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
           ["address"],

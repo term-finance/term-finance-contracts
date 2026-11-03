@@ -50,13 +50,16 @@ function buildCallbackData(
     flashLoanAmount: bigint | number;
     actions: ReturnType<typeof makeAction>[];
     backPropagate: boolean;
-  }
+  },
 ): string {
   // flashExecuteCallback selector
-  const callbackSel = "0x" +
+  const callbackSel =
+    "0x" +
     Buffer.from(
-      ethers.id("flashExecuteCallback(address[],uint256[],uint256[],address,bytes)").slice(2, 10),
-      "hex"
+      ethers
+        .id("flashExecuteCallback(address[],uint256[],uint256[],address,bytes)")
+        .slice(2, 10),
+      "hex",
     ).toString("hex");
 
   const planEncoded = AbiCoder.encode(
@@ -69,25 +72,27 @@ function buildCallbackData(
         plan.actions.map(actionToArray),
         plan.backPropagate,
       ],
-    ]
+    ],
   );
   return AbiCoder.encode(
     ["tuple(address callbackFacet, bytes4 selector)", "bytes"],
-    [{ callbackFacet: helperAddr, selector: callbackSel }, planEncoded]
+    [{ callbackFacet: helperAddr, selector: callbackSel }, planEncoded],
   );
 }
 
-function makeAction(overrides: Partial<{
-  inputToken: string;
-  maxInputAmount: bigint | number;
-  outputToken: string;
-  minOutputAmount: bigint | number;
-  outputTokenAmountIn: bigint | number;
-  usePermit2ForOutputTokenIn: boolean;
-  method: string;
-  targetAddress: string;
-  additionalCalldata: string;
-}> = {}) {
+function makeAction(
+  overrides: Partial<{
+    inputToken: string;
+    maxInputAmount: bigint | number;
+    outputToken: string;
+    minOutputAmount: bigint | number;
+    outputTokenAmountIn: bigint | number;
+    usePermit2ForOutputTokenIn: boolean;
+    method: string;
+    targetAddress: string;
+    additionalCalldata: string;
+  }> = {},
+) {
   return {
     inputToken: overrides.inputToken ?? ethers.ZeroAddress,
     maxInputAmount: overrides.maxInputAmount ?? 0n,
@@ -101,13 +106,15 @@ function makeAction(overrides: Partial<{
   };
 }
 
-function makePreview(overrides: Partial<{
-  expectedInputToken: string;
-  expectedInputAmount: bigint | number;
-  expectedOutputToken: string;
-  expectedOutputAmount: bigint | number;
-  isDeterministic: boolean;
-}> = {}) {
+function makePreview(
+  overrides: Partial<{
+    expectedInputToken: string;
+    expectedInputAmount: bigint | number;
+    expectedOutputToken: string;
+    expectedOutputAmount: bigint | number;
+    isDeterministic: boolean;
+  }> = {},
+) {
   return {
     expectedInputToken: overrides.expectedInputToken ?? ethers.ZeroAddress,
     expectedInputAmount: overrides.expectedInputAmount ?? 0n,
@@ -144,25 +151,33 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
 
     beforeEach(async () => {
       const AggFactory = await ethers.getContractFactory(
-        "TestMockFlashLoanAggregator"
+        "TestMockFlashLoanAggregator",
       );
       mockAgg = (await AggFactory.deploy()) as TestMockFlashLoanAggregator;
       await mockAgg.waitForDeployment();
 
       const HelperFactory = await ethers.getContractFactory(
-        "TestTermFlashLoanExecutorFacetHelper"
+        "TestTermFlashLoanExecutorFacetHelper",
       );
       helper = (await HelperFactory.deploy(
-        await mockAgg.getAddress()
+        await mockAgg.getAddress(),
       )) as TestTermFlashLoanExecutorFacetHelper;
       await helper.waitForDeployment();
       helperAddr = await helper.getAddress();
 
       const TokenFactory = await ethers.getContractFactory(
-        "TestMockRepoTokenFull"
+        "TestMockRepoTokenFull",
       );
-      tokenA = (await TokenFactory.deploy("TokenA", "TKA", 0)) as TestMockRepoTokenFull;
-      tokenB = (await TokenFactory.deploy("TokenB", "TKB", 0)) as TestMockRepoTokenFull;
+      tokenA = (await TokenFactory.deploy(
+        "TokenA",
+        "TKA",
+        0,
+      )) as TestMockRepoTokenFull;
+      tokenB = (await TokenFactory.deploy(
+        "TokenB",
+        "TKB",
+        0,
+      )) as TestMockRepoTokenFull;
       await tokenA.waitForDeployment();
       await tokenB.waitForDeployment();
 
@@ -182,7 +197,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         backPropagate: false,
       };
       await expect(
-        helper.connect(wallet1).flashExecute(req)
+        helper.connect(wallet1).flashExecute(req),
       ).to.be.revertedWithCustomError(helper, "EmptyActions");
     });
 
@@ -192,10 +207,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
 
       // Don't register facetAddress for METHOD_1 - create fresh helper without registration
       const HelperFactory = await ethers.getContractFactory(
-        "TestTermFlashLoanExecutorFacetHelper"
+        "TestTermFlashLoanExecutorFacetHelper",
       );
       const helper2 = (await HelperFactory.deploy(
-        await mockAgg.getAddress()
+        await mockAgg.getAddress(),
       )) as TestTermFlashLoanExecutorFacetHelper;
       await helper2.waitForDeployment();
       const h2Addr = await helper2.getAddress();
@@ -208,7 +223,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata = helper2.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
       await helper2.setMockAction(METHOD_1 as `0x${string}`, preview, calldata);
 
@@ -230,7 +248,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       };
 
       await expect(
-        helper2.connect(wallet1).flashExecute(req)
+        helper2.connect(wallet1).flashExecute(req),
       ).to.be.revertedWithCustomError(helper2, "SelectorNotFound");
     });
 
@@ -247,7 +265,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 1100n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        1100n,
       ]);
       await helper.setMockAction(METHOD_1 as `0x${string}`, preview, calldata);
 
@@ -269,7 +290,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       };
 
       await expect(
-        helper.connect(wallet1).flashExecute(req)
+        helper.connect(wallet1).flashExecute(req),
       ).to.be.revertedWithCustomError(helper, "InvalidInputToken");
     });
 
@@ -285,7 +306,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
       await helper.setMockAction(METHOD_1 as `0x${string}`, preview, calldata);
 
@@ -308,7 +332,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       };
 
       await expect(
-        helper.connect(wallet1).flashExecute(req)
+        helper.connect(wallet1).flashExecute(req),
       ).to.be.revertedWithCustomError(helper, "FinalOutputTokenMismatch");
     });
 
@@ -317,7 +341,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       const tokenBAddr = await tokenB.getAddress();
 
       const METHOD_2 =
-        "0x" + Buffer.from(ethers.id("mockSwap2()").slice(2, 10), "hex").toString("hex");
+        "0x" +
+        Buffer.from(ethers.id("mockSwap2()").slice(2, 10), "hex").toString(
+          "hex",
+        );
 
       // Action 0: tokenA -> tokenB
       const preview0 = makePreview({
@@ -328,9 +355,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
       await helper.setFacetAddress(METHOD_1 as `0x${string}`, helperAddr);
 
       // Action 1: tokenB -> tokenA
@@ -342,13 +376,22 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 1050n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        1050n,
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
       await helper.setFacetAddress(METHOD_2 as `0x${string}`, helperAddr);
 
       // Register flashExecuteCallback selector
-      const cbSel = helper.interface.getFunction("flashExecuteCallback").selector;
+      const cbSel = helper.interface.getFunction(
+        "flashExecuteCallback",
+      ).selector;
       await helper.setFacetAddress(cbSel as `0x${string}`, helperAddr);
 
       const action0 = makeAction({
@@ -379,7 +422,8 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         backPropagate: false,
       };
 
-      await expect(helper.connect(wallet1).flashExecute(req)).to.not.be.reverted;
+      await expect(helper.connect(wallet1).flashExecute(req)).to.not.be
+        .reverted;
     });
   });
 
@@ -403,7 +447,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       amounts: bigint[],
       premiums: bigint[],
       initiator: string,
-      data: string
+      data: string,
     ) {
       return helper
         .connect(caller)
@@ -412,32 +456,43 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
 
     beforeEach(async () => {
       const AggFactory = await ethers.getContractFactory(
-        "TestMockFlashLoanAggregator"
+        "TestMockFlashLoanAggregator",
       );
       mockAgg = (await AggFactory.deploy()) as TestMockFlashLoanAggregator;
       await mockAgg.waitForDeployment();
 
       // Use wallet1 as the aggregator so we can call callback directly
       const HelperFactory = await ethers.getContractFactory(
-        "TestTermFlashLoanExecutorFacetHelper"
+        "TestTermFlashLoanExecutorFacetHelper",
       );
       helper = (await HelperFactory.deploy(
-        wallet1.address
+        wallet1.address,
       )) as TestTermFlashLoanExecutorFacetHelper;
       await helper.waitForDeployment();
       helperAddr = await helper.getAddress();
 
       const TokenFactory = await ethers.getContractFactory(
-        "TestMockRepoTokenFull"
+        "TestMockRepoTokenFull",
       );
-      tokenA = (await TokenFactory.deploy("TokenA", "TKA", 0)) as TestMockRepoTokenFull;
-      tokenB = (await TokenFactory.deploy("TokenB", "TKB", 0)) as TestMockRepoTokenFull;
+      tokenA = (await TokenFactory.deploy(
+        "TokenA",
+        "TKA",
+        0,
+      )) as TestMockRepoTokenFull;
+      tokenB = (await TokenFactory.deploy(
+        "TokenB",
+        "TKB",
+        0,
+      )) as TestMockRepoTokenFull;
       await tokenA.waitForDeployment();
       await tokenB.waitForDeployment();
 
       METHOD_1 = helper.interface.getFunction("mockSwap").selector;
       METHOD_2 =
-        "0x" + Buffer.from(ethers.id("mockSwap2()").slice(2, 10), "hex").toString("hex");
+        "0x" +
+        Buffer.from(ethers.id("mockSwap2()").slice(2, 10), "hex").toString(
+          "hex",
+        );
 
       // Register selectors
       await helper.setFacetAddress(METHOD_1 as `0x${string}`, helperAddr);
@@ -450,7 +505,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       action: ReturnType<typeof makeAction>,
       flashLoanToken: string,
       flashLoanAmount: bigint,
-      backPropagate = false
+      backPropagate = false,
     ) {
       const plan = {
         user,
@@ -469,7 +524,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       action1: ReturnType<typeof makeAction>,
       flashLoanToken: string,
       flashLoanAmount: bigint,
-      backPropagate = false
+      backPropagate = false,
     ) {
       const plan = {
         user,
@@ -489,10 +544,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         wallet1.address,
         makeAction({ inputToken: tokenAAddr, outputToken: tokenAAddr }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet2, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet2, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "InvalidCaller");
     });
 
@@ -502,11 +557,18 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         wallet1.address,
         makeAction({ inputToken: tokenAAddr, outputToken: tokenAAddr }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       // Call from wallet1 (aggregator) but pass wallet2 as initiator
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], wallet2.address, data)
+        callCallback(
+          wallet1,
+          [tokenAAddr],
+          [1000n],
+          [0n],
+          wallet2.address,
+          data,
+        ),
       ).to.be.revertedWithCustomError(helper, "InvalidInitiator");
     });
 
@@ -522,10 +584,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         wallet1.address,
         makeAction({ inputToken: tokenAAddr, outputToken: tokenAAddr }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "UserNotFlashLoanInitiator");
 
       // cleanup
@@ -541,7 +603,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         wallet1.address,
         makeAction({ inputToken: tokenAAddr, outputToken: tokenAAddr }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
         callCallback(
@@ -550,8 +612,8 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           [1000n, 2000n],
           [0n, 0n],
           helperAddr,
-          data
-        )
+          data,
+        ),
       ).to.be.revertedWithCustomError(helper, "InvalidFlashLoanReceived");
 
       await helper.clearFlashLoanBorrower();
@@ -565,7 +627,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         wallet1.address,
         makeAction({ inputToken: tokenAAddr, outputToken: tokenAAddr }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
         callCallback(
@@ -574,8 +636,8 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           [1000n, 2000n],
           [0n],
           helperAddr,
-          data
-        )
+          data,
+        ),
       ).to.be.revertedWithCustomError(helper, "InvalidFlashLoanReceived");
 
       await helper.clearFlashLoanBorrower();
@@ -589,7 +651,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         wallet1.address,
         makeAction({ inputToken: tokenAAddr, outputToken: tokenAAddr }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
         callCallback(
@@ -598,8 +660,8 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           [1000n],
           [0n, 0n],
           helperAddr,
-          data
-        )
+          data,
+        ),
       ).to.be.revertedWithCustomError(helper, "InvalidFlashLoanReceived");
 
       await helper.clearFlashLoanBorrower();
@@ -615,10 +677,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         wallet1.address,
         makeAction({ inputToken: tokenAAddr, outputToken: tokenAAddr }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenBAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenBAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "InvalidFlashloanAsset");
 
       await helper.clearFlashLoanBorrower();
@@ -632,11 +694,11 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         wallet1.address,
         makeAction({ inputToken: tokenAAddr, outputToken: tokenAAddr }),
         tokenAAddr,
-        1000n // plan expects 1000
+        1000n, // plan expects 1000
       );
       // pass 999
       await expect(
-        callCallback(wallet1, [tokenAAddr], [999n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [999n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "IncorrectFlashLoanAmount");
 
       await helper.clearFlashLoanBorrower();
@@ -656,10 +718,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           method: METHOD_1,
         }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "ZeroInputToken");
 
       await helper.clearFlashLoanBorrower();
@@ -677,10 +739,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           method: METHOD_1,
         }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "ZeroOutputToken");
 
       await helper.clearFlashLoanBorrower();
@@ -698,10 +760,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           method: METHOD_1,
         }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "InputTokenMatchesOutputToken");
 
       await helper.clearFlashLoanBorrower();
@@ -721,10 +783,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           method: METHOD_1,
         }),
         tokenAAddr, // flashLoanToken = tokenA
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "InvalidInputToken");
 
       await helper.clearFlashLoanBorrower();
@@ -744,7 +806,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1050n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1050n,
       ]);
       await helper.setMockAction(METHOD_1 as `0x${string}`, preview, calldata);
 
@@ -757,9 +822,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata2 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 1000n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        1000n,
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview2, calldata2);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview2,
+        calldata2,
+      );
 
       await tokenA.mint(helperAddr, 1000n);
 
@@ -785,11 +857,11 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         action0,
         action1,
         tokenAAddr,
-        1000n
+        1000n,
       );
 
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.not.be.reverted;
 
       await helper.clearFlashLoanBorrower();
@@ -809,7 +881,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
       await helper.setMockAction(METHOD_1 as `0x${string}`, preview, calldata);
 
@@ -822,10 +897,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           method: METHOD_1,
         }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "InputTokenMismatch");
 
       await helper.clearFlashLoanBorrower();
@@ -844,7 +919,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
       await helper.setMockAction(METHOD_1 as `0x${string}`, preview, calldata);
 
@@ -857,10 +935,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           method: METHOD_1,
         }),
         tokenAAddr,
-        100n
+        100n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [100n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [100n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "ExpectedInputExceedsMax");
 
       await helper.clearFlashLoanBorrower();
@@ -870,8 +948,14 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       const tokenAAddr = await tokenA.getAddress();
       const tokenBAddr = await tokenB.getAddress();
 
-      const TokenFactory = await ethers.getContractFactory("TestMockRepoTokenFull");
-      const tokenC = (await TokenFactory.deploy("TokenC", "TKC", 0)) as TestMockRepoTokenFull;
+      const TokenFactory = await ethers.getContractFactory(
+        "TestMockRepoTokenFull",
+      );
+      const tokenC = (await TokenFactory.deploy(
+        "TokenC",
+        "TKC",
+        0,
+      )) as TestMockRepoTokenFull;
       await tokenC.waitForDeployment();
       const tokenCAddr = await tokenC.getAddress();
 
@@ -885,7 +969,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
       await helper.setMockAction(METHOD_1 as `0x${string}`, preview, calldata);
 
@@ -898,10 +985,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           method: METHOD_1,
         }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "OutputTokenMismatch");
 
       await helper.clearFlashLoanBorrower();
@@ -920,7 +1007,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 200n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        200n,
       ]);
       await helper.setMockAction(METHOD_1 as `0x${string}`, preview, calldata);
 
@@ -934,10 +1024,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           method: METHOD_1,
         }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "ExpectedOutputBelowMin");
 
       await helper.clearFlashLoanBorrower();
@@ -957,7 +1047,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       });
       // calldata mints 0 tokenB
       const calldata = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 0n, // mints 0
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        0n, // mints 0
       ]);
       await helper.setMockAction(METHOD_1 as `0x${string}`, preview, calldata);
 
@@ -973,10 +1066,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           method: METHOD_1,
         }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "NoTokensReceived");
 
       await helper.clearFlashLoanBorrower();
@@ -996,7 +1089,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 500n, tokenBAddr, 100n, // burns 500
+        tokenAAddr,
+        500n,
+        tokenBAddr,
+        100n, // burns 500
       ]);
       await helper.setMockAction(METHOD_1 as `0x${string}`, preview, calldata);
 
@@ -1012,10 +1108,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           method: METHOD_1,
         }),
         tokenAAddr,
-        500n
+        500n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [500n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [500n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "InputAmountExceeded");
 
       await helper.clearFlashLoanBorrower();
@@ -1035,7 +1131,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 10n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        10n,
       ]);
       await helper.setMockAction(METHOD_1 as `0x${string}`, preview, calldata);
 
@@ -1051,10 +1150,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           method: METHOD_1,
         }),
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "OutputAmountInsufficient");
 
       await helper.clearFlashLoanBorrower();
@@ -1074,7 +1173,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
       await helper.setMockAction(METHOD_1 as `0x${string}`, preview, calldata);
 
@@ -1090,10 +1192,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
           method: METHOD_1,
         }),
         tokenAAddr, // flashLoanToken = tokenA
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "FlashloanRepayIncompatible");
 
       await helper.clearFlashLoanBorrower();
@@ -1104,8 +1206,14 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       const tokenBAddr = await tokenB.getAddress();
 
       // Deploy a third token as the final output
-      const TokenFactory = await ethers.getContractFactory("TestMockRepoTokenFull");
-      const tokenC = (await TokenFactory.deploy("TokenC", "TKC", 0)) as TestMockRepoTokenFull;
+      const TokenFactory = await ethers.getContractFactory(
+        "TestMockRepoTokenFull",
+      );
+      const tokenC = (await TokenFactory.deploy(
+        "TokenC",
+        "TKC",
+        0,
+      )) as TestMockRepoTokenFull;
       await tokenC.waitForDeployment();
       const tokenCAddr = await tokenC.getAddress();
 
@@ -1118,7 +1226,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       // mockSwap mints exactly 1000 tokenC → passes OutputAmountInsufficient,
       // but currentInputToken=tokenC ≠ flashLoanToken=tokenA → FlashloanRepayIncompatible
       const METHOD_3 =
-        "0x" + Buffer.from(ethers.id("mockSwap3()").slice(2, 10), "hex").toString("hex");
+        "0x" +
+        Buffer.from(ethers.id("mockSwap3()").slice(2, 10), "hex").toString(
+          "hex",
+        );
       await helper.setFacetAddress(METHOD_3 as `0x${string}`, helperAddr);
 
       const preview0 = makePreview({
@@ -1129,9 +1240,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       const preview1 = makePreview({
         expectedInputToken: tokenBAddr,
@@ -1141,9 +1259,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenCAddr, 1000n,
+        tokenBAddr,
+        0n,
+        tokenCAddr,
+        1000n,
       ]);
-      await helper.setMockAction(METHOD_3 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_3 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
 
       await tokenA.mint(helperAddr, 1000n);
 
@@ -1166,10 +1291,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         action0,
         action1,
         tokenAAddr, // flashLoanToken = tokenA
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "FlashloanRepayIncompatible");
 
       await helper.clearFlashLoanBorrower();
@@ -1191,9 +1316,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       // Action 1: tokenB->tokenA, burn 0, mint 1000
       const preview1 = makePreview({
@@ -1204,9 +1336,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 1000n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        1000n,
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
 
       await tokenA.mint(helperAddr, 1000n);
 
@@ -1229,10 +1368,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         action0,
         action1,
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.not.be.reverted;
 
       await helper.clearFlashLoanBorrower();
@@ -1251,9 +1390,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       const preview1 = makePreview({
         expectedInputToken: tokenBAddr,
@@ -1263,9 +1409,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 1050n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        1050n,
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
 
       await tokenA.mint(helperAddr, 1000n);
       const userBalBefore = await tokenA.balanceOf(wallet1.address);
@@ -1289,9 +1442,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         action0,
         action1,
         tokenAAddr,
-        1000n
+        1000n,
       );
-      await callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data);
+      await callCallback(
+        wallet1,
+        [tokenAAddr],
+        [1000n],
+        [0n],
+        helperAddr,
+        data,
+      );
 
       const userBalAfter = await tokenA.balanceOf(wallet1.address);
       // surplus = 1050 - 1000 = 50; plus refund from action 0 unspent input (1000-0=1000)
@@ -1315,9 +1475,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 1000n, tokenBAddr, 1100n, // burns 1000
+        tokenAAddr,
+        1000n,
+        tokenBAddr,
+        1100n, // burns 1000
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       const preview1 = makePreview({
         expectedInputToken: tokenBAddr,
@@ -1327,9 +1494,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 1100n, tokenAAddr, 1000n, // burns all 1100
+        tokenBAddr,
+        1100n,
+        tokenAAddr,
+        1000n, // burns all 1100
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
 
       await tokenA.mint(helperAddr, 1000n);
 
@@ -1352,10 +1526,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         action0,
         action1,
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.not.be.reverted;
 
       await helper.clearFlashLoanBorrower();
@@ -1376,9 +1550,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 500n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        500n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       // action1: tokenB→tokenA
       //   maxInputAmount capped to 500 (currentInputAmount after action0)
@@ -1394,9 +1575,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 400n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        400n,
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
 
       // Pre-mint 1000 tokenA to helper (flash loan receipt)
       await tokenA.mint(helperAddr, 1000n);
@@ -1424,10 +1612,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         action0,
         action1,
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.not.be.reverted;
 
       await helper.clearFlashLoanBorrower();
@@ -1441,7 +1629,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       const permit2Deployed = await Permit2Factory.deploy();
       await permit2Deployed.waitForDeployment();
       const permit2RuntimeCode = await ethers.provider.getCode(
-        await permit2Deployed.getAddress()
+        await permit2Deployed.getAddress(),
       );
       await ethers.provider.send("hardhat_setCode", [
         PERMIT2_ADDR,
@@ -1460,9 +1648,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 500n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        500n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       // action1: tokenB→tokenA
       //   maxInputAmount capped to 500 (currentInputAmount after action0)
@@ -1478,9 +1673,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 400n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        400n,
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
 
       // Pre-mint 1000 tokenA to helper (flash loan receipt)
       await tokenA.mint(helperAddr, 1000n);
@@ -1508,10 +1710,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         action0,
         action1,
         tokenAAddr,
-        1000n
+        1000n,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.not.be.reverted;
 
       await helper.clearFlashLoanBorrower();
@@ -1533,9 +1735,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 500n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        500n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       // action1: outputTokenAmountIn = 2000 (user deposits), minOutputAmount = 0 (no required min)
       const preview1 = makePreview({
@@ -1546,9 +1755,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 1n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        1n,
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
 
       await tokenA.mint(helperAddr, 1000n);
       // User deposits 2000 tokenA for outputTokenAmountIn
@@ -1577,10 +1793,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         action1,
         tokenAAddr,
         1000n,
-        false // backPropagate = false
+        false, // backPropagate = false
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.not.be.reverted;
 
       await helper.clearFlashLoanBorrower();
@@ -1603,9 +1819,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 500n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        500n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       const preview1 = makePreview({
         expectedInputToken: tokenBAddr,
@@ -1615,9 +1838,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true, // must be true so floor-protection doesn't restore 500 over computed 0
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 1n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        1n,
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
 
       await tokenA.mint(helperAddr, 1000n);
       await tokenA.mint(wallet1.address, 2000n);
@@ -1645,10 +1875,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         action1,
         tokenAAddr,
         1000n,
-        true // backPropagate = true
+        true, // backPropagate = true
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.not.be.reverted;
 
       await helper.clearFlashLoanBorrower();
@@ -1667,9 +1897,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       const preview1 = makePreview({
         expectedInputToken: tokenBAddr,
@@ -1679,9 +1916,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 2000n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        2000n,
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
 
       await tokenA.mint(helperAddr, 1000n);
 
@@ -1705,10 +1949,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         action1,
         tokenAAddr,
         1000n,
-        false
+        false,
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.not.be.reverted;
 
       await helper.clearFlashLoanBorrower();
@@ -1727,9 +1971,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       const preview1 = makePreview({
         expectedInputToken: tokenBAddr,
@@ -1739,9 +1990,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 1000n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        1000n,
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
 
       await tokenA.mint(helperAddr, 1000n);
 
@@ -1765,10 +2023,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         action1,
         tokenAAddr,
         1000n,
-        true // backPropagate = true
+        true, // backPropagate = true
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.not.be.reverted;
 
       await helper.clearFlashLoanBorrower();
@@ -1788,9 +2046,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       const preview1 = makePreview({
         expectedInputToken: tokenBAddr,
@@ -1800,9 +2065,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 1200n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        1200n,
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
 
       await tokenA.mint(helperAddr, 1000n);
 
@@ -1829,10 +2101,10 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         action1,
         tokenAAddr,
         1000n,
-        true // backPropagate = true
+        true, // backPropagate = true
       );
       await expect(
-        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data)
+        callCallback(wallet1, [tokenAAddr], [1000n], [0n], helperAddr, data),
       ).to.be.revertedWithCustomError(helper, "OutputAmountInsufficient");
 
       await helper.clearFlashLoanBorrower();
@@ -1853,25 +2125,36 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
 
     beforeEach(async () => {
       const HelperFactory = await ethers.getContractFactory(
-        "TestTermFlashLoanExecutorFacetHelper"
+        "TestTermFlashLoanExecutorFacetHelper",
       );
       helper = (await HelperFactory.deploy(
-        wallet1.address
+        wallet1.address,
       )) as TestTermFlashLoanExecutorFacetHelper;
       await helper.waitForDeployment();
       helperAddr = await helper.getAddress();
 
       const TokenFactory = await ethers.getContractFactory(
-        "TestMockRepoTokenFull"
+        "TestMockRepoTokenFull",
       );
-      tokenA = (await TokenFactory.deploy("TokenA", "TKA", 0)) as TestMockRepoTokenFull;
-      tokenB = (await TokenFactory.deploy("TokenB", "TKB", 0)) as TestMockRepoTokenFull;
+      tokenA = (await TokenFactory.deploy(
+        "TokenA",
+        "TKA",
+        0,
+      )) as TestMockRepoTokenFull;
+      tokenB = (await TokenFactory.deploy(
+        "TokenB",
+        "TKB",
+        0,
+      )) as TestMockRepoTokenFull;
       await tokenA.waitForDeployment();
       await tokenB.waitForDeployment();
 
       METHOD_1 = helper.interface.getFunction("mockSwap").selector;
       METHOD_2 =
-        "0x" + Buffer.from(ethers.id("mockSwap2()").slice(2, 10), "hex").toString("hex");
+        "0x" +
+        Buffer.from(ethers.id("mockSwap2()").slice(2, 10), "hex").toString(
+          "hex",
+        );
 
       await helper.setFacetAddress(METHOD_1 as `0x${string}`, helperAddr);
       await helper.setFacetAddress(METHOD_2 as `0x${string}`, helperAddr);
@@ -1882,7 +2165,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       flashLoanToken: string,
       flashLoanAmount: bigint,
       actions: ReturnType<typeof makeAction>[],
-      backPropagate: boolean
+      backPropagate: boolean,
     ) {
       return [
         user,
@@ -1905,9 +2188,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       const preview1 = makePreview({
         expectedInputToken: tokenBAddr,
@@ -1917,9 +2207,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 1000n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        1000n,
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
 
       const action0 = makeAction({
         inputToken: tokenAAddr,
@@ -1941,7 +2238,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         tokenAAddr,
         1000n,
         [action0, action1],
-        true
+        true,
       );
 
       const result = await helper.quoteExecutionPlan(plan as any, 1000n);
@@ -1966,9 +2263,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       const preview1 = makePreview({
         expectedInputToken: tokenBAddr,
@@ -1978,9 +2282,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: false,
       });
       const calldata1 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenBAddr, 0n, tokenAAddr, 1000n,
+        tokenBAddr,
+        0n,
+        tokenAAddr,
+        1000n,
       ]);
-      await helper.setMockAction(METHOD_2 as `0x${string}`, preview1, calldata1);
+      await helper.setMockAction(
+        METHOD_2 as `0x${string}`,
+        preview1,
+        calldata1,
+      );
 
       const action0 = makeAction({
         inputToken: tokenAAddr,
@@ -2002,7 +2313,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         tokenAAddr,
         1000n,
         [action0, action1],
-        true
+        true,
       );
 
       const result = await helper.quoteExecutionPlan(plan as any, 1000n);
@@ -2022,9 +2333,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       const action0 = makeAction({
         inputToken: tokenAAddr,
@@ -2039,11 +2357,11 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         tokenAAddr,
         1000n,
         [action0],
-        true
+        true,
       );
 
       await expect(
-        helper.quoteExecutionPlan(plan as any, 1000n)
+        helper.quoteExecutionPlan(plan as any, 1000n),
       ).to.be.revertedWithCustomError(helper, "InputTokenMismatch");
     });
 
@@ -2051,8 +2369,14 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
       const tokenAAddr = await tokenA.getAddress();
       const tokenBAddr = await tokenB.getAddress();
 
-      const TokenFactory = await ethers.getContractFactory("TestMockRepoTokenFull");
-      const tokenC = (await TokenFactory.deploy("TokenC", "TKC", 0)) as TestMockRepoTokenFull;
+      const TokenFactory = await ethers.getContractFactory(
+        "TestMockRepoTokenFull",
+      );
+      const tokenC = (await TokenFactory.deploy(
+        "TokenC",
+        "TKC",
+        0,
+      )) as TestMockRepoTokenFull;
       await tokenC.waitForDeployment();
       const tokenCAddr = await tokenC.getAddress();
 
@@ -2064,9 +2388,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       const action0 = makeAction({
         inputToken: tokenAAddr,
@@ -2081,11 +2412,11 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         tokenAAddr,
         1000n,
         [action0],
-        true
+        true,
       );
 
       await expect(
-        helper.quoteExecutionPlan(plan as any, 1000n)
+        helper.quoteExecutionPlan(plan as any, 1000n),
       ).to.be.revertedWithCustomError(helper, "OutputTokenMismatch");
     });
 
@@ -2101,9 +2432,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       const action0 = makeAction({
         inputToken: tokenAAddr,
@@ -2118,11 +2456,11 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         tokenAAddr,
         100n,
         [action0],
-        true
+        true,
       );
 
       await expect(
-        helper.quoteExecutionPlan(plan as any, 100n)
+        helper.quoteExecutionPlan(plan as any, 100n),
       ).to.be.revertedWithCustomError(helper, "ExpectedInputExceedsMax");
     });
 
@@ -2138,9 +2476,16 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         isDeterministic: true,
       });
       const calldata0 = helper.interface.encodeFunctionData("mockSwap", [
-        tokenAAddr, 0n, tokenBAddr, 1100n,
+        tokenAAddr,
+        0n,
+        tokenBAddr,
+        1100n,
       ]);
-      await helper.setMockAction(METHOD_1 as `0x${string}`, preview0, calldata0);
+      await helper.setMockAction(
+        METHOD_1 as `0x${string}`,
+        preview0,
+        calldata0,
+      );
 
       // outputTokenAmountIn >= amountOwing → requiredOut = 0
       const action0 = makeAction({
@@ -2157,7 +2502,7 @@ describe("TermFlashLoanExecutorFacet Tests", () => {
         tokenAAddr,
         1000n,
         [action0],
-        true
+        true,
       );
 
       const result = await helper.quoteExecutionPlan(plan as any, 1000n);

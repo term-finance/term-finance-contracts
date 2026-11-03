@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
@@ -7,7 +6,10 @@ import duration from "dayjs/plugin/duration";
 import { ZeroAddress, solidityPackedKeccak256 } from "ethers";
 
 dayjs.extend(duration);
-import { deployMaturityPeriod, MaturityPeriodInfo } from "../utils/deploy-utils";
+import {
+  deployMaturityPeriod,
+  MaturityPeriodInfo,
+} from "../utils/deploy-utils";
 import { getGeneratedTenderId } from "../utils/simulation-utils";
 import {
   TermController,
@@ -97,9 +99,9 @@ describe("TermRefinance Integration Tests", () => {
   let snapshotId: string;
 
   // ─── Constants ────────────────────────────────────────────────────────────
-  const LOAN_AMOUNT = ethers.parseUnits("1000", 6);          // 1000 purchase tokens (6 dec)
-  const COLLATERAL_AMOUNT = ethers.parseEther("1500");       // 1500 collateral tokens (18 dec)
-  const BORROW_RATE = 5n * 10n ** 16n;                       // 5% per year
+  const LOAN_AMOUNT = ethers.parseUnits("1000", 6); // 1000 purchase tokens (6 dec)
+  const COLLATERAL_AMOUNT = ethers.parseEther("1500"); // 1500 collateral tokens (18 dec)
+  const BORROW_RATE = 5n * 10n ** 16n; // 5% per year
 
   const BID_NONCE = "12345";
   const OFFER_NONCE = "67890";
@@ -157,12 +159,17 @@ describe("TermRefinance Integration Tests", () => {
 
   // Build a LimitLendOrder for maturityPeriod2
   // Uses blockchain timestamp (not wall clock) because tests time-travel in before()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async function makeLendOrder2(purchaseTokenAmount: bigint, salt = 1n): Promise<any> {
+
+  async function makeLendOrder2(
+    purchaseTokenAmount: bigint,
+    salt = 1n,
+  ): Promise<any> {
     const block = await ethers.provider.getBlock("latest");
     const blockTimestamp = BigInt(block!.timestamp);
     return {
-      repoServicer: maturityPeriod2 ? maturityPeriod2.termRepoServicer.target : ZeroAddress,
+      repoServicer: maturityPeriod2
+        ? maturityPeriod2.termRepoServicer.target
+        : ZeroAddress,
       purchaseTokenAmount,
       offerRate: BORROW_RATE,
       maker: lender.address,
@@ -180,8 +187,12 @@ describe("TermRefinance Integration Tests", () => {
   }
 
   // Encode additionalCalldata for settleLimitLendHook
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function encodeLendHookCalldata(orders: any[], sigs: any[], fillAmounts: bigint[]): string {
+
+  function encodeLendHookCalldata(
+    orders: any[],
+    sigs: any[],
+    fillAmounts: bigint[],
+  ): string {
     return ethers.AbiCoder.defaultAbiCoder().encode(
       [
         "bool",
@@ -192,9 +203,20 @@ describe("TermRefinance Integration Tests", () => {
       [
         false, // usePermit2
         orders.map((o) => [
-          o.repoServicer, o.purchaseTokenAmount, o.offerRate, o.maker, o.taker,
-          o.borrowFee, o.feeRecipient, o.expiry, o.salt,
-          [o.retrieveFunds.method, o.retrieveFunds.target, o.retrieveFunds.additionalCalldata],
+          o.repoServicer,
+          o.purchaseTokenAmount,
+          o.offerRate,
+          o.maker,
+          o.taker,
+          o.borrowFee,
+          o.feeRecipient,
+          o.expiry,
+          o.salt,
+          [
+            o.retrieveFunds.method,
+            o.retrieveFunds.target,
+            o.retrieveFunds.additionalCalldata,
+          ],
         ]),
         sigs.map((s) => [s.sigType, s.sigData]),
         fillAmounts,
@@ -207,13 +229,13 @@ describe("TermRefinance Integration Tests", () => {
   before(async () => {
     upgrades.silenceWarnings();
     wallets = await ethers.getSigners();
-    lender         = wallets[0];
-    borrower       = wallets[1];
-    feeRecipient   = wallets[2];
-    devops         = wallets[4];
+    lender = wallets[0];
+    borrower = wallets[1];
+    feeRecipient = wallets[2];
+    devops = wallets[4];
     controllerAdmin = wallets[5];
-    admin          = wallets[6];
-    treasury       = wallets[7];
+    admin = wallets[6];
+    treasury = wallets[7];
     protocolReserve = wallets[8];
 
     // ── 1. Deploy purchase and collateral tokens ────────────────────────────
@@ -227,7 +249,9 @@ describe("TermRefinance Integration Tests", () => {
     await testCollateralToken.initialize("Collateral Token", "CT", 18, [], []);
 
     // ── 2. Deploy TermPriceConsumerV3 ───────────────────────────────────────
-    const termPriceOracleFactory = await ethers.getContractFactory("TermPriceConsumerV3");
+    const termPriceOracleFactory = await ethers.getContractFactory(
+      "TermPriceConsumerV3",
+    );
     termOracle = (await upgrades.deployProxy(
       termPriceOracleFactory,
       [devops.address],
@@ -235,7 +259,8 @@ describe("TermRefinance Integration Tests", () => {
     )) as unknown as TermPriceConsumerV3;
 
     // ── 3. Deploy TermController ────────────────────────────────────────────
-    const termControllerFactory = await ethers.getContractFactory("TermController");
+    const termControllerFactory =
+      await ethers.getContractFactory("TermController");
     termController = (await upgrades.deployProxy(
       termControllerFactory,
       [
@@ -249,7 +274,8 @@ describe("TermRefinance Integration Tests", () => {
     )) as unknown as TermController;
 
     // ── 4. Deploy TermInitializer and TermEventEmitter ──────────────────────
-    const termInitializerFactory = await ethers.getContractFactory("TermInitializer");
+    const termInitializerFactory =
+      await ethers.getContractFactory("TermInitializer");
     termInitializer = await termInitializerFactory.deploy(
       treasury.address,
       wallets[3].address,
@@ -259,39 +285,70 @@ describe("TermRefinance Integration Tests", () => {
       .connect(admin)
       .pairInitializer(await termInitializer.getAddress());
 
-
     // ── 5. Price feeds ($1.00 for both tokens) ──────────────────────────────
-    const mockPriceFeedFactory = await ethers.getContractFactory("TestPriceFeed");
+    const mockPriceFeedFactory =
+      await ethers.getContractFactory("TestPriceFeed");
     const mockPurchaseFeed = await mockPriceFeedFactory.deploy(
-      8, "", 1, 1, 100000000n, 1, 1, 1,
+      8,
+      "",
+      1,
+      1,
+      100000000n,
+      1,
+      1,
+      1,
     );
     const mockCollateralFeed = await mockPriceFeedFactory.deploy(
-      8, "", 1, 1, 100000000n, 1, 1, 1,
+      8,
+      "",
+      1,
+      1,
+      100000000n,
+      1,
+      1,
+      1,
     );
-    await termOracle.connect(devops).addNewTokenPriceFeed(
-      await testPurchaseToken.getAddress(), await mockPurchaseFeed.getAddress(), 0,
-    );
-    await termOracle.connect(devops).addNewTokenPriceFeed(
-      await testCollateralToken.getAddress(), await mockCollateralFeed.getAddress(), 0,
-    );
+    await termOracle
+      .connect(devops)
+      .addNewTokenPriceFeed(
+        await testPurchaseToken.getAddress(),
+        await mockPurchaseFeed.getAddress(),
+        0,
+      );
+    await termOracle
+      .connect(devops)
+      .addNewTokenPriceFeed(
+        await testCollateralToken.getAddress(),
+        await mockCollateralFeed.getAddress(),
+        0,
+      );
 
     // ── 6. Pre-deploy a shared TermDiamond for both maturity periods ────────
     // Both periods will grant DIAMOND_ROLE to this diamond during pairing,
     // enabling it to call mintOpenExposureFromIntent on either period's servicer.
-    const TermDiamondFactoryFactory = await ethers.getContractFactory("TermDiamondFactory");
-    const termDiamondFactory = await TermDiamondFactoryFactory.deploy(admin.address, devops.address);
+    const TermDiamondFactoryFactory =
+      await ethers.getContractFactory("TermDiamondFactory");
+    const termDiamondFactory = await TermDiamondFactoryFactory.deploy(
+      admin.address,
+      devops.address,
+    );
     await termDiamondFactory.waitForDeployment();
 
     const deployDiamondTx = await termDiamondFactory.deployDiamond();
     const deployDiamondReceipt = await deployDiamondTx.wait();
     const diamondDeployedEvent = deployDiamondReceipt?.logs.find(
-      (log) => log.topics[0] === termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash,
+      (log) =>
+        log.topics[0] ===
+        termDiamondFactory.interface.getEvent("DiamondDeployed").topicHash,
     );
-    if (!diamondDeployedEvent) throw new Error("DiamondDeployed event not found");
-    const decodedDiamondEvent = termDiamondFactory.interface.parseLog(diamondDeployedEvent);
+    if (!diamondDeployedEvent)
+      throw new Error("DiamondDeployed event not found");
+    const decodedDiamondEvent =
+      termDiamondFactory.interface.parseLog(diamondDeployedEvent);
     diamondAddress = decodedDiamondEvent?.args.diamond;
 
-    const termEventEmitterFactory = await ethers.getContractFactory("TermEventEmitter");
+    const termEventEmitterFactory =
+      await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
       [
@@ -307,49 +364,49 @@ describe("TermRefinance Integration Tests", () => {
       await termController.getAddress(),
       await termEventEmitter.getAddress(),
       await termOracle.getAddress(),
-      diamondAddress
+      diamondAddress,
     );
 
     // ── 7. Deploy maturityPeriod1 (source) and maturityPeriod2 (destination) ─
     // Pass our shared diamond so both periods grant DIAMOND_ROLE to it.
     const latestBlock = await ethers.provider.getBlock("latest");
     const now = dayjs.unix(latestBlock!.timestamp);
-    const auctionStart   = now.subtract(1, "minute");
-    const auctionReveal  = auctionStart.add(1, "day");
-    const auctionEnd     = auctionReveal.add(10, "minute");
-    const maturity       = auctionEnd.add(1, "month");
+    const auctionStart = now.subtract(1, "minute");
+    const auctionReveal = auctionStart.add(1, "day");
+    const auctionEnd = auctionReveal.add(10, "minute");
+    const maturity = auctionEnd.add(1, "month");
 
     const commonPeriodArgs = {
-      termControllerAddress:    await termController.getAddress(),
-      termEventEmitterAddress:  await termEventEmitter.getAddress(),
-      termInitializerAddress:   await termInitializer.getAddress(),
-      termOracleAddress:        await termOracle.getAddress(),
-      auctionStartDate:         auctionStart.unix().toString(),
-      auctionRevealDate:        auctionReveal.unix().toString(),
-      auctionEndDate:           auctionEnd.unix().toString(),
-      maturityTimestamp:        maturity.unix().toString(),
+      termControllerAddress: await termController.getAddress(),
+      termEventEmitterAddress: await termEventEmitter.getAddress(),
+      termInitializerAddress: await termInitializer.getAddress(),
+      termOracleAddress: await termOracle.getAddress(),
+      auctionStartDate: auctionStart.unix().toString(),
+      auctionRevealDate: auctionReveal.unix().toString(),
+      auctionEndDate: auctionEnd.unix().toString(),
+      maturityTimestamp: maturity.unix().toString(),
       servicerMaturityTimestamp: maturity.unix().toString(),
-      minimumTenderAmount:      "10",
-      repurchaseWindow:         "86400",
-      redemptionBuffer:         "300",
+      minimumTenderAmount: "10",
+      repurchaseWindow: "86400",
+      redemptionBuffer: "300",
       netExposureCapOnLiquidation: "5" + "0".repeat(16),
-      deMinimisMarginThreshold:    "50" + "0".repeat(18),
+      deMinimisMarginThreshold: "50" + "0".repeat(18),
       liquidateDamangesDueToProtocol: "3" + "0".repeat(16),
-      servicingFee:             "3" + "0".repeat(15),
-      purchaseTokenAddress:     await testPurchaseToken.getAddress(),
+      servicingFee: "3" + "0".repeat(15),
+      purchaseTokenAddress: await testPurchaseToken.getAddress(),
       collateralTokenAddresses: [await testCollateralToken.getAddress()],
-      initialCollateralRatios:  ["15" + "0".repeat(17)],
+      initialCollateralRatios: ["15" + "0".repeat(17)],
       maintenanceCollateralRatios: ["125" + "0".repeat(16)],
-      liquidatedDamages:        ["5" + "0".repeat(16)],
-      mintExposureCap:          "1000000000000000000",
-      termApprovalMultisig:     treasury,
-      devopsMultisig:           devops.address,
-      adminWallet:              admin.address,
-      controllerAdmin:          controllerAdmin,
-      termVersion:              "0.1.0",
-      auctionVersion:           "0.1.0",
+      liquidatedDamages: ["5" + "0".repeat(16)],
+      mintExposureCap: "1000000000000000000",
+      termApprovalMultisig: treasury,
+      devopsMultisig: devops.address,
+      adminWallet: admin.address,
+      controllerAdmin: controllerAdmin,
+      termVersion: "0.1.0",
+      auctionVersion: "0.1.0",
       clearingPricePostProcessingOffset: "0",
-      termDiamondAddress:       diamondAddress,
+      termDiamondAddress: diamondAddress,
     };
 
     maturityPeriod1 = await deployMaturityPeriod(commonPeriodArgs, "uups");
@@ -365,27 +422,38 @@ describe("TermRefinance Integration Tests", () => {
     collateralAToken = await MockATokenFactory.deploy();
     await collateralAToken.waitForDeployment();
 
-    const MockCreditDelegFactory = await ethers.getContractFactory("TestMockCreditDelegationToken");
+    const MockCreditDelegFactory = await ethers.getContractFactory(
+      "TestMockCreditDelegationToken",
+    );
     purchaseCreditDelegation = await MockCreditDelegFactory.deploy();
     await purchaseCreditDelegation.waitForDeployment();
     collateralCreditDelegation = await MockCreditDelegFactory.deploy();
     await collateralCreditDelegation.waitForDeployment();
 
-    const MockDataProviderFactory = await ethers.getContractFactory("TestMockAavePoolDataProvider");
+    const MockDataProviderFactory = await ethers.getContractFactory(
+      "TestMockAavePoolDataProvider",
+    );
     aaveDataProvider = await MockDataProviderFactory.deploy();
     await aaveDataProvider.waitForDeployment();
 
-    const MockAddressesProviderFactory = await ethers.getContractFactory("TestMockAavePoolAddressesProvider");
+    const MockAddressesProviderFactory = await ethers.getContractFactory(
+      "TestMockAavePoolAddressesProvider",
+    );
     aaveAddressesProvider = await MockAddressesProviderFactory.deploy();
     await aaveAddressesProvider.waitForDeployment();
 
-    const MockAavePoolFactory = await ethers.getContractFactory("TestMockAavePool");
+    const MockAavePoolFactory =
+      await ethers.getContractFactory("TestMockAavePool");
     mockAavePool = await MockAavePoolFactory.deploy();
     await mockAavePool.waitForDeployment();
 
     // Wire up Aave stack
-    await aaveAddressesProvider.setPoolDataProvider(await aaveDataProvider.getAddress());
-    await mockAavePool.setAddressesProvider(await aaveAddressesProvider.getAddress());
+    await aaveAddressesProvider.setPoolDataProvider(
+      await aaveDataProvider.getAddress(),
+    );
+    await mockAavePool.setAddressesProvider(
+      await aaveAddressesProvider.getAddress(),
+    );
 
     const pAddr = await testPurchaseToken.getAddress();
     const cAddr = await testCollateralToken.getAddress();
@@ -395,13 +463,34 @@ describe("TermRefinance Integration Tests", () => {
     const cCreditDeleg = await collateralCreditDelegation.getAddress();
     const aavePoolAddr = await mockAavePool.getAddress();
 
-    await aaveDataProvider.setReserveTokensAddresses(pAddr, pAToken, pCreditDeleg, pCreditDeleg);
-    await aaveDataProvider.setReserveTokensAddresses(cAddr, cAToken, cCreditDeleg, cCreditDeleg);
-    await mockAavePool.setReserveTokens(pAddr, pAToken, pCreditDeleg, pCreditDeleg);
-    await mockAavePool.setReserveTokens(cAddr, cAToken, cCreditDeleg, cCreditDeleg);
+    await aaveDataProvider.setReserveTokensAddresses(
+      pAddr,
+      pAToken,
+      pCreditDeleg,
+      pCreditDeleg,
+    );
+    await aaveDataProvider.setReserveTokensAddresses(
+      cAddr,
+      cAToken,
+      cCreditDeleg,
+      cCreditDeleg,
+    );
+    await mockAavePool.setReserveTokens(
+      pAddr,
+      pAToken,
+      pCreditDeleg,
+      pCreditDeleg,
+    );
+    await mockAavePool.setReserveTokens(
+      cAddr,
+      cAToken,
+      cCreditDeleg,
+      cCreditDeleg,
+    );
 
     // ── 8. Deploy Morpho mock pool ──────────────────────────────────────────
-    const MockMorphoFactory = await ethers.getContractFactory("TestMockMorphoPool");
+    const MockMorphoFactory =
+      await ethers.getContractFactory("TestMockMorphoPool");
     mockMorphoPool = await MockMorphoFactory.deploy();
     await mockMorphoPool.waitForDeployment();
     const morphoPoolAddr = await mockMorphoPool.getAddress();
@@ -409,48 +498,80 @@ describe("TermRefinance Integration Tests", () => {
     // Market: loanToken=purchaseToken, collateralToken=collateralToken
     // Used for both Term→Morpho (morphoRefinanceIn) and Morpho→Term (morphoRefinanceOut)
     const lltv = 8n * 10n ** 17n;
-    const oracleAddr = aavePoolAddr;  // dummy oracle address
-    const irmAddr = aavePoolAddr;     // dummy IRM address
-    refinanceMarketId = computeMarketId(pAddr, cAddr, oracleAddr, irmAddr, lltv);
-    await mockMorphoPool.setMarketParams(refinanceMarketId, [pAddr, cAddr, oracleAddr, irmAddr, lltv]);
+    const oracleAddr = aavePoolAddr; // dummy oracle address
+    const irmAddr = aavePoolAddr; // dummy IRM address
+    refinanceMarketId = computeMarketId(
+      pAddr,
+      cAddr,
+      oracleAddr,
+      irmAddr,
+      lltv,
+    );
+    await mockMorphoPool.setMarketParams(refinanceMarketId, [
+      pAddr,
+      cAddr,
+      oracleAddr,
+      irmAddr,
+      lltv,
+    ]);
 
     // ── 9. Deploy flash loan aggregator mock ───────────────────────────────
-    const MockFlashFactory = await ethers.getContractFactory("TestMockFlashLoanAggregator");
+    const MockFlashFactory = await ethers.getContractFactory(
+      "TestMockFlashLoanAggregator",
+    );
     mockFlashLoanAggregator = await MockFlashFactory.deploy();
     await mockFlashLoanAggregator.waitForDeployment();
     const flashAggregatorAddr = await mockFlashLoanAggregator.getAddress();
 
     // ── 10. Deploy facets ───────────────────────────────────────────────────
-    const DiamondLoupeFacetFactory = await ethers.getContractFactory("DiamondLoupeFacet");
+    const DiamondLoupeFacetFactory =
+      await ethers.getContractFactory("DiamondLoupeFacet");
     const diamondLoupeFacet = await DiamondLoupeFacetFactory.deploy();
     await diamondLoupeFacet.waitForDeployment();
 
-    const TermControllerFacetFactory = await ethers.getContractFactory("TermControllerFacet");
-    const termControllerFacet = await TermControllerFacetFactory.deploy() as TermControllerFacet;
+    const TermControllerFacetFactory = await ethers.getContractFactory(
+      "TermControllerFacet",
+    );
+    const termControllerFacet =
+      (await TermControllerFacetFactory.deploy()) as TermControllerFacet;
     await termControllerFacet.waitForDeployment();
 
-    const TermFlashLoanExecutorFacetFactory = await ethers.getContractFactory("TermFlashLoanExecutorFacet");
-    const flashLoanExecutorFacet = await TermFlashLoanExecutorFacetFactory.deploy(flashAggregatorAddr);
+    const TermFlashLoanExecutorFacetFactory = await ethers.getContractFactory(
+      "TermFlashLoanExecutorFacet",
+    );
+    const flashLoanExecutorFacet =
+      await TermFlashLoanExecutorFacetFactory.deploy(flashAggregatorAddr);
     await flashLoanExecutorFacet.waitForDeployment();
 
-    const TermRouterFacetFactory = await ethers.getContractFactory("TermRouterFacet");
+    const TermRouterFacetFactory =
+      await ethers.getContractFactory("TermRouterFacet");
     const termRouterFacet = await TermRouterFacetFactory.deploy();
     await termRouterFacet.waitForDeployment();
 
-    const TermAaveInterfaceFacetFactory = await ethers.getContractFactory("TermAaveInterfaceFacet");
+    const TermAaveInterfaceFacetFactory = await ethers.getContractFactory(
+      "TermAaveInterfaceFacet",
+    );
     const aaveInterfaceFacet = await TermAaveInterfaceFacetFactory.deploy();
     await aaveInterfaceFacet.waitForDeployment();
 
-    const TermMorphoInterfaceFacetFactory = await ethers.getContractFactory("TermMorphoInterfaceFacet");
-    const morphoInterfaceFacet = await TermMorphoInterfaceFacetFactory.deploy(morphoPoolAddr);
+    const TermMorphoInterfaceFacetFactory = await ethers.getContractFactory(
+      "TermMorphoInterfaceFacet",
+    );
+    const morphoInterfaceFacet =
+      await TermMorphoInterfaceFacetFactory.deploy(morphoPoolAddr);
     await morphoInterfaceFacet.waitForDeployment();
 
-    const TermLoanIntentHookFacetFactory = await ethers.getContractFactory("TermLoanIntentHookFacet");
+    const TermLoanIntentHookFacetFactory = await ethers.getContractFactory(
+      "TermLoanIntentHookFacet",
+    );
     const loanIntentHookFacet = await TermLoanIntentHookFacetFactory.deploy();
     await loanIntentHookFacet.waitForDeployment();
 
-    const TermLoanIntentFacetFactory = await ethers.getContractFactory("TermLoanIntentFacet");
-    loanIntentFacetImpl = await TermLoanIntentFacetFactory.deploy() as TermLoanIntentFacet;
+    const TermLoanIntentFacetFactory = await ethers.getContractFactory(
+      "TermLoanIntentFacet",
+    );
+    loanIntentFacetImpl =
+      (await TermLoanIntentFacetFactory.deploy()) as TermLoanIntentFacet;
     await loanIntentFacetImpl.waitForDeployment();
 
     // ── 11. Diamond cut: add all facets ────────────────────────────────────
@@ -574,14 +695,18 @@ describe("TermRefinance Integration Tests", () => {
       "TermLoanIntentFacet",
       diamondAddress,
     )) as TermLoanIntentFacet;
-    await loanIntent.initializeTermIntentFacet(await termEventEmitter.getAddress());
+    await loanIntent.initializeTermIntentFacet(
+      await termEventEmitter.getAddress(),
+    );
 
     // ── 13. Configure TermControllerFacet ──────────────────────────────────
     const ctrlFacet = (await ethers.getContractAt(
       "TermControllerFacet",
       diamondAddress,
     )) as TermControllerFacet;
-    await ctrlFacet.connect(devops).approveTermController(await termController.getAddress());
+    await ctrlFacet
+      .connect(devops)
+      .approveTermController(await termController.getAddress());
     await ctrlFacet.connect(devops).approveFeeRecipient(feeRecipient.address);
 
     // ── 14. Mark external protocols as approved ─────────────────────────────
@@ -589,7 +714,9 @@ describe("TermRefinance Integration Tests", () => {
     await termController.connect(admin).markTermApproved(morphoPoolAddr);
 
     // ── 15. Mark diamond as deployed (for event emitter access) ─────────────
-    await termController.connect(controllerAdmin).markTermDeployed(diamondAddress);
+    await termController
+      .connect(controllerAdmin)
+      .markTermDeployed(diamondAddress);
 
     // ── 16. Pre-fund mock pools ─────────────────────────────────────────────
     const LARGE_PURCHASE = ethers.parseUnits("1000000", 6);
@@ -609,15 +736,22 @@ describe("TermRefinance Integration Tests", () => {
     //   e) Time-travel past auction end
     //   f) completeAuction → borrower has active Term loan
 
-    const termRepoLocker1Addr = await maturityPeriod1.termRepoLocker.getAddress();
-    const bidLockerAddr = await maturityPeriod1.termAuctionBidLocker.getAddress();
-    const offerLockerAddr = await maturityPeriod1.termAuctionOfferLocker.getAddress();
+    const termRepoLocker1Addr =
+      await maturityPeriod1.termRepoLocker.getAddress();
+    const bidLockerAddr =
+      await maturityPeriod1.termAuctionBidLocker.getAddress();
+    const offerLockerAddr =
+      await maturityPeriod1.termAuctionOfferLocker.getAddress();
 
     // Fund participants
     await testPurchaseToken.mint(lender.address, LOAN_AMOUNT);
     await testCollateralToken.mint(borrower.address, COLLATERAL_AMOUNT);
-    await testPurchaseToken.connect(lender).approve(termRepoLocker1Addr, LOAN_AMOUNT);
-    await testCollateralToken.connect(borrower).approve(termRepoLocker1Addr, COLLATERAL_AMOUNT);
+    await testPurchaseToken
+      .connect(lender)
+      .approve(termRepoLocker1Addr, LOAN_AMOUNT);
+    await testCollateralToken
+      .connect(borrower)
+      .approve(termRepoLocker1Addr, COLLATERAL_AMOUNT);
 
     // Offer: lender offers LOAN_AMOUNT at BORROW_RATE
     const offerId = await getGeneratedTenderId(
@@ -666,18 +800,14 @@ describe("TermRefinance Integration Tests", () => {
     await network.provider.send("evm_mine", []);
 
     // Reveal offer
-    await maturityPeriod1.termAuctionOfferLocker.connect(lender).revealOffers(
-      [offerId],
-      [BORROW_RATE],
-      [OFFER_NONCE],
-    );
+    await maturityPeriod1.termAuctionOfferLocker
+      .connect(lender)
+      .revealOffers([offerId], [BORROW_RATE], [OFFER_NONCE]);
 
     // Reveal bid
-    await maturityPeriod1.termAuctionBidLocker.connect(borrower).revealBids(
-      [bidId],
-      [BORROW_RATE],
-      [BID_NONCE],
-    );
+    await maturityPeriod1.termAuctionBidLocker
+      .connect(borrower)
+      .revealBids([bidId], [BORROW_RATE], [BID_NONCE]);
 
     // Time-travel past auction end
     await network.provider.send("evm_increaseTime", [
@@ -727,8 +857,10 @@ describe("TermRefinance Integration Tests", () => {
     const servicer1Addr = await maturityPeriod1.termRepoServicer.getAddress();
 
     // Query borrower's repurchase obligation
-    const repurchaseObligation = await maturityPeriod1.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const repurchaseObligation =
+      await maturityPeriod1.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(repurchaseObligation).to.be.gt(0n);
 
     // Grant borrower → diamond approval for collateral (submitRepurchasePaymentHook will pull it)
@@ -744,7 +876,10 @@ describe("TermRefinance Integration Tests", () => {
     );
 
     // Fund the flash loan aggregator so it can transfer tokens to the diamond
-    await testPurchaseToken.mint(await mockFlashLoanAggregator.getAddress(), repurchaseObligation);
+    await testPurchaseToken.mint(
+      await mockFlashLoanAggregator.getAddress(),
+      repurchaseObligation,
+    );
 
     // Build flash execute request
     const flashExecutor = await ethers.getContractAt(
@@ -761,9 +896,14 @@ describe("TermRefinance Integration Tests", () => {
         minOutputAmount: COLLATERAL_AMOUNT,
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("submitRepurchasePaymentHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "submitRepurchasePaymentHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: servicer1Addr,
-        additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+        additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+          ["bool"],
+          [false],
+        ),
       },
       {
         // Action 1: supply collateral to Aave, borrow purchaseToken back
@@ -773,7 +913,9 @@ describe("TermRefinance Integration Tests", () => {
         minOutputAmount: 0n, // back-propagated to repurchaseObligation
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("aaveRefinanceInHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "aaveRefinanceInHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: aavePoolAddr,
         additionalCalldata: "0x",
       },
@@ -790,8 +932,10 @@ describe("TermRefinance Integration Tests", () => {
 
     // Assertions:
     // 1. Borrower's period1 obligation is cleared
-    const finalObligation = await maturityPeriod1.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const finalObligation =
+      await maturityPeriod1.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(finalObligation).to.equal(0n);
 
     // 2. Borrower has Aave collateral position (received collateralATokens)
@@ -814,8 +958,10 @@ describe("TermRefinance Integration Tests", () => {
     const servicer1Addr = await maturityPeriod1.termRepoServicer.getAddress();
 
     // Query borrower's repurchase obligation
-    const repurchaseObligation = await maturityPeriod1.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const repurchaseObligation =
+      await maturityPeriod1.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(repurchaseObligation).to.be.gt(0n);
 
     // Grant borrower → diamond approval for collateral
@@ -824,7 +970,10 @@ describe("TermRefinance Integration Tests", () => {
       .approve(diamondAddress, COLLATERAL_AMOUNT);
 
     // Fund the flash loan aggregator so it can transfer tokens to the diamond
-    await testPurchaseToken.mint(await mockFlashLoanAggregator.getAddress(), repurchaseObligation);
+    await testPurchaseToken.mint(
+      await mockFlashLoanAggregator.getAddress(),
+      repurchaseObligation,
+    );
 
     const flashExecutor = await ethers.getContractAt(
       "TermFlashLoanExecutorFacet",
@@ -846,9 +995,14 @@ describe("TermRefinance Integration Tests", () => {
         minOutputAmount: COLLATERAL_AMOUNT,
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("submitRepurchasePaymentHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "submitRepurchasePaymentHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: servicer1Addr,
-        additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+        additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+          ["bool"],
+          [false],
+        ),
       },
       {
         // Action 1: supply collateral to Morpho, borrow purchaseToken
@@ -858,7 +1012,9 @@ describe("TermRefinance Integration Tests", () => {
         minOutputAmount: 0n, // back-propagated
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("morphoRefinanceInHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "morphoRefinanceInHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: morphoPoolAddr,
         additionalCalldata: morphoAdditionalCalldata,
       },
@@ -874,8 +1030,10 @@ describe("TermRefinance Integration Tests", () => {
     await tx.wait();
 
     // Assertions:
-    const finalObligation = await maturityPeriod1.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const finalObligation =
+      await maturityPeriod1.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(finalObligation).to.equal(0n);
 
     // Diamond is clean
@@ -895,22 +1053,33 @@ describe("TermRefinance Integration Tests", () => {
     const repoLocker2Addr = await maturityPeriod2.termRepoLocker.getAddress();
 
     // Query repurchase obligation — new loan fill amount must cover it
-    const repurchaseObligation = await maturityPeriod1.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const repurchaseObligation =
+      await maturityPeriod1.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(repurchaseObligation).to.be.gt(0n);
 
     // Lender for period2: must have purchaseToken and approve diamond
     await testPurchaseToken.mint(lender.address, repurchaseObligation);
-    await testPurchaseToken.connect(lender).approve(diamondAddress, repurchaseObligation);
+    await testPurchaseToken
+      .connect(lender)
+      .approve(diamondAddress, repurchaseObligation);
 
     // Borrower approvals:
     //   - collateral → for submitRepurchasePaymentHook to pull
     //   - purchaseToken → for settleLimitLendHook to pull borrowAmount back
-    await testCollateralToken.connect(borrower).approve(diamondAddress, COLLATERAL_AMOUNT);
-    await testPurchaseToken.connect(borrower).approve(diamondAddress, repurchaseObligation);
+    await testCollateralToken
+      .connect(borrower)
+      .approve(diamondAddress, COLLATERAL_AMOUNT);
+    await testPurchaseToken
+      .connect(borrower)
+      .approve(diamondAddress, repurchaseObligation);
 
     // Fund the flash loan aggregator so it can transfer tokens to the diamond
-    await testPurchaseToken.mint(await mockFlashLoanAggregator.getAddress(), repurchaseObligation);
+    await testPurchaseToken.mint(
+      await mockFlashLoanAggregator.getAddress(),
+      repurchaseObligation,
+    );
 
     // Create signed lend order for period2
     const lendOrder = await makeLendOrder2(repurchaseObligation);
@@ -937,9 +1106,14 @@ describe("TermRefinance Integration Tests", () => {
         minOutputAmount: COLLATERAL_AMOUNT,
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("submitRepurchasePaymentHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "submitRepurchasePaymentHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: servicer1Addr,
-        additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+        additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+          ["bool"],
+          [false],
+        ),
       },
       {
         // Action 1: use collateral to enter period2 loan, get purchaseToken back
@@ -949,7 +1123,9 @@ describe("TermRefinance Integration Tests", () => {
         minOutputAmount: 0n, // back-propagated to repurchaseObligation
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("settleLimitLendHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "settleLimitLendHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: servicer2Addr,
         additionalCalldata: hookCalldata,
       },
@@ -966,13 +1142,17 @@ describe("TermRefinance Integration Tests", () => {
 
     // Assertions:
     // 1. Period1 obligation cleared
-    const finalObligation1 = await maturityPeriod1.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const finalObligation1 =
+      await maturityPeriod1.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(finalObligation1).to.equal(0n);
 
     // 2. Borrower has period2 loan (positive repurchase obligation)
-    const period2Obligation = await maturityPeriod2.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const period2Obligation =
+      await maturityPeriod2.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(period2Obligation).to.be.gt(0n);
 
     // 3. Diamond is clean
@@ -994,22 +1174,35 @@ describe("TermRefinance Integration Tests", () => {
     //   - borrower has collateralATokens (representing Aave collateral)
     //   - borrower has LOAN_AMOUNT of purchaseToken debt
     await collateralAToken.mint(borrower.address, COLLATERAL_AMOUNT);
-    await collateralAToken.connect(borrower).approve(diamondAddress, COLLATERAL_AMOUNT);
+    await collateralAToken
+      .connect(borrower)
+      .approve(diamondAddress, COLLATERAL_AMOUNT);
 
     // Lender for period2: provides LOAN_AMOUNT purchaseToken
     await testPurchaseToken.mint(lender.address, LOAN_AMOUNT);
-    await testPurchaseToken.connect(lender).approve(diamondAddress, LOAN_AMOUNT);
+    await testPurchaseToken
+      .connect(lender)
+      .approve(diamondAddress, LOAN_AMOUNT);
 
     // Borrower must approve diamond for purchaseToken (hook pulls borrowAmount back)
-    await testPurchaseToken.connect(borrower).approve(diamondAddress, LOAN_AMOUNT);
+    await testPurchaseToken
+      .connect(borrower)
+      .approve(diamondAddress, LOAN_AMOUNT);
 
     // Fund the flash loan aggregator so it can transfer tokens to the diamond
-    await testPurchaseToken.mint(await mockFlashLoanAggregator.getAddress(), LOAN_AMOUNT);
+    await testPurchaseToken.mint(
+      await mockFlashLoanAggregator.getAddress(),
+      LOAN_AMOUNT,
+    );
 
     // Create signed lend order for period2
     const lendOrder = await makeLendOrder2(LOAN_AMOUNT, 2n);
     const sig = await signLendOrder(lender, lendOrder);
-    const hookCalldata = encodeLendHookCalldata([lendOrder], [sig], [LOAN_AMOUNT]);
+    const hookCalldata = encodeLendHookCalldata(
+      [lendOrder],
+      [sig],
+      [LOAN_AMOUNT],
+    );
 
     const flashExecutor = await ethers.getContractAt(
       "TermFlashLoanExecutorFacet",
@@ -1025,7 +1218,9 @@ describe("TermRefinance Integration Tests", () => {
         minOutputAmount: COLLATERAL_AMOUNT,
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("aaveRefinanceOutHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "aaveRefinanceOutHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: aavePoolAddr,
         additionalCalldata: "0x",
       },
@@ -1037,7 +1232,9 @@ describe("TermRefinance Integration Tests", () => {
         minOutputAmount: 0n, // back-propagated
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("settleLimitLendHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "settleLimitLendHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: servicer2Addr,
         additionalCalldata: hookCalldata,
       },
@@ -1058,8 +1255,10 @@ describe("TermRefinance Integration Tests", () => {
     expect(aTokenBalance).to.equal(0n);
 
     // 2. Borrower has period2 Term loan
-    const period2Obligation = await maturityPeriod2.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const period2Obligation =
+      await maturityPeriod2.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(period2Obligation).to.be.gt(0n);
 
     // 3. Diamond is clean
@@ -1079,18 +1278,29 @@ describe("TermRefinance Integration Tests", () => {
 
     // Lender for period2
     await testPurchaseToken.mint(lender.address, LOAN_AMOUNT);
-    await testPurchaseToken.connect(lender).approve(diamondAddress, LOAN_AMOUNT);
+    await testPurchaseToken
+      .connect(lender)
+      .approve(diamondAddress, LOAN_AMOUNT);
 
     // Borrower must approve diamond for purchaseToken (hook pulls borrowAmount back)
-    await testPurchaseToken.connect(borrower).approve(diamondAddress, LOAN_AMOUNT);
+    await testPurchaseToken
+      .connect(borrower)
+      .approve(diamondAddress, LOAN_AMOUNT);
 
     // Fund the flash loan aggregator so it can transfer tokens to the diamond
-    await testPurchaseToken.mint(await mockFlashLoanAggregator.getAddress(), LOAN_AMOUNT);
+    await testPurchaseToken.mint(
+      await mockFlashLoanAggregator.getAddress(),
+      LOAN_AMOUNT,
+    );
 
     // Create signed lend order for period2
     const lendOrder = await makeLendOrder2(LOAN_AMOUNT, 3n);
     const sig = await signLendOrder(lender, lendOrder);
-    const hookCalldata = encodeLendHookCalldata([lendOrder], [sig], [LOAN_AMOUNT]);
+    const hookCalldata = encodeLendHookCalldata(
+      [lendOrder],
+      [sig],
+      [LOAN_AMOUNT],
+    );
 
     // Morpho market ID encoded in additionalCalldata for morphoRefinanceOutHook
     const morphoAdditionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
@@ -1112,7 +1322,9 @@ describe("TermRefinance Integration Tests", () => {
         minOutputAmount: COLLATERAL_AMOUNT,
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("morphoRefinanceOutHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "morphoRefinanceOutHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: morphoPoolAddr,
         additionalCalldata: morphoAdditionalCalldata,
       },
@@ -1124,7 +1336,9 @@ describe("TermRefinance Integration Tests", () => {
         minOutputAmount: 0n, // back-propagated
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("settleLimitLendHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "settleLimitLendHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: servicer2Addr,
         additionalCalldata: hookCalldata,
       },
@@ -1141,8 +1355,10 @@ describe("TermRefinance Integration Tests", () => {
 
     // Assertions:
     // 1. Borrower has period2 Term loan
-    const period2Obligation = await maturityPeriod2.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const period2Obligation =
+      await maturityPeriod2.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(period2Obligation).to.be.gt(0n);
 
     // 2. Diamond is clean

@@ -7,12 +7,11 @@ import {LibAccessControl} from "../libraries/LibAccessControl.sol";
 import {Versionable} from "../lib/Versionable.sol";
 import {IDiamondLoupe} from "./DiamondLoupeFacet.sol";
 
-/// @author TermLabs  
+/// @author TermLabs
 /// @title Term Controller Facet
 /// @notice This facet manages approval and revocation of term controller contracts and fee recipients
 /// @dev This facet whitelists term controller contracts and fee recipients for use in Term Repos
 contract TermControllerFacet is AccessControl, Versionable {
-
     // ========================================================================
     // = Errors  ==============================================================
     // ========================================================================
@@ -24,12 +23,20 @@ contract TermControllerFacet is AccessControl, Versionable {
     error InvalidFeeRecipient();
 
     // ========================================================================
+    // = Events  ==============================================================
+    // ========================================================================
+
+    event EIP712DomainSeparatorUpdated(bytes32 newDomainSeparator);
+
+    // ========================================================================
     // = Admin Functions ======================================================
     // ========================================================================
 
     /// @notice Approves a new term controller contract
     /// @param termController The address of the new term controller contract
-    function approveTermController(address termController) external onlyRole(LibAccessControl.DEVOPS_ROLE) {
+    function approveTermController(
+        address termController
+    ) external onlyRole(LibAccessControl.DEVOPS_ROLE) {
         TermStorage storage s = LibTermStorage.termStorage();
         if (s.approvedTermControllers[termController]) {
             revert TermControllerAlreadyApproved();
@@ -40,7 +47,9 @@ contract TermControllerFacet is AccessControl, Versionable {
 
     /// @notice Revokes an existing term controller contract
     /// @param termController The address of the term controller contract to revoke
-    function revokeTermController(address termController) external onlyRole(LibAccessControl.DEVOPS_ROLE) {
+    function revokeTermController(
+        address termController
+    ) external onlyRole(LibAccessControl.DEVOPS_ROLE) {
         TermStorage storage s = LibTermStorage.termStorage();
         if (!s.approvedTermControllers[termController]) {
             revert InvalidTermController();
@@ -50,7 +59,9 @@ contract TermControllerFacet is AccessControl, Versionable {
         uint256 length = s.approvedTermControllerList.length;
         for (uint256 i = 0; i < length; ++i) {
             if (s.approvedTermControllerList[i] == termController) {
-                s.approvedTermControllerList[i] = s.approvedTermControllerList[length - 1];
+                s.approvedTermControllerList[i] = s.approvedTermControllerList[
+                    length - 1
+                ];
                 s.approvedTermControllerList.pop();
                 break;
             }
@@ -59,7 +70,9 @@ contract TermControllerFacet is AccessControl, Versionable {
 
     /// @notice Approves a new fee recipient
     /// @param feeRecipient The address of the fee recipient to approve
-    function approveFeeRecipient(address feeRecipient) external onlyRole(LibAccessControl.DEVOPS_ROLE) {
+    function approveFeeRecipient(
+        address feeRecipient
+    ) external onlyRole(LibAccessControl.DEVOPS_ROLE) {
         TermStorage storage s = LibTermStorage.termStorage();
         if (s.approvedFeeRecipients[feeRecipient]) {
             revert FeeRecipientAlreadyApproved();
@@ -69,7 +82,9 @@ contract TermControllerFacet is AccessControl, Versionable {
 
     /// @notice Revokes an existing fee recipient
     /// @param feeRecipient The address of the fee recipient to revoke
-    function revokeFeeRecipient(address feeRecipient) external onlyRole(LibAccessControl.DEVOPS_ROLE) {
+    function revokeFeeRecipient(
+        address feeRecipient
+    ) external onlyRole(LibAccessControl.DEVOPS_ROLE) {
         TermStorage storage s = LibTermStorage.termStorage();
         if (!s.approvedFeeRecipients[feeRecipient]) {
             revert InvalidFeeRecipient();
@@ -79,9 +94,12 @@ contract TermControllerFacet is AccessControl, Versionable {
 
     ///@notice Updates the EIP-712 domain separator used for signing limit orders
     ///@param loanIntentFacetAddress The address of the TermLoanIntentFacet to read the
-    function updateEIP712DomainSeparator(address loanIntentFacetAddress) external onlyRole(LibAccessControl.ADMIN_ROLE) {
+    function updateEIP712DomainSeparator(
+        address loanIntentFacetAddress
+    ) external onlyRole(LibAccessControl.ADMIN_ROLE) {
         // Verify facetAddress is a registered diamond facet via loupe
-        bytes4[] memory selectors = IDiamondLoupe(address(this)).facetFunctionSelectors(loanIntentFacetAddress);
+        bytes4[] memory selectors = IDiamondLoupe(address(this))
+            .facetFunctionSelectors(loanIntentFacetAddress);
         if (selectors.length == 0) {
             revert InvalidFacetAddress();
         }
@@ -109,6 +127,6 @@ contract TermControllerFacet is AccessControl, Versionable {
                 address(this)
             )
         );
+        emit EIP712DomainSeparatorUpdated(s.eip712DomainSeparator);
     }
-    
 }

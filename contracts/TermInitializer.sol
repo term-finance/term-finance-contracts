@@ -10,12 +10,8 @@ import {TermAuctionBidLocker} from "./TermAuctionBidLocker.sol";
 import {TermAuctionOfferLocker} from "./TermAuctionOfferLocker.sol";
 import {TermPriceConsumerV3} from "./TermPriceConsumerV3.sol";
 import {TermRepoCollateralManager} from "./TermRepoCollateralManager.sol";
-import {TermRepoLocker} from "./TermRepoLocker.sol";
-import {TermRepoRolloverManager} from "./TermRepoRolloverManager.sol";
 import {TermRepoServicer} from "./TermRepoServicer.sol";
-import {TermRepoToken} from "./TermRepoToken.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {Versionable} from "./lib/Versionable.sol";
 
 /// @author TermLabs
@@ -176,19 +172,27 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
             "Zero Address auction"
         );
         require(
-            !controller.registeredRepoIds(termContractGroup.termRepoServicer.termRepoId()),
+            !controller.registeredRepoIds(
+                termContractGroup.termRepoServicer.termRepoId()
+            ),
             "Duplicate Repo ID"
         );
         require(
-            !controller.registeredAuctionIds((termContractGroup.termAuctionBidLocker).termAuctionId()),
+            !controller.registeredAuctionIds(
+                (termContractGroup.termAuctionBidLocker).termAuctionId()
+            ),
             "Duplicate Auction ID"
         );
 
         emitter.pairTermContract(address(termContractGroup.termRepoLocker));
 
         controller.pairAuction(address(termContractGroup.auction));
-        controller.registerRepoId(termContractGroup.termRepoServicer.termRepoId());
-        controller.registerAuctionId(termContractGroup.termAuctionBidLocker.termAuctionId());
+        controller.registerRepoId(
+            termContractGroup.termRepoServicer.termRepoId()
+        );
+        controller.registerAuctionId(
+            termContractGroup.termAuctionBidLocker.termAuctionId()
+        );
 
         termContractGroup.termRepoLocker.pairTermContracts(
             address(termContractGroup.termRepoCollateralManager),
@@ -286,6 +290,145 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
     }
 
     /// @notice Sets up a set of deployed term contracts
+    function setupTermWithoutAuction(
+        TermContractGroup calldata termContractGroup,
+        address devOpsMultiSig,
+        address adminWallet,
+        address deployerWallet,
+        string memory termVersion
+    ) external onlyRole(INITIALIZER_APPROVAL_ROLE) whileDeployingNotPaused {
+        require(deployerWallet != address(0), "Zero address deployer wallet");
+        require(
+            controller.isTermDeployed(
+                address(termContractGroup.termRepoServicer)
+            ),
+            "Non-Term TRS"
+        );
+        require(
+            controller.isTermDeployed(
+                address(termContractGroup.termRepoCollateralManager)
+            ),
+            "Non-Term TRCM"
+        );
+        require(
+            controller.isTermDeployed(
+                address(termContractGroup.termRepoLocker)
+            ),
+            "Non-Term TRL"
+        );
+        require(
+            controller.isTermDeployed(address(termContractGroup.termRepoToken)),
+            "Non-Term TRT"
+        );
+        require(
+            controller.isTermDeployed(
+                address(termContractGroup.rolloverManager)
+            ),
+            "Non-Term TRM"
+        );
+
+        require(
+            address(termContractGroup.termRepoServicer) != address(0),
+            "Zero Address Servicer"
+        );
+        require(
+            address(termContractGroup.termRepoCollateralManager) != address(0),
+            "Zero Address Collateral Manager"
+        );
+        require(
+            address(termContractGroup.termRepoLocker) != address(0),
+            "Zero Address Locker"
+        );
+        require(
+            address(termContractGroup.termRepoToken) != address(0),
+            "Zero Address RepoToken"
+        );
+        require(
+            address(termContractGroup.rolloverManager) != address(0),
+            "Zero Address RolloverManager"
+        );
+        require(
+            address(termContractGroup.termAuctionBidLocker) == address(0),
+            "termAuctionBidLocker must be zero address"
+        );
+        require(
+            address(termContractGroup.termAuctionOfferLocker) == address(0),
+            "termAuctionOfferLocker must be zero address"
+        );
+        require(
+            address(termContractGroup.auction) == address(0),
+            "auction must be zero address"
+        );
+        require(
+            !controller.registeredRepoIds(
+                termContractGroup.termRepoServicer.termRepoId()
+            ),
+            "Duplicate Repo ID"
+        );
+
+        emitter.pairTermContract(address(termContractGroup.termRepoLocker));
+
+        controller.registerRepoId(
+            termContractGroup.termRepoServicer.termRepoId()
+        );
+
+        termContractGroup.termRepoLocker.pairTermContracts(
+            address(termContractGroup.termRepoCollateralManager),
+            address(termContractGroup.termRepoServicer),
+            emitter,
+            devOpsMultiSig,
+            adminWallet
+        );
+
+        emitter.pairTermContract(address(termContractGroup.termRepoToken));
+        termContractGroup.termRepoToken.pairTermContracts(
+            address(termContractGroup.termRepoServicer),
+            emitter,
+            devOpsMultiSig,
+            adminWallet
+        );
+
+        emitter.pairTermContract(address(termContractGroup.termRepoServicer));
+        termContractGroup.termRepoServicer.pairTermContracts(
+            address(termContractGroup.termRepoLocker),
+            address(termContractGroup.termRepoCollateralManager),
+            address(termContractGroup.termRepoToken),
+            termDiamond,
+            address(termContractGroup.termAuctionOfferLocker),
+            address(termContractGroup.auction),
+            address(termContractGroup.rolloverManager),
+            devOpsMultiSig,
+            deployerWallet,
+            termVersion
+        );
+
+        emitter.pairTermContract(
+            address(termContractGroup.termRepoCollateralManager)
+        );
+        termContractGroup.termRepoCollateralManager.pairTermContracts(
+            address(termContractGroup.termRepoLocker),
+            address(termContractGroup.termRepoServicer),
+            address(termContractGroup.termAuctionBidLocker),
+            address(termContractGroup.auction),
+            address(controller),
+            address(priceOracle),
+            address(termContractGroup.rolloverManager),
+            termDiamond,
+            devOpsMultiSig,
+            adminWallet
+        );
+
+        emitter.pairTermContract(address(termContractGroup.rolloverManager));
+        termContractGroup.rolloverManager.pairTermContracts(
+            address(termContractGroup.termRepoServicer),
+            termDiamond,
+            emitter,
+            devOpsMultiSig,
+            adminWallet
+        );
+    }
+
+    /// @notice Sets up a set of deployed term contracts
     function setupAuction(
         TermRepoServicer termRepoServicer,
         TermRepoCollateralManager termRepoCollateralManager,
@@ -328,7 +471,9 @@ contract TermInitializer is AccessControlUpgradeable, Versionable {
         require(address(auction) != address(0), "Zero Address auction");
 
         require(
-            !controller.registeredAuctionIds((termAuctionBidLocker).termAuctionId()),
+            !controller.registeredAuctionIds(
+                (termAuctionBidLocker).termAuctionId()
+            ),
             "Duplicate Auction ID"
         );
 

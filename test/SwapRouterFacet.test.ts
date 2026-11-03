@@ -1,38 +1,37 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
-import {
-  SwapRouterFacet,
-} from "../typechain-types";
+import { SwapRouterFacet } from "../typechain-types";
 import {
   deployMockContract,
   MockContract,
 } from "@term-finance/ethers-mock-contract/compat/waffle";
 
 // Use compiled Pendle ABIs so function selectors exactly match what the contract generates
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+
 const IPActionSwapPTV3Artifact = require("@pendle/core-v2/build/artifacts/contracts/interfaces/IPActionSwapPTV3.sol/IPActionSwapPTV3.json");
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+
 const IPActionMiscV3Artifact = require("@pendle/core-v2/build/artifacts/contracts/interfaces/IPActionMiscV3.sol/IPActionMiscV3.json");
 
 // ─── ABI type strings that match Pendle's actual on-chain structs ─────────────
 const SWAP_DATA_TYPE =
   "tuple(uint8 swapType, address extRouter, bytes extCalldata, bool needScale)";
-const TOKEN_OUTPUT_TYPE =
-  `tuple(address tokenOut, uint256 minTokenOut, address tokenRedeemSy, address pendleSwap, ${SWAP_DATA_TYPE} swapData)`;
-const TOKEN_INPUT_TYPE =
-  `tuple(address tokenIn, uint256 netTokenIn, address tokenMintSy, address pendleSwap, ${SWAP_DATA_TYPE} swapData)`;
+const TOKEN_OUTPUT_TYPE = `tuple(address tokenOut, uint256 minTokenOut, address tokenRedeemSy, address pendleSwap, ${SWAP_DATA_TYPE} swapData)`;
+const TOKEN_INPUT_TYPE = `tuple(address tokenIn, uint256 netTokenIn, address tokenMintSy, address pendleSwap, ${SWAP_DATA_TYPE} swapData)`;
 const APPROX_PARAMS_TYPE =
   "tuple(uint256 guessMin, uint256 guessMax, uint256 guessOffchain, uint256 maxIteration, uint256 eps)";
 const ORDER_TYPE =
   "tuple(uint256 salt, uint256 expiry, uint256 nonce, uint8 orderType, address token, address YT, address maker, address receiver, uint256 makingAmount, uint256 lnImpliedRate, uint256 failSafeRate, bytes permit)";
-const FILL_ORDER_PARAMS_TYPE =
-  `tuple(${ORDER_TYPE} order, bytes signature, uint256 makingAmount)`;
-const LIMIT_ORDER_DATA_TYPE =
-  `tuple(address limitRouter, uint256 epsSkipMarket, ${FILL_ORDER_PARAMS_TYPE}[] normalFills, ${FILL_ORDER_PARAMS_TYPE}[] flashFills, bytes optData)`;
+const FILL_ORDER_PARAMS_TYPE = `tuple(${ORDER_TYPE} order, bytes signature, uint256 makingAmount)`;
+const LIMIT_ORDER_DATA_TYPE = `tuple(address limitRouter, uint256 epsSkipMarket, ${FILL_ORDER_PARAMS_TYPE}[] normalFills, ${FILL_ORDER_PARAMS_TYPE}[] flashFills, bytes optData)`;
 
 // Default zero values for complex structs used in encoded swap data
-const ZERO_SWAP_DATA = { swapType: 0, extRouter: ethers.ZeroAddress, extCalldata: "0x", needScale: false };
+const ZERO_SWAP_DATA = {
+  swapType: 0,
+  extRouter: ethers.ZeroAddress,
+  extCalldata: "0x",
+  needScale: false,
+};
 const ZERO_TOKEN_OUTPUT = (tokenOut: string) => ({
   tokenOut,
   minTokenOut: 0,
@@ -68,9 +67,14 @@ describe("SwapRouterFacet Tests", () => {
   const pendleRouterAbi = [
     ...IPActionSwapPTV3Artifact.abi,
     ...IPActionMiscV3Artifact.abi,
-  ].filter((x: any) =>
-    x.type === "function" &&
-    ["swapExactPtForToken", "swapExactTokenForPt", "exitPostExpToToken"].includes(x.name)
+  ].filter(
+    (x: any) =>
+      x.type === "function" &&
+      [
+        "swapExactPtForToken",
+        "swapExactTokenForPt",
+        "exitPostExpToToken",
+      ].includes(x.name),
   );
 
   const pendleSwapAbi = [
@@ -90,31 +94,48 @@ describe("SwapRouterFacet Tests", () => {
   });
 
   beforeEach(async () => {
-    const SwapRouterFacetFactory = await ethers.getContractFactory("SwapRouterFacet");
-    swapRouterFacet = await SwapRouterFacetFactory.deploy(
+    const SwapRouterFacetFactory =
+      await ethers.getContractFactory("SwapRouterFacet");
+    swapRouterFacet = (await SwapRouterFacetFactory.deploy(
       await mockPendleRouter.getAddress(),
-      await mockPendleSwap.getAddress()
-    ) as SwapRouterFacet;
+      await mockPendleSwap.getAddress(),
+    )) as SwapRouterFacet;
     await swapRouterFacet.waitForDeployment();
   });
 
   describe("Constructor", () => {
     it("should revert if pendleRouter address is zero", async () => {
-      const SwapRouterFacetFactory = await ethers.getContractFactory("SwapRouterFacet");
+      const SwapRouterFacetFactory =
+        await ethers.getContractFactory("SwapRouterFacet");
       await expect(
-        SwapRouterFacetFactory.deploy(ethers.ZeroAddress, await mockPendleSwap.getAddress())
-      ).to.be.revertedWithCustomError(SwapRouterFacetFactory, "InvalidPendleRouterAddress");
+        SwapRouterFacetFactory.deploy(
+          ethers.ZeroAddress,
+          await mockPendleSwap.getAddress(),
+        ),
+      ).to.be.revertedWithCustomError(
+        SwapRouterFacetFactory,
+        "InvalidPendleRouterAddress",
+      );
     });
 
     it("should revert if pendleSwap address is zero", async () => {
-      const SwapRouterFacetFactory = await ethers.getContractFactory("SwapRouterFacet");
+      const SwapRouterFacetFactory =
+        await ethers.getContractFactory("SwapRouterFacet");
       await expect(
-        SwapRouterFacetFactory.deploy(await mockPendleRouter.getAddress(), ethers.ZeroAddress)
-      ).to.be.revertedWithCustomError(SwapRouterFacetFactory, "InvalidPendleSwapAddress");
+        SwapRouterFacetFactory.deploy(
+          await mockPendleRouter.getAddress(),
+          ethers.ZeroAddress,
+        ),
+      ).to.be.revertedWithCustomError(
+        SwapRouterFacetFactory,
+        "InvalidPendleSwapAddress",
+      );
     });
 
     it("should deploy successfully with valid addresses", async () => {
-      expect(await swapRouterFacet.getAddress()).to.not.equal(ethers.ZeroAddress);
+      expect(await swapRouterFacet.getAddress()).to.not.equal(
+        ethers.ZeroAddress,
+      );
     });
   });
 
@@ -129,8 +150,11 @@ describe("SwapRouterFacet Tests", () => {
           swapData: "0x",
           isTokenInPendlePT: true,
           isTokenOutPendlePT: true,
-        })
-      ).to.be.revertedWithCustomError(swapRouterFacet, "BothTokensCannotBePendlePT");
+        }),
+      ).to.be.revertedWithCustomError(
+        swapRouterFacet,
+        "BothTokensCannotBePendlePT",
+      );
     });
 
     // ── PT input post-expiry ─────────────────────────────────────────────────
@@ -145,7 +169,13 @@ describe("SwapRouterFacet Tests", () => {
       const amountIn = 100n;
       const swapDataEncoded = ethers.AbiCoder.defaultAbiCoder().encode(
         ["address", "address", "uint256", "uint256", TOKEN_OUTPUT_TYPE],
-        [wallet1.address, wallet2.address, netPtIn, 0, ZERO_TOKEN_OUTPUT(wallet2.address)]
+        [
+          wallet1.address,
+          wallet2.address,
+          netPtIn,
+          0,
+          ZERO_TOKEN_OUTPUT(wallet2.address),
+        ],
       );
 
       await expect(
@@ -153,7 +183,7 @@ describe("SwapRouterFacet Tests", () => {
           swapData: swapDataEncoded,
           isTokenInPendlePT: true,
           isTokenOutPendlePT: false,
-        })
+        }),
       ).to.be.revertedWithCustomError(swapRouterFacet, "InputAmountMismatch");
     });
 
@@ -162,12 +192,21 @@ describe("SwapRouterFacet Tests", () => {
       await mockPT.mock.expiry.returns(Math.floor(Date.now() / 1000) - 86400); // past
       await mockPT.mock.approve.returns(true);
       await (mockPT.mock as any).transferFrom.returns(true);
-      await mockPendleRouter.mock.exitPostExpToToken.returns(BigInt(0), ZERO_EXIT_PARAMS);
+      await mockPendleRouter.mock.exitPostExpToToken.returns(
+        BigInt(0),
+        ZERO_EXIT_PARAMS,
+      );
 
       const amountIn = 100n;
       const swapDataEncoded = ethers.AbiCoder.defaultAbiCoder().encode(
         ["address", "address", "uint256", "uint256", TOKEN_OUTPUT_TYPE],
-        [wallet1.address, wallet2.address, amountIn, 0, ZERO_TOKEN_OUTPUT(wallet2.address)]
+        [
+          wallet1.address,
+          wallet2.address,
+          amountIn,
+          0,
+          ZERO_TOKEN_OUTPUT(wallet2.address),
+        ],
       );
 
       await expect(
@@ -175,7 +214,7 @@ describe("SwapRouterFacet Tests", () => {
           swapData: swapDataEncoded,
           isTokenInPendlePT: true,
           isTokenOutPendlePT: false,
-        })
+        }),
       ).to.not.be.reverted;
     });
 
@@ -190,8 +229,20 @@ describe("SwapRouterFacet Tests", () => {
       const exactPtIn = 50n;
       const amountIn = 100n;
       const swapDataEncoded = ethers.AbiCoder.defaultAbiCoder().encode(
-        ["address", "address", "uint256", TOKEN_OUTPUT_TYPE, LIMIT_ORDER_DATA_TYPE],
-        [wallet1.address, wallet2.address, exactPtIn, ZERO_TOKEN_OUTPUT(wallet2.address), ZERO_LIMIT_ORDER_DATA]
+        [
+          "address",
+          "address",
+          "uint256",
+          TOKEN_OUTPUT_TYPE,
+          LIMIT_ORDER_DATA_TYPE,
+        ],
+        [
+          wallet1.address,
+          wallet2.address,
+          exactPtIn,
+          ZERO_TOKEN_OUTPUT(wallet2.address),
+          ZERO_LIMIT_ORDER_DATA,
+        ],
       );
 
       await expect(
@@ -199,7 +250,7 @@ describe("SwapRouterFacet Tests", () => {
           swapData: swapDataEncoded,
           isTokenInPendlePT: true,
           isTokenOutPendlePT: false,
-        })
+        }),
       ).to.be.revertedWithCustomError(swapRouterFacet, "InputAmountMismatch");
     });
 
@@ -208,12 +259,28 @@ describe("SwapRouterFacet Tests", () => {
       await mockPT.mock.expiry.returns(Math.floor(Date.now() / 1000) + 86400); // future
       await mockPT.mock.approve.returns(true);
       await (mockPT.mock as any).transferFrom.returns(true);
-      await mockPendleRouter.mock.swapExactPtForToken.returns(BigInt(0), BigInt(0), BigInt(0));
+      await mockPendleRouter.mock.swapExactPtForToken.returns(
+        BigInt(0),
+        BigInt(0),
+        BigInt(0),
+      );
 
       const amountIn = 100n;
       const swapDataEncoded = ethers.AbiCoder.defaultAbiCoder().encode(
-        ["address", "address", "uint256", TOKEN_OUTPUT_TYPE, LIMIT_ORDER_DATA_TYPE],
-        [wallet1.address, wallet2.address, amountIn, ZERO_TOKEN_OUTPUT(wallet2.address), ZERO_LIMIT_ORDER_DATA]
+        [
+          "address",
+          "address",
+          "uint256",
+          TOKEN_OUTPUT_TYPE,
+          LIMIT_ORDER_DATA_TYPE,
+        ],
+        [
+          wallet1.address,
+          wallet2.address,
+          amountIn,
+          ZERO_TOKEN_OUTPUT(wallet2.address),
+          ZERO_LIMIT_ORDER_DATA,
+        ],
       );
 
       await expect(
@@ -221,7 +288,7 @@ describe("SwapRouterFacet Tests", () => {
           swapData: swapDataEncoded,
           isTokenInPendlePT: true,
           isTokenOutPendlePT: false,
-        })
+        }),
       ).to.not.be.reverted;
     });
 
@@ -229,29 +296,56 @@ describe("SwapRouterFacet Tests", () => {
 
     it("PT output: success", async () => {
       const TestTokenFactory = await ethers.getContractFactory("TestToken");
-      const tokenIn = await upgrades.deployProxy(TestTokenFactory, [
-        "Input Token", "IN", 18, [], [],
-      ], { initializer: "initialize" });
+      const tokenIn = await upgrades.deployProxy(
+        TestTokenFactory,
+        ["Input Token", "IN", 18, [], []],
+        { initializer: "initialize" },
+      );
       await tokenIn.waitForDeployment();
 
-      await mockPendleRouter.mock.swapExactTokenForPt.returns(BigInt(0), BigInt(0), BigInt(0));
+      await mockPendleRouter.mock.swapExactTokenForPt.returns(
+        BigInt(0),
+        BigInt(0),
+        BigInt(0),
+      );
 
       const amountIn = ethers.parseEther("100");
       const tokenInAddr = await tokenIn.getAddress();
 
       // New swap flow pulls tokens from msg.sender (wallet1) into the facet.
       await (tokenIn as any).mint(wallet1.address, amountIn);
-      await (tokenIn as any).connect(wallet1).approve(await swapRouterFacet.getAddress(), amountIn);
+      await (tokenIn as any)
+        .connect(wallet1)
+        .approve(await swapRouterFacet.getAddress(), amountIn);
       const swapDataEncoded = ethers.AbiCoder.defaultAbiCoder().encode(
-        ["address", "address", "uint256", APPROX_PARAMS_TYPE, TOKEN_INPUT_TYPE, LIMIT_ORDER_DATA_TYPE],
+        [
+          "address",
+          "address",
+          "uint256",
+          APPROX_PARAMS_TYPE,
+          TOKEN_INPUT_TYPE,
+          LIMIT_ORDER_DATA_TYPE,
+        ],
         [
           wallet1.address,
           wallet2.address,
           0,
-          { guessMin: 0, guessMax: ethers.MaxUint256, guessOffchain: 0, maxIteration: 256, eps: 1e14 },
-          { tokenIn: tokenInAddr, netTokenIn: amountIn, tokenMintSy: tokenInAddr, pendleSwap: ethers.ZeroAddress, swapData: ZERO_SWAP_DATA },
+          {
+            guessMin: 0,
+            guessMax: ethers.MaxUint256,
+            guessOffchain: 0,
+            maxIteration: 256,
+            eps: 1e14,
+          },
+          {
+            tokenIn: tokenInAddr,
+            netTokenIn: amountIn,
+            tokenMintSy: tokenInAddr,
+            pendleSwap: ethers.ZeroAddress,
+            swapData: ZERO_SWAP_DATA,
+          },
           ZERO_LIMIT_ORDER_DATA,
-        ]
+        ],
       );
 
       await expect(
@@ -259,7 +353,7 @@ describe("SwapRouterFacet Tests", () => {
           swapData: swapDataEncoded,
           isTokenInPendlePT: false,
           isTokenOutPendlePT: true,
-        })
+        }),
       ).to.not.be.reverted;
     });
 
@@ -267,16 +361,20 @@ describe("SwapRouterFacet Tests", () => {
 
     it("Regular ERC20 swap: success via Pendle aggregator", async () => {
       const TestTokenFactory = await ethers.getContractFactory("TestToken");
-      const tokenIn = await upgrades.deployProxy(TestTokenFactory, [
-        "Swap Token", "ST", 18, [], [],
-      ], { initializer: "initialize" });
+      const tokenIn = await upgrades.deployProxy(
+        TestTokenFactory,
+        ["Swap Token", "ST", 18, [], []],
+        { initializer: "initialize" },
+      );
       await tokenIn.waitForDeployment();
 
       const amountIn = ethers.parseEther("100");
       // New swap flow pulls tokens from msg.sender (wallet1) into the facet,
       // which then safeTransfers them onward to pendleSwap.
       await (tokenIn as any).mint(wallet1.address, amountIn);
-      await (tokenIn as any).connect(wallet1).approve(await swapRouterFacet.getAddress(), amountIn);
+      await (tokenIn as any)
+        .connect(wallet1)
+        .approve(await swapRouterFacet.getAddress(), amountIn);
 
       await mockPendleSwap.mock.swap.returns(BigInt(0));
 
@@ -288,7 +386,14 @@ describe("SwapRouterFacet Tests", () => {
       };
       const swapDataEncoded = ethers.AbiCoder.defaultAbiCoder().encode(
         [`tuple(uint8,address,bytes,bool)`],
-        [[pendleSwapData.swapType, pendleSwapData.extRouter, pendleSwapData.extCalldata, pendleSwapData.needScale]]
+        [
+          [
+            pendleSwapData.swapType,
+            pendleSwapData.extRouter,
+            pendleSwapData.extCalldata,
+            pendleSwapData.needScale,
+          ],
+        ],
       );
 
       await expect(
@@ -296,15 +401,17 @@ describe("SwapRouterFacet Tests", () => {
           swapData: swapDataEncoded,
           isTokenInPendlePT: false,
           isTokenOutPendlePT: false,
-        })
+        }),
       ).to.not.be.reverted;
     });
 
     it("PT output: InputAmountMismatch when input.netTokenIn != amountIn", async () => {
       const TestTokenFactory = await ethers.getContractFactory("TestToken");
-      const tokenIn = await upgrades.deployProxy(TestTokenFactory, [
-        "Input Token", "IN", 18, [], [],
-      ], { initializer: "initialize" });
+      const tokenIn = await upgrades.deployProxy(
+        TestTokenFactory,
+        ["Input Token", "IN", 18, [], []],
+        { initializer: "initialize" },
+      );
       await tokenIn.waitForDeployment();
 
       const amountIn = ethers.parseEther("100");
@@ -314,17 +421,38 @@ describe("SwapRouterFacet Tests", () => {
       // New swap flow pulls tokens from msg.sender (wallet1) before reaching
       // the InputAmountMismatch check inside _swapInternal.
       await (tokenIn as any).mint(wallet1.address, amountIn);
-      await (tokenIn as any).connect(wallet1).approve(await swapRouterFacet.getAddress(), amountIn);
+      await (tokenIn as any)
+        .connect(wallet1)
+        .approve(await swapRouterFacet.getAddress(), amountIn);
       const swapDataEncoded = ethers.AbiCoder.defaultAbiCoder().encode(
-        ["address", "address", "uint256", APPROX_PARAMS_TYPE, TOKEN_INPUT_TYPE, LIMIT_ORDER_DATA_TYPE],
+        [
+          "address",
+          "address",
+          "uint256",
+          APPROX_PARAMS_TYPE,
+          TOKEN_INPUT_TYPE,
+          LIMIT_ORDER_DATA_TYPE,
+        ],
         [
           wallet1.address,
           wallet2.address,
           0,
-          { guessMin: 0, guessMax: ethers.MaxUint256, guessOffchain: 0, maxIteration: 256, eps: 1e14 },
-          { tokenIn: tokenInAddr, netTokenIn: wrongNetTokenIn, tokenMintSy: tokenInAddr, pendleSwap: ethers.ZeroAddress, swapData: ZERO_SWAP_DATA },
+          {
+            guessMin: 0,
+            guessMax: ethers.MaxUint256,
+            guessOffchain: 0,
+            maxIteration: 256,
+            eps: 1e14,
+          },
+          {
+            tokenIn: tokenInAddr,
+            netTokenIn: wrongNetTokenIn,
+            tokenMintSy: tokenInAddr,
+            pendleSwap: ethers.ZeroAddress,
+            swapData: ZERO_SWAP_DATA,
+          },
           ZERO_LIMIT_ORDER_DATA,
-        ]
+        ],
       );
 
       await expect(
@@ -332,7 +460,7 @@ describe("SwapRouterFacet Tests", () => {
           swapData: swapDataEncoded,
           isTokenInPendlePT: false,
           isTokenOutPendlePT: true,
-        })
+        }),
       ).to.be.revertedWithCustomError(swapRouterFacet, "InputAmountMismatch");
     });
   });
@@ -351,8 +479,11 @@ describe("SwapRouterFacet Tests", () => {
           minOutputAmount: ethers.parseEther("90"),
           targetAddress: ethers.ZeroAddress,
           additionalCalldata: "0x",
-        })
-      ).to.be.revertedWithCustomError(swapRouterFacet, "InputOutputTokenCollision");
+        }),
+      ).to.be.revertedWithCustomError(
+        swapRouterFacet,
+        "InputOutputTokenCollision",
+      );
     });
 
     it("should return correct PreviewAction with isDeterministic=false", async () => {
@@ -393,18 +524,25 @@ describe("SwapRouterFacet Tests", () => {
           "0x12345678",
           ethers.ZeroAddress,
           "0x",
-        )
-      ).to.be.revertedWithCustomError(swapRouterFacet, "UnsupportedHookSelector");
+        ),
+      ).to.be.revertedWithCustomError(
+        swapRouterFacet,
+        "UnsupportedHookSelector",
+      );
     });
 
     it("should return valid previewAction and encodedCalldata for swapHook selector", async () => {
-      const hookSelector = (swapRouterFacet as any).interface.getFunction("swapHook").selector;
+      const hookSelector = (swapRouterFacet as any).interface.getFunction(
+        "swapHook",
+      ).selector;
       const inputToken = wallet1.address;
       const outputToken = wallet2.address;
       const maxInput = ethers.parseEther("100");
       const minOutput = ethers.parseEther("95");
 
-      const [previewAction, encodedCalldata] = await (swapRouterFacet as any).generateActionCalldata(
+      const [previewAction, encodedCalldata] = await (
+        swapRouterFacet as any
+      ).generateActionCalldata(
         wallet1.address,
         inputToken,
         maxInput,
@@ -424,7 +562,9 @@ describe("SwapRouterFacet Tests", () => {
     });
 
     it("should propagate InputOutputTokenCollision when inputToken equals outputToken", async () => {
-      const hookSelector = (swapRouterFacet as any).interface.getFunction("swapHook").selector;
+      const hookSelector = (swapRouterFacet as any).interface.getFunction(
+        "swapHook",
+      ).selector;
       const sameToken = wallet1.address;
 
       await expect(
@@ -437,7 +577,7 @@ describe("SwapRouterFacet Tests", () => {
           hookSelector,
           ethers.ZeroAddress,
           "0x",
-        )
+        ),
       ).to.be.reverted;
     });
   });
@@ -448,7 +588,9 @@ describe("SwapRouterFacet Tests", () => {
     let swapHelper: any;
 
     beforeEach(async () => {
-      const HelperFactory = await ethers.getContractFactory("TestSwapRouterFacetHelper");
+      const HelperFactory = await ethers.getContractFactory(
+        "TestSwapRouterFacetHelper",
+      );
       swapHelper = await HelperFactory.deploy(
         await mockPendleRouter.getAddress(),
         await mockPendleSwap.getAddress(),
@@ -459,11 +601,11 @@ describe("SwapRouterFacet Tests", () => {
     it("should revert Unauthorized caller when no flash loan context is active", async () => {
       const swapDataEncoded = ethers.AbiCoder.defaultAbiCoder().encode(
         [`tuple(uint8,address,bytes,bool)`],
-        [[0, ethers.ZeroAddress, "0x", false]]
+        [[0, ethers.ZeroAddress, "0x", false]],
       );
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(bytes,bool,bool)"],
-        [[swapDataEncoded, false, false]]
+        [[swapDataEncoded, false, false]],
       );
 
       await expect(
@@ -475,7 +617,7 @@ describe("SwapRouterFacet Tests", () => {
           minOutputAmount: 0,
           targetAddress: ethers.ZeroAddress,
           additionalCalldata,
-        })
+        }),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
@@ -484,11 +626,11 @@ describe("SwapRouterFacet Tests", () => {
 
       const swapDataEncoded = ethers.AbiCoder.defaultAbiCoder().encode(
         [`tuple(uint8,address,bytes,bool)`],
-        [[0, ethers.ZeroAddress, "0x", false]]
+        [[0, ethers.ZeroAddress, "0x", false]],
       );
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(bytes,bool,bool)"],
-        [[swapDataEncoded, false, false]]
+        [[swapDataEncoded, false, false]],
       );
 
       await expect(
@@ -500,7 +642,7 @@ describe("SwapRouterFacet Tests", () => {
           minOutputAmount: 0,
           targetAddress: ethers.ZeroAddress,
           additionalCalldata,
-        })
+        }),
       ).to.be.revertedWith("Unauthorized caller");
 
       await swapHelper.clearActiveFlashLoanBorrower();
@@ -508,9 +650,11 @@ describe("SwapRouterFacet Tests", () => {
 
     it("should successfully execute hook via regular ERC20 aggregator path", async () => {
       const TestTokenFactory = await ethers.getContractFactory("TestToken");
-      const tokenIn = await upgrades.deployProxy(TestTokenFactory, [
-        "Hook Token", "HT", 18, [], [],
-      ], { initializer: "initialize" });
+      const tokenIn = await upgrades.deployProxy(
+        TestTokenFactory,
+        ["Hook Token", "HT", 18, [], []],
+        { initializer: "initialize" },
+      );
       await tokenIn.waitForDeployment();
 
       const amountIn = ethers.parseEther("10");
@@ -520,14 +664,26 @@ describe("SwapRouterFacet Tests", () => {
 
       await swapHelper.setActiveFlashLoanBorrower(wallet1.address);
 
-      const pendleSwapData = { swapType: 1, extRouter: wallet2.address, extCalldata: "0x", needScale: false };
+      const pendleSwapData = {
+        swapType: 1,
+        extRouter: wallet2.address,
+        extCalldata: "0x",
+        needScale: false,
+      };
       const innerSwapDataEncoded = ethers.AbiCoder.defaultAbiCoder().encode(
         [`tuple(uint8,address,bytes,bool)`],
-        [[pendleSwapData.swapType, pendleSwapData.extRouter, pendleSwapData.extCalldata, pendleSwapData.needScale]]
+        [
+          [
+            pendleSwapData.swapType,
+            pendleSwapData.extRouter,
+            pendleSwapData.extCalldata,
+            pendleSwapData.needScale,
+          ],
+        ],
       );
       const additionalCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["tuple(bytes,bool,bool)"],
-        [[innerSwapDataEncoded, false, false]]
+        [[innerSwapDataEncoded, false, false]],
       );
 
       await expect(
@@ -539,7 +695,7 @@ describe("SwapRouterFacet Tests", () => {
           minOutputAmount: 0,
           targetAddress: ethers.ZeroAddress,
           additionalCalldata,
-        })
+        }),
       ).to.not.be.reverted;
 
       await swapHelper.clearActiveFlashLoanBorrower();

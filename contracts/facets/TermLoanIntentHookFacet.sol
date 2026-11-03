@@ -11,18 +11,16 @@ import {ExponentialNoError} from "../lib/ExponentialNoError.sol";
 import {PreviewAction} from "../lib/PreviewAction.sol";
 import {Versionable} from "../lib/Versionable.sol";
 
-import {LibTermStorage, TermStorage}  from "../libraries/LibTermStorage.sol";
+import {LibTermStorage, TermStorage} from "../libraries/LibTermStorage.sol";
 import {TermFlashHookFacet} from "./base/TermFlashHookFacet.sol";
 import {TermMultiContextAuth} from "./base/TermMultiContextAuth.sol";
 import {TermLoanIntentFacet} from "./TermLoanIntentFacet.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Permit2Lib} from "permit2/src/libraries/Permit2Lib.sol";
-
 
 /// @author TermLabs
 /// @title TermLoanIntentHookFacet
@@ -30,18 +28,28 @@ import {Permit2Lib} from "permit2/src/libraries/Permit2Lib.sol";
 /// @dev Wraps TermLoanIntentFacet settlement functions for use within flash loan callback contexts.
 ///      Each hook action is gated by `onlyFlashLoanContext` and delegates to the corresponding
 ///      TermLoanIntentFacet function via a self-call through the diamond proxy.
-contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMultiContextAuth, ITermIntent, ExponentialNoError, Versionable {
+contract TermLoanIntentHookFacet is
+    ReentrancyGuard,
+    TermFlashHookFacet,
+    TermMultiContextAuth,
+    ITermIntent,
+    ExponentialNoError,
+    Versionable
+{
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
 
     // ========================================================================
     // = Errors  ==============================================================
     // ========================================================================
-    
+
     error BorrowFeeTooHigh();
     error EmptyOrderBatch();
     error InconsistentRepoServicer();
-    error BatchOrderInsufficientRemainingCapacity(uint256 orderIndex, uint256 maxFill);
+    error BatchOrderInsufficientRemainingCapacity(
+        uint256 orderIndex,
+        uint256 maxFill
+    );
     error InvalidCollateralToken();
     error OrderBatchLengthMismatch();
 
@@ -51,9 +59,10 @@ contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMul
 
     constructor() {
         // Register preview function selectors for flash loan hook workflows
-        previewMapping[this.settleLimitLendHook.selector] = this.previewSettleLimitLend.selector;
+        previewMapping[this.settleLimitLendHook.selector] = this
+            .previewSettleLimitLend
+            .selector;
     }
-
 
     // ========================================================================
     // = Flash Hook Actions  ==================================================
@@ -72,27 +81,30 @@ contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMul
     ) external onlyFlashLoanContext(input.user) {
         address taker = input.user;
         address collateralToken = input.inputToken;
-        
+
         (
             bool usePermit2,
             LimitLendOrder[] memory orders,
             Signature[] memory signatures,
             uint256[] memory fillAmounts
         ) = abi.decode(
-            input.additionalCalldata,
-            (bool, LimitLendOrder[], Signature[], uint256[])
-        ); 
+                input.additionalCalldata,
+                (bool, LimitLendOrder[], Signature[], uint256[])
+            );
         uint256 len = orders.length;
         if (len == 0) revert EmptyOrderBatch();
-        if (len != signatures.length || len != fillAmounts.length) revert OrderBatchLengthMismatch();       
-        ITermRepoServicer termRepoServicer = ITermRepoServicer(orders[0].repoServicer);
+        if (len != signatures.length || len != fillAmounts.length)
+            revert OrderBatchLengthMismatch();
+        ITermRepoServicer termRepoServicer = ITermRepoServicer(
+            orders[0].repoServicer
+        );
         _validateRepoServicer(termRepoServicer);
 
         TermStorage storage ts = LibTermStorage.termStorage();
 
         address purchaseToken = termRepoServicer.purchaseToken();
 
-        uint256 maturityTimestamp = termRepoServicer.maturityTimestamp();
+        uint256 redemptionTimestamp = termRepoServicer.redemptionTimestamp();
 
         uint256 totalFillAmount;
         uint256 totalBorrowAmount;
@@ -116,7 +128,7 @@ contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMul
             totalBorrowAmount += _calculateBorrowAmountFromFillAmount(
                 fillAmounts[i],
                 orders[i].borrowFee,
-                maturityTimestamp
+                redemptionTimestamp
             );
         }
 
@@ -128,7 +140,8 @@ contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMul
                 collateralAmount = input.maxInputAmount - allocatedCollateral;
             } else {
                 collateralAmount =
-                    (input.maxInputAmount * fillAmounts[i]) / totalFillAmount;
+                    (input.maxInputAmount * fillAmounts[i]) /
+                    totalFillAmount;
                 allocatedCollateral += collateralAmount;
             }
 
@@ -148,7 +161,6 @@ contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMul
                 signatures[i]
             );
             ts.activeAtomicTxSettlementTaker = address(0);
-
         }
 
         if (usePermit2) {
@@ -177,15 +189,20 @@ contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMul
     function previewSettleLimitLend(
         ActionHookInput calldata actionHookInput
     ) external view returns (PreviewAction memory) {
-        (, LimitLendOrder[] memory orders, , ) = abi.decode(actionHookInput.additionalCalldata, (bool, LimitLendOrder[], Signature[], uint256[]));
-        
+        (, LimitLendOrder[] memory orders, , ) = abi.decode(
+            actionHookInput.additionalCalldata,
+            (bool, LimitLendOrder[], Signature[], uint256[])
+        );
+
         if (orders.length == 0) {
             revert EmptyOrderBatch();
         }
-        
+
         address termRepoServicer = orders[0].repoServicer;
 
-        ITermRepoServicer _termRepoServicer = ITermRepoServicer(termRepoServicer);
+        ITermRepoServicer _termRepoServicer = ITermRepoServicer(
+            termRepoServicer
+        );
         address purchaseToken = _termRepoServicer.purchaseToken();
 
         _validateCollateralToken(_termRepoServicer, actionHookInput.inputToken);
@@ -194,16 +211,16 @@ contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMul
         if (purchaseToken == collateralToken) {
             revert InputOutputTokenCollision();
         }
-        
-        return PreviewAction({
-            expectedInputToken: collateralToken,
-            expectedInputAmount: actionHookInput.maxInputAmount,
-            expectedOutputToken: purchaseToken,
-            expectedOutputAmount: actionHookInput.minOutputAmount,
-            isDeterministic: true
-        });
-    }
 
+        return
+            PreviewAction({
+                expectedInputToken: collateralToken,
+                expectedInputAmount: actionHookInput.maxInputAmount,
+                expectedOutputToken: purchaseToken,
+                expectedOutputAmount: actionHookInput.minOutputAmount,
+                isDeterministic: true
+            });
+    }
 
     function _validateRepoServicer(ITermRepoServicer servicer) private view {
         TermStorage storage s = LibTermStorage.termStorage();
@@ -211,7 +228,10 @@ contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMul
         if (!s.approvedTermControllers[address(termController)]) {
             revert InvalidTermController();
         }
-        if (!termController.isTermDeployed(address(servicer)) && !termController.isFactoryDeployed(address(servicer))) {
+        if (
+            !termController.isTermDeployed(address(servicer)) &&
+            !termController.isFactoryDeployed(address(servicer))
+        ) {
             revert InvalidRepoId();
         }
 
@@ -224,7 +244,11 @@ contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMul
         ITermRepoServicer repoServicer,
         address collateralToken
     ) private view {
-        if (repoServicer.termRepoCollateralManager().maintenanceCollateralRatios(collateralToken) == 0) {
+        if (
+            repoServicer
+                .termRepoCollateralManager()
+                .maintenanceCollateralRatios(collateralToken) == 0
+        ) {
             revert InvalidCollateralToken();
         }
     }
@@ -235,8 +259,10 @@ contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMul
         uint256 collateralAmount
     ) internal view returns (uint256[] memory) {
         ITermRepoServicer termRepoServicer = ITermRepoServicer(servicer);
-        ITermRepoCollateralManager collateralManager = termRepoServicer.termRepoCollateralManager();
-        uint256 numCollateralTokens = collateralManager.numOfAcceptedCollateralTokens();
+        ITermRepoCollateralManager collateralManager = termRepoServicer
+            .termRepoCollateralManager();
+        uint256 numCollateralTokens = collateralManager
+            .numOfAcceptedCollateralTokens();
         uint256[] memory collateralAmounts = new uint256[](numCollateralTokens);
 
         bool collateralSupported;
@@ -245,7 +271,7 @@ contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMul
                 collateralAmounts[i] = collateralAmount;
                 collateralSupported = true;
                 break;
-            } 
+            }
         }
 
         if (!collateralSupported) {
@@ -258,15 +284,15 @@ contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMul
     function _calculateBorrowAmountFromFillAmount(
         uint256 fillAmount,
         uint256 borrowFee,
-        uint256 maturityTimestamp
+        uint256 redemptionTimestamp
     ) internal view returns (uint256) {
         if (borrowFee == 0) {
             return fillAmount;
         } else {
             Exp memory feeFactor = mul_(
                 Exp({mantissa: borrowFee}),
-                div_ (
-                    Exp({mantissa: maturityTimestamp - block.timestamp}),
+                div_(
+                    Exp({mantissa: redemptionTimestamp - block.timestamp}),
                     Exp({mantissa: 360 days})
                 )
             );
@@ -290,10 +316,13 @@ contract TermLoanIntentHookFacet is ReentrancyGuard, TermFlashHookFacet, TermMul
     /// @custom:reverts NothingToFill if the computed fill amount is zero
     function _calculateLimitLendFillAmount(
         ITermIntent.LimitLendOrder memory order
-    ) internal view  returns (uint256 ) {
+    ) internal view returns (uint256) {
         TermStorage storage s = LibTermStorage.termStorage();
-        bytes32 orderHash = TermLoanIntentFacet(address(this)).getLendOrderHash(order);
-        ITermIntent.OrderContext memory orderContext = s.limitOrderContextMapping[orderHash];
+        bytes32 orderHash = TermLoanIntentFacet(address(this)).getLendOrderHash(
+            order
+        );
+        ITermIntent.OrderContext memory orderContext = s
+            .limitOrderContextMapping[orderHash];
         uint256 maxFill = order.purchaseTokenAmount - orderContext.filledAmount;
         return maxFill;
     }

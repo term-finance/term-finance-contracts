@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
@@ -9,8 +8,7 @@ import {
   TestToken,
 } from "../typechain-types";
 
-const PERMIT2_CANONICAL_ADDRESS =
-  "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+const PERMIT2_CANONICAL_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 
 interface PermitSingle {
   details: {
@@ -102,8 +100,9 @@ describe("Permit2Facet Tests", () => {
     await asset.waitForDeployment();
 
     // Deploy mock term controllers
-    const MockControllerFactory =
-      await ethers.getContractFactory("TestMockTermController");
+    const MockControllerFactory = await ethers.getContractFactory(
+      "TestMockTermController",
+    );
     mockController =
       (await MockControllerFactory.deploy()) as unknown as TestMockTermController;
     await mockController.waitForDeployment();
@@ -430,12 +429,7 @@ describe("Permit2Facet Tests", () => {
       await expect(
         permit2Facet
           .connect(wallet2)
-          .approve2TermContract(
-            permitSingle,
-            wallet2.address,
-            "0x",
-            false,
-          ),
+          .approve2TermContract(permitSingle, wallet2.address, "0x", false),
       ).to.be.revertedWith("unauthorized");
     });
 
@@ -453,12 +447,7 @@ describe("Permit2Facet Tests", () => {
       await expect(
         permit2Facet
           .connect(wallet1)
-          .approve2TermContract(
-            permitSingle,
-            wallet2.address,
-            "0x",
-            false,
-          ),
+          .approve2TermContract(permitSingle, wallet2.address, "0x", false),
       ).to.be.revertedWithCustomError(permit2Facet, "Expired");
     });
 
@@ -476,12 +465,7 @@ describe("Permit2Facet Tests", () => {
       await expect(
         permit2Facet
           .connect(wallet1)
-          .approve2TermContract(
-            permitSingle,
-            ethers.ZeroAddress,
-            "0x",
-            false,
-          ),
+          .approve2TermContract(permitSingle, ethers.ZeroAddress, "0x", false),
       ).to.be.revertedWithCustomError(permit2Facet, "InvalidOwner");
     });
 
@@ -500,12 +484,7 @@ describe("Permit2Facet Tests", () => {
       await expect(
         permit2Facet
           .connect(wallet1)
-          .approve2TermContract(
-            permitSingle,
-            wallet2.address,
-            "0x",
-            false,
-          ),
+          .approve2TermContract(permitSingle, wallet2.address, "0x", false),
       ).to.be.revertedWithCustomError(permit2Facet, "InvalidSpender");
     });
 
@@ -528,12 +507,7 @@ describe("Permit2Facet Tests", () => {
       await expect(
         permit2Facet
           .connect(wallet1)
-          .approve2TermContract(
-            permitSingle,
-            wallet2.address,
-            "0x",
-            false,
-          ),
+          .approve2TermContract(permitSingle, wallet2.address, "0x", false),
       ).to.be.revertedWithCustomError(permit2Facet, "InvalidSpender");
     });
 
@@ -556,12 +530,7 @@ describe("Permit2Facet Tests", () => {
       await expect(
         permit2Facet
           .connect(wallet1)
-          .approve2TermContract(
-            permitSingle,
-            wallet2.address,
-            "0x",
-            false,
-          ),
+          .approve2TermContract(permitSingle, wallet2.address, "0x", false),
       ).to.not.be.reverted;
     });
 
@@ -588,19 +557,15 @@ describe("Permit2Facet Tests", () => {
       await expect(
         permit2Facet
           .connect(wallet1)
-          .approve2TermContract(
-            permitSingle,
-            wallet2.address,
-            "0x",
-            false,
-          ),
+          .approve2TermContract(permitSingle, wallet2.address, "0x", false),
       ).to.not.be.reverted;
     });
 
     it("should succeed when only the last of multiple controllers recognizes spender", async () => {
       // Deploy a third controller
-      const MockControllerFactory =
-        await ethers.getContractFactory("TestMockTermController");
+      const MockControllerFactory = await ethers.getContractFactory(
+        "TestMockTermController",
+      );
       const mockController3 =
         (await MockControllerFactory.deploy()) as unknown as TestMockTermController;
       await mockController3.waitForDeployment();
@@ -630,12 +595,7 @@ describe("Permit2Facet Tests", () => {
       await expect(
         permit2Facet
           .connect(wallet1)
-          .approve2TermContract(
-            permitSingle,
-            wallet2.address,
-            "0x",
-            false,
-          ),
+          .approve2TermContract(permitSingle, wallet2.address, "0x", false),
       ).to.not.be.reverted;
     });
 
@@ -657,12 +617,7 @@ describe("Permit2Facet Tests", () => {
 
       await permit2Facet
         .connect(wallet1)
-        .approve2TermContract(
-          permitSingle,
-          wallet2.address,
-          "0x",
-          false,
-        );
+        .approve2TermContract(permitSingle, wallet2.address, "0x", false);
 
       expect(await mockPermit2.lastPermitOwner()).to.equal(wallet2.address);
     });
@@ -687,12 +642,7 @@ describe("Permit2Facet Tests", () => {
       await expect(
         permit2Facet
           .connect(wallet1)
-          .approve2TermContract(
-            permitSingle,
-            wallet2.address,
-            "0x",
-            false,
-          ),
+          .approve2TermContract(permitSingle, wallet2.address, "0x", false),
       ).to.be.revertedWith("Mock permit failed");
     });
 
@@ -716,12 +666,7 @@ describe("Permit2Facet Tests", () => {
       await expect(
         permit2Facet
           .connect(wallet1)
-          .approve2TermContract(
-            permitSingle,
-            wallet2.address,
-            "0x",
-            true,
-          ),
+          .approve2TermContract(permitSingle, wallet2.address, "0x", true),
       ).to.not.be.reverted;
     });
   });
@@ -761,9 +706,7 @@ describe("Permit2Facet Tests", () => {
       const facetAddr = await permit2Facet.getAddress();
 
       // Approve Permit2 canonical address to spend wallet1's tokens
-      await asset
-        .connect(wallet1)
-        .approve(PERMIT2_CANONICAL_ADDRESS, amount);
+      await asset.connect(wallet1).approve(PERMIT2_CANONICAL_ADDRESS, amount);
 
       const balanceBefore = await asset.balanceOf(wallet1.address);
       const facetBalanceBefore = await asset.balanceOf(facetAddr);
@@ -784,13 +727,9 @@ describe("Permit2Facet Tests", () => {
       const tokenAddr = await asset.getAddress();
       const facetAddr = await permit2Facet.getAddress();
 
-      await asset
-        .connect(wallet1)
-        .approve(PERMIT2_CANONICAL_ADDRESS, amount);
+      await asset.connect(wallet1).approve(PERMIT2_CANONICAL_ADDRESS, amount);
 
-      await permit2Facet
-        .connect(wallet1)
-        .transferFrom2(tokenAddr, amount);
+      await permit2Facet.connect(wallet1).transferFrom2(tokenAddr, amount);
 
       expect(await mockPermit2.lastTransferFrom()).to.equal(wallet1.address);
       expect(await mockPermit2.lastTransferTo()).to.equal(facetAddr);
@@ -812,9 +751,7 @@ describe("Permit2Facet Tests", () => {
     it("should revert when wallet has insufficient balance", async () => {
       const tooMuch = ethers.parseEther("20000"); // wallet1 only has 10000
 
-      await asset
-        .connect(wallet1)
-        .approve(PERMIT2_CANONICAL_ADDRESS, tooMuch);
+      await asset.connect(wallet1).approve(PERMIT2_CANONICAL_ADDRESS, tooMuch);
 
       await expect(
         permit2Facet

@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import dayjs from "dayjs";
@@ -62,9 +61,9 @@ describe("TermManager Tests", () => {
   let testTermRepoToken: TermRepoToken;
   let testOracleConsumer: TermPriceConsumerV3;
 
-  let termIdString: String;
+  let termIdString: string;
 
-  let termIdHashed: String;
+  let termIdHashed: string;
 
   let snapshotId: any;
   let expectedVersion: string;
@@ -91,7 +90,7 @@ describe("TermManager Tests", () => {
       anotherAuction,
       anotherAuctionBidLocker,
       anotherAuctionOfferLocker,
-      termDiamond
+      termDiamond,
     ] = await ethers.getSigners();
 
     const versionableFactory = await ethers.getContractFactory("Versionable");
@@ -104,7 +103,13 @@ describe("TermManager Tests", () => {
 
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [devopsMultisig.address, wallet3.address, termInitializer.address, wallet3.address, termDiamond.address],
+      [
+        devopsMultisig.address,
+        wallet3.address,
+        termInitializer.address,
+        wallet3.address,
+        termDiamond.address,
+      ],
       {
         kind: "uups",
       },
@@ -224,13 +229,11 @@ describe("TermManager Tests", () => {
       .returns(reserveAddress.address);
     await termController.mock.termContractsPaused.returns(false);
 
-
     termRepoRolloverManager = await deployMockContract<TermRepoRolloverManager>(
       wallet1,
       TermRepoRolloverManager__factory.abi,
     );
     await termRepoRolloverManager.mock.fulfillRollover.returns();
-
 
     // Yet to Mature Term Management
 
@@ -645,9 +648,9 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoLocker.connect(wallet2).upgrade(wallet1.address),
       ).to.be.revertedWithCustomError(
-      termRepoLocker,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoLocker,
+        "AccessControlUnauthorizedAccount",
+      );
     });
     it("servicer upgrade succeeds with admin and reverted if called by somebody else", async () => {
       await expect(
@@ -659,9 +662,9 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoServicer.connect(wallet2).upgrade(wallet1.address),
       ).to.be.revertedWithCustomError(
-      termRepoServicer,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoServicer,
+        "AccessControlUnauthorizedAccount",
+      );
     });
     it("collateral manager upgrade succeeds with admin and reverted if called by somebody else", async () => {
       await expect(
@@ -678,9 +681,9 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager.connect(wallet2).upgrade(wallet1.address),
       ).to.be.revertedWithCustomError(
-      termRepoCollateralManager,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoCollateralManager,
+        "AccessControlUnauthorizedAccount",
+      );
     });
   });
 
@@ -693,9 +696,9 @@ describe("TermManager Tests", () => {
           15,
         ),
       ).to.be.revertedWithCustomError(
-      termRepoLocker,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoLocker,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
         termRepoLocker.transferTokenToWallet(
@@ -704,9 +707,9 @@ describe("TermManager Tests", () => {
           15,
         ),
       ).to.be.revertedWithCustomError(
-      termRepoLocker,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoLocker,
+        "AccessControlUnauthorizedAccount",
+      );
     });
     it("all termRepoLocker transfers revert if transfers paused, and resume when unpaused", async () => {
       // pausing reverts when not called by the admin
@@ -787,20 +790,22 @@ describe("TermManager Tests", () => {
       );
 
       await expect(
-        termRepoServicer.connect(wallet1).lockOfferAmount(wallet1.address, wallet1.address, 15),
+        termRepoServicer
+          .connect(wallet1)
+          .lockOfferAmount(wallet1.address, wallet1.address, 15),
       ).to.be.revertedWithCustomError(
-      termRepoServicer,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoServicer,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
         termRepoServicer
           .connect(wallet1)
           .fulfillOffer(wallet1.address, 15, 20, getBytesHash("offer-1")),
       ).to.be.revertedWithCustomError(
-      termRepoServicer,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoServicer,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
         termRepoServicer
@@ -819,7 +824,6 @@ describe("TermManager Tests", () => {
       );
     });
   });
-
 
   describe("collateral ledger balances", () => {
     it("initializes with zero balance for collateral", async () => {
@@ -960,9 +964,9 @@ describe("TermManager Tests", () => {
           termAuctionOfferLocker: anotherAuctionOfferLocker.address,
         }),
       ).to.be.revertedWithCustomError(
-      termRepoCollateralManager,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoCollateralManager,
+        "AccessControlUnauthorizedAccount",
+      );
       // locking collateral
       await expect(
         termRepoCollateralManager.connect(termInitializer).reopenToNewAuction({
@@ -1282,7 +1286,7 @@ describe("TermManager Tests", () => {
 
       await termRepoServicer
         .connect(termAuctionOfferLockerAddress)
-        .lockOfferAmount(wallet1.address, wallet1.address,  "15000000");
+        .lockOfferAmount(wallet1.address, wallet1.address, "15000000");
 
       await termRepoServicer
         .connect(termAuctionAddress)
@@ -1610,13 +1614,17 @@ describe("TermManager Tests", () => {
         .connect(wallet2)
         .approve(await termRepoLocker.getAddress(), "20000000");
 
-      await termRepoServicer.connect(wallet2).submitRepurchasePayment("10000000");
+      await termRepoServicer
+        .connect(wallet2)
+        .submitRepurchasePayment("10000000");
 
       await network.provider.send("evm_increaseTime", [
         60 * 60 * 24 * 365 + 60 * 60,
       ]);
 
-      await termRepoServicer.connect(wallet2).submitRepurchasePayment("10000000");
+      await termRepoServicer
+        .connect(wallet2)
+        .submitRepurchasePayment("10000000");
 
       // Cover isTermRepoBalanced() public function (lines 400-402)
       expect(await termRepoServicer.isTermRepoBalanced()).to.be.true;
@@ -2113,12 +2121,12 @@ describe("TermManager Tests", () => {
         await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
       ).to.eq("20000000");
 
-        expect(await testTermRepoToken.balanceOf(wallet2.address)).to.eq(
-          "37940626",
-        );
-        expect(await testTermRepoToken.balanceOf(treasuryWallet.address)).to.eq(
-          "2059374",
-        );
+      expect(await testTermRepoToken.balanceOf(wallet2.address)).to.eq(
+        "37940626",
+      );
+      expect(await testTermRepoToken.balanceOf(treasuryWallet.address)).to.eq(
+        "2059374",
+      );
 
       // revert if attempt to collapse with no borrow balance
       await expect(
@@ -2783,6 +2791,95 @@ describe("TermManager Tests", () => {
       );
     });
 
+    describe("zero repo token mint amounts", () => {
+      it("reverts with ZeroMintAmount when a primary dealer mints zero repo tokens", async function () {
+        await termController.mock.verifyMintExposureAccess.returns(true);
+
+        await expect(
+          termRepoServicer
+            .connect(wallet2)
+            .mintOpenExposure("0", ["0", "50000000"]),
+        ).to.be.revertedWithCustomError(termRepoServicer, "ZeroMintAmount");
+      });
+
+      it("reverts with ZeroMintAmount when DIAMOND_ROLE mints zero repo tokens for a borrower", async function () {
+        await expect(
+          termRepoServicer
+            .connect(termDiamond)
+            [
+              "mintOpenExposure(address,uint256,uint256[])"
+            ](wallet1.address, "0", ["0", "50000000"]),
+        ).to.be.revertedWithCustomError(termRepoServicer, "ZeroMintAmount");
+      });
+
+      it("reverts with ZeroMintAmount when an intent fill mints zero repo tokens", async function () {
+        await expect(
+          termRepoServicer
+            .connect(termDiamond)
+            .mintOpenExposureFromIntent(
+              wallet1.address,
+              wallet2.address,
+              "0",
+              ["0", "50000000"],
+              "100000000000000000",
+              false,
+            ),
+        ).to.be.revertedWithCustomError(termRepoServicer, "ZeroMintAmount");
+      });
+
+      it("reverts with ZeroMintAmount when an intent fill mints zero repo tokens with routed collateral", async function () {
+        await fungibleToken2
+          .connect(wallet1)
+          .transfer(termDiamond.address, "50000000");
+        await fungibleToken2
+          .connect(termDiamond)
+          .approve(await termRepoLocker.getAddress(), "50000000");
+
+        await expect(
+          termRepoServicer
+            .connect(termDiamond)
+            .mintOpenExposureFromIntent(
+              wallet1.address,
+              wallet2.address,
+              "0",
+              ["0", "50000000"],
+              "100000000000000000",
+              true,
+            ),
+        ).to.be.revertedWithCustomError(termRepoServicer, "ZeroMintAmount");
+      });
+
+      it("locks no collateral and mints no tokens when a zero mint reverts", async function () {
+        await termController.mock.verifyMintExposureAccess.returns(true);
+
+        const lockerBalanceBefore = await fungibleToken2.balanceOf(
+          await termRepoLocker.getAddress(),
+        );
+
+        await expect(
+          termRepoServicer
+            .connect(wallet2)
+            .mintOpenExposure("0", ["0", "50000000"]),
+        ).to.be.revertedWithCustomError(termRepoServicer, "ZeroMintAmount");
+
+        expect(
+          await fungibleToken2.balanceOf(await termRepoLocker.getAddress()),
+        ).to.eq(lockerBalanceBefore);
+        expect(
+          await termRepoCollateralManager.getCollateralBalance(
+            wallet2.address,
+            await fungibleToken2.getAddress(),
+          ),
+        ).to.eq(0);
+        expect(await testTermRepoToken.totalSupply()).to.eq(0);
+        expect(
+          await termRepoServicer.getBorrowerRepurchaseObligation(
+            wallet2.address,
+          ),
+        ).to.eq(0);
+      });
+    });
+
     describe("mintOpenExposureFromIntent", () => {
       it("reverts if caller does not have DIAMOND_ROLE", async function () {
         await expect(
@@ -2873,12 +2970,12 @@ describe("TermManager Tests", () => {
             ),
         ).to.emit(termEventEmitter, "TermRepoTokenMint");
 
-        expect(
-          await testTermRepoToken.balanceOf(wallet2.address),
-        ).to.be.gt(0);
+        expect(await testTermRepoToken.balanceOf(wallet2.address)).to.be.gt(0);
 
         expect(
-          await termRepoServicer.getBorrowerRepurchaseObligation(wallet1.address),
+          await termRepoServicer.getBorrowerRepurchaseObligation(
+            wallet1.address,
+          ),
         ).to.be.gt(0);
       });
 
@@ -2904,12 +3001,12 @@ describe("TermManager Tests", () => {
             ),
         ).to.emit(termEventEmitter, "TermRepoTokenMint");
 
-        expect(
-          await testTermRepoToken.balanceOf(wallet2.address),
-        ).to.be.gt(0);
+        expect(await testTermRepoToken.balanceOf(wallet2.address)).to.be.gt(0);
 
         expect(
-          await termRepoServicer.getBorrowerRepurchaseObligation(wallet1.address),
+          await termRepoServicer.getBorrowerRepurchaseObligation(
+            wallet1.address,
+          ),
         ).to.be.gt(0);
       });
     });
@@ -3453,9 +3550,9 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager.connect(wallet2).pauseLiquidations(),
       ).to.be.revertedWithCustomError(
-      termRepoCollateralManager,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoCollateralManager,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
         termRepoCollateralManager.connect(adminWallet).pauseLiquidations(),
@@ -3476,9 +3573,9 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager.connect(wallet2).unpauseLiquidations(),
       ).to.be.revertedWithCustomError(
-      termRepoCollateralManager,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoCollateralManager,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
         termRepoCollateralManager.connect(adminWallet).unpauseLiquidations(),
@@ -3791,7 +3888,9 @@ describe("TermManager Tests", () => {
       ).to.eq("0");
 
       // Check that the borrower's token balance includes the returned collateral
-      expect(await fungibleToken1.balanceOf(wallet2.address)).to.equal("249999790");
+      expect(await fungibleToken1.balanceOf(wallet2.address)).to.equal(
+        "249999790",
+      );
     });
 
     it("revert batch liquidations of borrowers with no balance", async function () {
@@ -4020,9 +4119,9 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager.connect(wallet2).pauseLiquidations(),
       ).to.be.revertedWithCustomError(
-      termRepoCollateralManager,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoCollateralManager,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
         termRepoCollateralManager.connect(adminWallet).pauseLiquidations(),
@@ -4046,9 +4145,9 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoCollateralManager.connect(wallet2).unpauseLiquidations(),
       ).to.be.revertedWithCustomError(
-      termRepoCollateralManager,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoCollateralManager,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
         termRepoCollateralManager.connect(adminWallet).unpauseLiquidations(),
@@ -4435,7 +4534,9 @@ describe("TermManager Tests", () => {
       ).to.eq("0");
 
       // Check that the borrower's token balance includes the returned collateral
-      expect(await fungibleToken1.balanceOf(wallet2.address)).to.equal("249999790");
+      expect(await fungibleToken1.balanceOf(wallet2.address)).to.equal(
+        "249999790",
+      );
     });
 
     it("revert batch liquidations with repo token of borrowers with no balance", async function () {
@@ -4945,7 +5046,10 @@ describe("TermManager Tests", () => {
         await expect(
           termRepoCollateralManager
             .connect(wallet1)
-            .batchDefaultWithRepoToken(wallet2.address, ["10000000", "10000000"]),
+            .batchDefaultWithRepoToken(wallet2.address, [
+              "10000000",
+              "10000000",
+            ]),
         ).to.be.revertedWithCustomError(
           termRepoCollateralManager,
           "DefaultsClosed",
@@ -4961,7 +5065,10 @@ describe("TermManager Tests", () => {
         await expect(
           termRepoCollateralManager
             .connect(wallet2)
-            .batchDefaultWithRepoToken(wallet2.address, ["10000000", "10000000"]),
+            .batchDefaultWithRepoToken(wallet2.address, [
+              "10000000",
+              "10000000",
+            ]),
         ).to.be.revertedWithCustomError(
           termRepoCollateralManager,
           "SelfLiquidationNotPermitted",
@@ -4997,7 +5104,10 @@ describe("TermManager Tests", () => {
         await expect(
           termRepoCollateralManager
             .connect(wallet1)
-            .batchDefaultWithRepoToken(wallet2.address, [MaxUint256, "10000000"]),
+            .batchDefaultWithRepoToken(wallet2.address, [
+              MaxUint256,
+              "10000000",
+            ]),
         )
           .to.be.revertedWithCustomError(
             termRepoCollateralManager,
@@ -5091,7 +5201,9 @@ describe("TermManager Tests", () => {
 
         // Verify borrower's remaining obligation
         expect(
-          await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
+          await termRepoServicer.getBorrowerRepurchaseObligation(
+            wallet2.address,
+          ),
         ).to.equal("10000000");
       });
 
@@ -5109,7 +5221,9 @@ describe("TermManager Tests", () => {
 
         // Verify borrower obligation is zero
         expect(
-          await termRepoServicer.getBorrowerRepurchaseObligation(wallet2.address),
+          await termRepoServicer.getBorrowerRepurchaseObligation(
+            wallet2.address,
+          ),
         ).to.equal("0");
 
         // Verify all collateral is unencumbered
@@ -5132,12 +5246,17 @@ describe("TermManager Tests", () => {
           60 * 60 * 24 * 365 + 60 * 60 + 60 * 60 * 10,
         ]);
 
-        await termRepoCollateralManager.connect(adminWallet).pauseLiquidations();
+        await termRepoCollateralManager
+          .connect(adminWallet)
+          .pauseLiquidations();
 
         await expect(
           termRepoCollateralManager
             .connect(wallet1)
-            .batchDefaultWithRepoToken(wallet2.address, ["10000000", "10000000"]),
+            .batchDefaultWithRepoToken(wallet2.address, [
+              "10000000",
+              "10000000",
+            ]),
         ).to.be.revertedWithCustomError(
           termRepoCollateralManager,
           "LiquidationsPaused",
@@ -5167,9 +5286,9 @@ describe("TermManager Tests", () => {
           anotherAuction.address,
         ),
       ).to.be.revertedWithCustomError(
-      termRepoCollateralManager,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoCollateralManager,
+        "AccessControlUnauthorizedAccount",
+      );
       await termRepoCollateralManager
         .connect(termRepoRolloverManagerSigner)
         .approveRolloverAuction(anotherAuction.address);
@@ -5211,9 +5330,9 @@ describe("TermManager Tests", () => {
           anotherAuction.address,
         ),
       ).to.be.revertedWithCustomError(
-      termRepoCollateralManager,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoCollateralManager,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
         termRepoCollateralManager
@@ -5312,9 +5431,9 @@ describe("TermManager Tests", () => {
           anotherAuction.address,
         ),
       ).to.be.revertedWithCustomError(
-      termRepoCollateralManager,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoCollateralManager,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
         termRepoCollateralManager
@@ -5412,9 +5531,9 @@ describe("TermManager Tests", () => {
             "1000000000000000000",
           ),
       ).to.be.revertedWithCustomError(
-      termRepoCollateralManager,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoCollateralManager,
+        "AccessControlUnauthorizedAccount",
+      );
       await expect(
         termRepoServicer
           .connect(termAuctionAddress)
@@ -5459,9 +5578,9 @@ describe("TermManager Tests", () => {
       await expect(
         termRepoServicer.approveRolloverAuction(anotherAuction.address),
       ).to.be.revertedWithCustomError(
-      termRepoServicer,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoServicer,
+        "AccessControlUnauthorizedAccount",
+      );
       await termRepoServicer
         .connect(termRepoRolloverManagerSigner)
         .approveRolloverAuction(anotherAuction.address);
@@ -5531,9 +5650,9 @@ describe("TermManager Tests", () => {
           .connect(wallet2)
           .closeExposureOnRolloverExisting(wallet1.address, "600001"),
       ).to.be.revertedWithCustomError(
-      termRepoCollateralManager,
-      "AccessControlUnauthorizedAccount",
-    );
+        termRepoCollateralManager,
+        "AccessControlUnauthorizedAccount",
+      );
 
       await expect(
         termRepoServicer
@@ -5605,4 +5724,3 @@ describe("TermManager Tests", () => {
     expect(await termRepoCollateralManager.version()).to.eq(expectedVersion);
   });
 });
-/* eslint-enable camelcase */

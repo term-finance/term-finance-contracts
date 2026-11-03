@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
@@ -74,8 +73,14 @@ describe("TermInitializer Tests", () => {
   const DEVOPS_ROLE = ethers.keccak256(ethers.toUtf8Bytes("DEVOPS_ROLE"));
 
   before(async () => {
-    [deployer, devopsWallet, initializerApprovalWallet, adminWallet, wallet1, diamond] =
-      await ethers.getSigners();
+    [
+      deployer,
+      devopsWallet,
+      initializerApprovalWallet,
+      adminWallet,
+      wallet1,
+      diamond,
+    ] = await ethers.getSigners();
 
     // oracle address – only passed to mock pairTermContracts, never called
     oracleAddr = wallet1.address;
@@ -317,6 +322,18 @@ describe("TermInitializer Tests", () => {
     };
   }
 
+  /** Returns a TermContractGroup with zeroed auction addresses for setupTermWithoutAuction */
+  function makeGroupWithoutAuction(
+    overrides: Record<string, string> = {},
+  ): any {
+    return makeGroup({
+      termAuctionOfferLocker: ethers.ZeroAddress,
+      termAuctionBidLocker: ethers.ZeroAddress,
+      auction: ethers.ZeroAddress,
+      ...overrides,
+    });
+  }
+
   /** Stubs isTermDeployed(addr)=true on mockControllerDefault for the given addresses */
   async function stubTermDeployed(...addrs: string[]): Promise<void> {
     const iface = ITermController__factory.createInterface();
@@ -350,8 +367,8 @@ describe("TermInitializer Tests", () => {
     });
 
     it("devopsWallet receives DEVOPS_ROLE", async () => {
-      expect(await initializer.hasRole(DEVOPS_ROLE, devopsWallet.address)).to
-        .be.true;
+      expect(await initializer.hasRole(DEVOPS_ROLE, devopsWallet.address)).to.be
+        .true;
     });
   });
 
@@ -368,7 +385,7 @@ describe("TermInitializer Tests", () => {
             mockControllerAllTrueAddr as any,
             mockEmitterAddr as any,
             oracleAddr as any,
-            diamond.address
+            diamond.address,
           ),
       ).to.be.revertedWithCustomError(
         initializer,
@@ -384,7 +401,7 @@ describe("TermInitializer Tests", () => {
             mockControllerAllTrueAddr as any,
             mockEmitterAddr as any,
             oracleAddr as any,
-            diamond.address
+            diamond.address,
           ),
       ).to.not.be.reverted;
     });
@@ -411,8 +428,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
-
+          diamond.address,
         );
       await initializer.connect(devopsWallet).pauseDeploying();
       await expect(
@@ -447,7 +463,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await initializer.connect(devopsWallet).pauseDeploying();
       await initializer.connect(devopsWallet).unpauseDeploying();
@@ -480,8 +496,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
-
+          diamond.address,
         );
       await expect(
         initializer
@@ -507,8 +522,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
-
+          diamond.address,
         );
       await initializer.connect(devopsWallet).pauseDeploying();
       await expect(
@@ -532,8 +546,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
-
+          diamond.address,
         );
       await expect(
         initializer
@@ -557,7 +570,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -581,7 +594,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await stubTermDeployed(mockServicerAddr);
       await expect(
@@ -606,7 +619,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await stubTermDeployed(mockServicerAddr, mockCollateralManagerAddr);
       await expect(
@@ -631,7 +644,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await stubTermDeployed(
         mockServicerAddr,
@@ -660,7 +673,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await stubTermDeployed(
         mockServicerAddr,
@@ -690,7 +703,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await stubTermDeployed(
         mockServicerAddr,
@@ -721,7 +734,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await stubTermDeployed(
         mockServicerAddr,
@@ -753,7 +766,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await stubTermDeployed(
         mockServicerAddr,
@@ -787,7 +800,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -810,8 +823,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
-
+          diamond.address,
         );
       await expect(
         initializer
@@ -834,7 +846,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -857,7 +869,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -880,7 +892,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -903,7 +915,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -926,7 +938,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -949,7 +961,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -972,7 +984,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -983,6 +995,443 @@ describe("TermInitializer Tests", () => {
             adminWallet.address,
             deployer.address,
             "v1",
+            "v1",
+          ),
+      ).to.not.be.reverted;
+    });
+  });
+
+  // ============================================================================
+  // = setupTermWithoutAuction ==================================================
+  // ============================================================================
+
+  describe("setupTermWithoutAuction", () => {
+    it("reverts without INITIALIZER_APPROVAL_ROLE", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerDefaultAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await expect(
+        initializer
+          .connect(deployer)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction(),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
+            "v1",
+          ),
+      ).to.be.revertedWithCustomError(
+        initializer,
+        "AccessControlUnauthorizedAccount",
+      );
+    });
+
+    it("reverts DeployingPaused", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerAllTrueAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await initializer.connect(devopsWallet).pauseDeploying();
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction(),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
+            "v1",
+          ),
+      ).to.be.revertedWithCustomError(initializer, "DeployingPaused");
+    });
+
+    it("reverts Zero address deployer wallet", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerAllTrueAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction(),
+            adminWallet.address,
+            adminWallet.address,
+            ethers.ZeroAddress,
+            "v1",
+          ),
+      ).to.be.revertedWith("Zero address deployer wallet");
+    });
+
+    // isTermDeployed check 1: servicer
+    it("reverts Non-Term TRS when servicer not deployed", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerDefaultAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction(),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
+            "v1",
+          ),
+      ).to.be.revertedWith("Non-Term TRS");
+    });
+
+    // isTermDeployed check 2: collateralManager
+    it("reverts Non-Term TRCM when collateralManager not deployed", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerDefaultAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await stubTermDeployed(mockServicerAddr);
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction(),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
+            "v1",
+          ),
+      ).to.be.revertedWith("Non-Term TRCM");
+    });
+
+    // isTermDeployed check 3: locker
+    it("reverts Non-Term TRL when locker not deployed", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerDefaultAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await stubTermDeployed(mockServicerAddr, mockCollateralManagerAddr);
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction(),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
+            "v1",
+          ),
+      ).to.be.revertedWith("Non-Term TRL");
+    });
+
+    // isTermDeployed check 4: token
+    it("reverts Non-Term TRT when token not deployed", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerDefaultAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await stubTermDeployed(
+        mockServicerAddr,
+        mockCollateralManagerAddr,
+        mockLockerAddr,
+      );
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction(),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
+            "v1",
+          ),
+      ).to.be.revertedWith("Non-Term TRT");
+    });
+
+    // isTermDeployed check 5: rolloverManager
+    it("reverts Non-Term TRM when rolloverManager not deployed", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerDefaultAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await stubTermDeployed(
+        mockServicerAddr,
+        mockCollateralManagerAddr,
+        mockLockerAddr,
+        mockTokenAddr,
+      );
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction(),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
+            "v1",
+          ),
+      ).to.be.revertedWith("Non-Term TRM");
+    });
+
+    // Zero address checks (all isTermDeployed pass via mockControllerAllTrue wildcard)
+
+    it("reverts Zero Address Servicer", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerAllTrueAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction({ termRepoServicer: ethers.ZeroAddress }),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
+            "v1",
+          ),
+      ).to.be.revertedWith("Zero Address Servicer");
+    });
+
+    it("reverts Zero Address Collateral Manager", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerAllTrueAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await expect(
+        initializer.connect(initializerApprovalWallet).setupTermWithoutAuction(
+          makeGroupWithoutAuction({
+            termRepoCollateralManager: ethers.ZeroAddress,
+          }),
+          adminWallet.address,
+          adminWallet.address,
+          deployer.address,
+          "v1",
+        ),
+      ).to.be.revertedWith("Zero Address Collateral Manager");
+    });
+
+    it("reverts Zero Address Locker", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerAllTrueAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction({ termRepoLocker: ethers.ZeroAddress }),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
+            "v1",
+          ),
+      ).to.be.revertedWith("Zero Address Locker");
+    });
+
+    it("reverts Zero Address RepoToken", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerAllTrueAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction({ termRepoToken: ethers.ZeroAddress }),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
+            "v1",
+          ),
+      ).to.be.revertedWith("Zero Address RepoToken");
+    });
+
+    it("reverts Zero Address RolloverManager", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerAllTrueAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction({ rolloverManager: ethers.ZeroAddress }),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
+            "v1",
+          ),
+      ).to.be.revertedWith("Zero Address RolloverManager");
+    });
+
+    // Auction addresses must be zero
+
+    it("reverts when termAuctionBidLocker is nonzero", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerAllTrueAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await expect(
+        initializer.connect(initializerApprovalWallet).setupTermWithoutAuction(
+          makeGroupWithoutAuction({
+            termAuctionBidLocker: mockBidLockerAddr,
+          }),
+          adminWallet.address,
+          adminWallet.address,
+          deployer.address,
+          "v1",
+        ),
+      ).to.be.revertedWith("termAuctionBidLocker must be zero address");
+    });
+
+    it("reverts when termAuctionOfferLocker is nonzero", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerAllTrueAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await expect(
+        initializer.connect(initializerApprovalWallet).setupTermWithoutAuction(
+          makeGroupWithoutAuction({
+            termAuctionOfferLocker: mockOfferLockerAddr,
+          }),
+          adminWallet.address,
+          adminWallet.address,
+          deployer.address,
+          "v1",
+        ),
+      ).to.be.revertedWith("termAuctionOfferLocker must be zero address");
+    });
+
+    it("reverts when auction is nonzero", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerAllTrueAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction({ auction: mockAuctionAddr }),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
+            "v1",
+          ),
+      ).to.be.revertedWith("auction must be zero address");
+    });
+
+    it("reverts Duplicate Repo ID", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerAllTrueAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      // registeredRepoIds(testRepoId) → true overrides the wildcard false stub
+      await mockControllerAllTrue.setup({
+        abi: ITermController__factory.createInterface().getFunction(
+          "registeredRepoIds",
+        ),
+        kind: "read",
+        inputs: [ethers.encodeBytes32String("testRepoId")] as any,
+        outputs: [true],
+      });
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction(),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
+            "v1",
+          ),
+      ).to.be.revertedWith("Duplicate Repo ID");
+    });
+
+    it("success — pairs all non-auction contracts", async () => {
+      await initializer
+        .connect(deployer)
+        .pairTermContracts(
+          mockControllerAllTrueAddr as any,
+          mockEmitterAddr as any,
+          oracleAddr as any,
+          diamond.address,
+        );
+      await expect(
+        initializer
+          .connect(initializerApprovalWallet)
+          .setupTermWithoutAuction(
+            makeGroupWithoutAuction(),
+            adminWallet.address,
+            adminWallet.address,
+            deployer.address,
             "v1",
           ),
       ).to.not.be.reverted;
@@ -1001,7 +1450,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -1030,7 +1479,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await initializer.connect(devopsWallet).pauseDeploying();
       await expect(
@@ -1057,7 +1506,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -1084,7 +1533,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -1111,7 +1560,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await stubTermDeployed(mockServicerAddr);
       await expect(
@@ -1139,7 +1588,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await stubTermDeployed(mockServicerAddr, mockCollateralManagerAddr);
       await expect(
@@ -1167,7 +1616,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await stubTermDeployed(
         mockServicerAddr,
@@ -1199,7 +1648,7 @@ describe("TermInitializer Tests", () => {
           mockControllerDefaultAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await stubTermDeployed(
         mockServicerAddr,
@@ -1233,7 +1682,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -1259,7 +1708,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -1285,7 +1734,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer
@@ -1311,7 +1760,7 @@ describe("TermInitializer Tests", () => {
           mockControllerAllTrueAddr as any,
           mockEmitterAddr as any,
           oracleAddr as any,
-          diamond.address
+          diamond.address,
         );
       await expect(
         initializer

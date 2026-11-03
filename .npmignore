@@ -3,3 +3,6 @@ scripts
 test
 audits
 certora
+cache
+contracts/test
+artifacts/contracts/test

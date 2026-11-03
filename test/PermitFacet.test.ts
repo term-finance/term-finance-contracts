@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
@@ -40,8 +39,9 @@ describe("PermitFacet Tests", () => {
     await permitFacet.waitForDeployment();
 
     // Deploy mock permit token
-    const MockTokenFactory =
-      await ethers.getContractFactory("TestMockPermitToken");
+    const MockTokenFactory = await ethers.getContractFactory(
+      "TestMockPermitToken",
+    );
     mockToken = (await upgrades.deployProxy(MockTokenFactory, [
       "Mock Permit Token",
       "MPT",
@@ -52,8 +52,9 @@ describe("PermitFacet Tests", () => {
     await mockToken.waitForDeployment();
 
     // Deploy mock term controllers
-    const MockControllerFactory =
-      await ethers.getContractFactory("TestMockTermController");
+    const MockControllerFactory = await ethers.getContractFactory(
+      "TestMockTermController",
+    );
     mockController =
       (await MockControllerFactory.deploy()) as unknown as TestMockTermController;
     await mockController.waitForDeployment();

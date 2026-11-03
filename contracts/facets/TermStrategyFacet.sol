@@ -36,24 +36,30 @@ interface IStrategy {
     }
 
     function asset() external view returns (address);
-    function sellRepoToken(
-        address repoToken,
-        uint256 amount
-    ) external;
+    function sellRepoToken(address repoToken, uint256 amount) external;
     function strategyState() external view returns (StrategyState memory);
 }
 
 interface IDiscountRateAdapter {
     function getDiscountRate(address repoToken) external view returns (uint256);
-    function repoRedemptionHaircut(address repoToken) external view returns (uint256);
+    function repoRedemptionHaircut(
+        address repoToken
+    ) external view returns (uint256);
 }
 
-
-/// @author TermLabs  
+/// @author TermLabs
 /// @title Term Strategy Facet
 /// @notice This facet provides functionality to interact with strategy contracts for repo token operations
 /// @dev This facet allows users to sell repo tokens through approved strategy contracts with automatic asset handling
-contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxProtection, TermMulticallProtection, TermMultiContextAuth, ExponentialNoError, Versionable {
+contract TermStrategyFacet is
+    ReentrancyGuard,
+    TermFlashHookFacet,
+    TermAtomicTxProtection,
+    TermMulticallProtection,
+    TermMultiContextAuth,
+    ExponentialNoError,
+    Versionable
+{
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
 
@@ -71,9 +77,11 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
     // ========================================================================
     // = Deploy ===============================================================
     // ========================================================================
-    
+
     constructor() {
-        previewMapping[this.mintAndSellRepoTokenHook.selector] = this.previewMintAndSellRepoToken.selector;
+        previewMapping[this.mintAndSellRepoTokenHook.selector] = this
+            .previewMintAndSellRepoToken
+            .selector;
     }
 
     // ========================================================================
@@ -96,10 +104,16 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
         uint256 preProceedsBalance = IERC20(asset).balanceOf(address(this));
 
         // Transfer repo tokens from user to this contract
-        IERC20(repoToken).safeTransferFrom(msg.sender, address(this), repoTokenAmount);
+        IERC20(repoToken).safeTransferFrom(
+            msg.sender,
+            address(this),
+            repoTokenAmount
+        );
 
         // Check repo token balance before strategy call
-        uint256 repoTokenBalanceBefore = IERC20(repoToken).balanceOf(address(this));
+        uint256 repoTokenBalanceBefore = IERC20(repoToken).balanceOf(
+            address(this)
+        );
 
         IERC20(repoToken).forceApprove(address(strategy), repoTokenAmount);
 
@@ -109,7 +123,9 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
         IERC20(repoToken).forceApprove(address(strategy), 0);
 
         // Check repo token balance after strategy call
-        uint256 repoTokenBalanceAfter = IERC20(repoToken).balanceOf(address(this));
+        uint256 repoTokenBalanceAfter = IERC20(repoToken).balanceOf(
+            address(this)
+        );
 
         // Ensure exact amount was consumed
         if (repoTokenBalanceBefore - repoTokenBalanceAfter != repoTokenAmount) {
@@ -123,7 +139,7 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
             revert NoProceedsReceived();
         }
         proceeds = postProceedsBalance - preProceedsBalance;
-        
+
         IERC20(asset).safeTransfer(msg.sender, proceeds);
     }
 
@@ -141,20 +157,27 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
         uint256 borrowAmount,
         uint256[] calldata collateralAmounts,
         bool usePermit2
-    ) external initiateAtomicTxProtection nonReentrant returns (uint256 proceeds) {
+    )
+        external
+        initiateAtomicTxProtection
+        nonReentrant
+        returns (uint256 proceeds)
+    {
         address borrower = msg.sender;
-        ITermRepoServicer _termRepoServicer = ITermRepoServicer(termRepoServicer);
+        ITermRepoServicer _termRepoServicer = ITermRepoServicer(
+            termRepoServicer
+        );
 
         ITermRepoCollateralManager termRepoCollateralManager = ITermRepoCollateralManager(
-            _termRepoServicer.termRepoCollateralManager()
-        );
+                _termRepoServicer.termRepoCollateralManager()
+            );
 
         address collateralToken;
         uint256 amount;
         uint8 index;
 
         // @dev Transfer collateral tokens from msg.sender to this contract
-        for (index = 0; index < collateralAmounts.length; ++index){
+        for (index = 0; index < collateralAmounts.length; ++index) {
             collateralToken = termRepoCollateralManager.collateralTokens(index);
             amount = collateralAmounts[index];
             if (usePermit2) {
@@ -165,18 +188,23 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
                     collateralToken
                 );
             } else {
-                IERC20(collateralToken).safeTransferFrom(borrower, address(this), amount);
+                IERC20(collateralToken).safeTransferFrom(
+                    borrower,
+                    address(this),
+                    amount
+                );
             }
         }
 
-        return _mintAndSellRepoTokenInternal(
-            strategy,
-            termRepoServicer,
-            borrower,
-            borrowAmount,
-            collateralAmounts,
-            true
-        );
+        return
+            _mintAndSellRepoTokenInternal(
+                strategy,
+                termRepoServicer,
+                borrower,
+                borrowAmount,
+                collateralAmounts,
+                true
+            );
     }
 
     // ========================================================================
@@ -201,14 +229,22 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
     /// @return proceeds The purchase token amount received from selling the minted repo tokens.
     function mintAndSellRepoTokenHook(
         ActionHookInput calldata input
-    ) external onlyFlashLoanContext(input.user) nonReentrant returns (uint256 proceeds) {
+    )
+        external
+        onlyFlashLoanContext(input.user)
+        nonReentrant
+        returns (uint256 proceeds)
+    {
         address borrower = input.user;
         address collateralToken = input.inputToken;
         uint256 collateralAmount = input.maxInputAmount;
         address purchaseToken = input.outputToken;
         uint256 borrowAmount = input.minOutputAmount;
         address termRepoServicer = input.targetAddress;
-        address strategyAddress = abi.decode(input.additionalCalldata, (address));
+        address strategyAddress = abi.decode(
+            input.additionalCalldata,
+            (address)
+        );
 
         IStrategy strategy = IStrategy(strategyAddress);
 
@@ -218,19 +254,22 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
             collateralAmount
         );
 
-        ITermRepoServicer _termRepoServicer = ITermRepoServicer(termRepoServicer);
+        ITermRepoServicer _termRepoServicer = ITermRepoServicer(
+            termRepoServicer
+        );
         if (_termRepoServicer.purchaseToken() != purchaseToken) {
             revert PurchaseTokenMismatch();
         }
 
-        return _mintAndSellRepoTokenInternal(
-            strategy,
-            termRepoServicer,
-            borrower,
-            borrowAmount,
-            collateralAmounts,
-            false
-        );
+        return
+            _mintAndSellRepoTokenInternal(
+                strategy,
+                termRepoServicer,
+                borrower,
+                borrowAmount,
+                collateralAmounts,
+                false
+            );
     }
 
     // ========================================================================
@@ -248,21 +287,27 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
         ActionHookInput calldata actionHookInput
     ) external view returns (PreviewAction memory) {
         address termRepoServicerAddr = actionHookInput.targetAddress;
-        address strategyAddress = abi.decode(actionHookInput.additionalCalldata, (address));
-        
-         ITermRepoServicer termRepoServicer = ITermRepoServicer(termRepoServicerAddr);
-         IStrategy strategy = IStrategy(strategyAddress);
-         if (termRepoServicer.purchaseToken() != strategy.asset()) {
-             revert PurchaseTokenMismatch();
-         }
+        address strategyAddress = abi.decode(
+            actionHookInput.additionalCalldata,
+            (address)
+        );
 
-         return PreviewAction({
-            expectedInputToken: actionHookInput.inputToken,
-            expectedInputAmount: actionHookInput.maxInputAmount,
-            expectedOutputToken: strategy.asset(),
-            expectedOutputAmount: actionHookInput.minOutputAmount,
-            isDeterministic: true
-         });
+        ITermRepoServicer termRepoServicer = ITermRepoServicer(
+            termRepoServicerAddr
+        );
+        IStrategy strategy = IStrategy(strategyAddress);
+        if (termRepoServicer.purchaseToken() != strategy.asset()) {
+            revert PurchaseTokenMismatch();
+        }
+
+        return
+            PreviewAction({
+                expectedInputToken: actionHookInput.inputToken,
+                expectedInputAmount: actionHookInput.maxInputAmount,
+                expectedOutputToken: strategy.asset(),
+                expectedOutputAmount: actionHookInput.minOutputAmount,
+                isDeterministic: true
+            });
     }
 
     function _mintAndSellRepoTokenInternal(
@@ -274,22 +319,28 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
         bool payoutToUser
     ) internal returns (uint256 proceeds) {
         IStrategy.StrategyState memory strategyState = strategy.strategyState();
-         _validateStrategy(strategy, strategyState);
-         ITermRepoServicer _termRepoServicer = ITermRepoServicer(termRepoServicer);
+        _validateStrategy(strategy, strategyState);
+        ITermRepoServicer _termRepoServicer = ITermRepoServicer(
+            termRepoServicer
+        );
         _validateRepoServicer(_termRepoServicer);
         if (_termRepoServicer.purchaseToken() != strategy.asset()) {
-             revert PurchaseTokenMismatch();
-         }
+            revert PurchaseTokenMismatch();
+        }
         ITermRepoLocker termRepoLocker = _termRepoServicer.termRepoLocker();
 
         ITermRepoCollateralManager termRepoCollateralManager = ITermRepoCollateralManager(
-            _termRepoServicer.termRepoCollateralManager()
-        );
+                _termRepoServicer.termRepoCollateralManager()
+            );
 
         ITermRepoToken termRepoTokenMinted = _termRepoServicer.termRepoToken();
 
         // Block repo tokens with redemption haircuts — our pricing doesn't account for them
-        if (strategyState.discountRateAdapter.repoRedemptionHaircut(address(termRepoTokenMinted)) != 0) {
+        if (
+            strategyState.discountRateAdapter.repoRedemptionHaircut(
+                address(termRepoTokenMinted)
+            ) != 0
+        ) {
             revert RepoRedemptionHaircutNotSupported();
         }
 
@@ -297,20 +348,28 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
         uint256 amount;
         uint8 index;
 
-        for (index = 0; index < collateralAmounts.length; ++index){
+        for (index = 0; index < collateralAmounts.length; ++index) {
             collateralToken = termRepoCollateralManager.collateralTokens(index);
             amount = collateralAmounts[index];
             if (amount > 0) {
-                IERC20(collateralToken).forceApprove(address(termRepoLocker), amount);
+                IERC20(collateralToken).forceApprove(
+                    address(termRepoLocker),
+                    amount
+                );
             }
         }
 
-        uint256 discountRate = strategyState.discountRateAdapter.getDiscountRate(address(termRepoTokenMinted));
+        uint256 discountRate = strategyState
+            .discountRateAdapter
+            .getDiscountRate(address(termRepoTokenMinted));
         uint256 discountRateMarkup = strategyState.discountRateMarkup;
 
         Exp memory dayCountFraction = div_(
             // solhint-disable-next-line not-rely-on-time
-            Exp({mantissa: (_termRepoServicer.redemptionTimestamp() - block.timestamp)}),
+            Exp({
+                mantissa: (_termRepoServicer.redemptionTimestamp() -
+                    block.timestamp)
+            }),
             Exp({mantissa: (360 days)})
         );
 
@@ -338,11 +397,12 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
         // Forward-verify: ensure the strategy would pay at least borrowAmount
         uint256 estimatedProceeds = truncate(
             div_(
-                Exp({mantissa: mul_(minAmountOfRepoTokensToSell, redemptionValue)}),
+                Exp({
+                    mantissa: mul_(minAmountOfRepoTokensToSell, redemptionValue)
+                }),
                 repurchaseFactor
             )
         );
-
 
         /// @dev This off-by-one adjustment is necessary due to precision loss in division operations.
         // Round up minAmountOfRepoTokensToSell if estimated proceeds are less than borrow amount to ensure we meet the target after the discount
@@ -356,31 +416,35 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
             Exp({mantissa: _termRepoServicer.servicingFee()})
         );
 
-        uint256 amountOfRepoTokensToMint = 
-            truncate(
-                div_(
-                    Exp({mantissa: minAmountOfRepoTokensToSell * expScale}),
-                    sub_(Exp({mantissa: expScale}), proRatedServicingFee)
-                )
-            );
+        uint256 amountOfRepoTokensToMint = truncate(
+            div_(
+                Exp({mantissa: minAmountOfRepoTokensToSell * expScale}),
+                sub_(Exp({mantissa: expScale}), proRatedServicingFee)
+            )
+        );
 
         uint256 proratedFee = mul_ScalarTruncate(
             proRatedServicingFee,
             amountOfRepoTokensToMint
         );
 
-        uint256 repoTokenBalanceBeforeMint = termRepoTokenMinted.balanceOf(address(this));
-        
+        uint256 repoTokenBalanceBeforeMint = termRepoTokenMinted.balanceOf(
+            address(this)
+        );
+
         _termRepoServicer.mintOpenExposure(
-            borrower, 
-            amountOfRepoTokensToMint, 
+            borrower,
+            amountOfRepoTokensToMint,
             collateralAmounts
         );
 
-        uint256 repoTokenBalanceAfterMint = termRepoTokenMinted.balanceOf(address(this));
-        uint256 actualMintedAmount = repoTokenBalanceAfterMint - repoTokenBalanceBeforeMint;
+        uint256 repoTokenBalanceAfterMint = termRepoTokenMinted.balanceOf(
+            address(this)
+        );
+        uint256 actualMintedAmount = repoTokenBalanceAfterMint -
+            repoTokenBalanceBeforeMint;
 
-        for (index = 0; index < collateralAmounts.length; ++index){
+        for (index = 0; index < collateralAmounts.length; ++index) {
             collateralToken = termRepoCollateralManager.collateralTokens(index);
             IERC20(collateralToken).forceApprove(address(termRepoLocker), 0);
         }
@@ -391,15 +455,22 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
         termRepoTokenMinted.approve(address(strategy), actualMintedAmount);
 
         // Call the strategy's sellRepoTokenfunction
-        strategy.sellRepoToken(address(termRepoTokenMinted), actualMintedAmount);
+        strategy.sellRepoToken(
+            address(termRepoTokenMinted),
+            actualMintedAmount
+        );
 
         termRepoTokenMinted.approve(address(strategy), 0);
 
         // Check repo token balance after strategy call
-        uint256 repoTokenBalanceAfterSellRepoToken = termRepoTokenMinted.balanceOf(address(this));
+        uint256 repoTokenBalanceAfterSellRepoToken = termRepoTokenMinted
+            .balanceOf(address(this));
 
         // Ensure exact amount was consumed
-        if (repoTokenBalanceAfterMint - repoTokenBalanceAfterSellRepoToken != actualMintedAmount) {
+        if (
+            repoTokenBalanceAfterMint - repoTokenBalanceAfterSellRepoToken !=
+            actualMintedAmount
+        ) {
             revert RepoTokensNotFullyConsumed();
         }
 
@@ -426,14 +497,17 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
             proceeds,
             actualMintedAmount,
             proratedFee,
-            _termRepoServicer.termController().getTreasuryAddress(), 
+            _termRepoServicer.termController().getTreasuryAddress(),
             0, // originalOrderAmount is not applicable for this flow
             0, // expiry is not applicable for this flow
             0 // salt is not applicable for this flow
         );
     }
 
-    function _validateStrategy(IStrategy strategy, IStrategy.StrategyState memory strategyState) private view {
+    function _validateStrategy(
+        IStrategy strategy,
+        IStrategy.StrategyState memory strategyState
+    ) private view {
         ITermController controller = strategyState.currTermController;
         TermStorage storage s = LibTermStorage.termStorage();
         if (!s.approvedTermControllers[address(controller)]) {
@@ -450,7 +524,10 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
         if (!s.approvedTermControllers[address(termController)]) {
             revert InvalidTermController();
         }
-        if (!termController.isTermDeployed(address(servicer)) && !termController.isFactoryDeployed(address(servicer))) {
+        if (
+            !termController.isTermDeployed(address(servicer)) &&
+            !termController.isFactoryDeployed(address(servicer))
+        ) {
             revert InvalidRepoId();
         }
 
@@ -459,15 +536,16 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
         }
     }
 
-
     function _buildCollateralAmountsArray(
         address servicer,
         address collateralToken,
         uint256 collateralAmount
     ) internal view returns (uint256[] memory) {
         ITermRepoServicer termRepoServicer = ITermRepoServicer(servicer);
-        ITermRepoCollateralManager collateralManager = termRepoServicer.termRepoCollateralManager();
-        uint256 numCollateralTokens = collateralManager.numOfAcceptedCollateralTokens();
+        ITermRepoCollateralManager collateralManager = termRepoServicer
+            .termRepoCollateralManager();
+        uint256 numCollateralTokens = collateralManager
+            .numOfAcceptedCollateralTokens();
         uint256[] memory collateralAmounts = new uint256[](numCollateralTokens);
 
         bool collateralSupported;
@@ -476,7 +554,7 @@ contract TermStrategyFacet is ReentrancyGuard, TermFlashHookFacet, TermAtomicTxP
                 collateralAmounts[i] = collateralAmount;
                 collateralSupported = true;
                 break;
-            } 
+            }
         }
 
         if (!collateralSupported) {

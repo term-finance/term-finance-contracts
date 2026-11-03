@@ -1,12 +1,7 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import dayjs from "dayjs";
-import {
-  ZeroAddress,
-  ZeroHash,
-  solidityPackedKeccak256,
-} from "ethers";
+import { ZeroAddress, ZeroHash, solidityPackedKeccak256 } from "ethers";
 import { ethers, network, upgrades } from "hardhat";
 import { getBytesHash } from "../utils/simulation-utils";
 import {
@@ -95,7 +90,13 @@ describe("Encumbered Collateral Tracking Tests", () => {
 
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [devopsMultisig.address, wallet3.address, termInitializer.address, adminWallet.address, termDiamond.address],
+      [
+        devopsMultisig.address,
+        wallet3.address,
+        termInitializer.address,
+        adminWallet.address,
+        termDiamond.address,
+      ],
       { kind: "uups" },
     )) as unknown as TermEventEmitter;
 
@@ -146,13 +147,34 @@ describe("Encumbered Collateral Tracking Tests", () => {
       await ethers.getContractFactory("TestPriceFeed");
 
     collateral1Feed = await mockPriceFeedFactory.deploy(
-      3, "", 1, 1, 2 * 1e3, 1, 1, 1, // $2 per token
+      3,
+      "",
+      1,
+      1,
+      2 * 1e3,
+      1,
+      1,
+      1, // $2 per token
     );
     collateral2Feed = await mockPriceFeedFactory.deploy(
-      3, "", 1, 1, 1e3, 1, 1, 1, // $1 per token
+      3,
+      "",
+      1,
+      1,
+      1e3,
+      1,
+      1,
+      1, // $1 per token
     );
     const purchaseTokenFeed = await mockPriceFeedFactory.deploy(
-      3, "", 1, 1, 1e3, 1, 1, 1, // $1 per token
+      3,
+      "",
+      1,
+      1,
+      1e3,
+      1,
+      1,
+      1, // $1 per token
     );
 
     testOracleConsumer = (await upgrades.deployProxy(TermPriceConsumerV3, [
@@ -196,11 +218,10 @@ describe("Encumbered Collateral Tracking Tests", () => {
     await termController.mock.termContractsPaused.returns(false);
 
     // Mock rollover manager
-    termRepoRolloverManager =
-      await deployMockContract<TermRepoRolloverManager>(
-        wallet1,
-        TermRepoRolloverManager__factory.abi,
-      );
+    termRepoRolloverManager = await deployMockContract<TermRepoRolloverManager>(
+      wallet1,
+      TermRepoRolloverManager__factory.abi,
+    );
     await termRepoRolloverManager.mock.fulfillRollover.returns();
     await termRepoRolloverManager.mock.getRolloverInstructions.returns({
       rolloverAuctionBidLocker: ZeroAddress,
@@ -487,7 +508,12 @@ describe("Encumbered Collateral Tracking Tests", () => {
       // CT1: 15M tokens ($30), CT2: 15M tokens ($15) = $45 total
       // Loan: 15M, Repurchase: 20M
       await setupLoanPosition(
-        wallet2, "15000000", "15000000", "15000000", "20000000", "offer-1",
+        wallet2,
+        "15000000",
+        "15000000",
+        "15000000",
+        "20000000",
+        "offer-1",
       );
 
       // Verify initial encumbered state
@@ -540,7 +566,12 @@ describe("Encumbered Collateral Tracking Tests", () => {
       // New loan for Alice using ONLY CT1
       // journalBidCollateralToCollateralManager should catch up ALL tokens
       await setupLoanPosition(
-        wallet2, "10000000", "0", "10000000", "15000000", "offer-2",
+        wallet2,
+        "10000000",
+        "0",
+        "10000000",
+        "15000000",
+        "offer-2",
       );
 
       // Verify: encumbered[CT2] includes stuck amount (caught up via _encumberExistingCollateralInternal)
@@ -566,7 +597,12 @@ describe("Encumbered Collateral Tracking Tests", () => {
     it("unlockCollateralOnRepurchase pre-decrements encumbered even on transfer failure", async function () {
       // Set up Alice with CT1-only loan
       await setupLoanPosition(
-        wallet2, "15000000", "0", "15000000", "20000000", "offer-1",
+        wallet2,
+        "15000000",
+        "0",
+        "15000000",
+        "20000000",
+        "offer-1",
       );
 
       expect(
@@ -612,15 +648,19 @@ describe("Encumbered Collateral Tracking Tests", () => {
     it("encumberExistingCollateral correctly encumbers stuck collateral once", async function () {
       // Create stuck state: obligation=0, locked[CT1]=15M, encumbered=0
       await createStuckCollateralState(
-        wallet2, "15000000", "0", "15000000", "20000000", "offer-1",
+        wallet2,
+        "15000000",
+        "0",
+        "15000000",
+        "20000000",
+        "offer-1",
         collateralToken1,
       );
 
-      const stuckAmount =
-        await termRepoCollateralManager.getCollateralBalance(
-          wallet2.address,
-          await collateralToken1.getAddress(),
-        );
+      const stuckAmount = await termRepoCollateralManager.getCollateralBalance(
+        wallet2.address,
+        await collateralToken1.getAddress(),
+      );
       expect(stuckAmount).to.equal("15000000");
       expect(
         await termRepoCollateralManager.getEncumberedCollateralBalances(
@@ -649,12 +689,22 @@ describe("Encumbered Collateral Tracking Tests", () => {
     it("other borrowers not affected when stuck collateral is re-encumbered", async function () {
       // Set up Alice with CT1 loan
       await setupLoanPosition(
-        wallet2, "15000000", "0", "15000000", "20000000", "offer-1",
+        wallet2,
+        "15000000",
+        "0",
+        "15000000",
+        "20000000",
+        "offer-1",
       );
 
       // Set up Bob with CT1 loan
       await setupLoanPosition(
-        wallet3, "15000000", "0", "15000000", "20000000", "offer-2",
+        wallet3,
+        "15000000",
+        "0",
+        "15000000",
+        "20000000",
+        "offer-2",
       );
 
       // Both encumbered: 15M + 15M = 30M CT1
@@ -686,7 +736,12 @@ describe("Encumbered Collateral Tracking Tests", () => {
       await collateralToken1.setTransferFailure(wallet2.address, false);
 
       await setupLoanPosition(
-        wallet2, "10000000", "0", "10000000", "15000000", "offer-3",
+        wallet2,
+        "10000000",
+        "0",
+        "10000000",
+        "15000000",
+        "offer-3",
       );
 
       // Alice's stuck 15M + new 10M = 25M, plus Bob's 15M = 40M total
@@ -717,7 +772,12 @@ describe("Encumbered Collateral Tracking Tests", () => {
     it("borrower recovers stuck collateral after repurchase silent failure", async function () {
       // Create stuck state
       await createStuckCollateralState(
-        wallet2, "15000000", "0", "15000000", "20000000", "offer-1",
+        wallet2,
+        "15000000",
+        "0",
+        "15000000",
+        "20000000",
+        "offer-1",
         collateralToken1,
       );
 
@@ -767,7 +827,12 @@ describe("Encumbered Collateral Tracking Tests", () => {
     it("new loan catches up stuck collateral for each token independently", async function () {
       // Set up Alice with BOTH collateral tokens
       await setupLoanPosition(
-        wallet2, "15000000", "15000000", "15000000", "20000000", "offer-1",
+        wallet2,
+        "15000000",
+        "15000000",
+        "15000000",
+        "20000000",
+        "offer-1",
       );
 
       // Block CT2 transfers, create stuck CT2 via repayment
@@ -784,11 +849,10 @@ describe("Encumbered Collateral Tracking Tests", () => {
         ),
       ).to.equal(0);
 
-      const stuckCT2 =
-        await termRepoCollateralManager.getCollateralBalance(
-          wallet2.address,
-          await collateralToken2.getAddress(),
-        );
+      const stuckCT2 = await termRepoCollateralManager.getCollateralBalance(
+        wallet2.address,
+        await collateralToken2.getAddress(),
+      );
       expect(stuckCT2).to.equal("15000000");
 
       // Unblock CT2
@@ -797,7 +861,12 @@ describe("Encumbered Collateral Tracking Tests", () => {
       // New loan with ONLY CT2 (not CT1)
       // journalBidCollateralToCollateralManager catches up ALL tokens
       await setupLoanPosition(
-        wallet2, "0", "10000000", "10000000", "15000000", "offer-2",
+        wallet2,
+        "0",
+        "10000000",
+        "10000000",
+        "15000000",
+        "offer-2",
       );
 
       // encumbered[CT2] = stuck 15M + new 10M = 25M
@@ -824,7 +893,12 @@ describe("Encumbered Collateral Tracking Tests", () => {
       // Set up Alice with CT1 + CT2
       // CT1: 50M ($100), CT2: 50M ($50). Loan: 80M, Repurchase: 90M ($90)
       await setupLoanPosition(
-        wallet2, "50000000", "50000000", "80000000", "90000000", "offer-1",
+        wallet2,
+        "50000000",
+        "50000000",
+        "80000000",
+        "90000000",
+        "offer-1",
       );
 
       expect(
@@ -882,7 +956,12 @@ describe("Encumbered Collateral Tracking Tests", () => {
       // Set up Alice with CT1 + CT2
       // CT1: 10M ($20), CT2: 50M ($50). Loan: 15M, Repurchase: 20M
       await setupLoanPosition(
-        wallet2, "10000000", "50000000", "15000000", "20000000", "offer-1",
+        wallet2,
+        "10000000",
+        "50000000",
+        "15000000",
+        "20000000",
+        "offer-1",
       );
 
       // Block CT2 transfers to Alice
@@ -957,7 +1036,12 @@ describe("Encumbered Collateral Tracking Tests", () => {
       await collateralToken2.setTransferFailure(wallet2.address, false);
 
       await setupLoanPosition(
-        wallet2, "10000000", "0", "10000000", "15000000", "offer-2",
+        wallet2,
+        "10000000",
+        "0",
+        "10000000",
+        "15000000",
+        "offer-2",
       );
 
       // encumbered[CT2] should include stuck amount (caught up)
@@ -983,7 +1067,12 @@ describe("Encumbered Collateral Tracking Tests", () => {
     it("partial batchLiquidation then repay creates stuck CT2; new loan catches up ALL tokens", async function () {
       // CT1: 50M ($100), CT2: 50M ($50). Loan: 80M, Repurchase: 90M ($90)
       await setupLoanPosition(
-        wallet2, "50000000", "50000000", "80000000", "90000000", "offer-liq-1",
+        wallet2,
+        "50000000",
+        "50000000",
+        "80000000",
+        "90000000",
+        "offer-liq-1",
       );
 
       expect(
@@ -1057,7 +1146,12 @@ describe("Encumbered Collateral Tracking Tests", () => {
       await collateralToken2.setTransferFailure(wallet2.address, false);
 
       await setupLoanPosition(
-        wallet2, "10000000", "0", "10000000", "15000000", "offer-liq-2",
+        wallet2,
+        "10000000",
+        "0",
+        "10000000",
+        "15000000",
+        "offer-liq-2",
       );
 
       // Verify catch-up: encumbered[CT2] includes stuck amount
@@ -1083,14 +1177,19 @@ describe("Encumbered Collateral Tracking Tests", () => {
     it("partial batchLiquidationWithRepoToken then repay creates stuck CT2; new loan catches up ALL tokens", async function () {
       // Same setup: CT1: 50M ($100), CT2: 50M ($50). Loan: 80M, Repurchase: 90M ($90)
       await setupLoanPosition(
-        wallet2, "50000000", "50000000", "80000000", "90000000", "offer-repo-1",
+        wallet2,
+        "50000000",
+        "50000000",
+        "80000000",
+        "90000000",
+        "offer-repo-1",
       );
 
       // wallet1 (lender) received 90M repo tokens from fulfillOffer
       // (redemptionValue = 1e18, so 1:1 with purchase token value)
-      expect(
-        await testTermRepoToken.balanceOf(wallet1.address),
-      ).to.equal("90000000");
+      expect(await testTermRepoToken.balanceOf(wallet1.address)).to.equal(
+        "90000000",
+      );
 
       // Block CT2 transfers TO Alice
       await collateralToken2.setTransferFailure(wallet2.address, true);
@@ -1110,9 +1209,9 @@ describe("Encumbered Collateral Tracking Tests", () => {
       ).to.equal("80000000");
 
       // wallet1 repo tokens: 90M - 10M = 80M remaining
-      expect(
-        await testTermRepoToken.balanceOf(wallet1.address),
-      ).to.equal("80000000");
+      expect(await testTermRepoToken.balanceOf(wallet1.address)).to.equal(
+        "80000000",
+      );
 
       // Restore prices and repay remaining
       await collateral1Feed.setAnswer(2000);
@@ -1153,7 +1252,12 @@ describe("Encumbered Collateral Tracking Tests", () => {
       await collateralToken2.setTransferFailure(wallet2.address, false);
 
       await setupLoanPosition(
-        wallet2, "10000000", "0", "10000000", "15000000", "offer-repo-2",
+        wallet2,
+        "10000000",
+        "0",
+        "10000000",
+        "15000000",
+        "offer-repo-2",
       );
 
       // Verify catch-up: encumbered[CT2] includes stuck amount

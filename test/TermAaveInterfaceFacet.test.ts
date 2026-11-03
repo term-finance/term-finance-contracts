@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
@@ -53,15 +52,23 @@ describe("TermAaveInterfaceFacet Tests", () => {
     [wallet1, wallet2] = await ethers.getSigners();
 
     // Deploy facet helper
-    const FacetFactory = await ethers.getContractFactory("TestTermAaveInterfaceFacetHelper");
-    facetHelper = (await FacetFactory.deploy()) as unknown as TestTermAaveInterfaceFacetHelper;
+    const FacetFactory = await ethers.getContractFactory(
+      "TestTermAaveInterfaceFacetHelper",
+    );
+    facetHelper =
+      (await FacetFactory.deploy()) as unknown as TestTermAaveInterfaceFacetHelper;
     await facetHelper.waitForDeployment();
 
     // Deploy mock term controller and register
-    const ControllerFactory = await ethers.getContractFactory("TestMockTermController");
-    mockController = (await ControllerFactory.deploy()) as unknown as TestMockTermController;
+    const ControllerFactory = await ethers.getContractFactory(
+      "TestMockTermController",
+    );
+    mockController =
+      (await ControllerFactory.deploy()) as unknown as TestMockTermController;
     await mockController.waitForDeployment();
-    await facetHelper.addApprovedTermController(await mockController.getAddress());
+    await facetHelper.addApprovedTermController(
+      await mockController.getAddress(),
+    );
 
     // Deploy real asset token (18 decimals)
     const TokenFactory = await ethers.getContractFactory("TestToken");
@@ -79,31 +86,45 @@ describe("TermAaveInterfaceFacet Tests", () => {
     aToken = (await ATokenFactory.deploy()) as unknown as TestMockAToken;
     await aToken.waitForDeployment();
 
-    const DebtTokenFactory = await ethers.getContractFactory("TestMockCreditDelegationToken");
-    debtToken = (await DebtTokenFactory.deploy()) as unknown as TestMockCreditDelegationToken;
+    const DebtTokenFactory = await ethers.getContractFactory(
+      "TestMockCreditDelegationToken",
+    );
+    debtToken =
+      (await DebtTokenFactory.deploy()) as unknown as TestMockCreditDelegationToken;
     await debtToken.waitForDeployment();
 
     // Deploy mock data provider
-    const DataProviderFactory = await ethers.getContractFactory("TestMockAavePoolDataProvider");
-    dataProvider = (await DataProviderFactory.deploy()) as unknown as TestMockAavePoolDataProvider;
+    const DataProviderFactory = await ethers.getContractFactory(
+      "TestMockAavePoolDataProvider",
+    );
+    dataProvider =
+      (await DataProviderFactory.deploy()) as unknown as TestMockAavePoolDataProvider;
     await dataProvider.waitForDeployment();
     await dataProvider.setReserveTokensAddresses(
       await asset.getAddress(),
       await aToken.getAddress(),
       await debtToken.getAddress(),
-      await debtToken.getAddress()
+      await debtToken.getAddress(),
     );
 
     // Deploy mock price oracle
-    const OracleFactory = await ethers.getContractFactory("TestMockAavePriceOracle");
-    oracle = (await OracleFactory.deploy()) as unknown as TestMockAavePriceOracle;
+    const OracleFactory = await ethers.getContractFactory(
+      "TestMockAavePriceOracle",
+    );
+    oracle =
+      (await OracleFactory.deploy()) as unknown as TestMockAavePriceOracle;
     await oracle.waitForDeployment();
 
     // Deploy mock addresses provider
-    const APFactory = await ethers.getContractFactory("TestMockAavePoolAddressesProvider");
-    addressesProvider = (await APFactory.deploy()) as unknown as TestMockAavePoolAddressesProvider;
+    const APFactory = await ethers.getContractFactory(
+      "TestMockAavePoolAddressesProvider",
+    );
+    addressesProvider =
+      (await APFactory.deploy()) as unknown as TestMockAavePoolAddressesProvider;
     await addressesProvider.waitForDeployment();
-    await addressesProvider.setPoolDataProvider(await dataProvider.getAddress());
+    await addressesProvider.setPoolDataProvider(
+      await dataProvider.getAddress(),
+    );
     await addressesProvider.setPriceOracle(await oracle.getAddress());
 
     // Deploy mock pool
@@ -115,29 +136,37 @@ describe("TermAaveInterfaceFacet Tests", () => {
       await asset.getAddress(),
       await aToken.getAddress(),
       await debtToken.getAddress(),
-      await debtToken.getAddress()
+      await debtToken.getAddress(),
     );
 
     // Approve pool in controller
     await mockController.setVaultApproval(await mockPool.getAddress(), true);
 
     // Pre-fund pool with assets for borrow/withdraw tests
-    await asset.connect(wallet1).transfer(await mockPool.getAddress(), ethers.parseEther("5000"));
+    await asset
+      .connect(wallet1)
+      .transfer(await mockPool.getAddress(), ethers.parseEther("5000"));
 
     // Set up credit delegation allowance for borrow tests (large default)
     await debtToken.setBorrowAllowance(
       wallet1.address,
       await facetHelper.getAddress(),
-      ethers.MaxUint256
+      ethers.MaxUint256,
     );
 
     // Deploy supporting mocks for fulfillOrder tests
-    const ServicerFactory = await ethers.getContractFactory("TestMockRepoServicer");
-    mockServicer = (await ServicerFactory.deploy()) as unknown as TestMockRepoServicer;
+    const ServicerFactory = await ethers.getContractFactory(
+      "TestMockRepoServicer",
+    );
+    mockServicer =
+      (await ServicerFactory.deploy()) as unknown as TestMockRepoServicer;
     await mockServicer.waitForDeployment();
 
-    const CMFactory = await ethers.getContractFactory("TestMockCollateralManager");
-    mockCollateralManager = (await CMFactory.deploy()) as unknown as TestMockCollateralManager;
+    const CMFactory = await ethers.getContractFactory(
+      "TestMockCollateralManager",
+    );
+    mockCollateralManager =
+      (await CMFactory.deploy()) as unknown as TestMockCollateralManager;
     await mockCollateralManager.waitForDeployment();
 
     const RTFactory = await ethers.getContractFactory("TestMockRepoToken");
@@ -145,13 +174,15 @@ describe("TermAaveInterfaceFacet Tests", () => {
     await mockRepoToken.waitForDeployment();
 
     await mockServicer.setPurchaseToken(await asset.getAddress());
-    await mockServicer.setCollateralManager(await mockCollateralManager.getAddress());
+    await mockServicer.setCollateralManager(
+      await mockCollateralManager.getAddress(),
+    );
     await mockCollateralManager.setCollateralTokens([await asset.getAddress()]);
     await mockRepoToken.setConfig(
       Math.floor(Date.now() / 1000) + 86400,
       await asset.getAddress(),
       await mockServicer.getAddress(),
-      await mockCollateralManager.getAddress()
+      await mockCollateralManager.getAddress(),
     );
   });
 
@@ -161,12 +192,14 @@ describe("TermAaveInterfaceFacet Tests", () => {
   describe("approvedAavePoolOnly modifier", () => {
     it("should revert with InvalidAavePoolAddress for unapproved pool", async () => {
       await expect(
-        facetHelper.connect(wallet1)["aaveSupply(address,address,uint256,bool)"](
-          wallet2.address, // not approved
-          await asset.getAddress(),
-          ethers.parseEther("100"),
-          false
-        )
+        facetHelper
+          .connect(wallet1)
+          ["aaveSupply(address,address,uint256,bool)"](
+            wallet2.address, // not approved
+            await asset.getAddress(),
+            ethers.parseEther("100"),
+            false,
+          ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAavePoolAddress");
     });
   });
@@ -177,30 +210,34 @@ describe("TermAaveInterfaceFacet Tests", () => {
   describe("aaveApproveDelegationWithSig", () => {
     it("should revert when multicallInitiator not set (uninitialized)", async () => {
       await expect(
-        facetHelper.connect(wallet1).aaveApproveDelegationWithSig(
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          ethers.parseEther("100"),
-          Math.floor(Date.now() / 1000) + 3600,
-          0,
-          ethers.ZeroHash,
-          ethers.ZeroHash
-        )
+        facetHelper
+          .connect(wallet1)
+          .aaveApproveDelegationWithSig(
+            await mockPool.getAddress(),
+            await asset.getAddress(),
+            ethers.parseEther("100"),
+            Math.floor(Date.now() / 1000) + 3600,
+            0,
+            ethers.ZeroHash,
+            ethers.ZeroHash,
+          ),
       ).to.be.revertedWith("uninitialized");
     });
 
     it("should revert when called by wrong address (unauthorized)", async () => {
       await facetHelper.setMulticallInitiator(wallet1.address);
       await expect(
-        facetHelper.connect(wallet2).aaveApproveDelegationWithSig(
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          ethers.parseEther("100"),
-          Math.floor(Date.now() / 1000) + 3600,
-          0,
-          ethers.ZeroHash,
-          ethers.ZeroHash
-        )
+        facetHelper
+          .connect(wallet2)
+          .aaveApproveDelegationWithSig(
+            await mockPool.getAddress(),
+            await asset.getAddress(),
+            ethers.parseEther("100"),
+            Math.floor(Date.now() / 1000) + 3600,
+            0,
+            ethers.ZeroHash,
+            ethers.ZeroHash,
+          ),
       ).to.be.revertedWith("unauthorized");
       await facetHelper.clearMulticallInitiator();
     });
@@ -209,15 +246,17 @@ describe("TermAaveInterfaceFacet Tests", () => {
       await facetHelper.setMulticallInitiator(wallet1.address);
       const pastDeadline = 1; // Unix timestamp 1 is always <= any real block.timestamp
       await expect(
-        facetHelper.connect(wallet1).aaveApproveDelegationWithSig(
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          ethers.parseEther("100"),
-          pastDeadline,
-          0,
-          ethers.ZeroHash,
-          ethers.ZeroHash
-        )
+        facetHelper
+          .connect(wallet1)
+          .aaveApproveDelegationWithSig(
+            await mockPool.getAddress(),
+            await asset.getAddress(),
+            ethers.parseEther("100"),
+            pastDeadline,
+            0,
+            ethers.ZeroHash,
+            ethers.ZeroHash,
+          ),
       ).to.be.revertedWithCustomError(facetHelper, "Expired");
       await facetHelper.clearMulticallInitiator();
     });
@@ -225,15 +264,17 @@ describe("TermAaveInterfaceFacet Tests", () => {
     it("should revert with InvalidAssetAddress when asset = address(0)", async () => {
       await facetHelper.setMulticallInitiator(wallet1.address);
       await expect(
-        facetHelper.connect(wallet1).aaveApproveDelegationWithSig(
-          await mockPool.getAddress(),
-          ethers.ZeroAddress,
-          ethers.parseEther("100"),
-          Math.floor(Date.now() / 1000) + 3600,
-          0,
-          ethers.ZeroHash,
-          ethers.ZeroHash
-        )
+        facetHelper
+          .connect(wallet1)
+          .aaveApproveDelegationWithSig(
+            await mockPool.getAddress(),
+            ethers.ZeroAddress,
+            ethers.parseEther("100"),
+            Math.floor(Date.now() / 1000) + 3600,
+            0,
+            ethers.ZeroHash,
+            ethers.ZeroHash,
+          ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAssetAddress");
       await facetHelper.clearMulticallInitiator();
     });
@@ -241,15 +282,17 @@ describe("TermAaveInterfaceFacet Tests", () => {
     it("should revert with InvalidAmount when amount = 0", async () => {
       await facetHelper.setMulticallInitiator(wallet1.address);
       await expect(
-        facetHelper.connect(wallet1).aaveApproveDelegationWithSig(
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          0,
-          Math.floor(Date.now() / 1000) + 3600,
-          0,
-          ethers.ZeroHash,
-          ethers.ZeroHash
-        )
+        facetHelper
+          .connect(wallet1)
+          .aaveApproveDelegationWithSig(
+            await mockPool.getAddress(),
+            await asset.getAddress(),
+            0,
+            Math.floor(Date.now() / 1000) + 3600,
+            0,
+            ethers.ZeroHash,
+            ethers.ZeroHash,
+          ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAmount");
       await facetHelper.clearMulticallInitiator();
     });
@@ -259,19 +302,26 @@ describe("TermAaveInterfaceFacet Tests", () => {
       const amount = ethers.parseEther("100");
       const deadline = Math.floor(Date.now() / 1000) + 3600;
 
-      const tx = await facetHelper.connect(wallet1).aaveApproveDelegationWithSig(
-        await mockPool.getAddress(),
-        await asset.getAddress(),
-        amount,
-        deadline,
-        0,
-        ethers.ZeroHash,
-        ethers.ZeroHash
-      );
+      const tx = await facetHelper
+        .connect(wallet1)
+        .aaveApproveDelegationWithSig(
+          await mockPool.getAddress(),
+          await asset.getAddress(),
+          amount,
+          deadline,
+          0,
+          ethers.ZeroHash,
+          ethers.ZeroHash,
+        );
 
       await expect(tx)
         .to.emit(debtToken, "DelegationWithSigCalled")
-        .withArgs(wallet1.address, await facetHelper.getAddress(), amount, deadline);
+        .withArgs(
+          wallet1.address,
+          await facetHelper.getAddress(),
+          amount,
+          deadline,
+        );
       await facetHelper.clearMulticallInitiator();
     });
   });
@@ -282,38 +332,37 @@ describe("TermAaveInterfaceFacet Tests", () => {
   describe("aaveSupply (3-arg)", () => {
     it("should revert with InvalidAssetAddress when asset = address(0)", async () => {
       await expect(
-        facetHelper.connect(wallet1)["aaveSupply(address,address,uint256,bool)"](
-          await mockPool.getAddress(),
-          ethers.ZeroAddress,
-          ethers.parseEther("100"),
-          false
-        )
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveSupply(address,address,uint256,bool)"
+          ](await mockPool.getAddress(), ethers.ZeroAddress, ethers.parseEther("100"), false),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAssetAddress");
     });
 
     it("should revert with InvalidAmount when amount = 0", async () => {
       await expect(
-        facetHelper.connect(wallet1)["aaveSupply(address,address,uint256,bool)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          0,
-          false
-        )
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveSupply(address,address,uint256,bool)"
+          ](await mockPool.getAddress(), await asset.getAddress(), 0, false),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAmount");
     });
 
     it("should revert with SupplyAmountMismatch when pool mints wrong aToken amount", async () => {
       const amount = ethers.parseEther("100");
       await mockPool.setSupplyMintAmount(0); // mint 0 aTokens instead of amount
-      await asset.connect(wallet1).approve(await facetHelper.getAddress(), amount);
+      await asset
+        .connect(wallet1)
+        .approve(await facetHelper.getAddress(), amount);
 
       await expect(
-        facetHelper.connect(wallet1)["aaveSupply(address,address,uint256,bool)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          amount,
-          false
-        )
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveSupply(address,address,uint256,bool)"
+          ](await mockPool.getAddress(), await asset.getAddress(), amount, false),
       ).to.be.revertedWithCustomError(facetHelper, "SupplyAmountMismatch");
 
       await mockPool.resetSupplyMintAmount();
@@ -323,15 +372,16 @@ describe("TermAaveInterfaceFacet Tests", () => {
       const amount = ethers.parseEther("100");
       // Mint correct aTokens but pull 0 assets
       await mockPool.setSupplyPullAmount(0);
-      await asset.connect(wallet1).approve(await facetHelper.getAddress(), amount);
+      await asset
+        .connect(wallet1)
+        .approve(await facetHelper.getAddress(), amount);
 
       await expect(
-        facetHelper.connect(wallet1)["aaveSupply(address,address,uint256,bool)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          amount,
-          false
-        )
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveSupply(address,address,uint256,bool)"
+          ](await mockPool.getAddress(), await asset.getAddress(), amount, false),
       ).to.be.revertedWithCustomError(facetHelper, "SupplyAssetMismatch");
 
       await mockPool.resetSupplyPullAmount();
@@ -346,12 +396,11 @@ describe("TermAaveInterfaceFacet Tests", () => {
       expect(await aToken.balanceOf(facetAddr)).to.equal(0);
 
       const aTokenBefore = await aToken.balanceOf(wallet1.address);
-      await facetHelper.connect(wallet1)["aaveSupply(address,address,uint256,bool)"](
-        await mockPool.getAddress(),
-        await asset.getAddress(),
-        amount,
-        false
-      );
+      await facetHelper
+        .connect(wallet1)
+        [
+          "aaveSupply(address,address,uint256,bool)"
+        ](await mockPool.getAddress(), await asset.getAddress(), amount, false);
       const aTokenAfter = await aToken.balanceOf(wallet1.address);
       expect(aTokenAfter - aTokenBefore).to.equal(amount);
 
@@ -366,33 +415,33 @@ describe("TermAaveInterfaceFacet Tests", () => {
   describe("aaveSupply (5-arg)", () => {
     it("should revert with Unauthorized caller for unauthorized caller", async () => {
       await expect(
-        facetHelper.connect(wallet2)["aaveSupply(address,address,uint256,address,bool)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          ethers.parseEther("100"),
-          wallet1.address,
-          false
-        )
+        facetHelper
+          .connect(wallet2)
+          [
+            "aaveSupply(address,address,uint256,address,bool)"
+          ](await mockPool.getAddress(), await asset.getAddress(), ethers.parseEther("100"), wallet1.address, false),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
     it("should succeed with direct user call", async () => {
       const amount = ethers.parseEther("100");
-      await asset.connect(wallet1).approve(await facetHelper.getAddress(), amount);
+      await asset
+        .connect(wallet1)
+        .approve(await facetHelper.getAddress(), amount);
 
-      await facetHelper.connect(wallet1)["aaveSupply(address,address,uint256,address,bool)"](
-        await mockPool.getAddress(),
-        await asset.getAddress(),
-        amount,
-        wallet1.address,
-        false
-      );
+      await facetHelper
+        .connect(wallet1)
+        [
+          "aaveSupply(address,address,uint256,address,bool)"
+        ](await mockPool.getAddress(), await asset.getAddress(), amount, wallet1.address, false);
       expect(await aToken.balanceOf(wallet1.address)).to.equal(amount);
     });
 
     it("should succeed with activeSettlementMaker context", async () => {
       const amount = ethers.parseEther("50");
-      await asset.connect(wallet1).approve(await facetHelper.getAddress(), amount);
+      await asset
+        .connect(wallet1)
+        .approve(await facetHelper.getAddress(), amount);
 
       // The onlyUserOrActiveContext modifier now requires msg.sender == address(this)
       // for the activeSettlementMaker branch, so we exercise the code path via a
@@ -403,7 +452,7 @@ describe("TermAaveInterfaceFacet Tests", () => {
         await asset.getAddress(),
         amount,
         wallet1.address,
-        false
+        false,
       );
       expect(await aToken.balanceOf(wallet1.address)).to.equal(amount);
     });
@@ -419,11 +468,16 @@ describe("TermAaveInterfaceFacet Tests", () => {
       const P2Factory = await ethers.getContractFactory("TestMockPermit2");
       const tempP2 = await P2Factory.deploy();
       await tempP2.waitForDeployment();
-      const runtimeCode = await ethers.provider.getCode(await tempP2.getAddress());
-      await ethers.provider.send("hardhat_setCode", [PERMIT2_CANONICAL_ADDRESS, runtimeCode]);
+      const runtimeCode = await ethers.provider.getCode(
+        await tempP2.getAddress(),
+      );
+      await ethers.provider.send("hardhat_setCode", [
+        PERMIT2_CANONICAL_ADDRESS,
+        runtimeCode,
+      ]);
       mockPermit2 = (await ethers.getContractAt(
         "TestMockPermit2",
-        PERMIT2_CANONICAL_ADDRESS
+        PERMIT2_CANONICAL_ADDRESS,
       )) as unknown as TestMockPermit2;
     });
 
@@ -435,17 +489,18 @@ describe("TermAaveInterfaceFacet Tests", () => {
       expect(await asset.balanceOf(facetAddr)).to.equal(0);
       expect(await aToken.balanceOf(facetAddr)).to.equal(0);
 
-      await facetHelper.connect(wallet1)["aaveSupply(address,address,uint256,bool)"](
-        await mockPool.getAddress(),
-        await asset.getAddress(),
-        amount,
-        true
-      );
+      await facetHelper
+        .connect(wallet1)
+        [
+          "aaveSupply(address,address,uint256,bool)"
+        ](await mockPool.getAddress(), await asset.getAddress(), amount, true);
 
       expect(await mockPermit2.lastTransferFrom()).to.equal(wallet1.address);
       expect(await mockPermit2.lastTransferTo()).to.equal(facetAddr);
       expect(await mockPermit2.lastTransferAmount()).to.equal(amount);
-      expect(await mockPermit2.lastTransferToken()).to.equal(await asset.getAddress());
+      expect(await mockPermit2.lastTransferToken()).to.equal(
+        await asset.getAddress(),
+      );
 
       expect(await asset.balanceOf(facetAddr)).to.equal(0);
       expect(await aToken.balanceOf(facetAddr)).to.equal(0);
@@ -461,37 +516,39 @@ describe("TermAaveInterfaceFacet Tests", () => {
     beforeEach(async () => {
       // Mint aTokens to wallet1 and approve facet
       await aToken.mint(wallet1.address, amount * 2n);
-      await aToken.connect(wallet1).approve(await facetHelper.getAddress(), ethers.MaxUint256);
+      await aToken
+        .connect(wallet1)
+        .approve(await facetHelper.getAddress(), ethers.MaxUint256);
     });
 
     it("should revert with InvalidAssetAddress when asset = address(0)", async () => {
       await expect(
-        facetHelper.connect(wallet1)["aaveWithdrawOnBehalfOf(address,address,uint256)"](
-          await mockPool.getAddress(),
-          ethers.ZeroAddress,
-          amount
-        )
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveWithdrawOnBehalfOf(address,address,uint256)"
+          ](await mockPool.getAddress(), ethers.ZeroAddress, amount),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAssetAddress");
     });
 
     it("should revert with InvalidAmount when amount = 0", async () => {
       await expect(
-        facetHelper.connect(wallet1)["aaveWithdrawOnBehalfOf(address,address,uint256)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          0
-        )
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveWithdrawOnBehalfOf(address,address,uint256)"
+          ](await mockPool.getAddress(), await asset.getAddress(), 0),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAmount");
     });
 
     it("should revert with WithdrawalAmountMismatch when pool returns wrong amount", async () => {
       await mockPool.setWithdrawReturnAmount(amount + 1n);
       await expect(
-        facetHelper.connect(wallet1)["aaveWithdrawOnBehalfOf(address,address,uint256)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          amount
-        )
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveWithdrawOnBehalfOf(address,address,uint256)"
+          ](await mockPool.getAddress(), await asset.getAddress(), amount),
       ).to.be.revertedWithCustomError(facetHelper, "WithdrawalAmountMismatch");
       await mockPool.resetWithdrawReturnAmount();
     });
@@ -500,11 +557,11 @@ describe("TermAaveInterfaceFacet Tests", () => {
       // Return correct amount but only send partial assets
       await mockPool.setWithdrawSendAmount(0n);
       await expect(
-        facetHelper.connect(wallet1)["aaveWithdrawOnBehalfOf(address,address,uint256)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          amount
-        )
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveWithdrawOnBehalfOf(address,address,uint256)"
+          ](await mockPool.getAddress(), await asset.getAddress(), amount),
       ).to.be.revertedWithCustomError(facetHelper, "WithdrawalAmountMismatch");
       await mockPool.resetWithdrawSendAmount();
     });
@@ -519,11 +576,11 @@ describe("TermAaveInterfaceFacet Tests", () => {
       expect(await asset.balanceOf(facetAddr)).to.equal(0);
       expect(await aToken.balanceOf(facetAddr)).to.equal(0);
 
-      await facetHelper.connect(wallet1)["aaveWithdrawOnBehalfOf(address,address,uint256)"](
-        await mockPool.getAddress(),
-        await asset.getAddress(),
-        amount
-      );
+      await facetHelper
+        .connect(wallet1)
+        [
+          "aaveWithdrawOnBehalfOf(address,address,uint256)"
+        ](await mockPool.getAddress(), await asset.getAddress(), amount);
 
       const aTokenAfter = await aToken.balanceOf(wallet1.address);
       const assetAfter = await asset.balanceOf(wallet1.address);
@@ -543,11 +600,11 @@ describe("TermAaveInterfaceFacet Tests", () => {
       expect(await aToken.balanceOf(facetAddr)).to.equal(0);
 
       const assetBefore = await asset.balanceOf(wallet1.address);
-      await facetHelper.connect(wallet1)["aaveWithdrawOnBehalfOf(address,address,uint256)"](
-        await mockPool.getAddress(),
-        await asset.getAddress(),
-        amount
-      );
+      await facetHelper
+        .connect(wallet1)
+        [
+          "aaveWithdrawOnBehalfOf(address,address,uint256)"
+        ](await mockPool.getAddress(), await asset.getAddress(), amount);
       const assetAfter = await asset.balanceOf(wallet1.address);
       expect(assetAfter - assetBefore).to.equal(amount);
 
@@ -564,44 +621,44 @@ describe("TermAaveInterfaceFacet Tests", () => {
 
     beforeEach(async () => {
       await aToken.mint(wallet1.address, amount * 4n);
-      await aToken.connect(wallet1).approve(await facetHelper.getAddress(), ethers.MaxUint256);
+      await aToken
+        .connect(wallet1)
+        .approve(await facetHelper.getAddress(), ethers.MaxUint256);
     });
 
     it("should revert with Unauthorized caller for unauthorized caller", async () => {
       await expect(
-        facetHelper.connect(wallet2)["aaveWithdrawOnBehalfOf(address,address,uint256,address,bool)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          amount,
-          wallet1.address,
-          true
-        )
+        facetHelper
+          .connect(wallet2)
+          [
+            "aaveWithdrawOnBehalfOf(address,address,uint256,address,bool)"
+          ](await mockPool.getAddress(), await asset.getAddress(), amount, wallet1.address, true),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
     it("should succeed with direct user call and payout assets", async () => {
       const assetBefore = await asset.balanceOf(wallet1.address);
-      await facetHelper.connect(wallet1)["aaveWithdrawOnBehalfOf(address,address,uint256,address,bool)"](
-        await mockPool.getAddress(),
-        await asset.getAddress(),
+      await facetHelper
+        .connect(wallet1)
+        [
+          "aaveWithdrawOnBehalfOf(address,address,uint256,address,bool)"
+        ](await mockPool.getAddress(), await asset.getAddress(), amount, wallet1.address, true);
+      expect((await asset.balanceOf(wallet1.address)) - assetBefore).to.equal(
         amount,
-        wallet1.address,
-        true
       );
-      expect((await asset.balanceOf(wallet1.address)) - assetBefore).to.equal(amount);
     });
 
     it("should still pay out assets with payoutToUser=false when no atomic context (direct call)", async () => {
       // atomicTxInitiator == 0 AND msg.sender != address(this) => payout regardless of payoutToUser flag
       const assetBefore = await asset.balanceOf(wallet1.address);
-      await facetHelper.connect(wallet1)["aaveWithdrawOnBehalfOf(address,address,uint256,address,bool)"](
-        await mockPool.getAddress(),
-        await asset.getAddress(),
+      await facetHelper
+        .connect(wallet1)
+        [
+          "aaveWithdrawOnBehalfOf(address,address,uint256,address,bool)"
+        ](await mockPool.getAddress(), await asset.getAddress(), amount, wallet1.address, false);
+      expect((await asset.balanceOf(wallet1.address)) - assetBefore).to.equal(
         amount,
-        wallet1.address,
-        false
       );
-      expect((await asset.balanceOf(wallet1.address)) - assetBefore).to.equal(amount);
     });
 
     it("should hold assets in contract with payoutToUser=false in atomic context", async () => {
@@ -609,13 +666,15 @@ describe("TermAaveInterfaceFacet Tests", () => {
       const assetBefore = await asset.balanceOf(facetAddr);
 
       // selfCallWithdraw sets atomicTxInitiator = user and calls 5-arg withdraw
-      await facetHelper.connect(wallet1).selfCallWithdraw(
-        await mockPool.getAddress(),
-        await asset.getAddress(),
-        amount,
-        wallet1.address,
-        false
-      );
+      await facetHelper
+        .connect(wallet1)
+        .selfCallWithdraw(
+          await mockPool.getAddress(),
+          await asset.getAddress(),
+          amount,
+          wallet1.address,
+          false,
+        );
 
       const assetAfter = await asset.balanceOf(facetAddr);
       expect(assetAfter - assetBefore).to.equal(amount);
@@ -628,35 +687,46 @@ describe("TermAaveInterfaceFacet Tests", () => {
   describe("aaveBorrow (3-arg)", () => {
     it("should revert with InvalidAssetAddress when asset = address(0)", async () => {
       await expect(
-        facetHelper.connect(wallet1)["aaveBorrow(address,address,uint256)"](
-          await mockPool.getAddress(),
-          ethers.ZeroAddress,
-          ethers.parseEther("100")
-        )
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveBorrow(address,address,uint256)"
+          ](await mockPool.getAddress(), ethers.ZeroAddress, ethers.parseEther("100")),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAssetAddress");
     });
 
     it("should revert with InvalidAmount when amount = 0", async () => {
       await expect(
-        facetHelper.connect(wallet1)["aaveBorrow(address,address,uint256)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          0
-        )
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveBorrow(address,address,uint256)"
+          ](await mockPool.getAddress(), await asset.getAddress(), 0),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAmount");
     });
 
     it("should revert with InsufficientCreditDelegationAllowance when allowance too low", async () => {
-      await debtToken.setBorrowAllowance(wallet1.address, await facetHelper.getAddress(), 0);
+      await debtToken.setBorrowAllowance(
+        wallet1.address,
+        await facetHelper.getAddress(),
+        0,
+      );
       await expect(
-        facetHelper.connect(wallet1)["aaveBorrow(address,address,uint256)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          ethers.parseEther("100")
-        )
-      ).to.be.revertedWithCustomError(facetHelper, "InsufficientCreditDelegationAllowance");
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveBorrow(address,address,uint256)"
+          ](await mockPool.getAddress(), await asset.getAddress(), ethers.parseEther("100")),
+      ).to.be.revertedWithCustomError(
+        facetHelper,
+        "InsufficientCreditDelegationAllowance",
+      );
       // Restore
-      await debtToken.setBorrowAllowance(wallet1.address, await facetHelper.getAddress(), ethers.MaxUint256);
+      await debtToken.setBorrowAllowance(
+        wallet1.address,
+        await facetHelper.getAddress(),
+        ethers.MaxUint256,
+      );
     });
 
     it("should successfully borrow and transfer assets to user", async () => {
@@ -667,12 +737,14 @@ describe("TermAaveInterfaceFacet Tests", () => {
       expect(await aToken.balanceOf(facetAddr)).to.equal(0);
 
       const assetBefore = await asset.balanceOf(wallet1.address);
-      await facetHelper.connect(wallet1)["aaveBorrow(address,address,uint256)"](
-        await mockPool.getAddress(),
-        await asset.getAddress(),
-        amount
+      await facetHelper
+        .connect(wallet1)
+        [
+          "aaveBorrow(address,address,uint256)"
+        ](await mockPool.getAddress(), await asset.getAddress(), amount);
+      expect((await asset.balanceOf(wallet1.address)) - assetBefore).to.equal(
+        amount,
       );
-      expect((await asset.balanceOf(wallet1.address)) - assetBefore).to.equal(amount);
 
       expect(await asset.balanceOf(facetAddr)).to.equal(0);
       expect(await aToken.balanceOf(facetAddr)).to.equal(0);
@@ -685,40 +757,38 @@ describe("TermAaveInterfaceFacet Tests", () => {
   describe("aaveBorrow (5-arg)", () => {
     it("should revert with Unauthorized caller for unauthorized caller", async () => {
       await expect(
-        facetHelper.connect(wallet2)["aaveBorrow(address,address,uint256,address,bool)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          ethers.parseEther("100"),
-          wallet1.address,
-          true
-        )
+        facetHelper
+          .connect(wallet2)
+          [
+            "aaveBorrow(address,address,uint256,address,bool)"
+          ](await mockPool.getAddress(), await asset.getAddress(), ethers.parseEther("100"), wallet1.address, true),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
     it("should succeed with direct user call and payout assets", async () => {
       const amount = ethers.parseEther("100");
       const assetBefore = await asset.balanceOf(wallet1.address);
-      await facetHelper.connect(wallet1)["aaveBorrow(address,address,uint256,address,bool)"](
-        await mockPool.getAddress(),
-        await asset.getAddress(),
+      await facetHelper
+        .connect(wallet1)
+        [
+          "aaveBorrow(address,address,uint256,address,bool)"
+        ](await mockPool.getAddress(), await asset.getAddress(), amount, wallet1.address, true);
+      expect((await asset.balanceOf(wallet1.address)) - assetBefore).to.equal(
         amount,
-        wallet1.address,
-        true
       );
-      expect((await asset.balanceOf(wallet1.address)) - assetBefore).to.equal(amount);
     });
 
     it("should still pay out assets with payoutToUser=false when no atomic context (direct call)", async () => {
       const amount = ethers.parseEther("100");
       const assetBefore = await asset.balanceOf(wallet1.address);
-      await facetHelper.connect(wallet1)["aaveBorrow(address,address,uint256,address,bool)"](
-        await mockPool.getAddress(),
-        await asset.getAddress(),
+      await facetHelper
+        .connect(wallet1)
+        [
+          "aaveBorrow(address,address,uint256,address,bool)"
+        ](await mockPool.getAddress(), await asset.getAddress(), amount, wallet1.address, false);
+      expect((await asset.balanceOf(wallet1.address)) - assetBefore).to.equal(
         amount,
-        wallet1.address,
-        false
       );
-      expect((await asset.balanceOf(wallet1.address)) - assetBefore).to.equal(amount);
     });
 
     it("should hold assets in contract with payoutToUser=false in atomic context", async () => {
@@ -726,18 +796,19 @@ describe("TermAaveInterfaceFacet Tests", () => {
       const facetAddr = await facetHelper.getAddress();
       const assetBefore = await asset.balanceOf(facetAddr);
 
-      await facetHelper.connect(wallet1).selfCallBorrow(
-        await mockPool.getAddress(),
-        await asset.getAddress(),
-        amount,
-        wallet1.address,
-        false
-      );
+      await facetHelper
+        .connect(wallet1)
+        .selfCallBorrow(
+          await mockPool.getAddress(),
+          await asset.getAddress(),
+          amount,
+          wallet1.address,
+          false,
+        );
 
       expect((await asset.balanceOf(facetAddr)) - assetBefore).to.equal(amount);
     });
   });
-
 
   // ==========================================================================
   // = aaveRepay (4-arg) ======================================================
@@ -747,40 +818,39 @@ describe("TermAaveInterfaceFacet Tests", () => {
 
     beforeEach(async () => {
       // Approve the facet to pull repay funds from wallet1
-      await asset.connect(wallet1).approve(await facetHelper.getAddress(), repayAmount * 2n);
+      await asset
+        .connect(wallet1)
+        .approve(await facetHelper.getAddress(), repayAmount * 2n);
     });
 
     it("should revert with InvalidAssetAddress when asset = address(0)", async () => {
       await expect(
-        facetHelper.connect(wallet1)["aaveRepay(address,address,uint256,bool)"](
-          await mockPool.getAddress(),
-          ethers.ZeroAddress,
-          repayAmount,
-          false
-        )
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveRepay(address,address,uint256,bool)"
+          ](await mockPool.getAddress(), ethers.ZeroAddress, repayAmount, false),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAssetAddress");
     });
 
     it("should revert with InvalidAmount when amount = 0", async () => {
       await expect(
-        facetHelper.connect(wallet1)["aaveRepay(address,address,uint256,bool)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          0,
-          false
-        )
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveRepay(address,address,uint256,bool)"
+          ](await mockPool.getAddress(), await asset.getAddress(), 0, false),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAmount");
     });
 
     it("should revert with RepaidAssetsMismatch when pool returns wrong repaid amount", async () => {
       await mockPool.setRepayReturnAmount(repayAmount - 1n);
       await expect(
-        facetHelper.connect(wallet1)["aaveRepay(address,address,uint256,bool)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          repayAmount,
-          false
-        )
+        facetHelper
+          .connect(wallet1)
+          [
+            "aaveRepay(address,address,uint256,bool)"
+          ](await mockPool.getAddress(), await asset.getAddress(), repayAmount, false),
       ).to.be.revertedWithCustomError(facetHelper, "RepaidAssetsMismatch");
       await mockPool.resetRepayReturnAmount();
     });
@@ -791,12 +861,11 @@ describe("TermAaveInterfaceFacet Tests", () => {
       expect(await aToken.balanceOf(facetAddr)).to.equal(0);
 
       const wallet1Before = await asset.balanceOf(wallet1.address);
-      await facetHelper.connect(wallet1)["aaveRepay(address,address,uint256,bool)"](
-        await mockPool.getAddress(),
-        await asset.getAddress(),
-        repayAmount,
-        false
-      );
+      await facetHelper
+        .connect(wallet1)
+        [
+          "aaveRepay(address,address,uint256,bool)"
+        ](await mockPool.getAddress(), await asset.getAddress(), repayAmount, false);
       const wallet1After = await asset.balanceOf(wallet1.address);
       expect(wallet1Before - wallet1After).to.equal(repayAmount);
 
@@ -813,30 +882,28 @@ describe("TermAaveInterfaceFacet Tests", () => {
 
     beforeEach(async () => {
       // Approve the facet to pull repay funds from wallet1
-      await asset.connect(wallet1).approve(await facetHelper.getAddress(), repayAmount * 2n);
+      await asset
+        .connect(wallet1)
+        .approve(await facetHelper.getAddress(), repayAmount * 2n);
     });
 
     it("should revert with Unauthorized caller for unauthorized caller", async () => {
       await expect(
-        facetHelper.connect(wallet2)["aaveRepay(address,address,uint256,address,bool)"](
-          await mockPool.getAddress(),
-          await asset.getAddress(),
-          repayAmount,
-          wallet1.address,
-          false
-        )
+        facetHelper
+          .connect(wallet2)
+          [
+            "aaveRepay(address,address,uint256,address,bool)"
+          ](await mockPool.getAddress(), await asset.getAddress(), repayAmount, wallet1.address, false),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
     it("should succeed with direct user call", async () => {
       const wallet1Before = await asset.balanceOf(wallet1.address);
-      await facetHelper.connect(wallet1)["aaveRepay(address,address,uint256,address,bool)"](
-        await mockPool.getAddress(),
-        await asset.getAddress(),
-        repayAmount,
-        wallet1.address,
-        false
-      );
+      await facetHelper
+        .connect(wallet1)
+        [
+          "aaveRepay(address,address,uint256,address,bool)"
+        ](await mockPool.getAddress(), await asset.getAddress(), repayAmount, wallet1.address, false);
       const wallet1After = await asset.balanceOf(wallet1.address);
       expect(wallet1Before - wallet1After).to.equal(repayAmount);
     });
@@ -852,8 +919,8 @@ describe("TermAaveInterfaceFacet Tests", () => {
           await mockPool.getAddress(),
           await asset.getAddress(),
           3,
-          wallet1.address
-        )
+          wallet1.address,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidRateMode");
     });
 
@@ -863,30 +930,38 @@ describe("TermAaveInterfaceFacet Tests", () => {
           await mockPool.getAddress(),
           await asset.getAddress(),
           0,
-          wallet1.address
-        )
+          wallet1.address,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidRateMode");
     });
 
     it("should check stable debt token allowance for rateMode = 1", async () => {
       // debtToken is set as both stable and variable in the mock pool
-      await debtToken.setBorrowAllowance(wallet1.address, await facetHelper.getAddress(), 999n);
+      await debtToken.setBorrowAllowance(
+        wallet1.address,
+        await facetHelper.getAddress(),
+        999n,
+      );
       const allowance = await facetHelper.testCheckBorrowAllowance(
         await mockPool.getAddress(),
         await asset.getAddress(),
         1, // stable
-        wallet1.address
+        wallet1.address,
       );
       expect(allowance).to.equal(999n);
     });
 
     it("should check variable debt token allowance for rateMode = 2", async () => {
-      await debtToken.setBorrowAllowance(wallet1.address, await facetHelper.getAddress(), 12345n);
+      await debtToken.setBorrowAllowance(
+        wallet1.address,
+        await facetHelper.getAddress(),
+        12345n,
+      );
       const allowance = await facetHelper.testCheckBorrowAllowance(
         await mockPool.getAddress(),
         await asset.getAddress(),
         2, // variable
-        wallet1.address
+        wallet1.address,
       );
       expect(allowance).to.equal(12345n);
     });
@@ -897,8 +972,8 @@ describe("TermAaveInterfaceFacet Tests", () => {
           await mockPool.getAddress(),
           ethers.ZeroAddress,
           2,
-          wallet1.address
-        )
+          wallet1.address,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAssetAddress");
     });
 
@@ -908,8 +983,8 @@ describe("TermAaveInterfaceFacet Tests", () => {
           await mockPool.getAddress(),
           await asset.getAddress(),
           2,
-          ethers.ZeroAddress
-        )
+          ethers.ZeroAddress,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidDelegatorAddress");
     });
   });
@@ -920,13 +995,21 @@ describe("TermAaveInterfaceFacet Tests", () => {
   describe("availableFunds", () => {
     it("should revert with InvalidAavePoolAddress when aavePool = address(0)", async () => {
       await expect(
-        facetHelper.availableFunds(ethers.ZeroAddress, await asset.getAddress(), wallet1.address)
+        facetHelper.availableFunds(
+          ethers.ZeroAddress,
+          await asset.getAddress(),
+          wallet1.address,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAavePoolAddress");
     });
 
     it("should revert with InvalidAssetAddress when asset = address(0)", async () => {
       await expect(
-        facetHelper.availableFunds(await mockPool.getAddress(), ethers.ZeroAddress, wallet1.address)
+        facetHelper.availableFunds(
+          await mockPool.getAddress(),
+          ethers.ZeroAddress,
+          wallet1.address,
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAssetAddress");
     });
 
@@ -937,7 +1020,7 @@ describe("TermAaveInterfaceFacet Tests", () => {
       const balance = await facetHelper.availableFunds(
         await mockPool.getAddress(),
         await asset.getAddress(),
-        wallet1.address
+        wallet1.address,
       );
       expect(balance).to.be.gte(mintAmount);
     });
@@ -954,7 +1037,7 @@ describe("TermAaveInterfaceFacet Tests", () => {
       const result = await facetHelper.availableBorrow(
         await mockPool.getAddress(),
         await asset.getAddress(),
-        wallet1.address
+        wallet1.address,
       );
       expect(result).to.equal(0n);
     });
@@ -966,7 +1049,7 @@ describe("TermAaveInterfaceFacet Tests", () => {
       const result = await facetHelper.availableBorrow(
         await mockPool.getAddress(),
         await asset.getAddress(),
-        wallet1.address
+        wallet1.address,
       );
       expect(result).to.equal(ethers.parseEther("10"));
     });
@@ -979,12 +1062,12 @@ describe("TermAaveInterfaceFacet Tests", () => {
     const WITHDRAW_SELECTOR = ethers.dataSlice(
       ethers.id("aaveWithdrawOnBehalfOf(address,address,uint256,address,bool)"),
       0,
-      4
+      4,
     );
     const BORROW_SELECTOR = ethers.dataSlice(
       ethers.id("aaveBorrow(address,address,uint256,address,bool)"),
       0,
-      4
+      4,
     );
 
     it("should generate calldata for WITHDRAW_SELECTOR", async () => {
@@ -996,12 +1079,18 @@ describe("TermAaveInterfaceFacet Tests", () => {
         wallet1.address,
         amount,
         true,
-        "0x"
+        "0x",
       );
 
       const expectedCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["address", "address", "uint256", "address", "bool"],
-        [await mockPool.getAddress(), await asset.getAddress(), amount, wallet1.address, true]
+        [
+          await mockPool.getAddress(),
+          await asset.getAddress(),
+          amount,
+          wallet1.address,
+          true,
+        ],
       );
       const expected = WITHDRAW_SELECTOR + expectedCalldata.slice(2);
       expect(calldata).to.equal(expected);
@@ -1016,12 +1105,18 @@ describe("TermAaveInterfaceFacet Tests", () => {
         wallet1.address,
         amount,
         false,
-        "0x"
+        "0x",
       );
 
       const expectedCalldata = ethers.AbiCoder.defaultAbiCoder().encode(
         ["address", "address", "uint256", "address", "bool"],
-        [await mockPool.getAddress(), await asset.getAddress(), amount, wallet1.address, false]
+        [
+          await mockPool.getAddress(),
+          await asset.getAddress(),
+          amount,
+          wallet1.address,
+          false,
+        ],
       );
       const expected = BORROW_SELECTOR + expectedCalldata.slice(2);
       expect(calldata).to.equal(expected);
@@ -1036,8 +1131,8 @@ describe("TermAaveInterfaceFacet Tests", () => {
           wallet1.address,
           ethers.parseEther("100"),
           true,
-          "0x"
-        )
+          "0x",
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "UnsupportedSelector");
     });
   });
@@ -1059,7 +1154,7 @@ describe("TermAaveInterfaceFacet Tests", () => {
           minOutputAmount: ethers.parseEther("50"),
           targetAddress: await mockPool.getAddress(),
           additionalCalldata: "0x",
-        })
+        }),
       ).to.be.revertedWithCustomError(facetHelper, "InputOutputTokenCollision");
     });
 
@@ -1101,7 +1196,7 @@ describe("TermAaveInterfaceFacet Tests", () => {
           minOutputAmount: ethers.parseEther("50"),
           targetAddress: await mockPool.getAddress(),
           additionalCalldata: "0x",
-        })
+        }),
       ).to.be.revertedWithCustomError(facetHelper, "InputOutputTokenCollision");
     });
 
@@ -1143,28 +1238,31 @@ describe("TermAaveInterfaceFacet Tests", () => {
           ethers.parseEther("50"),
           "0x12345678",
           await mockPool.getAddress(),
-          "0x"
-        )
+          "0x",
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "UnsupportedHookSelector");
     });
 
     it("should return previewAction and encodedCalldata for aaveRefinanceInHook selector", async () => {
-      const refinanceInSelector = facetHelper.interface.getFunction("aaveRefinanceInHook").selector;
+      const refinanceInSelector = facetHelper.interface.getFunction(
+        "aaveRefinanceInHook",
+      ).selector;
       const inputToken = wallet1.address;
       const outputToken = wallet2.address;
       const maxInputAmount = ethers.parseEther("100");
       const minOutputAmount = ethers.parseEther("50");
 
-      const [previewAction, encodedCalldata] = await facetHelper.generateActionCalldata(
-        wallet1.address,
-        inputToken,
-        maxInputAmount,
-        outputToken,
-        minOutputAmount,
-        refinanceInSelector,
-        await mockPool.getAddress(),
-        "0x"
-      );
+      const [previewAction, encodedCalldata] =
+        await facetHelper.generateActionCalldata(
+          wallet1.address,
+          inputToken,
+          maxInputAmount,
+          outputToken,
+          minOutputAmount,
+          refinanceInSelector,
+          await mockPool.getAddress(),
+          "0x",
+        );
 
       expect(previewAction.expectedInputToken).to.equal(inputToken);
       expect(previewAction.expectedInputAmount).to.equal(maxInputAmount);
@@ -1173,22 +1271,25 @@ describe("TermAaveInterfaceFacet Tests", () => {
     });
 
     it("should return previewAction and encodedCalldata for aaveRefinanceOutHook selector", async () => {
-      const refinanceOutSelector = facetHelper.interface.getFunction("aaveRefinanceOutHook").selector;
+      const refinanceOutSelector = facetHelper.interface.getFunction(
+        "aaveRefinanceOutHook",
+      ).selector;
       const inputToken = wallet1.address;
       const outputToken = wallet2.address;
       const maxInputAmount = ethers.parseEther("100");
       const minOutputAmount = ethers.parseEther("50");
 
-      const [previewAction, encodedCalldata] = await facetHelper.generateActionCalldata(
-        wallet1.address,
-        inputToken,
-        maxInputAmount,
-        outputToken,
-        minOutputAmount,
-        refinanceOutSelector,
-        await mockPool.getAddress(),
-        "0x"
-      );
+      const [previewAction, encodedCalldata] =
+        await facetHelper.generateActionCalldata(
+          wallet1.address,
+          inputToken,
+          maxInputAmount,
+          outputToken,
+          minOutputAmount,
+          refinanceOutSelector,
+          await mockPool.getAddress(),
+          "0x",
+        );
 
       expect(previewAction.expectedInputToken).to.equal(inputToken);
       expect(previewAction.expectedInputAmount).to.equal(maxInputAmount);
@@ -1197,7 +1298,9 @@ describe("TermAaveInterfaceFacet Tests", () => {
     });
 
     it("should propagate InputOutputTokenCollision from previewAaveRefinanceIn when tokens collide", async () => {
-      const refinanceInSelector = facetHelper.interface.getFunction("aaveRefinanceInHook").selector;
+      const refinanceInSelector = facetHelper.interface.getFunction(
+        "aaveRefinanceInHook",
+      ).selector;
       const sameToken = await asset.getAddress();
 
       await expect(
@@ -1209,8 +1312,8 @@ describe("TermAaveInterfaceFacet Tests", () => {
           ethers.parseEther("50"),
           refinanceInSelector,
           await mockPool.getAddress(),
-          "0x"
-        )
+          "0x",
+        ),
       ).to.be.revertedWithCustomError(facetHelper, "InputOutputTokenCollision");
     });
   });
@@ -1232,7 +1335,7 @@ describe("TermAaveInterfaceFacet Tests", () => {
           minOutputAmount: borrowAmount,
           targetAddress: await mockPool.getAddress(),
           additionalCalldata: "0x",
-        })
+        }),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
@@ -1248,7 +1351,7 @@ describe("TermAaveInterfaceFacet Tests", () => {
           minOutputAmount: borrowAmount,
           targetAddress: await mockPool.getAddress(),
           additionalCalldata: "0x",
-        })
+        }),
       ).to.be.revertedWith("Unauthorized caller");
 
       await facetHelper.clearActiveFlashLoanBorrower();
@@ -1266,7 +1369,7 @@ describe("TermAaveInterfaceFacet Tests", () => {
           minOutputAmount: borrowAmount,
           targetAddress: wallet2.address,
           additionalCalldata: "0x",
-        })
+        }),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAavePoolAddress");
 
       await facetHelper.clearActiveFlashLoanBorrower();
@@ -1276,7 +1379,9 @@ describe("TermAaveInterfaceFacet Tests", () => {
       await facetHelper.setActiveFlashLoanBorrower(wallet1.address);
 
       // Fund the facet with collateral to supply
-      await asset.connect(wallet1).transfer(await facetHelper.getAddress(), collateralAmount);
+      await asset
+        .connect(wallet1)
+        .transfer(await facetHelper.getAddress(), collateralAmount);
 
       // Use distinct collateral and loan tokens (same asset for mock simplicity, since mock allows same token)
       // collateralToken = asset (inputToken), loanAsset = asset (outputToken)
@@ -1284,13 +1389,13 @@ describe("TermAaveInterfaceFacet Tests", () => {
       await expect(
         facetHelper.connect(wallet1).aaveRefinanceInHook({
           user: wallet1.address,
-          inputToken: await asset.getAddress(),   // collateral
+          inputToken: await asset.getAddress(), // collateral
           maxInputAmount: collateralAmount,
-          outputToken: await asset.getAddress(),  // loan asset
+          outputToken: await asset.getAddress(), // loan asset
           minOutputAmount: borrowAmount,
           targetAddress: await mockPool.getAddress(),
           additionalCalldata: "0x",
-        })
+        }),
       ).to.not.be.reverted;
 
       await facetHelper.clearActiveFlashLoanBorrower();
@@ -1314,7 +1419,7 @@ describe("TermAaveInterfaceFacet Tests", () => {
           minOutputAmount: withdrawAmount,
           targetAddress: await mockPool.getAddress(),
           additionalCalldata: "0x",
-        })
+        }),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
@@ -1330,7 +1435,7 @@ describe("TermAaveInterfaceFacet Tests", () => {
           minOutputAmount: withdrawAmount,
           targetAddress: await mockPool.getAddress(),
           additionalCalldata: "0x",
-        })
+        }),
       ).to.be.revertedWith("Unauthorized caller");
 
       await facetHelper.clearActiveFlashLoanBorrower();
@@ -1348,7 +1453,7 @@ describe("TermAaveInterfaceFacet Tests", () => {
           minOutputAmount: withdrawAmount,
           targetAddress: wallet2.address,
           additionalCalldata: "0x",
-        })
+        }),
       ).to.be.revertedWithCustomError(facetHelper, "InvalidAavePoolAddress");
 
       await facetHelper.clearActiveFlashLoanBorrower();
@@ -1358,22 +1463,26 @@ describe("TermAaveInterfaceFacet Tests", () => {
       await facetHelper.setActiveFlashLoanBorrower(wallet1.address);
 
       // Fund the facet with assets to repay
-      await asset.connect(wallet1).transfer(await facetHelper.getAddress(), repayAmount);
+      await asset
+        .connect(wallet1)
+        .transfer(await facetHelper.getAddress(), repayAmount);
 
       // Mint aTokens to wallet1 and approve facet to spend them (for withdraw)
       await aToken.mint(wallet1.address, withdrawAmount);
-      await aToken.connect(wallet1).approve(await facetHelper.getAddress(), withdrawAmount);
+      await aToken
+        .connect(wallet1)
+        .approve(await facetHelper.getAddress(), withdrawAmount);
 
       await expect(
         facetHelper.connect(wallet1).aaveRefinanceOutHook({
           user: wallet1.address,
-          inputToken: await asset.getAddress(),   // loan asset to repay
+          inputToken: await asset.getAddress(), // loan asset to repay
           maxInputAmount: repayAmount,
-          outputToken: await asset.getAddress(),  // collateral to withdraw
+          outputToken: await asset.getAddress(), // collateral to withdraw
           minOutputAmount: withdrawAmount,
           targetAddress: await mockPool.getAddress(),
           additionalCalldata: "0x",
-        })
+        }),
       ).to.not.be.reverted;
 
       await facetHelper.clearActiveFlashLoanBorrower();

@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, upgrades } from "hardhat";
@@ -11,11 +10,13 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
   let purchaseToken: TestToken;
   let collateralToken: TestToken;
   let mockController: any;
-  let mockServicer: any;        // TestMockRepoServicerFull
+  let mockServicer: any; // TestMockRepoServicerFull
   let mockCollateralManager: any; // TestMockCollateralManager
 
   const CURRENT_TIME = Math.floor(Date.now() / 1000);
   const MATURITY_TIME = CURRENT_TIME + 86400 * 30; // 30 days from now
+  // maturity + repurchase window + redemption buffer; 37 days from now
+  const REDEMPTION_TIME = MATURITY_TIME + 86400 * 7;
 
   // ABI type strings for encoding additionalCalldata
   const RETRIEVE_FUNDS_TYPE = "tuple(bytes4,address,bytes)";
@@ -25,18 +26,18 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
   // Returns a positional array matching LimitLendOrder tuple
   function makeOrder(
     servicerAddr: string,
-    overrides: { borrowFee?: bigint; repoServicer?: string } = {}
+    overrides: { borrowFee?: bigint; repoServicer?: string } = {},
   ): unknown[] {
     return [
       overrides.repoServicer ?? servicerAddr, // repoServicer
-      ethers.parseEther("100"),               // purchaseTokenAmount
-      0n,                                     // offerRate
-      ethers.ZeroAddress,                     // maker
-      ethers.ZeroAddress,                     // taker
-      overrides.borrowFee ?? 0n,              // borrowFee
-      ethers.ZeroAddress,                     // feeRecipient
-      BigInt(CURRENT_TIME + 86400),           // expiry
-      1n,                                     // salt
+      ethers.parseEther("100"), // purchaseTokenAmount
+      0n, // offerRate
+      ethers.ZeroAddress, // maker
+      ethers.ZeroAddress, // taker
+      overrides.borrowFee ?? 0n, // borrowFee
+      ethers.ZeroAddress, // feeRecipient
+      BigInt(CURRENT_TIME + 86400), // expiry
+      1n, // salt
       ["0x00000000", ethers.ZeroAddress, "0x"], // retrieveFunds
     ];
   }
@@ -50,11 +51,11 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
     usePermit2: boolean,
     orders: unknown[][],
     signatures: unknown[][],
-    fillAmounts: bigint[]
+    fillAmounts: bigint[],
   ): string {
     return ethers.AbiCoder.defaultAbiCoder().encode(
       ["bool", `${LEND_ORDER_TYPE}[]`, `${SIGNATURE_TYPE}[]`, "uint256[]"],
-      [usePermit2, orders, signatures, fillAmounts]
+      [usePermit2, orders, signatures, fillAmounts],
     );
   }
 
@@ -63,7 +64,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
 
     // Deploy the hook facet helper (standalone, not diamond)
     const HookFacetFactory = await ethers.getContractFactory(
-      "TestTermLoanIntentHookFacetHelper"
+      "TestTermLoanIntentHookFacetHelper",
     );
     hookFacet = await HookFacetFactory.deploy();
     await hookFacet.waitForDeployment();
@@ -109,9 +110,10 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
     await mockServicer.setPurchaseToken(await purchaseToken.getAddress());
     await mockServicer.setTermController(await mockController.getAddress());
     await mockServicer.setCollateralManager(
-      await mockCollateralManager.getAddress()
+      await mockCollateralManager.getAddress(),
     );
     await mockServicer.setMaturityTimestamp(MATURITY_TIME);
+    await mockServicer.setRedemptionTimestamp(REDEMPTION_TIME);
 
     // Wire up the collateral manager — one accepted collateral token
     await mockCollateralManager.setCollateralTokens([
@@ -119,11 +121,10 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
     ]);
 
     // Register servicer and approve controller in diamond storage
-    await mockController.setTermDeployed(
-      await mockServicer.getAddress(),
-      true
+    await mockController.setTermDeployed(await mockServicer.getAddress(), true);
+    await hookFacet.addApprovedTermController(
+      await mockController.getAddress(),
     );
-    await hookFacet.addApprovedTermController(await mockController.getAddress());
 
     // Install a no-op Permit2 stub so Permit2Lib.PERMIT2.transferFrom() doesn't revert
     await ethers.provider.send("hardhat_setCode", [
@@ -148,7 +149,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.previewSettleLimitLend(input)
+        hookFacet.previewSettleLimitLend(input),
       ).to.be.revertedWithCustomError(hookFacet, "EmptyOrderBatch");
     });
 
@@ -162,7 +163,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [makeSignature()],
-        [ethers.parseEther("100")]
+        [ethers.parseEther("100")],
       );
       const input = {
         user: wallet1.address,
@@ -174,7 +175,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.previewSettleLimitLend(input)
+        hookFacet.previewSettleLimitLend(input),
       ).to.be.revertedWithCustomError(hookFacet, "InputOutputTokenCollision");
     });
 
@@ -186,7 +187,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [makeSignature()],
-        [ethers.parseEther("100")]
+        [ethers.parseEther("100")],
       );
       const input = {
         user: wallet1.address,
@@ -199,11 +200,11 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
       };
       const result = await hookFacet.previewSettleLimitLend(input);
       expect(result.expectedInputToken).to.equal(
-        await collateralToken.getAddress()
+        await collateralToken.getAddress(),
       );
       expect(result.expectedInputAmount).to.equal(maxInput);
       expect(result.expectedOutputToken).to.equal(
-        await purchaseToken.getAddress()
+        await purchaseToken.getAddress(),
       );
       expect(result.expectedOutputAmount).to.equal(minOutput);
       expect(result.isDeterministic).to.be.true;
@@ -224,20 +225,21 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
           0n,
           "0x12345678",
           await mockServicer.getAddress(),
-          "0x"
-        )
+          "0x",
+        ),
       ).to.be.revertedWithCustomError(hookFacet, "UnsupportedHookSelector");
     });
 
     it("succeeds with settleLimitLendHook selector", async () => {
-      const hookSelector =
-        hookFacet.interface.getFunction("settleLimitLendHook").selector;
+      const hookSelector = hookFacet.interface.getFunction(
+        "settleLimitLendHook",
+      ).selector;
       const order = makeOrder(await mockServicer.getAddress());
       const calldata = encodeAdditionalCalldata(
         false,
         [order],
         [makeSignature()],
-        [ethers.parseEther("100")]
+        [ethers.parseEther("100")],
       );
 
       const [previewAction, encodedCalldata] =
@@ -249,19 +251,20 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
           0n,
           hookSelector,
           await mockServicer.getAddress(),
-          calldata
+          calldata,
         );
 
       expect(previewAction.isDeterministic).to.be.true;
       expect(previewAction.expectedOutputToken).to.equal(
-        await purchaseToken.getAddress()
+        await purchaseToken.getAddress(),
       );
       expect(encodedCalldata.slice(0, 10)).to.equal(hookSelector);
     });
 
     it("propagates EmptyOrderBatch error", async () => {
-      const hookSelector =
-        hookFacet.interface.getFunction("settleLimitLendHook").selector;
+      const hookSelector = hookFacet.interface.getFunction(
+        "settleLimitLendHook",
+      ).selector;
       const calldata = encodeAdditionalCalldata(false, [], [], []);
 
       await expect(
@@ -273,8 +276,8 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
           0n,
           hookSelector,
           await mockServicer.getAddress(),
-          calldata
-        )
+          calldata,
+        ),
       ).to.be.revertedWithCustomError(hookFacet, "EmptyOrderBatch");
     });
   });
@@ -289,7 +292,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [makeSignature()],
-        [ethers.parseEther("100")]
+        [ethers.parseEther("100")],
       );
       const input = {
         user: wallet1.address,
@@ -301,7 +304,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
+        hookFacet.connect(wallet1).settleLimitLendHook(input),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
@@ -312,7 +315,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [makeSignature()],
-        [ethers.parseEther("100")]
+        [ethers.parseEther("100")],
       );
       const input = {
         user: wallet1.address, // wallet1 != wallet2
@@ -324,7 +327,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
+        hookFacet.connect(wallet1).settleLimitLendHook(input),
       ).to.be.revertedWith("Unauthorized caller");
     });
 
@@ -341,7 +344,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
+        hookFacet.connect(wallet1).settleLimitLendHook(input),
       ).to.be.revertedWithCustomError(hookFacet, "EmptyOrderBatch");
     });
 
@@ -353,7 +356,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [],
-        [ethers.parseEther("100")]
+        [ethers.parseEther("100")],
       );
       const input = {
         user: wallet1.address,
@@ -365,7 +368,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
+        hookFacet.connect(wallet1).settleLimitLendHook(input),
       ).to.be.revertedWithCustomError(hookFacet, "OrderBatchLengthMismatch");
     });
 
@@ -377,7 +380,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [makeSignature()],
-        []
+        [],
       );
       const input = {
         user: wallet1.address,
@@ -389,7 +392,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
+        hookFacet.connect(wallet1).settleLimitLendHook(input),
       ).to.be.revertedWithCustomError(hookFacet, "OrderBatchLengthMismatch");
     });
 
@@ -401,7 +404,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
       ).deploy();
       await unapprovedController.waitForDeployment();
       await mockServicer.setTermController(
-        await unapprovedController.getAddress()
+        await unapprovedController.getAddress(),
       );
 
       const order = makeOrder(await mockServicer.getAddress());
@@ -409,7 +412,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [makeSignature()],
-        [ethers.parseEther("100")]
+        [ethers.parseEther("100")],
       );
       const input = {
         user: wallet1.address,
@@ -421,7 +424,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
+        hookFacet.connect(wallet1).settleLimitLendHook(input),
       ).to.be.revertedWithCustomError(hookFacet, "InvalidTermController");
     });
 
@@ -429,7 +432,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
       await hookFacet.setActiveFlashLoanBorrower(wallet1.address);
       await mockController.setTermDeployed(
         await mockServicer.getAddress(),
-        false
+        false,
       );
 
       const order = makeOrder(await mockServicer.getAddress());
@@ -437,7 +440,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [makeSignature()],
-        [ethers.parseEther("100")]
+        [ethers.parseEther("100")],
       );
       const input = {
         user: wallet1.address,
@@ -449,7 +452,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
+        hookFacet.connect(wallet1).settleLimitLendHook(input),
       ).to.be.revertedWithCustomError(hookFacet, "InvalidRepoId");
     });
 
@@ -462,7 +465,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [makeSignature()],
-        [ethers.parseEther("100")]
+        [ethers.parseEther("100")],
       );
       const input = {
         user: wallet1.address,
@@ -474,7 +477,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
+        hookFacet.connect(wallet1).settleLimitLendHook(input),
       ).to.be.revertedWithCustomError(hookFacet, "AfterMaturity");
     });
 
@@ -488,9 +491,15 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
       await mockServicer2.waitForDeployment();
       await mockServicer2.setPurchaseToken(await purchaseToken.getAddress());
       await mockServicer2.setTermController(await mockController.getAddress());
-      await mockServicer2.setCollateralManager(await mockCollateralManager.getAddress());
+      await mockServicer2.setCollateralManager(
+        await mockCollateralManager.getAddress(),
+      );
       await mockServicer2.setMaturityTimestamp(MATURITY_TIME);
-      await mockController.setTermDeployed(await mockServicer2.getAddress(), true);
+      await mockServicer2.setRedemptionTimestamp(REDEMPTION_TIME);
+      await mockController.setTermDeployed(
+        await mockServicer2.getAddress(),
+        true,
+      );
 
       const order1 = makeOrder(await mockServicer.getAddress());
       const order2 = makeOrder(await mockServicer2.getAddress()); // different servicer
@@ -498,7 +507,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order1, order2],
         [makeSignature(), makeSignature()],
-        [ethers.parseEther("50"), ethers.parseEther("50")]
+        [ethers.parseEther("50"), ethers.parseEther("50")],
       );
       const input = {
         user: wallet1.address,
@@ -510,7 +519,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
+        hookFacet.connect(wallet1).settleLimitLendHook(input),
       ).to.be.revertedWithCustomError(hookFacet, "InconsistentRepoServicer");
     });
 
@@ -521,7 +530,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [makeSignature()],
-        [0n]
+        [0n],
       );
       const input = {
         user: wallet1.address,
@@ -533,7 +542,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
+        hookFacet.connect(wallet1).settleLimitLendHook(input),
       ).to.be.revertedWithCustomError(hookFacet, "InvalidFillAmount");
     });
 
@@ -546,7 +555,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [makeSignature()],
-        [excessAmount] // Exceeds purchaseTokenAmount
+        [excessAmount], // Exceeds purchaseTokenAmount
       );
       const input = {
         user: wallet1.address,
@@ -558,13 +567,16 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
-      ).to.be.revertedWithCustomError(hookFacet, "BatchOrderInsufficientRemainingCapacity");
+        hookFacet.connect(wallet1).settleLimitLendHook(input),
+      ).to.be.revertedWithCustomError(
+        hookFacet,
+        "BatchOrderInsufficientRemainingCapacity",
+      );
     });
 
     it("reverts BorrowFeeTooHigh when fee exceeds expScale", async () => {
-      // feeFactor = borrowFee * timeRemaining / 360days
-      // With 30 days remaining: borrowFee must be >= 12e18 to trigger BorrowFeeTooHigh
+      // feeFactor = borrowFee * timeToRedemption / 360days
+      // With 37 days to redemption: borrowFee must be >= ~9.73e18 to trigger BorrowFeeTooHigh
       await hookFacet.setActiveFlashLoanBorrower(wallet1.address);
       const order = makeOrder(await mockServicer.getAddress(), {
         borrowFee: ethers.parseEther("13"),
@@ -573,7 +585,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [makeSignature()],
-        [ethers.parseEther("100")]
+        [ethers.parseEther("100")],
       );
       const input = {
         user: wallet1.address,
@@ -585,7 +597,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
+        hookFacet.connect(wallet1).settleLimitLendHook(input),
       ).to.be.revertedWithCustomError(hookFacet, "BorrowFeeTooHigh");
     });
 
@@ -599,7 +611,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [makeSignature()],
-        [ethers.parseEther("100")]
+        [ethers.parseEther("100")],
       );
       const input = {
         user: wallet1.address,
@@ -611,7 +623,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         additionalCalldata: calldata,
       };
       await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
+        hookFacet.connect(wallet1).settleLimitLendHook(input),
       ).to.be.revertedWithCustomError(hookFacet, "InvalidCollateralToken");
     });
 
@@ -627,7 +639,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order],
         [makeSignature()],
-        [fillAmount]
+        [fillAmount],
       );
       const input = {
         user: wallet1.address,
@@ -638,9 +650,8 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         targetAddress: await mockServicer.getAddress(),
         additionalCalldata: calldata,
       };
-      await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
-      ).to.not.be.reverted;
+      await expect(hookFacet.connect(wallet1).settleLimitLendHook(input)).to.not
+        .be.reverted;
     });
 
     it("succeeds with 2 orders, allocating collateral proportionally", async () => {
@@ -659,7 +670,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         false,
         [order1, order2],
         [makeSignature(), makeSignature()],
-        [fillAmount1, fillAmount2]
+        [fillAmount1, fillAmount2],
       );
       const input = {
         user: wallet1.address,
@@ -670,9 +681,8 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         targetAddress: await mockServicer.getAddress(),
         additionalCalldata: calldata,
       };
-      await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
-      ).to.not.be.reverted;
+      await expect(hookFacet.connect(wallet1).settleLimitLendHook(input)).to.not
+        .be.reverted;
 
       // Verify proportional collateral allocation:
       // order 0 (non-last): collateral = maxInput * fillAmount1 / totalFill
@@ -696,7 +706,7 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         true,
         [order],
         [makeSignature()],
-        [fillAmount]
+        [fillAmount],
       );
       const input = {
         user: wallet1.address,
@@ -707,9 +717,8 @@ describe("TermLoanIntentHookFacet Unit Tests", () => {
         targetAddress: await mockServicer.getAddress(),
         additionalCalldata: calldata,
       };
-      await expect(
-        hookFacet.connect(wallet1).settleLimitLendHook(input)
-      ).to.not.be.reverted;
+      await expect(hookFacet.connect(wallet1).settleLimitLendHook(input)).to.not
+        .be.reverted;
     });
   });
 });

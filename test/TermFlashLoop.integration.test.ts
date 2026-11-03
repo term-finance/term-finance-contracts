@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
@@ -7,7 +6,10 @@ import duration from "dayjs/plugin/duration";
 import { ZeroAddress, solidityPackedKeccak256 } from "ethers";
 
 dayjs.extend(duration);
-import { deployMaturityPeriod, MaturityPeriodInfo } from "../utils/deploy-utils";
+import {
+  deployMaturityPeriod,
+  MaturityPeriodInfo,
+} from "../utils/deploy-utils";
 import { getGeneratedTenderId } from "../utils/simulation-utils";
 import {
   TermController,
@@ -81,16 +83,16 @@ describe("TermFlashLoop Integration Tests", () => {
   let snapshotId: string;
 
   // ─── Constants ────────────────────────────────────────────────────────────
-  const LOAN_AMOUNT = ethers.parseUnits("1000", 6);    // 1000 rawPurchase (6 dec)
+  const LOAN_AMOUNT = ethers.parseUnits("1000", 6); // 1000 rawPurchase (6 dec)
   const COLLATERAL_AMOUNT = ethers.parseEther("1500"); // 1500 (18 dec scale)
-  const BORROW_RATE = 5n * 10n ** 16n;                 // 5% per year
-  const EXTRA_PURCHASE = ethers.parseUnits("500", 6);  // extra rawPurchase for scenario 4
+  const BORROW_RATE = 5n * 10n ** 16n; // 5% per year
+  const EXTRA_PURCHASE = ethers.parseUnits("500", 6); // extra rawPurchase for scenario 4
 
   // Rate for TestMockSwapAggregator: amountOut = amountIn * rate / 1e18
   // rawCollateral (18 dec) → rawPurchase (6 dec) at $1:$1:  1500e18 * 1e6 / 1e18 = 1500e6
-  const RATE_COLLATERAL_TO_PURCHASE = 1_000_000n;       // 1e6
+  const RATE_COLLATERAL_TO_PURCHASE = 1_000_000n; // 1e6
   // rawPurchase (6 dec) → rawCollateral (18 dec) at $1:$1: 1500e6 * 1e30 / 1e18 = 1500e18
-  const RATE_PURCHASE_TO_COLLATERAL = 10n ** 30n;       // 1e30
+  const RATE_PURCHASE_TO_COLLATERAL = 10n ** 30n; // 1e30
 
   const BID_NONCE = "12345";
   const OFFER_NONCE = "67890";
@@ -131,8 +133,11 @@ describe("TermFlashLoop Integration Tests", () => {
     return { sigType: 0, sigData };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async function makeLendOrder(repoServicerAddr: string, purchaseTokenAmount: bigint, salt = 1n): Promise<any> {
+  async function makeLendOrder(
+    repoServicerAddr: string,
+    purchaseTokenAmount: bigint,
+    salt = 1n,
+  ): Promise<any> {
     const block = await ethers.provider.getBlock("latest");
     const blockTimestamp = BigInt(block!.timestamp);
     return {
@@ -153,8 +158,11 @@ describe("TermFlashLoop Integration Tests", () => {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function encodeLendHookCalldata(orders: any[], sigs: any[], fillAmounts: bigint[]): string {
+  function encodeLendHookCalldata(
+    orders: any[],
+    sigs: any[],
+    fillAmounts: bigint[],
+  ): string {
     return ethers.AbiCoder.defaultAbiCoder().encode(
       [
         "bool",
@@ -165,9 +173,20 @@ describe("TermFlashLoop Integration Tests", () => {
       [
         false, // usePermit2
         orders.map((o) => [
-          o.repoServicer, o.purchaseTokenAmount, o.offerRate, o.maker, o.taker,
-          o.borrowFee, o.feeRecipient, o.expiry, o.salt,
-          [o.retrieveFunds.method, o.retrieveFunds.target, o.retrieveFunds.additionalCalldata],
+          o.repoServicer,
+          o.purchaseTokenAmount,
+          o.offerRate,
+          o.maker,
+          o.taker,
+          o.borrowFee,
+          o.feeRecipient,
+          o.expiry,
+          o.salt,
+          [
+            o.retrieveFunds.method,
+            o.retrieveFunds.target,
+            o.retrieveFunds.additionalCalldata,
+          ],
         ]),
         sigs.map((s) => [s.sigType, s.sigData]),
         fillAmounts,
@@ -177,12 +196,29 @@ describe("TermFlashLoop Integration Tests", () => {
 
   function encodeSwapRouterData(): string {
     const innerSwapData = ethers.AbiCoder.defaultAbiCoder().encode(
-      ["tuple(uint8 swapType, address extRouter, bytes extCalldata, bool needScale)"],
-      [{ swapType: 0, extRouter: ZeroAddress, extCalldata: "0x", needScale: false }],
+      [
+        "tuple(uint8 swapType, address extRouter, bytes extCalldata, bool needScale)",
+      ],
+      [
+        {
+          swapType: 0,
+          extRouter: ZeroAddress,
+          extCalldata: "0x",
+          needScale: false,
+        },
+      ],
     );
     return ethers.AbiCoder.defaultAbiCoder().encode(
-      ["tuple(bytes swapData, bool isTokenInPendlePT, bool isTokenOutPendlePT)"],
-      [{ swapData: innerSwapData, isTokenInPendlePT: false, isTokenOutPendlePT: false }],
+      [
+        "tuple(bytes swapData, bool isTokenInPendlePT, bool isTokenOutPendlePT)",
+      ],
+      [
+        {
+          swapData: innerSwapData,
+          isTokenInPendlePT: false,
+          isTokenOutPendlePT: false,
+        },
+      ],
     );
   }
 
@@ -190,27 +226,29 @@ describe("TermFlashLoop Integration Tests", () => {
   before(async () => {
     upgrades.silenceWarnings();
     wallets = await ethers.getSigners();
-    lender          = wallets[0];
-    borrower        = wallets[1];
-    feeRecipient    = wallets[2];
-    devops          = wallets[4];
+    lender = wallets[0];
+    borrower = wallets[1];
+    feeRecipient = wallets[2];
+    devops = wallets[4];
     controllerAdmin = wallets[5];
-    admin           = wallets[6];
-    treasury        = wallets[7];
+    admin = wallets[6];
+    treasury = wallets[7];
     protocolReserve = wallets[8];
 
     // ── 1. Deploy rawPurchase (6 dec) and rawCollateral (18 dec) ────────────
     const testTokenFactory = await ethers.getContractFactory("TestToken");
-    rawPurchase = await testTokenFactory.deploy() as TestToken;
+    rawPurchase = (await testTokenFactory.deploy()) as TestToken;
     await rawPurchase.waitForDeployment();
     await rawPurchase.initialize("Purchase Token", "PT", 6, [], []);
 
-    rawCollateral = await testTokenFactory.deploy() as TestToken;
+    rawCollateral = (await testTokenFactory.deploy()) as TestToken;
     await rawCollateral.waitForDeployment();
     await rawCollateral.initialize("Collateral Token", "CT", 18, [], []);
 
     // ── 2. Deploy TermPriceConsumerV3 ───────────────────────────────────────
-    const termPriceOracleFactory = await ethers.getContractFactory("TermPriceConsumerV3");
+    const termPriceOracleFactory = await ethers.getContractFactory(
+      "TermPriceConsumerV3",
+    );
     termOracle = (await upgrades.deployProxy(
       termPriceOracleFactory,
       [devops.address],
@@ -218,7 +256,8 @@ describe("TermFlashLoop Integration Tests", () => {
     )) as unknown as TermPriceConsumerV3;
 
     // ── 3. Deploy TermController ────────────────────────────────────────────
-    const termControllerFactory = await ethers.getContractFactory("TermController");
+    const termControllerFactory =
+      await ethers.getContractFactory("TermController");
     termController = (await upgrades.deployProxy(
       termControllerFactory,
       [
@@ -232,13 +271,16 @@ describe("TermFlashLoop Integration Tests", () => {
     )) as unknown as TermController;
 
     // ── 4. Deploy TermInitializer and TermEventEmitter ──────────────────────
-    const termInitializerFactory = await ethers.getContractFactory("TermInitializer");
+    const termInitializerFactory =
+      await ethers.getContractFactory("TermInitializer");
     termInitializer = await termInitializerFactory.deploy(
       treasury.address,
       wallets[3].address,
     );
     await termInitializer.waitForDeployment();
-    await termController.connect(admin).pairInitializer(await termInitializer.getAddress());
+    await termController
+      .connect(admin)
+      .pairInitializer(await termInitializer.getAddress());
 
     // Deploy TermDiamond via factory
     const termDiamondFactoryFactory =
@@ -265,7 +307,8 @@ describe("TermFlashLoop Integration Tests", () => {
       decodedEvent!.args.diamond,
     )) as unknown as TermDiamond;
 
-    const termEventEmitterFactory = await ethers.getContractFactory("TermEventEmitter");
+    const termEventEmitterFactory =
+      await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
       [
@@ -286,15 +329,42 @@ describe("TermFlashLoop Integration Tests", () => {
     );
 
     // ── 5. Price feeds for rawPurchase and rawCollateral ($1.00) ────────────
-    const mockPriceFeedFactory = await ethers.getContractFactory("TestPriceFeed");
-    const purchaseFeed = await mockPriceFeedFactory.deploy(8, "", 1, 1, 100000000n, 1, 1, 1);
-    const collateralFeed = await mockPriceFeedFactory.deploy(8, "", 1, 1, 100000000n, 1, 1, 1);
-    await termOracle.connect(devops).addNewTokenPriceFeed(
-      await rawPurchase.getAddress(), await purchaseFeed.getAddress(), 0,
+    const mockPriceFeedFactory =
+      await ethers.getContractFactory("TestPriceFeed");
+    const purchaseFeed = await mockPriceFeedFactory.deploy(
+      8,
+      "",
+      1,
+      1,
+      100000000n,
+      1,
+      1,
+      1,
     );
-    await termOracle.connect(devops).addNewTokenPriceFeed(
-      await rawCollateral.getAddress(), await collateralFeed.getAddress(), 0,
+    const collateralFeed = await mockPriceFeedFactory.deploy(
+      8,
+      "",
+      1,
+      1,
+      100000000n,
+      1,
+      1,
+      1,
     );
+    await termOracle
+      .connect(devops)
+      .addNewTokenPriceFeed(
+        await rawPurchase.getAddress(),
+        await purchaseFeed.getAddress(),
+        0,
+      );
+    await termOracle
+      .connect(devops)
+      .addNewTokenPriceFeed(
+        await rawCollateral.getAddress(),
+        await collateralFeed.getAddress(),
+        0,
+      );
 
     // ── 6. Deploy ERC4626 vaults ────────────────────────────────────────────
     const vaultFactory = await ethers.getContractFactory("TestMockVault");
@@ -302,31 +372,82 @@ describe("TermFlashLoop Integration Tests", () => {
     // purchaseVault: asset = rawPurchase; shares used as period2's purchase token
     purchaseVault = await vaultFactory.deploy();
     await purchaseVault.waitForDeployment();
-    await purchaseVault.initialize(await rawPurchase.getAddress(), "Purchase Vault Shares", "PVS");
+    await purchaseVault.initialize(
+      await rawPurchase.getAddress(),
+      "Purchase Vault Shares",
+      "PVS",
+    );
 
     // collateralVault: asset = rawCollateral; shares used as period2's collateral token
     collateralVault = await vaultFactory.deploy();
     await collateralVault.waitForDeployment();
-    await collateralVault.initialize(await rawCollateral.getAddress(), "Collateral Vault Shares", "CVS");
+    await collateralVault.initialize(
+      await rawCollateral.getAddress(),
+      "Collateral Vault Shares",
+      "CVS",
+    );
 
     // collateral2Vault: asset = rawPurchase; shares used as period3's collateral token
     collateral2Vault = await vaultFactory.deploy();
     await collateral2Vault.waitForDeployment();
-    await collateral2Vault.initialize(await rawPurchase.getAddress(), "Collateral2 Vault Shares", "C2VS");
+    await collateral2Vault.initialize(
+      await rawPurchase.getAddress(),
+      "Collateral2 Vault Shares",
+      "C2VS",
+    );
 
     // ── 7. Price feeds for vault share tokens ($1.00) ───────────────────────
-    const pvFeed  = await mockPriceFeedFactory.deploy(8, "", 1, 1, 100000000n, 1, 1, 1);
-    const cvFeed  = await mockPriceFeedFactory.deploy(8, "", 1, 1, 100000000n, 1, 1, 1);
-    const c2vFeed = await mockPriceFeedFactory.deploy(8, "", 1, 1, 100000000n, 1, 1, 1);
-    await termOracle.connect(devops).addNewTokenPriceFeed(
-      await purchaseVault.getAddress(), await pvFeed.getAddress(), 0,
+    const pvFeed = await mockPriceFeedFactory.deploy(
+      8,
+      "",
+      1,
+      1,
+      100000000n,
+      1,
+      1,
+      1,
     );
-    await termOracle.connect(devops).addNewTokenPriceFeed(
-      await collateralVault.getAddress(), await cvFeed.getAddress(), 0,
+    const cvFeed = await mockPriceFeedFactory.deploy(
+      8,
+      "",
+      1,
+      1,
+      100000000n,
+      1,
+      1,
+      1,
     );
-    await termOracle.connect(devops).addNewTokenPriceFeed(
-      await collateral2Vault.getAddress(), await c2vFeed.getAddress(), 0,
+    const c2vFeed = await mockPriceFeedFactory.deploy(
+      8,
+      "",
+      1,
+      1,
+      100000000n,
+      1,
+      1,
+      1,
     );
+    await termOracle
+      .connect(devops)
+      .addNewTokenPriceFeed(
+        await purchaseVault.getAddress(),
+        await pvFeed.getAddress(),
+        0,
+      );
+    await termOracle
+      .connect(devops)
+      .addNewTokenPriceFeed(
+        await collateralVault.getAddress(),
+        await cvFeed.getAddress(),
+        0,
+      );
+    await termOracle
+      .connect(devops)
+      .addNewTokenPriceFeed(
+        await collateral2Vault.getAddress(),
+        await c2vFeed.getAddress(),
+        0,
+      );
 
     // ── 8. Use the shared TermDiamond deployed above ────────────────────────
     diamondAddress = await termDiamond.getAddress();
@@ -334,41 +455,41 @@ describe("TermFlashLoop Integration Tests", () => {
     // ── 9. Deploy 3 maturity periods (shared diamond, same auction dates) ───
     const latestBlock = await ethers.provider.getBlock("latest");
     const now = dayjs.unix(latestBlock!.timestamp);
-    const auctionStart  = now.subtract(1, "minute");
+    const auctionStart = now.subtract(1, "minute");
     const auctionReveal = auctionStart.add(1, "day");
-    const auctionEnd    = auctionReveal.add(10, "minute");
-    const maturity      = auctionEnd.add(1, "month");
+    const auctionEnd = auctionReveal.add(10, "minute");
+    const maturity = auctionEnd.add(1, "month");
 
     const commonArgs = {
-      termControllerAddress:       await termController.getAddress(),
-      termEventEmitterAddress:     await termEventEmitter.getAddress(),
-      termInitializerAddress:      await termInitializer.getAddress(),
-      termOracleAddress:           await termOracle.getAddress(),
-      termDiamondAddress:          diamondAddress,
-      auctionStartDate:            auctionStart.unix().toString(),
-      auctionRevealDate:           auctionReveal.unix().toString(),
-      auctionEndDate:              auctionEnd.unix().toString(),
-      maturityTimestamp:           maturity.unix().toString(),
-      servicerMaturityTimestamp:   maturity.unix().toString(),
-      minimumTenderAmount:         "10",
-      repurchaseWindow:            "86400",
-      redemptionBuffer:            "300",
+      termControllerAddress: await termController.getAddress(),
+      termEventEmitterAddress: await termEventEmitter.getAddress(),
+      termInitializerAddress: await termInitializer.getAddress(),
+      termOracleAddress: await termOracle.getAddress(),
+      termDiamondAddress: diamondAddress,
+      auctionStartDate: auctionStart.unix().toString(),
+      auctionRevealDate: auctionReveal.unix().toString(),
+      auctionEndDate: auctionEnd.unix().toString(),
+      maturityTimestamp: maturity.unix().toString(),
+      servicerMaturityTimestamp: maturity.unix().toString(),
+      minimumTenderAmount: "10",
+      repurchaseWindow: "86400",
+      redemptionBuffer: "300",
       netExposureCapOnLiquidation: "5" + "0".repeat(16),
-      deMinimisMarginThreshold:    "50" + "0".repeat(18),
+      deMinimisMarginThreshold: "50" + "0".repeat(18),
       liquidateDamangesDueToProtocol: "3" + "0".repeat(16),
-      servicingFee:                "3" + "0".repeat(15),
-      purchaseTokenAddress:        await rawPurchase.getAddress(),
-      collateralTokenAddresses:    [await rawCollateral.getAddress()],
-      initialCollateralRatios:     ["15" + "0".repeat(17)],
+      servicingFee: "3" + "0".repeat(15),
+      purchaseTokenAddress: await rawPurchase.getAddress(),
+      collateralTokenAddresses: [await rawCollateral.getAddress()],
+      initialCollateralRatios: ["15" + "0".repeat(17)],
       maintenanceCollateralRatios: ["125" + "0".repeat(16)],
-      liquidatedDamages:           ["5" + "0".repeat(16)],
-      mintExposureCap:             "1000000000000000000",
-      termApprovalMultisig:        treasury,
-      devopsMultisig:              devops.address,
-      adminWallet:                 admin.address,
-      controllerAdmin:             controllerAdmin,
-      termVersion:                 "0.1.0",
-      auctionVersion:              "0.1.0",
+      liquidatedDamages: ["5" + "0".repeat(16)],
+      mintExposureCap: "1000000000000000000",
+      termApprovalMultisig: treasury,
+      devopsMultisig: devops.address,
+      adminWallet: admin.address,
+      controllerAdmin: controllerAdmin,
+      termVersion: "0.1.0",
+      auctionVersion: "0.1.0",
       clearingPricePostProcessingOffset: "0",
     };
 
@@ -379,7 +500,7 @@ describe("TermFlashLoop Integration Tests", () => {
     maturityPeriod2 = await deployMaturityPeriod(
       {
         ...commonArgs,
-        purchaseTokenAddress:     await purchaseVault.getAddress(),
+        purchaseTokenAddress: await purchaseVault.getAddress(),
         collateralTokenAddresses: [await collateralVault.getAddress()],
       },
       "uups",
@@ -395,48 +516,71 @@ describe("TermFlashLoop Integration Tests", () => {
     );
 
     // ── 10. Deploy mock flash loan and swap aggregators ──────────────────────
-    const MockFlashFactory = await ethers.getContractFactory("TestMockFlashLoanAggregator");
+    const MockFlashFactory = await ethers.getContractFactory(
+      "TestMockFlashLoanAggregator",
+    );
     mockFlashLoanAggregator = await MockFlashFactory.deploy();
     await mockFlashLoanAggregator.waitForDeployment();
 
-    const MockSwapFactory = await ethers.getContractFactory("TestMockSwapAggregator");
+    const MockSwapFactory = await ethers.getContractFactory(
+      "TestMockSwapAggregator",
+    );
     mockSwapAggregator = await MockSwapFactory.deploy();
     await mockSwapAggregator.waitForDeployment();
 
     // ── 11. Deploy facets ───────────────────────────────────────────────────
-    const DiamondLoupeFacetFactory = await ethers.getContractFactory("DiamondLoupeFacet");
+    const DiamondLoupeFacetFactory =
+      await ethers.getContractFactory("DiamondLoupeFacet");
     const diamondLoupeFacet = await DiamondLoupeFacetFactory.deploy();
     await diamondLoupeFacet.waitForDeployment();
 
-    const TermControllerFacetFactory = await ethers.getContractFactory("TermControllerFacet");
-    const termControllerFacet = await TermControllerFacetFactory.deploy() as TermControllerFacet;
+    const TermControllerFacetFactory = await ethers.getContractFactory(
+      "TermControllerFacet",
+    );
+    const termControllerFacet =
+      (await TermControllerFacetFactory.deploy()) as TermControllerFacet;
     await termControllerFacet.waitForDeployment();
 
     const flashAggAddr = await mockFlashLoanAggregator.getAddress();
-    const TermFlashLoanExecutorFacetFactory = await ethers.getContractFactory("TermFlashLoanExecutorFacet");
-    const flashLoanExecutorFacet = await TermFlashLoanExecutorFacetFactory.deploy(flashAggAddr);
+    const TermFlashLoanExecutorFacetFactory = await ethers.getContractFactory(
+      "TermFlashLoanExecutorFacet",
+    );
+    const flashLoanExecutorFacet =
+      await TermFlashLoanExecutorFacetFactory.deploy(flashAggAddr);
     await flashLoanExecutorFacet.waitForDeployment();
 
-    const TermRouterFacetFactory = await ethers.getContractFactory("TermRouterFacet");
+    const TermRouterFacetFactory =
+      await ethers.getContractFactory("TermRouterFacet");
     const termRouterFacet = await TermRouterFacetFactory.deploy();
     await termRouterFacet.waitForDeployment();
 
-    const TermLoanIntentHookFacetFactory = await ethers.getContractFactory("TermLoanIntentHookFacet");
+    const TermLoanIntentHookFacetFactory = await ethers.getContractFactory(
+      "TermLoanIntentHookFacet",
+    );
     const loanIntentHookFacet = await TermLoanIntentHookFacetFactory.deploy();
     await loanIntentHookFacet.waitForDeployment();
 
-    const TermLoanIntentFacetFactory = await ethers.getContractFactory("TermLoanIntentFacet");
-    loanIntentFacetImpl = await TermLoanIntentFacetFactory.deploy() as TermLoanIntentFacet;
+    const TermLoanIntentFacetFactory = await ethers.getContractFactory(
+      "TermLoanIntentFacet",
+    );
+    loanIntentFacetImpl =
+      (await TermLoanIntentFacetFactory.deploy()) as TermLoanIntentFacet;
     await loanIntentFacetImpl.waitForDeployment();
 
-    const ERC4626InterfaceFacetFactory = await ethers.getContractFactory("ERC4626InterfaceFacet");
+    const ERC4626InterfaceFacetFactory = await ethers.getContractFactory(
+      "ERC4626InterfaceFacet",
+    );
     const erc4626InterfaceFacet = await ERC4626InterfaceFacetFactory.deploy();
     await erc4626InterfaceFacet.waitForDeployment();
 
     // SwapRouterFacet: pendleRouter_ must be non-zero (use feeRecipient as dummy); pendleSwap_ = swap agg
     const swapAggAddr = await mockSwapAggregator.getAddress();
-    const SwapRouterFacetFactory = await ethers.getContractFactory("SwapRouterFacet");
-    const swapRouterFacet = await SwapRouterFacetFactory.deploy(feeRecipient.address, swapAggAddr);
+    const SwapRouterFacetFactory =
+      await ethers.getContractFactory("SwapRouterFacet");
+    const swapRouterFacet = await SwapRouterFacetFactory.deploy(
+      feeRecipient.address,
+      swapAggAddr,
+    );
     await swapRouterFacet.waitForDeployment();
 
     // ── 12. Diamond cut: add all facets ────────────────────────────────────
@@ -558,23 +702,35 @@ describe("TermFlashLoop Integration Tests", () => {
       "TermLoanIntentFacet",
       diamondAddress,
     )) as TermLoanIntentFacet;
-    await loanIntent.initializeTermIntentFacet(await termEventEmitter.getAddress());
+    await loanIntent.initializeTermIntentFacet(
+      await termEventEmitter.getAddress(),
+    );
 
     // ── 14. Configure TermControllerFacet ──────────────────────────────────
     const ctrlFacet = (await ethers.getContractAt(
       "TermControllerFacet",
       diamondAddress,
     )) as TermControllerFacet;
-    await ctrlFacet.connect(devops).approveTermController(await termController.getAddress());
+    await ctrlFacet
+      .connect(devops)
+      .approveTermController(await termController.getAddress());
     await ctrlFacet.connect(devops).approveFeeRecipient(feeRecipient.address);
 
     // ── 15. markTermApproved for all 3 vaults ──────────────────────────────
-    await termController.connect(admin).markTermApproved(await purchaseVault.getAddress());
-    await termController.connect(admin).markTermApproved(await collateralVault.getAddress());
-    await termController.connect(admin).markTermApproved(await collateral2Vault.getAddress());
+    await termController
+      .connect(admin)
+      .markTermApproved(await purchaseVault.getAddress());
+    await termController
+      .connect(admin)
+      .markTermApproved(await collateralVault.getAddress());
+    await termController
+      .connect(admin)
+      .markTermApproved(await collateral2Vault.getAddress());
 
     // ── 16. markTermDeployed for diamond ───────────────────────────────────
-    await termController.connect(controllerAdmin).markTermDeployed(diamondAddress);
+    await termController
+      .connect(controllerAdmin)
+      .markTermDeployed(diamondAddress);
 
     // ── 17. Configure swap rates ────────────────────────────────────────────
     await mockSwapAggregator.setSwap(
@@ -595,19 +751,29 @@ describe("TermFlashLoop Integration Tests", () => {
     await rawPurchase.mint(lender.address, LOAN_AMOUNT);
     await rawCollateral.mint(borrower.address, COLLATERAL_AMOUNT);
     await rawPurchase.connect(lender).approve(repoLocker1Addr, LOAN_AMOUNT);
-    await rawCollateral.connect(borrower).approve(repoLocker1Addr, COLLATERAL_AMOUNT);
+    await rawCollateral
+      .connect(borrower)
+      .approve(repoLocker1Addr, COLLATERAL_AMOUNT);
 
     // Period 2 setup: lender deposits rawPurchase → purchaseVaultShares; borrower deposits rawCollateral → collateralVaultShares
     const repoLocker2Addr = await maturityPeriod2.termRepoLocker.getAddress();
     await rawPurchase.mint(lender.address, LOAN_AMOUNT);
-    await rawPurchase.connect(lender).approve(await purchaseVault.getAddress(), LOAN_AMOUNT);
+    await rawPurchase
+      .connect(lender)
+      .approve(await purchaseVault.getAddress(), LOAN_AMOUNT);
     await purchaseVault.connect(lender).deposit(LOAN_AMOUNT, lender.address);
     await purchaseVault.connect(lender).approve(repoLocker2Addr, LOAN_AMOUNT);
 
     await rawCollateral.mint(borrower.address, COLLATERAL_AMOUNT);
-    await rawCollateral.connect(borrower).approve(await collateralVault.getAddress(), COLLATERAL_AMOUNT);
-    await collateralVault.connect(borrower).deposit(COLLATERAL_AMOUNT, borrower.address);
-    await collateralVault.connect(borrower).approve(repoLocker2Addr, COLLATERAL_AMOUNT);
+    await rawCollateral
+      .connect(borrower)
+      .approve(await collateralVault.getAddress(), COLLATERAL_AMOUNT);
+    await collateralVault
+      .connect(borrower)
+      .deposit(COLLATERAL_AMOUNT, borrower.address);
+    await collateralVault
+      .connect(borrower)
+      .approve(repoLocker2Addr, COLLATERAL_AMOUNT);
 
     // Period 3 setup: lender provides rawPurchase, borrower deposits COLLATERAL_AMOUNT rawPurchase → collateral2VaultShares
     const repoLocker3Addr = await maturityPeriod3.termRepoLocker.getAddress();
@@ -616,89 +782,137 @@ describe("TermFlashLoop Integration Tests", () => {
 
     // COLLATERAL_AMOUNT of rawPurchase (6-dec token) for collateral2Vault deposit
     await rawPurchase.mint(borrower.address, COLLATERAL_AMOUNT);
-    await rawPurchase.connect(borrower).approve(await collateral2Vault.getAddress(), COLLATERAL_AMOUNT);
-    await collateral2Vault.connect(borrower).deposit(COLLATERAL_AMOUNT, borrower.address);
-    await collateral2Vault.connect(borrower).approve(repoLocker3Addr, COLLATERAL_AMOUNT);
+    await rawPurchase
+      .connect(borrower)
+      .approve(await collateral2Vault.getAddress(), COLLATERAL_AMOUNT);
+    await collateral2Vault
+      .connect(borrower)
+      .deposit(COLLATERAL_AMOUNT, borrower.address);
+    await collateral2Vault
+      .connect(borrower)
+      .approve(repoLocker3Addr, COLLATERAL_AMOUNT);
 
     // Lock all bids/offers
-    const bidLocker1   = maturityPeriod1.termAuctionBidLocker;
+    const bidLocker1 = maturityPeriod1.termAuctionBidLocker;
     const offerLocker1 = maturityPeriod1.termAuctionOfferLocker;
-    const bidLocker2   = maturityPeriod2.termAuctionBidLocker;
+    const bidLocker2 = maturityPeriod2.termAuctionBidLocker;
     const offerLocker2 = maturityPeriod2.termAuctionOfferLocker;
-    const bidLocker3   = maturityPeriod3.termAuctionBidLocker;
+    const bidLocker3 = maturityPeriod3.termAuctionBidLocker;
     const offerLocker3 = maturityPeriod3.termAuctionOfferLocker;
 
     const offerId1 = await getGeneratedTenderId(
-      ethers.keccak256(ethers.toUtf8Bytes("offer-p1")), offerLocker1, lender,
+      ethers.keccak256(ethers.toUtf8Bytes("offer-p1")),
+      offerLocker1,
+      lender,
     );
-    await offerLocker1.connect(lender).lockOffers([{
-      id: ethers.keccak256(ethers.toUtf8Bytes("offer-p1")),
-      offeror: lender.address,
-      offerPriceHash: solidityPackedKeccak256(["uint256", "uint256"], [BORROW_RATE, OFFER_NONCE]),
-      amount: LOAN_AMOUNT,
-      purchaseToken: await rawPurchase.getAddress(),
-    }]);
+    await offerLocker1.connect(lender).lockOffers([
+      {
+        id: ethers.keccak256(ethers.toUtf8Bytes("offer-p1")),
+        offeror: lender.address,
+        offerPriceHash: solidityPackedKeccak256(
+          ["uint256", "uint256"],
+          [BORROW_RATE, OFFER_NONCE],
+        ),
+        amount: LOAN_AMOUNT,
+        purchaseToken: await rawPurchase.getAddress(),
+      },
+    ]);
 
     const bidId1 = await getGeneratedTenderId(
-      ethers.keccak256(ethers.toUtf8Bytes("bid-p1")), bidLocker1, borrower,
+      ethers.keccak256(ethers.toUtf8Bytes("bid-p1")),
+      bidLocker1,
+      borrower,
     );
-    await bidLocker1.connect(borrower).lockBids([{
-      id: ethers.keccak256(ethers.toUtf8Bytes("bid-p1")),
-      bidder: borrower.address,
-      bidPriceHash: solidityPackedKeccak256(["uint256", "uint256"], [BORROW_RATE, BID_NONCE]),
-      amount: LOAN_AMOUNT,
-      collateralAmounts: [COLLATERAL_AMOUNT],
-      purchaseToken: await rawPurchase.getAddress(),
-      collateralTokens: [await rawCollateral.getAddress()],
-    }]);
+    await bidLocker1.connect(borrower).lockBids([
+      {
+        id: ethers.keccak256(ethers.toUtf8Bytes("bid-p1")),
+        bidder: borrower.address,
+        bidPriceHash: solidityPackedKeccak256(
+          ["uint256", "uint256"],
+          [BORROW_RATE, BID_NONCE],
+        ),
+        amount: LOAN_AMOUNT,
+        collateralAmounts: [COLLATERAL_AMOUNT],
+        purchaseToken: await rawPurchase.getAddress(),
+        collateralTokens: [await rawCollateral.getAddress()],
+      },
+    ]);
 
     const offerId2 = await getGeneratedTenderId(
-      ethers.keccak256(ethers.toUtf8Bytes("offer-p2")), offerLocker2, lender,
+      ethers.keccak256(ethers.toUtf8Bytes("offer-p2")),
+      offerLocker2,
+      lender,
     );
-    await offerLocker2.connect(lender).lockOffers([{
-      id: ethers.keccak256(ethers.toUtf8Bytes("offer-p2")),
-      offeror: lender.address,
-      offerPriceHash: solidityPackedKeccak256(["uint256", "uint256"], [BORROW_RATE, OFFER_NONCE]),
-      amount: LOAN_AMOUNT,
-      purchaseToken: await purchaseVault.getAddress(),
-    }]);
+    await offerLocker2.connect(lender).lockOffers([
+      {
+        id: ethers.keccak256(ethers.toUtf8Bytes("offer-p2")),
+        offeror: lender.address,
+        offerPriceHash: solidityPackedKeccak256(
+          ["uint256", "uint256"],
+          [BORROW_RATE, OFFER_NONCE],
+        ),
+        amount: LOAN_AMOUNT,
+        purchaseToken: await purchaseVault.getAddress(),
+      },
+    ]);
 
     const bidId2 = await getGeneratedTenderId(
-      ethers.keccak256(ethers.toUtf8Bytes("bid-p2")), bidLocker2, borrower,
+      ethers.keccak256(ethers.toUtf8Bytes("bid-p2")),
+      bidLocker2,
+      borrower,
     );
-    await bidLocker2.connect(borrower).lockBids([{
-      id: ethers.keccak256(ethers.toUtf8Bytes("bid-p2")),
-      bidder: borrower.address,
-      bidPriceHash: solidityPackedKeccak256(["uint256", "uint256"], [BORROW_RATE, BID_NONCE]),
-      amount: LOAN_AMOUNT,
-      collateralAmounts: [COLLATERAL_AMOUNT],
-      purchaseToken: await purchaseVault.getAddress(),
-      collateralTokens: [await collateralVault.getAddress()],
-    }]);
+    await bidLocker2.connect(borrower).lockBids([
+      {
+        id: ethers.keccak256(ethers.toUtf8Bytes("bid-p2")),
+        bidder: borrower.address,
+        bidPriceHash: solidityPackedKeccak256(
+          ["uint256", "uint256"],
+          [BORROW_RATE, BID_NONCE],
+        ),
+        amount: LOAN_AMOUNT,
+        collateralAmounts: [COLLATERAL_AMOUNT],
+        purchaseToken: await purchaseVault.getAddress(),
+        collateralTokens: [await collateralVault.getAddress()],
+      },
+    ]);
 
     const offerId3 = await getGeneratedTenderId(
-      ethers.keccak256(ethers.toUtf8Bytes("offer-p3")), offerLocker3, lender,
+      ethers.keccak256(ethers.toUtf8Bytes("offer-p3")),
+      offerLocker3,
+      lender,
     );
-    await offerLocker3.connect(lender).lockOffers([{
-      id: ethers.keccak256(ethers.toUtf8Bytes("offer-p3")),
-      offeror: lender.address,
-      offerPriceHash: solidityPackedKeccak256(["uint256", "uint256"], [BORROW_RATE, OFFER_NONCE]),
-      amount: LOAN_AMOUNT,
-      purchaseToken: await rawPurchase.getAddress(),
-    }]);
+    await offerLocker3.connect(lender).lockOffers([
+      {
+        id: ethers.keccak256(ethers.toUtf8Bytes("offer-p3")),
+        offeror: lender.address,
+        offerPriceHash: solidityPackedKeccak256(
+          ["uint256", "uint256"],
+          [BORROW_RATE, OFFER_NONCE],
+        ),
+        amount: LOAN_AMOUNT,
+        purchaseToken: await rawPurchase.getAddress(),
+      },
+    ]);
 
     const bidId3 = await getGeneratedTenderId(
-      ethers.keccak256(ethers.toUtf8Bytes("bid-p3")), bidLocker3, borrower,
+      ethers.keccak256(ethers.toUtf8Bytes("bid-p3")),
+      bidLocker3,
+      borrower,
     );
-    await bidLocker3.connect(borrower).lockBids([{
-      id: ethers.keccak256(ethers.toUtf8Bytes("bid-p3")),
-      bidder: borrower.address,
-      bidPriceHash: solidityPackedKeccak256(["uint256", "uint256"], [BORROW_RATE, BID_NONCE]),
-      amount: LOAN_AMOUNT,
-      collateralAmounts: [COLLATERAL_AMOUNT],
-      purchaseToken: await rawPurchase.getAddress(),
-      collateralTokens: [await collateral2Vault.getAddress()],
-    }]);
+    await bidLocker3.connect(borrower).lockBids([
+      {
+        id: ethers.keccak256(ethers.toUtf8Bytes("bid-p3")),
+        bidder: borrower.address,
+        bidPriceHash: solidityPackedKeccak256(
+          ["uint256", "uint256"],
+          [BORROW_RATE, BID_NONCE],
+        ),
+        amount: LOAN_AMOUNT,
+        collateralAmounts: [COLLATERAL_AMOUNT],
+        purchaseToken: await rawPurchase.getAddress(),
+        collateralTokens: [await collateral2Vault.getAddress()],
+      },
+    ]);
 
     // Time-travel past reveal date (shared across all 3 periods)
     await network.provider.send("evm_increaseTime", [
@@ -707,12 +921,24 @@ describe("TermFlashLoop Integration Tests", () => {
     await network.provider.send("evm_mine", []);
 
     // Reveal all offers and bids
-    await offerLocker1.connect(lender).revealOffers([offerId1], [BORROW_RATE], [OFFER_NONCE]);
-    await bidLocker1.connect(borrower).revealBids([bidId1], [BORROW_RATE], [BID_NONCE]);
-    await offerLocker2.connect(lender).revealOffers([offerId2], [BORROW_RATE], [OFFER_NONCE]);
-    await bidLocker2.connect(borrower).revealBids([bidId2], [BORROW_RATE], [BID_NONCE]);
-    await offerLocker3.connect(lender).revealOffers([offerId3], [BORROW_RATE], [OFFER_NONCE]);
-    await bidLocker3.connect(borrower).revealBids([bidId3], [BORROW_RATE], [BID_NONCE]);
+    await offerLocker1
+      .connect(lender)
+      .revealOffers([offerId1], [BORROW_RATE], [OFFER_NONCE]);
+    await bidLocker1
+      .connect(borrower)
+      .revealBids([bidId1], [BORROW_RATE], [BID_NONCE]);
+    await offerLocker2
+      .connect(lender)
+      .revealOffers([offerId2], [BORROW_RATE], [OFFER_NONCE]);
+    await bidLocker2
+      .connect(borrower)
+      .revealBids([bidId2], [BORROW_RATE], [BID_NONCE]);
+    await offerLocker3
+      .connect(lender)
+      .revealOffers([offerId3], [BORROW_RATE], [OFFER_NONCE]);
+    await bidLocker3
+      .connect(borrower)
+      .revealBids([bidId3], [BORROW_RATE], [BID_NONCE]);
 
     // Time-travel past auction end (shared)
     await network.provider.send("evm_increaseTime", [
@@ -722,24 +948,24 @@ describe("TermFlashLoop Integration Tests", () => {
 
     // Complete all 3 auctions (use lender signer to avoid NonceManager desync)
     await maturityPeriod1.auction.connect(lender).completeAuction({
-      revealedBidSubmissions:    [bidId1],
-      expiredRolloverBids:       [],
-      unrevealedBidSubmissions:  [],
-      revealedOfferSubmissions:  [offerId1],
+      revealedBidSubmissions: [bidId1],
+      expiredRolloverBids: [],
+      unrevealedBidSubmissions: [],
+      revealedOfferSubmissions: [offerId1],
       unrevealedOfferSubmissions: [],
     });
     await maturityPeriod2.auction.connect(lender).completeAuction({
-      revealedBidSubmissions:    [bidId2],
-      expiredRolloverBids:       [],
-      unrevealedBidSubmissions:  [],
-      revealedOfferSubmissions:  [offerId2],
+      revealedBidSubmissions: [bidId2],
+      expiredRolloverBids: [],
+      unrevealedBidSubmissions: [],
+      revealedOfferSubmissions: [offerId2],
       unrevealedOfferSubmissions: [],
     });
     await maturityPeriod3.auction.connect(lender).completeAuction({
-      revealedBidSubmissions:    [bidId3],
-      expiredRolloverBids:       [],
-      unrevealedBidSubmissions:  [],
-      revealedOfferSubmissions:  [offerId3],
+      revealedBidSubmissions: [bidId3],
+      expiredRolloverBids: [],
+      unrevealedBidSubmissions: [],
+      revealedOfferSubmissions: [offerId3],
       unrevealedOfferSubmissions: [],
     });
 
@@ -774,22 +1000,36 @@ describe("TermFlashLoop Integration Tests", () => {
     const cAddr = await rawCollateral.getAddress();
     const servicer1Addr = await maturityPeriod1.termRepoServicer.getAddress();
 
-    const repurchaseObligation = await maturityPeriod1.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const repurchaseObligation =
+      await maturityPeriod1.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(repurchaseObligation).to.be.gt(0n);
 
     // Amount of rawPurchase we get from swapping COLLATERAL_AMOUNT rawCollateral
-    const swapOutputAmount = COLLATERAL_AMOUNT * RATE_COLLATERAL_TO_PURCHASE / 10n ** 18n;
+    const swapOutputAmount =
+      (COLLATERAL_AMOUNT * RATE_COLLATERAL_TO_PURCHASE) / 10n ** 18n;
 
     // Fund mock contracts
-    await rawPurchase.mint(await mockFlashLoanAggregator.getAddress(), repurchaseObligation);
-    await rawPurchase.mint(await mockSwapAggregator.getAddress(), swapOutputAmount);
+    await rawPurchase.mint(
+      await mockFlashLoanAggregator.getAddress(),
+      repurchaseObligation,
+    );
+    await rawPurchase.mint(
+      await mockSwapAggregator.getAddress(),
+      swapOutputAmount,
+    );
 
     // Borrower approves diamond for collateral (hook will pull it after repayment)
-    await rawCollateral.connect(borrower).approve(diamondAddress, COLLATERAL_AMOUNT);
+    await rawCollateral
+      .connect(borrower)
+      .approve(diamondAddress, COLLATERAL_AMOUNT);
 
     const swapRouterData = encodeSwapRouterData();
-    const flashExecutor = await ethers.getContractAt("TermFlashLoanExecutorFacet", diamondAddress);
+    const flashExecutor = await ethers.getContractAt(
+      "TermFlashLoanExecutorFacet",
+      diamondAddress,
+    );
 
     const actions = [
       {
@@ -800,9 +1040,14 @@ describe("TermFlashLoop Integration Tests", () => {
         minOutputAmount: COLLATERAL_AMOUNT,
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("submitRepurchasePaymentHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "submitRepurchasePaymentHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: servicer1Addr,
-        additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+        additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+          ["bool"],
+          [false],
+        ),
       },
       {
         // Action 1: swap rawCollateral → rawPurchase to repay flash loan
@@ -812,7 +1057,9 @@ describe("TermFlashLoop Integration Tests", () => {
         minOutputAmount: repurchaseObligation, // at least enough to repay flash loan
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("swapHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "swapHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: ZeroAddress,
         additionalCalldata: swapRouterData,
       },
@@ -828,8 +1075,10 @@ describe("TermFlashLoop Integration Tests", () => {
     await tx.wait();
 
     // Borrower's period1 obligation is cleared
-    const finalObligation = await maturityPeriod1.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const finalObligation =
+      await maturityPeriod1.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(finalObligation).to.equal(0n);
 
     // Diamond has no residual tokens
@@ -844,30 +1093,44 @@ describe("TermFlashLoop Integration Tests", () => {
   // → swap rawCollateral → rawPurchase → repay flash loan
   // ═══════════════════════════════════════════════════════════════════════════
   it("Scenario 2: Loop out of period2 term loan with full vault pipeline", async () => {
-    const pAddr   = await rawPurchase.getAddress();
-    const cAddr   = await rawCollateral.getAddress();
-    const pvAddr  = await purchaseVault.getAddress();
-    const cvAddr  = await collateralVault.getAddress();
+    const pAddr = await rawPurchase.getAddress();
+    const cAddr = await rawCollateral.getAddress();
+    const pvAddr = await purchaseVault.getAddress();
+    const cvAddr = await collateralVault.getAddress();
     const servicer2Addr = await maturityPeriod2.termRepoServicer.getAddress();
 
-    const repurchaseObligation2 = await maturityPeriod2.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const repurchaseObligation2 =
+      await maturityPeriod2.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(repurchaseObligation2).to.be.gt(0n);
 
     // Amount of rawPurchase we get from swapping COLLATERAL_AMOUNT rawCollateral
-    const swapOutputAmount = COLLATERAL_AMOUNT * RATE_COLLATERAL_TO_PURCHASE / 10n ** 18n;
+    const swapOutputAmount =
+      (COLLATERAL_AMOUNT * RATE_COLLATERAL_TO_PURCHASE) / 10n ** 18n;
 
     // Fund mock contracts
     // Flash aggregator needs repurchaseObligation2 rawPurchase (to deposit to vault)
-    await rawPurchase.mint(await mockFlashLoanAggregator.getAddress(), repurchaseObligation2);
+    await rawPurchase.mint(
+      await mockFlashLoanAggregator.getAddress(),
+      repurchaseObligation2,
+    );
     // Swap aggregator needs rawPurchase output
-    await rawPurchase.mint(await mockSwapAggregator.getAddress(), swapOutputAmount);
+    await rawPurchase.mint(
+      await mockSwapAggregator.getAddress(),
+      swapOutputAmount,
+    );
 
     // Borrower approves diamond for collateralVaultShares (hook pulls them after repayment releases them)
-    await collateralVault.connect(borrower).approve(diamondAddress, COLLATERAL_AMOUNT);
+    await collateralVault
+      .connect(borrower)
+      .approve(diamondAddress, COLLATERAL_AMOUNT);
 
     const swapRouterData = encodeSwapRouterData();
-    const flashExecutor = await ethers.getContractAt("TermFlashLoanExecutorFacet", diamondAddress);
+    const flashExecutor = await ethers.getContractAt(
+      "TermFlashLoanExecutorFacet",
+      diamondAddress,
+    );
 
     const actions = [
       {
@@ -878,7 +1141,9 @@ describe("TermFlashLoop Integration Tests", () => {
         minOutputAmount: repurchaseObligation2, // desired vault shares = obligation
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("depositToVaultHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "depositToVaultHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: pvAddr,
         additionalCalldata: "0x",
       },
@@ -890,9 +1155,14 @@ describe("TermFlashLoop Integration Tests", () => {
         minOutputAmount: COLLATERAL_AMOUNT,
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("submitRepurchasePaymentHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "submitRepurchasePaymentHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: servicer2Addr,
-        additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+        additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+          ["bool"],
+          [false],
+        ),
       },
       {
         // Action 2: redeem collateralVaultShares → rawCollateral
@@ -902,7 +1172,9 @@ describe("TermFlashLoop Integration Tests", () => {
         minOutputAmount: COLLATERAL_AMOUNT, // 1:1 vault, redeem all collateral
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("redeemFromVaultHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "redeemFromVaultHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: cvAddr,
         additionalCalldata: "0x",
       },
@@ -914,7 +1186,9 @@ describe("TermFlashLoop Integration Tests", () => {
         minOutputAmount: repurchaseObligation2,
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("swapHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "swapHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: ZeroAddress,
         additionalCalldata: swapRouterData,
       },
@@ -930,8 +1204,10 @@ describe("TermFlashLoop Integration Tests", () => {
     await tx.wait();
 
     // Period2 obligation cleared
-    const finalObligation2 = await maturityPeriod2.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const finalObligation2 =
+      await maturityPeriod2.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(finalObligation2).to.equal(0n);
 
     // Diamond has no residual tokens
@@ -948,21 +1224,31 @@ describe("TermFlashLoop Integration Tests", () => {
   // (surplus collateral2VaultShares refunded to borrower)
   // ═══════════════════════════════════════════════════════════════════════════
   it("Scenario 3: Loop out of period3 term loan with vault collateral (no swap)", async () => {
-    const pAddr   = await rawPurchase.getAddress();
+    const pAddr = await rawPurchase.getAddress();
     const c2vAddr = await collateral2Vault.getAddress();
     const servicer3Addr = await maturityPeriod3.termRepoServicer.getAddress();
 
-    const repurchaseObligation3 = await maturityPeriod3.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const repurchaseObligation3 =
+      await maturityPeriod3.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(repurchaseObligation3).to.be.gt(0n);
 
     // Fund flash aggregator with rawPurchase (to repay period3 loan)
-    await rawPurchase.mint(await mockFlashLoanAggregator.getAddress(), repurchaseObligation3);
+    await rawPurchase.mint(
+      await mockFlashLoanAggregator.getAddress(),
+      repurchaseObligation3,
+    );
 
     // Borrower approves diamond for all collateral2VaultShares (hook pulls them after repayment)
-    await collateral2Vault.connect(borrower).approve(diamondAddress, COLLATERAL_AMOUNT);
+    await collateral2Vault
+      .connect(borrower)
+      .approve(diamondAddress, COLLATERAL_AMOUNT);
 
-    const flashExecutor = await ethers.getContractAt("TermFlashLoanExecutorFacet", diamondAddress);
+    const flashExecutor = await ethers.getContractAt(
+      "TermFlashLoanExecutorFacet",
+      diamondAddress,
+    );
 
     const actions = [
       {
@@ -973,9 +1259,14 @@ describe("TermFlashLoop Integration Tests", () => {
         minOutputAmount: COLLATERAL_AMOUNT, // pull all collateral back from borrower
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("submitRepurchasePaymentHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "submitRepurchasePaymentHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: servicer3Addr,
-        additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(["bool"], [false]),
+        additionalCalldata: ethers.AbiCoder.defaultAbiCoder().encode(
+          ["bool"],
+          [false],
+        ),
       },
       {
         // Action 1: redeem exactly repurchaseObligation3 collateral2VaultShares → rawPurchase
@@ -987,7 +1278,9 @@ describe("TermFlashLoop Integration Tests", () => {
         minOutputAmount: repurchaseObligation3, // exact amount needed to repay flash loan
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("redeemFromVaultHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "redeemFromVaultHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: c2vAddr,
         additionalCalldata: "0x",
       },
@@ -1003,8 +1296,10 @@ describe("TermFlashLoop Integration Tests", () => {
     await tx.wait();
 
     // Period3 obligation cleared
-    const finalObligation3 = await maturityPeriod3.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const finalObligation3 =
+      await maturityPeriod3.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(finalObligation3).to.equal(0n);
 
     // Diamond has no residual tokens
@@ -1026,14 +1321,21 @@ describe("TermFlashLoop Integration Tests", () => {
     // Total rawPurchase that will be swapped: LOAN_AMOUNT (from lend order) + EXTRA_PURCHASE (from borrower)
     const totalPurchaseToSwap = LOAN_AMOUNT + EXTRA_PURCHASE; // 1500e6
     // Swap output: 1500e6 * 1e30 / 1e18 = 1500e18 = COLLATERAL_AMOUNT
-    const swapOutputAmount = totalPurchaseToSwap * RATE_PURCHASE_TO_COLLATERAL / 10n ** 18n;
+    const swapOutputAmount =
+      (totalPurchaseToSwap * RATE_PURCHASE_TO_COLLATERAL) / 10n ** 18n;
     expect(swapOutputAmount).to.equal(COLLATERAL_AMOUNT);
 
     // Fund mock contracts
     // Flash aggregator lends COLLATERAL_AMOUNT rawCollateral (used as collateral for new loan)
-    await rawCollateral.mint(await mockFlashLoanAggregator.getAddress(), COLLATERAL_AMOUNT);
+    await rawCollateral.mint(
+      await mockFlashLoanAggregator.getAddress(),
+      COLLATERAL_AMOUNT,
+    );
     // Swap aggregator needs rawCollateral to return after swapping rawPurchase
-    await rawCollateral.mint(await mockSwapAggregator.getAddress(), swapOutputAmount);
+    await rawCollateral.mint(
+      await mockSwapAggregator.getAddress(),
+      swapOutputAmount,
+    );
 
     // Lender provides LOAN_AMOUNT rawPurchase for the new term loan
     await rawPurchase.mint(lender.address, LOAN_AMOUNT);
@@ -1042,15 +1344,24 @@ describe("TermFlashLoop Integration Tests", () => {
     // Borrower provides EXTRA_PURCHASE rawPurchase for outputTokenAmountIn
     // Also approves LOAN_AMOUNT for the hook's safeTransferFrom (totalBorrowAmount)
     await rawPurchase.mint(borrower.address, LOAN_AMOUNT + EXTRA_PURCHASE);
-    await rawPurchase.connect(borrower).approve(diamondAddress, LOAN_AMOUNT + EXTRA_PURCHASE);
+    await rawPurchase
+      .connect(borrower)
+      .approve(diamondAddress, LOAN_AMOUNT + EXTRA_PURCHASE);
 
     // Create and sign lend order for period1
     const lendOrder = await makeLendOrder(servicer1Addr, LOAN_AMOUNT, 1n);
     const sig = await signLendOrder(lender, lendOrder);
-    const hookCalldata = encodeLendHookCalldata([lendOrder], [sig], [LOAN_AMOUNT]);
+    const hookCalldata = encodeLendHookCalldata(
+      [lendOrder],
+      [sig],
+      [LOAN_AMOUNT],
+    );
 
     const swapRouterData = encodeSwapRouterData();
-    const flashExecutor = await ethers.getContractAt("TermFlashLoanExecutorFacet", diamondAddress);
+    const flashExecutor = await ethers.getContractAt(
+      "TermFlashLoanExecutorFacet",
+      diamondAddress,
+    );
 
     const actions = [
       {
@@ -1064,7 +1375,9 @@ describe("TermFlashLoop Integration Tests", () => {
         minOutputAmount: LOAN_AMOUNT,
         outputTokenAmountIn: EXTRA_PURCHASE,
         usePermit2ForOutputTokenIn: false,
-        method: sel("settleLimitLendHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "settleLimitLendHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: servicer1Addr,
         additionalCalldata: hookCalldata,
       },
@@ -1076,7 +1389,9 @@ describe("TermFlashLoop Integration Tests", () => {
         minOutputAmount: COLLATERAL_AMOUNT, // must cover flash loan repayment
         outputTokenAmountIn: 0n,
         usePermit2ForOutputTokenIn: false,
-        method: sel("swapHook((address,address,uint256,address,uint256,address,bytes))"),
+        method: sel(
+          "swapHook((address,address,uint256,address,uint256,address,bytes))",
+        ),
         targetAddress: ZeroAddress,
         additionalCalldata: swapRouterData,
       },
@@ -1092,8 +1407,10 @@ describe("TermFlashLoop Integration Tests", () => {
     await tx.wait();
 
     // Borrower now has a (new/increased) period1 repurchase obligation
-    const finalObligation1 = await maturityPeriod1.termRepoServicer
-      .getBorrowerRepurchaseObligation(borrower.address);
+    const finalObligation1 =
+      await maturityPeriod1.termRepoServicer.getBorrowerRepurchaseObligation(
+        borrower.address,
+      );
     expect(finalObligation1).to.be.gt(0n);
 
     // Diamond has no residual tokens

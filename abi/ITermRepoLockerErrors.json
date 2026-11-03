@@ -1,0 +1,17 @@
+[
+  {
+    "inputs": [],
+    "name": "AlreadyTermContractPaired",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ERC20TransferFailed",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "TermRepoLockerTransfersPaused",
+    "type": "error"
+  }
+]

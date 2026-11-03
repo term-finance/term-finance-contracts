@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers, network, upgrades } from "hardhat";
@@ -155,7 +154,6 @@ function expectBigNumberEq(
   expected: BigNumberish,
   message: string = `Expected ${expected.toString()} but was ${actual.toString()}`,
 ): void {
-  // eslint-disable-next-line no-unused-expressions
   expect(actual === BigInt(expected), message).to.be.true;
 }
 
@@ -201,7 +199,13 @@ describe("TermAuction", () => {
       await ethers.getContractFactory("TermEventEmitter");
     termEventEmitter = (await upgrades.deployProxy(
       termEventEmitterFactory,
-      [wallets[3].address, wallets[4].address, wallets[5].address, wallets[4].address, wallets[5].address],
+      [
+        wallets[3].address,
+        wallets[4].address,
+        wallets[5].address,
+        wallets[4].address,
+        wallets[5].address,
+      ],
       { kind: "uups" },
     )) as unknown as TermEventEmitter;
 
@@ -330,9 +334,6 @@ describe("TermAuction", () => {
         ),
     ).to.be.revertedWithCustomError(termAuction, "AlreadyTermContractPaired");
   });
-
-  // beforeEach(async () => {
-  // });
 
   afterEach(async () => {
     await network.provider.send("evm_revert", [snapshotId]);
@@ -1500,10 +1501,10 @@ describe("TermAuction", () => {
       );
       await termRepoServicer.mock.fulfillBid.returns();
       await termRepoServicer.mock.fulfillOffer.returns();
-      
+
       // Mock isTermRepoBalanced to return false (balance check fails)
       await termRepoServicer.mock.isTermRepoBalanced.returns(false);
-      
+
       await termAuctionBidLocker.mock.auctionUnlockBid.returns();
       await termAuctionOfferLocker.mock.unlockOfferPartial.returns();
 
@@ -1560,10 +1561,10 @@ describe("TermAuction", () => {
       );
       await termRepoServicer.mock.fulfillBid.returns();
       await termRepoServicer.mock.fulfillOffer.returns();
-      
+
       // Mock isTermRepoBalanced to return true (balance check passes)
       await termRepoServicer.mock.isTermRepoBalanced.returns(true);
-      
+
       await termAuctionBidLocker.mock.auctionUnlockBid.returns();
       await termAuctionOfferLocker.mock.unlockOfferPartial.returns();
       await testBorrowedToken.mock.decimals.returns(8);
@@ -1582,9 +1583,9 @@ describe("TermAuction", () => {
     });
 
     it("should demonstrate old vs new balance logic behavior", async () => {
-      // This test demonstrates that the new logic provides more accurate 
+      // This test demonstrates that the new logic provides more accurate
       // balance validation compared to the old truncation-based approach
-      
+
       const { bids, offers } = await parseBidsOffers(
         clearingPriceTestCSV_random1,
         await testBorrowedToken.getAddress(),
@@ -1621,13 +1622,13 @@ describe("TermAuction", () => {
       );
       await termRepoServicer.mock.fulfillBid.returns();
       await termRepoServicer.mock.fulfillOffer.returns();
-      
+
       // Test case where new logic is more precise:
       // Scenario where difference is exactly at the 10^4 boundary
       // New logic: |difference| <= 10^4 (more precise)
       // Old logic: truncated division might mask small differences
       await termRepoServicer.mock.isTermRepoBalanced.returns(true);
-      
+
       await termAuctionBidLocker.mock.auctionUnlockBid.returns();
       await termAuctionOfferLocker.mock.unlockOfferPartial.returns();
       await testBorrowedToken.mock.decimals.returns(8);
@@ -1650,4 +1651,3 @@ describe("TermAuction", () => {
     expect(await termAuction.version()).to.eq(expectedVersion);
   });
 });
-/* eslint-enable camelcase */

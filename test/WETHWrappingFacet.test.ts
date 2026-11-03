@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { expect } from "chai";
 import { ethers } from "hardhat";
@@ -9,8 +8,7 @@ import {
   TestETHRejecter,
 } from "../typechain-types";
 
-const PERMIT2_CANONICAL_ADDRESS =
-  "0x000000000022D473030F116dDEE9F6B43aC78BA3";
+const PERMIT2_CANONICAL_ADDRESS = "0x000000000022D473030F116dDEE9F6B43aC78BA3";
 
 describe("WETHWrappingFacet Tests", () => {
   let facet: TestWETHWrappingFacetHelper;
@@ -55,8 +53,7 @@ describe("WETHWrappingFacet Tests", () => {
     await facet.waitForDeployment();
 
     // Deploy ETH rejecter
-    const RejecterFactory =
-      await ethers.getContractFactory("TestETHRejecter");
+    const RejecterFactory = await ethers.getContractFactory("TestETHRejecter");
     ethRejecter =
       (await RejecterFactory.deploy()) as unknown as TestETHRejecter;
     await ethRejecter.waitForDeployment();
@@ -113,9 +110,8 @@ describe("WETHWrappingFacet Tests", () => {
     it("should work with msg.value = 0 (no-op)", async () => {
       const wethAddr = await mockWETH.getAddress();
 
-      await expect(
-        facet.connect(wallet1).wrapETH(wethAddr, { value: 0 }),
-      ).to.not.be.reverted;
+      await expect(facet.connect(wallet1).wrapETH(wethAddr, { value: 0 })).to
+        .not.be.reverted;
 
       const wethBalance = await mockWETH.balanceOf(wallet1.address);
       expect(wethBalance).to.equal(0);
@@ -133,9 +129,7 @@ describe("WETHWrappingFacet Tests", () => {
       const amount = ethers.parseEther("1");
 
       await expect(
-        facet
-          .connect(wallet1)
-          .wrapETH(ethers.ZeroAddress, { value: amount }),
+        facet.connect(wallet1).wrapETH(ethers.ZeroAddress, { value: amount }),
       ).to.be.reverted;
     });
   });
@@ -157,9 +151,7 @@ describe("WETHWrappingFacet Tests", () => {
         await mockWETH.connect(wallet1).approve(facetAddr, amount);
 
         const ethBefore = await ethers.provider.getBalance(wallet1.address);
-        await facet
-          .connect(wallet1)
-          .unwrapETH(amount, wethAddr, false);
+        await facet.connect(wallet1).unwrapETH(amount, wethAddr, false);
         const ethAfter = await ethers.provider.getBalance(wallet1.address);
 
         // ETH increased (minus gas), WETH decreased
@@ -180,9 +172,7 @@ describe("WETHWrappingFacet Tests", () => {
         expect(wethBefore).to.equal(amount);
 
         const ethBefore = await ethers.provider.getBalance(wallet1.address);
-        await facet
-          .connect(wallet1)
-          .unwrapETH(amount, wethAddr, false);
+        await facet.connect(wallet1).unwrapETH(amount, wethAddr, false);
         const ethAfter = await ethers.provider.getBalance(wallet1.address);
 
         expect(await mockWETH.balanceOf(wallet1.address)).to.equal(0);
@@ -199,9 +189,7 @@ describe("WETHWrappingFacet Tests", () => {
         await facet.connect(wallet1).wrapETH(wethAddr, { value: amount });
         await mockWETH.connect(wallet1).approve(facetAddr, amount);
 
-        await facet
-          .connect(wallet1)
-          .unwrapETH(amount, wethAddr, false);
+        await facet.connect(wallet1).unwrapETH(amount, wethAddr, false);
 
         expect(await mockWETH.balanceOf(facetAddr)).to.equal(0);
         expect(await ethers.provider.getBalance(facetAddr)).to.equal(0);
@@ -215,11 +203,8 @@ describe("WETHWrappingFacet Tests", () => {
         // Approve but have no balance
         await mockWETH.connect(wallet1).approve(facetAddr, amount);
 
-        await expect(
-          facet
-            .connect(wallet1)
-            .unwrapETH(amount, wethAddr, false),
-        ).to.be.reverted;
+        await expect(facet.connect(wallet1).unwrapETH(amount, wethAddr, false))
+          .to.be.reverted;
       });
 
       it("should revert when caller has not approved facet", async () => {
@@ -229,22 +214,16 @@ describe("WETHWrappingFacet Tests", () => {
         // Give wallet1 WETH but don't approve
         await facet.connect(wallet1).wrapETH(wethAddr, { value: amount });
 
-        await expect(
-          facet
-            .connect(wallet1)
-            .unwrapETH(amount, wethAddr, false),
-        ).to.be.reverted;
+        await expect(facet.connect(wallet1).unwrapETH(amount, wethAddr, false))
+          .to.be.reverted;
       });
 
       it("should work with amount = 0 (no-op)", async () => {
         const wethAddr = await mockWETH.getAddress();
         const facetAddr = await facet.getAddress();
 
-        await expect(
-          facet
-            .connect(wallet1)
-            .unwrapETH(0, wethAddr, false),
-        ).to.not.be.reverted;
+        await expect(facet.connect(wallet1).unwrapETH(0, wethAddr, false)).to
+          .not.be.reverted;
       });
     });
 
@@ -266,9 +245,7 @@ describe("WETHWrappingFacet Tests", () => {
           .approve(PERMIT2_CANONICAL_ADDRESS, amount);
 
         const ethBefore = await ethers.provider.getBalance(wallet1.address);
-        await facet
-          .connect(wallet1)
-          .unwrapETH(amount, wethAddr, true);
+        await facet.connect(wallet1).unwrapETH(amount, wethAddr, true);
         const ethAfter = await ethers.provider.getBalance(wallet1.address);
 
         expect(await mockWETH.balanceOf(wallet1.address)).to.equal(0);
@@ -286,13 +263,9 @@ describe("WETHWrappingFacet Tests", () => {
           .connect(wallet1)
           .approve(PERMIT2_CANONICAL_ADDRESS, amount);
 
-        await facet
-          .connect(wallet1)
-          .unwrapETH(amount, wethAddr, true);
+        await facet.connect(wallet1).unwrapETH(amount, wethAddr, true);
 
-        expect(await mockPermit2.lastTransferFrom()).to.equal(
-          wallet1.address,
-        );
+        expect(await mockPermit2.lastTransferFrom()).to.equal(wallet1.address);
         expect(await mockPermit2.lastTransferTo()).to.equal(facetAddr);
         expect(await mockPermit2.lastTransferAmount()).to.equal(amount);
         expect(await mockPermit2.lastTransferToken()).to.equal(wethAddr);
@@ -304,11 +277,13 @@ describe("WETHWrappingFacet Tests", () => {
         const overflowAmount = 2n ** 160n;
 
         await expect(
-          facet
-            .connect(wallet1)
-            .unwrapETH(overflowAmount, wethAddr, true),
+          facet.connect(wallet1).unwrapETH(overflowAmount, wethAddr, true),
         ).to.be.revertedWithCustomError(
-          { interface: new ethers.Interface(["error SafeCastOverflowedUintDowncast(uint8 bits, uint256 value)"]) },
+          {
+            interface: new ethers.Interface([
+              "error SafeCastOverflowedUintDowncast(uint8 bits, uint256 value)",
+            ]),
+          },
           "SafeCastOverflowedUintDowncast",
         );
       });
@@ -326,9 +301,7 @@ describe("WETHWrappingFacet Tests", () => {
         await mockPermit2.setShouldRevertOnTransferFrom(true);
 
         await expect(
-          facet
-            .connect(wallet1)
-            .unwrapETH(amount, wethAddr, true),
+          facet.connect(wallet1).unwrapETH(amount, wethAddr, true),
         ).to.be.revertedWith("Mock transferFrom failed");
       });
     });
@@ -363,9 +336,7 @@ describe("WETHWrappingFacet Tests", () => {
         const amount = ethers.parseEther("1");
 
         await expect(
-          facet
-            .connect(wallet1)
-            .unwrapETH(amount, wallet2.address, false),
+          facet.connect(wallet1).unwrapETH(amount, wallet2.address, false),
         ).to.be.reverted;
       });
 
@@ -382,9 +353,7 @@ describe("WETHWrappingFacet Tests", () => {
         await mockWETH.setShouldRevertOnWithdraw(true);
 
         await expect(
-          facet
-            .connect(wallet1)
-            .unwrapETH(amount, wethAddr, false),
+          facet.connect(wallet1).unwrapETH(amount, wethAddr, false),
         ).to.be.revertedWith("MockWETH: withdraw reverted");
       });
     });
